@@ -179,6 +179,12 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
 
+        # Connessione callback di propagazione sandbox (aggiorna la pagina Stato)
+        def _on_sandbox_propagated_callback() -> None:
+            self.status_page.refresh()
+
+        self.sandbox_page.on_sandbox_propagated = _on_sandbox_propagated_callback
+
         # Selezione iniziale della pagina Stato all'avvio dell'applicazione
         self.select_page("status")
 
@@ -313,6 +319,14 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             and not self.presets_page.is_loading
         ):
             self.presets_page.refresh()
+
+        # Caricamento automatico al primo accesso della pagina Sandbox
+        if (
+            page_id == "sandbox"
+            and self.sandbox_page._current_sandbox_status is None
+            and not self.sandbox_page._is_loading
+        ):
+            self.sandbox_page.refresh()
 
         # Sincronizza la selezione visiva nella Gtk.ListBox senza generare loop ricorsivi
         target_row = self._page_id_to_row.get(page_id)

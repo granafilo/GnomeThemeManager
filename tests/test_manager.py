@@ -422,3 +422,39 @@ def test_manager_install_theme_polymorphic(manager: ThemeManager, mock_installer
         overwrite=False,
     )
 
+
+def test_manager_get_sandbox_status(manager: ThemeManager, mock_sandbox: MagicMock) -> None:
+    """Verifica che get_sandbox_status deleghi a SandboxBridge.get_sandbox_status."""
+    expected = SandboxStatus(snap_available=True, flatpak_available=True)
+    mock_sandbox.get_sandbox_status.return_value = expected
+
+    res = manager.get_sandbox_status()
+    assert res == expected
+    mock_sandbox.get_sandbox_status.assert_called_once()
+
+
+def test_manager_propagate_sandbox_with_explicit_themes(manager: ThemeManager, mock_sandbox: MagicMock) -> None:
+    """Verifica che propagate_sandbox deleghi a SandboxBridge.propagate_all con i temi specificati."""
+    expected = PropagationResult(flatpak_success=True, snap_success=True)
+    mock_sandbox.propagate_all.return_value = expected
+
+    res = manager.propagate_sandbox(gtk_theme="MyGTK", icon_theme="MyIcons")
+    assert res == expected
+    mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="MyGTK", icon_theme="MyIcons")
+
+
+def test_manager_propagate_sandbox_with_active_themes(
+    manager: ThemeManager,
+    mock_gsettings: MagicMock,
+    mock_sandbox: MagicMock,
+) -> None:
+    """Verifica che propagate_sandbox usi i temi correnti se non specificati."""
+    mock_gsettings.get_current.return_value = ThemeSet(gtk_theme="ActiveGTK", icon_theme="ActiveIcons")
+    expected = PropagationResult(flatpak_success=True, snap_success=True)
+    mock_sandbox.propagate_all.return_value = expected
+
+    res = manager.propagate_sandbox()
+    assert res == expected
+    mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="ActiveGTK", icon_theme="ActiveIcons")
+
+

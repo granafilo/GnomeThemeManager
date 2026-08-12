@@ -17,7 +17,15 @@ from .errors import GSettingsUnavailableError, ThemeNotFoundError
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import ThemeInstaller
-from .models import ApplyResult, PropagationResult, SystemStatus, Theme, ThemeSet, ThemeType
+from .models import (
+    ApplyResult,
+    PropagationResult,
+    SandboxStatus,
+    SystemStatus,
+    Theme,
+    ThemeSet,
+    ThemeType,
+)
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
@@ -156,6 +164,43 @@ class ThemeManager:
             sandbox_status=sandbox_stat,
             gtk4_override_active=gtk4_override_stat,
         )
+
+    def get_sandbox_status(self) -> SandboxStatus:
+        """Restituisce lo stato diagnostico dei runtime sandbox (Flatpak e Snap).
+
+        Returns:
+            Istanza di SandboxStatus con i dettagli di disponibilità e override.
+        """
+        return self._sandbox.get_sandbox_status()
+
+    def propagate_sandbox(
+        self,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+    ) -> PropagationResult:
+        """Propaga i temi attivi (o specificati) agli ambienti sandbox Flatpak e Snap.
+
+        Non esegue operazioni con privilegi elevati né installa pacchetti automaticamente.
+        Concede permessi di filesystem per Flatpak e verifica la compatibilità per Snap.
+
+        Args:
+            gtk_theme: Nome opzionale del tema GTK (se None, tenta di usare quello attivo).
+            icon_theme: Nome opzionale del tema icone (se None, tenta di usare quello attivo).
+
+        Returns:
+            Istanza di PropagationResult con messaggi, esiti e avvisi.
+        """
+        if gtk_theme is None or icon_theme is None:
+            try:
+                current = self.get_current_themes()
+                gtk_theme = gtk_theme or current.gtk_theme
+                icon_theme = icon_theme or current.icon_theme
+            except GSettingsUnavailableError:
+                logger.debug(
+                    "GSettings non disponibile per determinare i temi attivi durante la propagazione sandbox."
+                )
+
+        return self._sandbox.propagate_all(gtk_theme=gtk_theme, icon_theme=icon_theme)
 
     def list_themes(
         self,
