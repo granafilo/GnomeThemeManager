@@ -325,3 +325,91 @@ def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
     assert (dest_folder / "gtk-4.0" / "gtk.css").exists()
     assert (dest_folder / "gnome-shell" / "gnome-shell.css").exists()
 
+
+# =============================================================================
+# 6. Test Ispezione e Installazione da Cartella Locale
+# =============================================================================
+
+
+def test_installer_inspect_source_archive(tmp_path: Path) -> None:
+    """Verifica che inspect_source analizzi un archivio senza installarlo."""
+    archive = tmp_path / "InspectTheme.zip"
+    create_mock_zip(archive, {"InspectTheme/gtk-3.0/gtk.css": "/* CSS */"})
+
+    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    results = installer.inspect_source(archive)
+
+    assert len(results) == 1
+    assert results[0][0] == "InspectTheme"
+    assert results[0][2] == ThemeType.GTK
+    # Verifica che non sia stato installato nulla
+    assert not (tmp_path / "themes" / "InspectTheme").exists()
+
+
+def test_installer_inspect_source_directory(tmp_path: Path) -> None:
+    """Verifica che inspect_source analizzi una cartella senza modificarla."""
+    source_dir = tmp_path / "LocalThemeDir"
+    (source_dir / "gtk-3.0").mkdir(parents=True)
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
+
+    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    results = installer.inspect_source(source_dir)
+
+    assert len(results) == 1
+    assert results[0][0] == "LocalThemeDir"
+    assert results[0][2] == ThemeType.GTK
+    # La cartella sorgente originale deve rimanere intatta
+    assert (source_dir / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_inspect_source_non_existent(tmp_path: Path) -> None:
+    """Verifica che inspect_source sollevi FileNotFoundError se la sorgente non esiste."""
+    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    with pytest.raises(FileNotFoundError):
+        installer.inspect_source(tmp_path / "NonExistentPath")
+
+
+def test_installer_install_directory_success(tmp_path: Path) -> None:
+    """Verifica l'installazione di un tema da cartella locale."""
+    user_themes = tmp_path / "user_themes"
+    user_icons = tmp_path / "user_icons"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    source_dir = tmp_path / "MyFolderTheme"
+    (source_dir / "gtk-3.0").mkdir(parents=True)
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
+
+    installed = installer.install_directory(source_dir)
+    assert len(installed) == 1
+    assert installed[0].name == "MyFolderTheme"
+    assert installed[0].theme_type == ThemeType.GTK
+    assert installed[0].is_user_level is True
+
+    # Verifica destinazione
+    assert (user_themes / "MyFolderTheme" / "gtk-3.0" / "gtk.css").exists()
+    # Verifica che la sorgente non sia stata eliminata o spostata
+    assert (source_dir / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> None:
+    """Verifica gestione del conflitto di sovrascrittura da cartella."""
+    user_themes = tmp_path / "user_themes"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
+
+    source_dir = tmp_path / "ConflictTheme"
+    (source_dir / "gtk-3.0").mkdir(parents=True)
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* v1 */")
+
+    installer.install_directory(source_dir)
+
+    # Nuovo tentativo con overwrite=False
+    with pytest.raises(FileExistsError, match="esiste già"):
+        installer.install_directory(source_dir, overwrite=False)
+
+    # Sovrascrittura con overwrite=True
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* v2 */")
+    installed = installer.install_directory(source_dir, overwrite=True)
+    assert len(installed) == 1
+    assert (user_themes / "ConflictTheme" / "gtk-3.0" / "gtk.css").read_text() == "/* v2 */"
+
+

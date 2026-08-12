@@ -379,3 +379,46 @@ def test_manager_install_and_uninstall(manager: ThemeManager, mock_installer: Ma
     uninstalled = manager.uninstall_theme("Installed", ThemeType.GTK)
     assert uninstalled is True
     mock_installer.uninstall.assert_called_once_with(theme_name="Installed", theme_type=ThemeType.GTK)
+
+
+def test_manager_inspect_theme_source(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+    """Verifica che inspect_theme_source deleghi a ThemeInstaller.inspect_source."""
+    source = tmp_path / "SomeSource"
+    mock_installer.inspect_source.return_value = [("MyTheme", source, ThemeType.GTK)]
+
+    results = manager.inspect_theme_source(source)
+    assert results == [("MyTheme", ThemeType.GTK)]
+    mock_installer.inspect_source.assert_called_once_with(source_path=source)
+
+
+def test_manager_install_theme_directory(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+    """Verifica che install_theme_directory deleghi a ThemeInstaller.install_directory."""
+    source_dir = tmp_path / "MyDir"
+    installed_theme = Theme("MyDir", ThemeType.GTK, tmp_path / "MyDir", True)
+    mock_installer.install_directory.return_value = [installed_theme]
+
+    res = manager.install_theme_directory(source_dir, overwrite=True)
+    assert res == [installed_theme]
+    mock_installer.install_directory.assert_called_once_with(
+        directory_path=source_dir,
+        theme_type=None,
+        custom_name=None,
+        overwrite=True,
+    )
+
+
+def test_manager_install_theme_polymorphic(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+    """Verifica che install_theme accetti sia archivi che directory delegando a ThemeInstaller.install."""
+    source = tmp_path / "generic_source"
+    installed_theme = Theme("GenTheme", ThemeType.GTK, tmp_path / "GenTheme", True)
+    mock_installer.install.return_value = [installed_theme]
+
+    res = manager.install_theme(source, overwrite=False)
+    assert res == [installed_theme]
+    mock_installer.install.assert_called_once_with(
+        archive_path=source,
+        theme_type=None,
+        custom_name=None,
+        overwrite=False,
+    )
+

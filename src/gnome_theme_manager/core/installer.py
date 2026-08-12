@@ -253,17 +253,62 @@ class ThemeInstaller:
             else USER_ICONS_DIRS[0]
         )
 
-    def install(
+    def inspect_source(
         self,
-        archive_path: Path,
+        source_path: Path,
+        fallback_name: str | None = None,
+    ) -> list[tuple[str, Path, ThemeType]]:
+        """Ispeziona una sorgente (cartella o archivio) per identificare i temi e i componenti contenuti.
+
+        Non modifica la sorgente originale. Se la sorgente è un archivio, la estrae
+        temporaneamente in una directory protetta ed esegue l'analisi prima di ripulirla.
+
+        Args:
+            source_path: Percorso del file archivio o della cartella del tema.
+            fallback_name: Nome facoltativo da assegnare se il tema ha layout flat.
+
+        Returns:
+            Lista di tuple (nome_tema, percorso_sorgente, tipo_tema).
+
+        Raises:
+            FileNotFoundError: Se source_path non esiste.
+            ArchiveExtractionError: Se l'archivio è corrotto o non valido.
+            ThemeValidationError: Se non viene rilevata alcuna struttura di tema valida.
+        """
+        source_path = Path(source_path).resolve()
+        if not source_path.exists():
+            raise FileNotFoundError(f"La sorgente '{source_path}' non esiste.")
+
+        if source_path.is_dir():
+            name = fallback_name or source_path.name
+            return inspect_extracted_tree(source_path, fallback_name=name)
+
+        # Se è un file archivio
+        name = fallback_name or source_path.name
+        for ext in [".tar.gz", ".tar.xz", ".tar.bz2", ".tgz", ".txz", ".tbz2", ".zip", ".tar"]:
+            if name.lower().endswith(ext):
+                name = name[:-len(ext)]
+                break
+
+        with tempfile.TemporaryDirectory() as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            safe_extract(source_path, tmp_dir)
+            targets = inspect_extracted_tree(tmp_dir, fallback_name=name)
+            return [(t_name, source_path, t_type) for t_name, _, t_type in targets]
+
+    def install_directory(
+        self,
+        directory_path: Path,
         theme_type: ThemeType | None = None,
         custom_name: str | None = None,
         overwrite: bool = False,
     ) -> list[Theme]:
-        """Estrae, valida e installa uno o più temi da un archivio nelle directory utente.
+        """Ispeziona e installa temi da una cartella locale nelle directory utente.
+
+        Non modifica, non sposta e non elimina la cartella sorgente originale.
 
         Args:
-            archive_path: Percorso del file archivio (.zip, .tar.*).
+            directory_path: Percorso della directory del tema da installare.
             theme_type: Tipo di tema opzionale per filtrare o forzare un tipo specifico.
             custom_name: Nome personalizzato per la cartella di destinazione.
             overwrite: Se True, sovrascrive il tema se già esistente.
@@ -272,12 +317,102 @@ class ThemeInstaller:
             Lista delle istanze Theme installate con successo.
 
         Raises:
+            FileNotFoundError: Se la directory sorgente non esiste o non è una cartella.
+            ThemeValidationError: Se la struttura non è valida o non compatibile.
+            FileExistsError: Se il tema esiste già e overwrite=False.
+        """
+        directory_path = Path(directory_path).resolve()
+        if not directory_path.exists() or not directory_path.is_dir():
+            raise FileNotFoundError(
+                f"La cartella sorgente '{directory_path}' non esiste o non è una directory."
+            )
+
+        fallback_name = custom_name or directory_path.name
+        targets = inspect_extracted_tree(directory_path, fallback_name=fallback_name)
+
+        if theme_type is not None:
+            filtered = [t for t in targets if t[2] == theme_type]
+            if not filtered:
+                raise ThemeValidationError(
+                    f"La cartella non contiene un tema compatibile con il tipo richiesto '{theme_type.value}'."
+                )
+            targets = filtered
+
+        if custom_name and len({t[1] for t in targets}) == 1:
+            targets = [(custom_name, t[1], t[2]) for t in targets]
+
+        installed_themes: list[Theme] = []
+        processed_dirs: set[tuple[str, Path]] = set()
+
+        for name, source_dir, t_type in targets:
+            target_base_dir = (
+                self.user_themes_dir
+                if t_type in (ThemeType.GTK, ThemeType.SHELL)
+                else self.user_icons_dir
+            )
+            dest_dir = target_base_dir / name
+
+            dir_key = (name, source_dir)
+            if dir_key not in processed_dirs:
+                if dest_dir.exists():
+                    if not overwrite:
+                        raise FileExistsError(
+                            f"Il tema '{name}' esiste già in '{dest_dir}'. Usare overwrite=True per sovrascrivere."
+                        )
+                    shutil.rmtree(dest_dir)
+
+                target_base_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(source_dir, dest_dir)
+                processed_dirs.add(dir_key)
+
+            installed_themes.append(
+                Theme(
+                    name=name,
+                    theme_type=t_type,
+                    path=dest_dir,
+                    is_user_level=True,
+                )
+            )
+
+        return installed_themes
+
+    def install(
+        self,
+        archive_path: Path,
+        theme_type: ThemeType | None = None,
+        custom_name: str | None = None,
+        overwrite: bool = False,
+    ) -> list[Theme]:
+        """Estrae, valida e installa uno o più temi da un archivio o cartella nelle directory utente.
+
+        Se archive_path è una directory, delega a install_directory. Se è un file archivio,
+        esegue l'estrazione sicura in una cartella temporanea e installa i temi trovati.
+
+        Args:
+            archive_path: Percorso del file archivio (.zip, .tar.*) o della directory del tema.
+            theme_type: Tipo di tema opzionale per filtrare o forzare un tipo specifico.
+            custom_name: Nome personalizzato per la cartella di destinazione.
+            overwrite: Se True, sovrascrive il tema se già esistente.
+
+        Returns:
+            Lista delle istanze Theme installate con successo.
+
+        Raises:
+            FileNotFoundError: Se il file o la directory non esiste.
             ArchiveExtractionError: Se l'estrazione fallisce o in caso di minaccia di sicurezza.
             ThemeValidationError: Se la struttura dell'archivio non è valida o non compatibile.
             FileExistsError: Se il tema esiste già e overwrite=False.
         """
-        archive_path = Path(archive_path)
-        fallback_name = custom_name or archive_path.name
+        source_path = Path(archive_path)
+        if source_path.is_dir():
+            return self.install_directory(
+                directory_path=source_path,
+                theme_type=theme_type,
+                custom_name=custom_name,
+                overwrite=overwrite,
+            )
+
+        fallback_name = custom_name or source_path.name
         for ext in [".tar.gz", ".tar.xz", ".tar.bz2", ".tgz", ".txz", ".tbz2", ".zip", ".tar"]:
             if fallback_name.lower().endswith(ext):
                 fallback_name = fallback_name[:-len(ext)]
@@ -287,7 +422,7 @@ class ThemeInstaller:
 
         with tempfile.TemporaryDirectory() as tmp_dir_str:
             tmp_dir = Path(tmp_dir_str)
-            safe_extract(archive_path, tmp_dir)
+            safe_extract(source_path, tmp_dir)
 
             targets = inspect_extracted_tree(tmp_dir, fallback_name=fallback_name)
 

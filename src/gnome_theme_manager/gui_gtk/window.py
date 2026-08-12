@@ -166,6 +166,19 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         self.presets_page.on_preset_applied = _on_preset_applied_callback
 
+        # Connessione callback di installazione tema (aggiorna Esplora Temi)
+        def _on_theme_installed_callback() -> None:
+            self.themes_page.refresh()
+
+        self.installer_page.on_theme_installed = _on_theme_installed_callback
+
+        # Connessione callback di installazione e applicazione tema (aggiorna Stato ed Esplora Temi)
+        def _on_theme_installed_and_applied_callback() -> None:
+            self.status_page.refresh()
+            self.themes_page.refresh()
+
+        self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
+
         # Selezione iniziale della pagina Stato all'avvio dell'applicazione
         self.select_page("status")
 

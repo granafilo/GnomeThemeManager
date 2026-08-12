@@ -438,8 +438,56 @@ class ThemeManager:
         return self._presets.delete_preset(name)
 
     # -------------------------------------------------------------------------
-    # Installazione e Disinstallazione Temi da Archivi
+    # Installazione e Disinstallazione Temi da Cartelle o Archivi
     # -------------------------------------------------------------------------
+
+    def inspect_theme_source(self, source_path: Path) -> list[tuple[str, ThemeType]]:
+        """Ispeziona una sorgente locale (archivio o cartella) rilevando temi e componenti.
+
+        Non modifica la sorgente originale e non esegue alcuna installazione sul sistema.
+
+        Args:
+            source_path: Percorso del file archivio o della cartella da analizzare.
+
+        Returns:
+            Lista di tuple (nome_tema, tipo_tema) per ciascun componente identificato.
+
+        Raises:
+            FileNotFoundError: Se source_path non esiste.
+            ArchiveExtractionError: Se l'archivio è corrotto o non supportato.
+            ThemeValidationError: Se non viene rilevata alcuna struttura di tema valida.
+        """
+        logger.info("Ispezione sorgente tema richiesta: %s", source_path)
+        results = self._installer.inspect_source(source_path=Path(source_path))
+        return [(name, t_type) for name, _, t_type in results]
+
+    def install_theme_directory(
+        self,
+        directory_path: Path,
+        theme_type: ThemeType | None = None,
+        custom_name: str | None = None,
+        overwrite: bool = False,
+    ) -> list[Theme]:
+        """Installa temi da una cartella locale nelle directory utente (~/.local/share/...).
+
+        Non modifica, non sposta e non elimina la cartella sorgente originale.
+
+        Args:
+            directory_path: Percorso della cartella del tema.
+            theme_type: Tipologia opzionale per filtrare l'installazione.
+            custom_name: Nome personalizzato per la cartella di destinazione.
+            overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+
+        Returns:
+            Lista delle istanze Theme installate con successo nelle directory utente.
+        """
+        logger.info("Installazione cartella tema richiesta: %s", directory_path)
+        return self._installer.install_directory(
+            directory_path=Path(directory_path),
+            theme_type=theme_type,
+            custom_name=custom_name,
+            overwrite=overwrite,
+        )
 
     def install_theme_archive(
         self,
@@ -461,7 +509,35 @@ class ThemeManager:
         """
         logger.info("Installazione archivio richiesta: %s", archive_path)
         return self._installer.install(
-            archive_path=archive_path,
+            archive_path=Path(archive_path),
+            theme_type=theme_type,
+            custom_name=custom_name,
+            overwrite=overwrite,
+        )
+
+    def install_theme(
+        self,
+        source_path: Path,
+        theme_type: ThemeType | None = None,
+        custom_name: str | None = None,
+        overwrite: bool = False,
+    ) -> list[Theme]:
+        """Installa uno o più temi da una sorgente locale (cartella o archivio).
+
+        Riconosce automaticamente se la sorgente è una directory o un file archivio.
+
+        Args:
+            source_path: Percorso del file archivio o della cartella del tema.
+            theme_type: Tipologia opzionale per filtrare l'installazione.
+            custom_name: Nome personalizzato per la cartella di destinazione.
+            overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+
+        Returns:
+            Lista delle istanze Theme installate con successo nelle directory utente.
+        """
+        logger.info("Installazione tema richiesta da sorgente: %s", source_path)
+        return self._installer.install(
+            archive_path=Path(source_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
