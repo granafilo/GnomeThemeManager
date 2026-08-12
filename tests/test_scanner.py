@@ -237,3 +237,32 @@ def test_scanner_nonexistent_directory(tmp_path: Path):
     assert scanner.scan_icon_themes() == []
     assert scanner.scan_cursor_themes() == []
     assert scanner.scan_shell_themes() == []
+
+
+def test_dynamic_xdg_paths_resolution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Verifica che le variabili d'ambiente XDG_DATA_HOME e XDG_DATA_DIRS vengano considerate dinamicamente."""
+    custom_xdg_home = tmp_path / "custom_data_home"
+    custom_xdg_dirs = f"{tmp_path}/custom_sys1:{tmp_path}/custom_sys2"
+
+    monkeypatch.setenv("XDG_DATA_HOME", str(custom_xdg_home))
+    monkeypatch.setenv("XDG_DATA_DIRS", custom_xdg_dirs)
+
+    scanner = ThemeScanner()
+
+    # Verifica user themes
+    assert custom_xdg_home / "themes" in scanner.user_theme_dirs
+    assert Path.home() / ".themes" in scanner.user_theme_dirs
+
+    # Verifica user icons
+    assert custom_xdg_home / "icons" in scanner.user_icon_dirs
+    assert Path.home() / ".icons" in scanner.user_icon_dirs
+
+    # Verifica system themes
+    assert tmp_path / "custom_sys1" / "themes" in scanner.system_theme_dirs
+    assert tmp_path / "custom_sys2" / "themes" in scanner.system_theme_dirs
+    assert Path("/usr/share/themes") in scanner.system_theme_dirs
+
+    # Verifica system icons
+    assert tmp_path / "custom_sys1" / "icons" in scanner.system_icon_dirs
+    assert tmp_path / "custom_sys2" / "icons" in scanner.system_icon_dirs
+    assert Path("/usr/share/icons") in scanner.system_icon_dirs

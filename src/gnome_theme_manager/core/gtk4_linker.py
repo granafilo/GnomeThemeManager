@@ -107,10 +107,7 @@ class GTK4ThemeLinker:
             return False
 
         # 3. Controllo integrità per 'assets' se presente come symlink
-        if target_assets.is_symlink() and not target_assets.exists():
-            return False
-
-        return True
+        return not (target_assets.is_symlink() and not target_assets.exists())
 
     # -------------------------------------------------------------------------
     # Metodi di Supporto per Symlink Sicuri

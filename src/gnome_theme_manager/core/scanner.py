@@ -16,10 +16,10 @@ Regole di business applicate:
 from pathlib import Path
 
 from .constants import (
-    SYSTEM_ICONS_DIRS,
-    SYSTEM_THEMES_DIRS,
-    USER_ICONS_DIRS,
-    USER_THEMES_DIRS,
+    get_system_icons_dirs,
+    get_system_themes_dirs,
+    get_user_icons_dirs,
+    get_user_themes_dirs,
 )
 from .models import Theme, ThemeType
 
@@ -41,8 +41,8 @@ class ThemeScanner:
     ) -> None:
         """Inizializza lo scanner con i percorsi da analizzare.
 
-        Se non vengono specificati percorsi personalizzati, vengono utilizzati
-        i percorsi standard definiti nel modulo constants.py.
+        Se non vengono specificati percorsi personalizzati, vengono risolti
+        dinamicamente i percorsi standard XDG e legacy.
 
         Args:
             user_theme_dirs: Lista di percorsi delle directory temi utente.
@@ -51,16 +51,16 @@ class ThemeScanner:
             system_icon_dirs: Lista di percorsi delle directory icone/cursori di sistema.
         """
         self.user_theme_dirs = (
-            user_theme_dirs if user_theme_dirs is not None else list(USER_THEMES_DIRS)
+            user_theme_dirs if user_theme_dirs is not None else get_user_themes_dirs()
         )
         self.user_icon_dirs = (
-            user_icon_dirs if user_icon_dirs is not None else list(USER_ICONS_DIRS)
+            user_icon_dirs if user_icon_dirs is not None else get_user_icons_dirs()
         )
         self.system_theme_dirs = (
-            system_theme_dirs if system_theme_dirs is not None else list(SYSTEM_THEMES_DIRS)
+            system_theme_dirs if system_theme_dirs is not None else get_system_themes_dirs()
         )
         self.system_icon_dirs = (
-            system_icon_dirs if system_icon_dirs is not None else list(SYSTEM_ICONS_DIRS)
+            system_icon_dirs if system_icon_dirs is not None else get_system_icons_dirs()
         )
 
     # -------------------------------------------------------------------------
