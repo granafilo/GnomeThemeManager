@@ -61,19 +61,20 @@ gnome-theme-manager apply --gtk "Adwaita-dark" --icon "Papirus" --cursor "Yaru"
 
 ## Checklist di Implementazione
 
-- [ ] **Costanti & Modelli**:
+- [x] **Costanti & Modelli**:
   - Implementare dataclass `Theme` con attributi: `name`, `theme_type`, `path`, `is_user_level`.
   - Definire enum `ThemeType` (`GTK`, `ICON`, `CURSOR`).
-- [ ] **GSettings Client**:
+- [x] **GSettings Client**:
   - Wrapper su `gi.repository.Gio.Settings("org.gnome.desktop.interface")`.
   - Metodi `get_current() -> ThemeSet` e `apply(theme_set: ThemeSet)`.
   - Fallback sicuro / eccezione dedicata se lo schema non è presente (es. ambienti non-GNOME).
-- [ ] **Scanner**:
+- [x] **Scanner**:
   - Iterazione sicura delle directory con `pathlib.Path`.
   - Rilevamento duplicati (i temi utente oscurano i temi di sistema con lo stesso nome).
-- [ ] **Interfaccia CLI**:
+- [x] **Interfaccia CLI**:
   - Argparse con subcomandi (`current`, `list`, `apply`).
   - Output formattato leggibile (tabelle ASCII o elenchi colorati).
-- [ ] **Test Unitari**:
+- [x] **Test Unitari**:
   - Test per `scanner` con mock di directory temporanee.
   - Test per `gsettings` con mock di `Gio.Settings`.
+  - Test di integrazione CLI per tutti i comandi.
