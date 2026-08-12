@@ -9,6 +9,7 @@ Verifica l'interazione con Gio.Settings simulando (mocking):
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from gnome_theme_manager.core.errors import GSettingsUnavailableError
@@ -19,7 +20,11 @@ from gnome_theme_manager.core.models import ThemeSet
 class MockGioSettings:
     """Mock per simulare l'oggetto Gio.Settings di PyGObject."""
 
-    def __init__(self, schema_id: str = "org.gnome.desktop.interface", initial_values: dict[str, str] = None) -> None:
+    def __init__(
+        self,
+        schema_id: str = "org.gnome.desktop.interface",
+        initial_values: dict[str, str] | None = None,
+    ) -> None:
         self.schema_id = schema_id
         self.values = initial_values or {
             "gtk-theme": "Adwaita",
@@ -171,6 +176,9 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
 
 def test_gsettings_unavailable_when_gio_missing():
     """Verifica che venga sollevata GSettingsUnavailableError se PyGObject non è installato."""
-    with patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", False):
-        with pytest.raises(GSettingsUnavailableError, match="PyGObject .* non è disponibile"):
-            GSettingsClient()
+    with (
+        patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", False),
+        pytest.raises(GSettingsUnavailableError, match="PyGObject .* non è disponibile"),
+    ):
+        GSettingsClient()
+

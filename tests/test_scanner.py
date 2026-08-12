@@ -11,6 +11,7 @@ Verifica il corretto rilevamento di:
 """
 
 from pathlib import Path
+
 import pytest
 
 from gnome_theme_manager.core.models import ThemeType

@@ -3,7 +3,6 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 
 class ThemeType(str, Enum):
@@ -34,13 +33,13 @@ class Theme:
 @dataclass
 class ThemeSet:
     """Insieme di temi configurati/attivi sul desktop GNOME."""
-    gtk_theme: Optional[str] = None
-    icon_theme: Optional[str] = None
-    cursor_theme: Optional[str] = None
-    color_scheme: Optional[str] = None
-    shell_theme: Optional[str] = None
+    gtk_theme: str | None = None
+    icon_theme: str | None = None
+    cursor_theme: str | None = None
+    color_scheme: str | None = None
+    shell_theme: str | None = None
 
-    def as_dict(self) -> dict[str, Optional[str]]:
+    def as_dict(self) -> dict[str, str | None]:
         """Converte il set di temi in un dizionario serializzabile."""
         return {
             "gtk_theme": self.gtk_theme,

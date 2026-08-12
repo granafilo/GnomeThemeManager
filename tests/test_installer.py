@@ -1,9 +1,9 @@
 """Test unitari per la gestione sicura degli archivi e per l'installer dei temi."""
 
 import io
-from pathlib import Path
 import tarfile
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -295,3 +295,33 @@ def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
 
     with pytest.raises(ThemeNotFoundError, match="Impossibile disinstallare"):
         installer.uninstall("NonExistentTheme", ThemeType.GTK)
+
+
+def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
+    """Test di installazione di un tema moderno unificato (GTK3, GTK4, Libadwaita e GNOME Shell in unico archivio)."""
+    user_themes = tmp_path / "user_themes"
+    user_icons = tmp_path / "user_icons"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    archive = tmp_path / "Nordic-Unified.zip"
+    create_mock_zip(
+        archive,
+        {
+            "Nordic-Unified/gtk-3.0/gtk.css": "/* GTK3 */",
+            "Nordic-Unified/gtk-4.0/gtk.css": "/* GTK4 Libadwaita */",
+            "Nordic-Unified/gnome-shell/gnome-shell.css": "/* GNOME Shell */",
+            "Nordic-Unified/index.theme": "[Desktop Entry]\nName=Nordic-Unified\n",
+        },
+    )
+
+    installed = installer.install(archive)
+    # Deve rilevare sia GTK che SHELL dalla medesima cartella
+    types = {t.theme_type for t in installed}
+    assert ThemeType.GTK in types
+    assert ThemeType.SHELL in types
+
+    dest_folder = user_themes / "Nordic-Unified"
+    assert (dest_folder / "gtk-3.0" / "gtk.css").exists()
+    assert (dest_folder / "gtk-4.0" / "gtk.css").exists()
+    assert (dest_folder / "gnome-shell" / "gnome-shell.css").exists()
+

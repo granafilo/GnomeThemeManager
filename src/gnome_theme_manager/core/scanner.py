@@ -14,7 +14,6 @@ Regole di business applicate:
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .constants import (
     SYSTEM_ICONS_DIRS,
@@ -35,10 +34,10 @@ class ThemeScanner:
 
     def __init__(
         self,
-        user_theme_dirs: Optional[list[Path]] = None,
-        user_icon_dirs: Optional[list[Path]] = None,
-        system_theme_dirs: Optional[list[Path]] = None,
-        system_icon_dirs: Optional[list[Path]] = None,
+        user_theme_dirs: list[Path] | None = None,
+        user_icon_dirs: list[Path] | None = None,
+        system_theme_dirs: list[Path] | None = None,
+        system_icon_dirs: list[Path] | None = None,
     ) -> None:
         """Inizializza lo scanner con i percorsi da analizzare.
 
@@ -128,7 +127,7 @@ class ThemeScanner:
         all_themes.extend(self.scan_shell_themes(user_only=user_only))
         return all_themes
 
-    def find_theme(self, name: str, theme_type: ThemeType) -> Optional[Theme]:
+    def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
         """Cerca un tema specifico per nome e tipologia.
 
         La ricerca rispetta la regola di precedenza (se il tema esiste sia a livello

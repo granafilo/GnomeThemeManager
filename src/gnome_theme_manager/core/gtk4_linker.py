@@ -6,9 +6,8 @@ Per applicare un tema personalizzato a queste applicazioni, occorre creare dei
 collegamenti simbolici (symlink) nella directory di configurazione utente `~/.config/gtk-4.0/`.
 """
 
-from pathlib import Path
-from typing import Optional
 import shutil
+from pathlib import Path
 
 from .constants import GTK4_CONFIG_DIR
 
@@ -16,7 +15,7 @@ from .constants import GTK4_CONFIG_DIR
 class GTK4ThemeLinker:
     """Gestisce la creazione e rimozione sicura dei symlink per temi GTK4 / Libadwaita."""
 
-    def __init__(self, config_dir: Optional[Path] = None) -> None:
+    def __init__(self, config_dir: Path | None = None) -> None:
         """Inizializza il linker GTK4.
 
         Args:
@@ -40,7 +39,7 @@ class GTK4ThemeLinker:
         gtk4_source = theme_path / "gtk-4.0"
         gtk3_source = theme_path / "gtk-3.0"
 
-        source_dir: Optional[Path] = None
+        source_dir: Path | None = None
         if gtk4_source.is_dir() and (gtk4_source / "gtk.css").exists():
             source_dir = gtk4_source
         elif gtk3_source.is_dir() and (gtk3_source / "gtk.css").exists():

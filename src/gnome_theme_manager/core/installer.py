@@ -7,13 +7,11 @@ Questo modulo implementa la logica per:
 4. Installazione e disinstallazione limitata all'ambito utente (~/.local/share/...).
 """
 
-import os
-from pathlib import Path
 import shutil
 import tarfile
 import tempfile
-from typing import Optional, Sequence
 import zipfile
+from pathlib import Path
 
 from .constants import USER_ICONS_DIRS, USER_THEMES_DIRS
 from .errors import ArchiveExtractionError, ThemeNotFoundError, ThemeValidationError
@@ -47,17 +45,10 @@ def safe_extract(archive_path: Path, target_dir: Path) -> Path:
 
     if filename_lower.endswith(".zip"):
         _extract_zip(archive_path, target_dir)
-    elif (
-        filename_lower.endswith(".tar.gz")
-        or filename_lower.endswith(".tgz")
-        or filename_lower.endswith(".tar.xz")
-        or filename_lower.endswith(".txz")
-        or filename_lower.endswith(".tar.bz2")
-        or filename_lower.endswith(".tbz2")
-        or filename_lower.endswith(".tar")
-    ):
+    elif filename_lower.endswith((".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar")):
         _extract_tar(archive_path, target_dir)
     else:
+
         raise ArchiveExtractionError(
             f"Formato archivio non supportato per '{archive_path.name}'. "
             "Formati supportati: .zip, .tar.gz, .tar.xz, .tar.bz2, .tar"
@@ -140,7 +131,7 @@ def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
             content = index_theme.read_text(encoding="utf-8", errors="ignore")
             if "[Desktop Entry]" in content or "[GtkTheme]" in content:
                 is_gtk = True
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             pass
 
     if is_gtk:
@@ -162,8 +153,9 @@ def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
             content = index_theme.read_text(encoding="utf-8", errors="ignore")
             if "[Icon Theme]" in content:
                 is_icon = True
-        except Exception:
+        except (OSError, UnicodeDecodeError):
             pass
+
 
     if not is_icon and not (theme_dir / "cursors").is_dir():
         icon_subdirs = ["scalable", "16x16", "22x22", "24x24", "32x32", "48x48", "64x64", "128x128", "256x256", "512x512"]
@@ -229,8 +221,9 @@ def inspect_extracted_tree(
 
     if not targets:
         raise ThemeValidationError(
-            f"L'archivio non contiene una struttura di tema riconosciuta (GTK, Shell, Icone o Cursori)."
+            "L'archivio non contiene una struttura di tema riconosciuta (GTK, Shell, Icone o Cursori)."
         )
+
 
     return targets
 
@@ -240,8 +233,8 @@ class ThemeInstaller:
 
     def __init__(
         self,
-        user_themes_dir: Optional[Path] = None,
-        user_icons_dir: Optional[Path] = None,
+        user_themes_dir: Path | None = None,
+        user_icons_dir: Path | None = None,
     ) -> None:
         """Inizializza l'installer con i percorsi di destinazione utente.
 
@@ -263,8 +256,8 @@ class ThemeInstaller:
     def install(
         self,
         archive_path: Path,
-        theme_type: Optional[ThemeType] = None,
-        custom_name: Optional[str] = None,
+        theme_type: ThemeType | None = None,
+        custom_name: str | None = None,
         overwrite: bool = False,
     ) -> list[Theme]:
         """Estrae, valida e installa uno o più temi da un archivio nelle directory utente.
@@ -373,7 +366,7 @@ class ThemeInstaller:
             if d.expanduser() not in [ud.expanduser() for ud in user_dirs]:
                 user_dirs.append(d)
 
-        found_user_path: Optional[Path] = None
+        found_user_path: Path | None = None
         for base_dir in user_dirs:
             candidate = base_dir.expanduser() / theme_name
             if candidate.exists() and candidate.is_dir():

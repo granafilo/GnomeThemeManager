@@ -1,6 +1,7 @@
 """Test di base per i modelli e i percorsi costanti."""
 
 from pathlib import Path
+
 from gnome_theme_manager.core.constants import (
     GSETTINGS_SCHEMA_INTERFACE,
     GSETTINGS_SCHEMA_USER_THEME,

@@ -5,6 +5,7 @@ Verifica la corretta creazione, sostituzione e rimozione dei collegamenti simbol
 """
 
 from pathlib import Path
+
 import pytest
 
 from gnome_theme_manager.core.gtk4_linker import GTK4ThemeLinker

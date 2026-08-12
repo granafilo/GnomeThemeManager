@@ -1,7 +1,6 @@
 """Test di integrazione CLI per i comandi `install` e `uninstall`."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 

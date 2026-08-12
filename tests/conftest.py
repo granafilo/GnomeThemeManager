@@ -1,6 +1,7 @@
 """Configurazione globale e fixture per pytest."""
 
 from pathlib import Path
+
 import pytest
 
 

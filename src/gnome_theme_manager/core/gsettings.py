@@ -8,7 +8,6 @@ Questo modulo astrae e incapsula tutte le chiamate di lettura e scrittura verso:
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .constants import (
     GSETTINGS_KEY_COLOR_SCHEME,
@@ -41,7 +40,7 @@ class GSettingsClient:
         self,
         schema_name: str = GSETTINGS_SCHEMA_INTERFACE,
         shell_schema_name: str = GSETTINGS_SCHEMA_USER_THEME,
-        custom_schema_dirs: Optional[list[Path]] = None,
+        custom_schema_dirs: list[Path] | None = None,
     ) -> None:
         """Inizializza il client GSettings e verifica la disponibilità degli schemi.
 
@@ -85,7 +84,7 @@ class GSettingsClient:
     # Ricerca Dinamica degli Schemi (Inclusi Schemi Estensioni Utente)
     # -------------------------------------------------------------------------
 
-    def _get_settings_for_schema(self, target_schema: str) -> Optional[object]:
+    def _get_settings_for_schema(self, target_schema: str) -> object | None:
         """Trova e istanzia un oggetto Gio.Settings per uno schema.
 
         Cerca prima nei percorsi globali di sistema ($XDG_DATA_DIRS/glib-2.0/schemas).
@@ -100,7 +99,7 @@ class GSettingsClient:
                     if hasattr(Gio.Settings, "new_full"):
                         return Gio.Settings.new_full(schema, None, None)
                     return Gio.Settings.new(target_schema)
-                except Exception:
+                except Exception:  # noqa: S110, BLE001
                     pass
 
         # Percorsi delle estensioni GNOME (sia utente che di sistema)
@@ -130,10 +129,11 @@ class GSettingsClient:
                                 if hasattr(Gio.Settings, "new_full"):
                                     return Gio.Settings.new_full(schema, None, None)
                                 return Gio.Settings.new_with_path(target_schema, None)
-                        except Exception:
+                        except Exception:  # noqa: S112, BLE001
                             continue
-            except Exception:
+            except Exception:  # noqa: S112, BLE001
                 continue
+
 
         return None
 
@@ -152,11 +152,11 @@ class GSettingsClient:
         icon_theme = self._settings.get_string(GSETTINGS_KEY_ICON_THEME)
         cursor_theme = self._settings.get_string(GSETTINGS_KEY_CURSOR_THEME)
 
-        color_scheme: Optional[str] = None
+        color_scheme: str | None = None
         if self._has_key(self._settings, GSETTINGS_KEY_COLOR_SCHEME):
             color_scheme = self._settings.get_string(GSETTINGS_KEY_COLOR_SCHEME)
 
-        shell_theme: Optional[str] = None
+        shell_theme: str | None = None
         if self._shell_settings is not None:
             shell_theme = self._shell_settings.get_string(GSETTINGS_KEY_SHELL_THEME)
 
@@ -241,7 +241,7 @@ class GSettingsClient:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def _has_key(settings_obj: Optional[object], key: str) -> bool:
+    def _has_key(settings_obj: object | None, key: str) -> bool:
         """Verifica in modo sicuro se una chiave è supportata dallo schema corrente."""
         if settings_obj is None:
             return False
@@ -249,8 +249,8 @@ class GSettingsClient:
             if hasattr(settings_obj, "list_keys"):
                 return key in settings_obj.list_keys()
             if hasattr(settings_obj, "keys"):
-                return key in settings_obj.keys()
-        except Exception:
+                return key in settings_obj
+        except Exception:  # noqa: S110, BLE001
             pass
         return False
 
@@ -258,5 +258,6 @@ class GSettingsClient:
         """Sincronizza le modifiche con il backend dconf."""
         try:
             Gio.Settings.sync()
-        except Exception:
+        except Exception:  # noqa: S110, BLE001
             pass
+
