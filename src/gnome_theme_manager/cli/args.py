@@ -40,6 +40,12 @@ def create_parser() -> argparse.ArgumentParser:
         help="Mostra i temi attualmente applicati sul desktop GNOME",
     )
 
+    # Subcomando: sandbox-status
+    subparsers.add_parser(
+        "sandbox-status",
+        help="Mostra lo stato di integrazione con i runtime sandbox (Snap e Flatpak)",
+    )
+
     # Subcomando: list
     list_parser = subparsers.add_parser(
         "list",
@@ -96,6 +102,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-gtk4-override",
         action="store_true",
         help="Non applicare l'override GTK4 in ~/.config/gtk-4.0 quando si imposta un tema GTK",
+    )
+    apply_parser.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        help="Non propagare il tema alle app Snap/Flatpak",
     )
 
 
@@ -196,6 +207,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-gtk4-override",
         action="store_true",
         help="Non applicare l'override GTK4 in ~/.config/gtk-4.0",
+    )
+    apply_preset_parser.add_argument(
+        "--no-sandbox",
+        action="store_true",
+        help="Non propagare il tema alle app Snap/Flatpak",
     )
 
     # preset delete <nome> [-y]

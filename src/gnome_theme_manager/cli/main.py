@@ -78,6 +78,26 @@ def handle_current_command(manager: ThemeManager) -> int:
     return 0
 
 
+def handle_sandbox_status_command(manager: ThemeManager) -> int:
+    """Gestisce il comando `sandbox-status` mostrando lo stato di Snap e Flatpak."""
+    status = manager.get_system_status()
+    sb = status.sandbox_status
+
+    print("\n=== Stato Integrazione Sandbox (Snap & Flatpak) ===")
+    if sb is not None:
+        snap_str = "✅ Disponibile" if sb.snap_available else "❌ Non disponibile"
+        snap_themes_str = "✅ Installato" if sb.snap_gtk_common_themes_installed else "❌ Non installato"
+        flatpak_str = "✅ Disponibile" if sb.flatpak_available else "❌ Non disponibile"
+        flatpak_ov_str = "✅ Attivo" if sb.flatpak_filesystem_override_active else "❌ Non attivo"
+
+        print(f"  Snap:    {snap_str:<16} | gtk-common-themes:   {snap_themes_str}")
+        print(f"  Flatpak: {flatpak_str:<16} | Filesystem override: {flatpak_ov_str}")
+    else:
+        print("  Stato sandbox non disponibile.")
+    print()
+    return 0
+
+
 def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool) -> int:
     """Gestisce il comando `list` scansionando e mostrando i temi disponibili.
 
@@ -128,6 +148,13 @@ def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> 
     if result.color_scheme:
         print(f"  - Schema Colori impostato su:    {result.color_scheme}")
 
+    if result.sandbox_propagation:
+        sb = result.sandbox_propagation
+        if sb.flatpak_success:
+            print("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati")
+        if sb.snap_success and not sb.warnings:
+            print("  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes")
+
     for warning in result.warnings:
         print(f"\n[AVVISO] {warning}")
     print()
@@ -142,6 +169,7 @@ def handle_apply_command(
     color_scheme: str | None,
     no_gtk4_override: bool = False,
     theme: str | None = None,
+    no_sandbox: bool = False,
 ) -> int:
     """Gestisce il comando `apply` validando l'esistenza dei temi e applicandoli.
 
@@ -154,6 +182,7 @@ def handle_apply_command(
         color_scheme: Valore dello schema colori ('default' o 'prefer-dark', opzionale).
         no_gtk4_override: Se True, non applica l'override dei symlink in ~/.config/gtk-4.0.
         theme: Nome del tema unificato da applicare a GTK e Shell (opzionale).
+        no_sandbox: Se True, non propaga i temi alle applicazioni Snap e Flatpak.
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
@@ -185,7 +214,11 @@ def handle_apply_command(
         shell_theme=shell,
     )
 
-    result = manager.apply_themes(target_set, apply_gtk4_override=not no_gtk4_override)
+    result = manager.apply_themes(
+        target_set,
+        apply_gtk4_override=not no_gtk4_override,
+        propagate_sandbox=not no_sandbox,
+    )
     _print_apply_result(result, no_gtk4_override=no_gtk4_override)
     return 0
 
@@ -284,7 +317,12 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
         return 0
 
     elif action == "apply":
-        result = manager.apply_preset(args.name, apply_gtk4_override=not args.no_gtk4_override)
+        no_sb = getattr(args, "no_sandbox", False)
+        result = manager.apply_preset(
+            args.name,
+            apply_gtk4_override=not args.no_gtk4_override,
+            propagate_sandbox=not no_sb,
+        )
         print(f"\n✓ Preset '{args.name}' applicato con successo:")
         _print_apply_result(result, no_gtk4_override=args.no_gtk4_override)
         return 0
@@ -349,6 +387,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         if args.command == "current":
             return handle_current_command(manager)
+        elif args.command == "sandbox-status":
+            return handle_sandbox_status_command(manager)
         elif args.command == "list":
             return handle_list_command(manager, theme_type=args.type, user_only=args.user_only)
         elif args.command == "apply":
@@ -361,6 +401,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 color_scheme=args.color_scheme,
                 no_gtk4_override=args.no_gtk4_override,
                 theme=args.theme,
+                no_sandbox=getattr(args, "no_sandbox", False),
             )
         elif args.command == "install":
             return handle_install_command(

@@ -62,11 +62,13 @@ class CurrentStatusView(ttk.Frame):
         self.var_shell = tk.StringVar(value="Caricamento...")
         self.var_color_scheme = tk.StringVar(value="Caricamento...")
 
-        # Variabili diagnostiche di sistema
+        # Variabili diagnostiche di sistema e sandbox
         self.var_gsettings_status = tk.StringVar(value="Verifica...")
         self.var_shell_extension = tk.StringVar(value="Verifica...")
         self.var_user_themes_path = tk.StringVar(value="")
         self.var_user_icons_path = tk.StringVar(value="")
+        self.var_snap_status = tk.StringVar(value="Verifica...")
+        self.var_flatpak_status = tk.StringVar(value="Verifica...")
 
         self._build_ui()
         self.refresh_status()
@@ -102,6 +104,8 @@ class CurrentStatusView(ttk.Frame):
             ("Estensione User Themes (Shell):", self.var_shell_extension),
             ("Cartella Temi Utente:", self.var_user_themes_path),
             ("Cartella Icone Utente:", self.var_user_icons_path),
+            ("Snap (Sandbox):", self.var_snap_status),
+            ("Flatpak (Sandbox):", self.var_flatpak_status),
         ]
 
         for row_idx, (label_text, var) in enumerate(diag_fields):
@@ -153,6 +157,31 @@ class CurrentStatusView(ttk.Frame):
             self.var_shell_extension.set(shell_text)
             self.var_user_themes_path.set(str(status.user_themes_path))
             self.var_user_icons_path.set(str(status.user_icons_path))
+
+            # Diagnostica ambienti sandbox (Snap e Flatpak)
+            if status.sandbox_status is not None:
+                sb_stat = status.sandbox_status
+                if sb_stat.snap_available:
+                    if sb_stat.snap_gtk_common_themes_installed:
+                        snap_txt = "✅ Disponibile (gtk-common-themes installato)"
+                    else:
+                        snap_txt = "⚠️ Disponibile (gtk-common-themes non rilevato)"
+                else:
+                    snap_txt = "❌ Non disponibile"
+
+                if sb_stat.flatpak_available:
+                    if sb_stat.flatpak_filesystem_override_active:
+                        flatpak_txt = "✅ Disponibile (override filesystem attivo)"
+                    else:
+                        flatpak_txt = "⚠️ Disponibile (override non configurato)"
+                else:
+                    flatpak_txt = "❌ Non disponibile"
+            else:
+                snap_txt = "Non verificato"
+                flatpak_txt = "Non verificato"
+
+            self.var_snap_status.set(snap_txt)
+            self.var_flatpak_status.set(flatpak_txt)
         except Exception as err:  # noqa: BLE001
             logger.warning("Errore nel recupero dello stato di sistema: %s", err)
 
@@ -196,6 +225,7 @@ class AvailableThemesView(ttk.Frame):
         self.var_user_only = tk.BooleanVar(value=False)
         self.var_search_query = tk.StringVar(value="")
         self.var_apply_gtk4_override = tk.BooleanVar(value=True)
+        self.var_propagate_sandbox = tk.BooleanVar(value=True)
 
         # Cache locale dei temi scansionati per facilitare il filtraggio rapido
         self._cached_themes: list[Theme] = []
@@ -285,10 +315,18 @@ class AvailableThemesView(ttk.Frame):
         # Override GTK4
         chk_gtk4 = ttk.Checkbutton(
             actions_frame,
-            text="Applica override GTK4 / Libadwaita",
+            text="Applica override GTK4",
             variable=self.var_apply_gtk4_override,
         )
-        chk_gtk4.pack(side=tk.LEFT, padx=(0, 12))
+        chk_gtk4.pack(side=tk.LEFT, padx=(0, 8))
+
+        # Propagazione Sandbox (Snap e Flatpak)
+        chk_sandbox = ttk.Checkbutton(
+            actions_frame,
+            text="Propaga a Snap/Flatpak",
+            variable=self.var_propagate_sandbox,
+        )
+        chk_sandbox.pack(side=tk.LEFT, padx=(0, 12))
 
         # Pulsante Applica Tema Unificato (GTK + GNOME Shell contemporaneamente con 1 clic)
         self.btn_apply_unified = ttk.Button(
@@ -431,6 +469,7 @@ class AvailableThemesView(ttk.Frame):
 
         name, theme_type, _ = data
         apply_gtk4 = self.var_apply_gtk4_override.get()
+        propagate_sb = self.var_propagate_sandbox.get()
 
         try:
             # Costruisce il ThemeSet in base al tipo selezionato
@@ -445,12 +484,22 @@ class AvailableThemesView(ttk.Frame):
             else:
                 theme_set = ThemeSet()
 
-            result = self.manager.apply_themes(theme_set, apply_gtk4_override=apply_gtk4)
+            result = self.manager.apply_themes(
+                theme_set,
+                apply_gtk4_override=apply_gtk4,
+                propagate_sandbox=propagate_sb,
+            )
 
             # Notifica di successo
             msg_parts = [f"Tema {theme_type.value.upper()} '{name}' applicato con successo."]
             if result.gtk4_override_applied:
                 msg_parts.append("Override GTK4 / Libadwaita applicato in ~/.config/gtk-4.0.")
+            if result.sandbox_propagation:
+                sb = result.sandbox_propagation
+                if sb.flatpak_success:
+                    msg_parts.append("✅ Configurazione filesystem e variabili Flatpak applicata.")
+                if sb.snap_success and not sb.warnings:
+                    msg_parts.append("✅ Compatibilità verificata con Snap.")
             if result.warnings:
                 msg_parts.append("\nAvvisi:\n" + "\n".join(f"- {w}" for w in result.warnings))
 
@@ -475,12 +524,14 @@ class AvailableThemesView(ttk.Frame):
 
         name, _, _ = data
         apply_gtk4 = self.var_apply_gtk4_override.get()
+        propagate_sb = self.var_propagate_sandbox.get()
 
         try:
             # Invoca il metodo Facade apply_unified_theme per impostare GTK, Shell e override GTK4
             result = self.manager.apply_unified_theme(
                 theme_name=name,
                 apply_gtk4_override=apply_gtk4,
+                propagate_sandbox=propagate_sb,
             )
 
             msg_parts = [f"🎨 Tema globale '{name}' applicato con successo a tutto il sistema!"]
@@ -490,6 +541,12 @@ class AvailableThemesView(ttk.Frame):
                 msg_parts.append(f" • Tema GNOME Shell: {result.shell_theme}")
             if result.gtk4_override_applied:
                 msg_parts.append(" • Override GTK4 / Libadwaita: ~/.config/gtk-4.0")
+            if result.sandbox_propagation:
+                sb = result.sandbox_propagation
+                if sb.flatpak_success:
+                    msg_parts.append(" • Sandbox Flatpak: ✅ Override e variabili configurati")
+                if sb.snap_success and not sb.warnings:
+                    msg_parts.append(" • Sandbox Snap: ✅ Compatibilità verificata")
             if result.warnings:
                 msg_parts.append("\nAvvisi:\n" + "\n".join(f"- {w}" for w in result.warnings))
 
@@ -768,12 +825,18 @@ class PresetManagerView(ttk.Frame):
             return
 
         try:
-            result = self.manager.apply_preset(name, apply_gtk4_override=True)
-            msg = f"Preset '{name}' applicato con successo!"
+            result = self.manager.apply_preset(name, apply_gtk4_override=True, propagate_sandbox=True)
+            msg_parts = [f"Preset '{name}' applicato con successo!"]
+            if result.sandbox_propagation:
+                sb = result.sandbox_propagation
+                if sb.flatpak_success:
+                    msg_parts.append("• Flatpak: ✅ Configurato accesso filesystem e variabili")
+                if sb.snap_success and not sb.warnings:
+                    msg_parts.append("• Snap: ✅ Verificata compatibilità")
             if result.warnings:
-                msg += "\n\nAvvisi:\n" + "\n".join(f"- {w}" for w in result.warnings)
+                msg_parts.append("\nAvvisi:\n" + "\n".join(f"- {w}" for w in result.warnings))
 
-            messagebox.showinfo("Preset Applicato", msg)
+            messagebox.showinfo("Preset Applicato", "\n".join(msg_parts))
             if self.on_preset_applied:
                 self.on_preset_applied()
         except (FileNotFoundError, ThemeNotFoundError, ValueError, GSettingsUnavailableError) as err:
