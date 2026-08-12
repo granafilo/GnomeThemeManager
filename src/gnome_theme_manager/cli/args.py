@@ -97,5 +97,39 @@ def create_parser() -> argparse.ArgumentParser:
         choices=["gtk", "icon", "cursor", "shell"],
         help="Tipo di tema (se non specificato, verrà effettuato il rilevamento automatico)",
     )
+    install_parser.add_argument(
+        "-n", "--name",
+        metavar="NOME",
+        help="Nome personalizzato per la cartella di destinazione del tema",
+    )
+    install_parser.add_argument(
+        "-y", "--overwrite",
+        action="store_true",
+        help="Sovrascrive il tema se la cartella di destinazione esiste già",
+    )
+
+    # Subcomando: uninstall
+    uninstall_parser = subparsers.add_parser(
+        "uninstall",
+        help="Disinstalla un tema specifico dalle directory utente",
+    )
+    uninstall_parser.add_argument(
+        "-n", "--name",
+        required=True,
+        metavar="NOME",
+        help="Nome del tema da disinstallare",
+    )
+    uninstall_parser.add_argument(
+        "-t", "--type",
+        choices=["gtk", "icon", "cursor", "shell"],
+        required=True,
+        help="Tipo del tema da disinstallare",
+    )
+    uninstall_parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Conferma la disinstallazione senza prompt interattivo",
+    )
 
     return parser
+

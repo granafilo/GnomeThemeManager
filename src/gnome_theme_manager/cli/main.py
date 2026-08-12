@@ -5,19 +5,24 @@ interfacciandosi con il core (`ThemeScanner`, `GSettingsClient` e `GTK4ThemeLink
 la formattazione dell'output e le eccezioni in modo elegante e pulito.
 """
 
+from pathlib import Path
 import sys
 from typing import Optional, Sequence
 
 from ..core.errors import (
+    ArchiveExtractionError,
     GnomeThemeManagerError,
     GSettingsUnavailableError,
     ThemeNotFoundError,
+    ThemeValidationError,
 )
 from ..core.gsettings import GSettingsClient
 from ..core.gtk4_linker import GTK4ThemeLinker
+from ..core.installer import ThemeInstaller
 from ..core.models import Theme, ThemeSet, ThemeType
 from ..core.scanner import ThemeScanner
 from .args import create_parser
+
 
 
 def format_table(headers: list[str], rows: list[list[str]]) -> str:
@@ -209,6 +214,72 @@ def handle_apply_command(
     return 0
 
 
+def handle_install_command(
+    archive_file: str,
+    theme_type_str: Optional[str] = None,
+    custom_name: Optional[str] = None,
+    overwrite: bool = False,
+) -> int:
+    """Gestisce il comando `install` estraendo e installando temi da un archivio.
+
+    Args:
+        archive_file: Percorso del file archivio da installare.
+        theme_type_str: Tipologia di tema opzionale ('gtk', 'icon', 'cursor', 'shell').
+        custom_name: Nome personalizzato della cartella di destinazione.
+        overwrite: Se True, sovrascrive eventuale tema esistente.
+    """
+    archive_path = Path(archive_file)
+    theme_type = ThemeType(theme_type_str) if theme_type_str else None
+
+    installer = ThemeInstaller()
+    installed_themes = installer.install(
+        archive_path=archive_path,
+        theme_type=theme_type,
+        custom_name=custom_name,
+        overwrite=overwrite,
+    )
+
+    headers = ["NOME TEMA", "TIPO", "PERCORSO INSTALLATO"]
+    rows = [
+        [t.name, t.theme_type.value, str(t.path)]
+        for t in installed_themes
+    ]
+
+    print(f"\n✓ Installazione completata con successo ({len(installed_themes)} tema/i installato/i):")
+    print(format_table(headers, rows))
+    print()
+    return 0
+
+
+def handle_uninstall_command(
+    name: str,
+    theme_type_str: str,
+    assume_yes: bool = False,
+) -> int:
+    """Gestisce il comando `uninstall` per rimuovere temi utente.
+
+    Args:
+        name: Nome del tema da disinstallare.
+        theme_type_str: Tipologia del tema ('gtk', 'icon', 'cursor', 'shell').
+        assume_yes: Se True, disinstalla senza richiedere conferma interattiva.
+    """
+    theme_type = ThemeType(theme_type_str)
+
+    if not assume_yes:
+        confirm = input(
+            f"Sei sicuro di voler disinstallare il tema '{name}' ({theme_type.value})? [s/N]: "
+        ).strip().lower()
+        if confirm not in ("s", "si", "y", "yes"):
+            print("\nOperazione annullata dall'utente.\n")
+            return 0
+
+    installer = ThemeInstaller()
+    installer.uninstall(theme_name=name, theme_type=theme_type)
+
+    print(f"\n✓ Tema '{name}' ({theme_type.value}) disinstallato con successo.\n")
+    return 0
+
+
 # -----------------------------------------------------------------------------
 # Main Router
 # -----------------------------------------------------------------------------
@@ -245,8 +316,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 no_gtk4_override=args.no_gtk4_override,
             )
         elif args.command == "install":
-            print(f"Installazione archivio {args.file} (Fase 2 in sviluppo)...")
-            return 0
+            return handle_install_command(
+                archive_file=args.file,
+                theme_type_str=args.type,
+                custom_name=args.name,
+                overwrite=args.overwrite,
+            )
+        elif args.command == "uninstall":
+            return handle_uninstall_command(
+                name=args.name,
+                theme_type_str=args.type,
+                assume_yes=args.yes,
+            )
         else:
             parser.print_help()
             return 0
@@ -257,12 +338,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except ThemeNotFoundError as err:
         print(f"\n[ERRORE TEMA] {err}\n", file=sys.stderr)
         return 1
+    except ArchiveExtractionError as err:
+        print(f"\n[ERRORE ESTRAZIONE ARCHIVIO] {err}\n", file=sys.stderr)
+        return 1
+    except ThemeValidationError as err:
+        print(f"\n[ERRORE VALIDAZIONE TEMA] {err}\n", file=sys.stderr)
+        return 1
+    except FileExistsError as err:
+        print(f"\n[ERRORE FILE GIA ESISTENTE] {err}\n", file=sys.stderr)
+        return 1
     except GnomeThemeManagerError as err:
         print(f"\n[ERRORE GNOME THEME MANAGER] {err}\n", file=sys.stderr)
         return 1
     except Exception as err:
         print(f"\n[ERRORE IMPREVISTO] {err}\n", file=sys.stderr)
         return 1
+
 
 
 if __name__ == "__main__":

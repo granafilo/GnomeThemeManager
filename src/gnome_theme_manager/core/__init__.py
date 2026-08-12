@@ -24,6 +24,12 @@ from .errors import (
 )
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
+from .installer import (
+    ThemeInstaller,
+    detect_theme_types,
+    inspect_extracted_tree,
+    safe_extract,
+)
 from .models import Theme, ThemeSet, ThemeType
 from .scanner import ThemeScanner
 
@@ -52,4 +58,9 @@ __all__ = [
     "ThemeScanner",
     "GSettingsClient",
     "GTK4ThemeLinker",
+    "ThemeInstaller",
+    "detect_theme_types",
+    "inspect_extracted_tree",
+    "safe_extract",
 ]
+

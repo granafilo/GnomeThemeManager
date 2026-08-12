@@ -1,0 +1,297 @@
+"""Test unitari per la gestione sicura degli archivi e per l'installer dei temi."""
+
+import io
+from pathlib import Path
+import tarfile
+import zipfile
+
+import pytest
+
+from gnome_theme_manager.core.errors import (
+    ArchiveExtractionError,
+    ThemeNotFoundError,
+    ThemeValidationError,
+)
+from gnome_theme_manager.core.installer import (
+    ThemeInstaller,
+    detect_theme_types,
+    inspect_extracted_tree,
+    safe_extract,
+)
+from gnome_theme_manager.core.models import ThemeType
+
+
+def create_mock_zip(zip_path: Path, files: dict[str, str | bytes]) -> Path:
+    """Helper per creare un archivio ZIP con contenuti di test.
+
+    Args:
+        zip_path: Percorso in cui salvare lo zip.
+        files: Dizionario {rel_path: contenuto}.
+
+    Returns:
+        Path del file zip creato.
+    """
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        for rel_path, content in files.items():
+            if isinstance(content, str):
+                content = content.encode("utf-8")
+            zf.writestr(rel_path, content)
+    return zip_path
+
+
+def create_mock_tar(tar_path: Path, files: dict[str, str | bytes], mode: str = "w:gz") -> Path:
+    """Helper per creare un archivio TAR (.tar.gz, ecc.) con contenuti di test.
+
+    Args:
+        tar_path: Percorso del file tar.
+        files: Dizionario {rel_path: contenuto}.
+        mode: Modalità di apertura per tarfile (es. 'w:gz', 'w:xz').
+
+    Returns:
+        Path del file tar creato.
+    """
+    tar_path.parent.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(tar_path, mode) as tf:
+        for rel_path, content in files.items():
+            if isinstance(content, str):
+                content = content.encode("utf-8")
+            info = tarfile.TarInfo(name=rel_path)
+            info.size = len(content)
+            tf.addfile(info, io.BytesIO(content))
+    return tar_path
+
+
+# =============================================================================
+# 1. Test Estrazione Sicura (safe_extract)
+# =============================================================================
+
+
+def test_safe_extract_valid_zip(tmp_path: Path) -> None:
+    """Verifica l'estrazione corretta di un archivio ZIP valido."""
+    archive_file = tmp_path / "valid_theme.zip"
+    create_mock_zip(archive_file, {"MyTheme/gtk-3.0/gtk.css": "/* CSS */"})
+
+    target_dir = tmp_path / "extracted"
+    result = safe_extract(archive_file, target_dir)
+
+    assert result == target_dir
+    assert (target_dir / "MyTheme" / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_safe_extract_valid_targz(tmp_path: Path) -> None:
+    """Verifica l'estrazione corretta di un archivio TAR.GZ valido."""
+    archive_file = tmp_path / "valid_theme.tar.gz"
+    create_mock_tar(archive_file, {"MyTheme/cursors/arrow": b"CURSOR"})
+
+    target_dir = tmp_path / "extracted"
+    result = safe_extract(archive_file, target_dir)
+
+    assert result == target_dir
+    assert (target_dir / "MyTheme" / "cursors" / "arrow").exists()
+
+
+def test_safe_extract_zip_path_traversal(tmp_path: Path) -> None:
+    """Verifica che tentativi di Zip Slip / Path Traversal sollevino ArchiveExtractionError."""
+    archive_file = tmp_path / "malicious.zip"
+    # File con percorso relativo che tenta di uscire dalla directory di estrazione
+    create_mock_zip(archive_file, {"../../evil.txt": "hacked"})
+
+    target_dir = tmp_path / "extracted"
+    with pytest.raises(ArchiveExtractionError, match="Path Traversal"):
+        safe_extract(archive_file, target_dir)
+
+
+def test_safe_extract_tar_path_traversal(tmp_path: Path) -> None:
+    """Verifica che tentativi di Path Traversal in un archivio TAR sollevino ArchiveExtractionError."""
+    archive_file = tmp_path / "malicious.tar.gz"
+    create_mock_tar(archive_file, {"../../evil.txt": "hacked"})
+
+    target_dir = tmp_path / "extracted"
+    with pytest.raises(ArchiveExtractionError, match="Path Traversal"):
+        safe_extract(archive_file, target_dir)
+
+
+def test_safe_extract_corrupted_file(tmp_path: Path) -> None:
+    """Verifica che un archivio corrotto sollevi ArchiveExtractionError."""
+    corrupted_file = tmp_path / "broken.zip"
+    corrupted_file.write_bytes(b"NOT A ZIP FILE CONTENT")
+
+    target_dir = tmp_path / "extracted"
+    with pytest.raises(ArchiveExtractionError):
+        safe_extract(corrupted_file, target_dir)
+
+
+def test_safe_extract_unsupported_extension(tmp_path: Path) -> None:
+    """Verifica che un'estensione non supportata sollevi ArchiveExtractionError."""
+    txt_file = tmp_path / "archive.rar"
+    txt_file.write_text("dummy")
+
+    target_dir = tmp_path / "extracted"
+    with pytest.raises(ArchiveExtractionError, match="non supportato"):
+        safe_extract(txt_file, target_dir)
+
+
+def test_safe_extract_non_existent_file(tmp_path: Path) -> None:
+    """Verifica la gestione di file archivio inesistente."""
+    missing = tmp_path / "missing.zip"
+    with pytest.raises(ArchiveExtractionError, match="non esiste"):
+        safe_extract(missing, tmp_path / "out")
+
+
+# =============================================================================
+# 2. Test Rilevamento Tipi e Struttura (detect_theme_types & inspect_extracted_tree)
+# =============================================================================
+
+
+def test_detect_theme_types_gtk(tmp_path: Path) -> None:
+    """Verifica il rilevamento di un tema GTK con sottodirectory gtk-3.0."""
+    theme_dir = tmp_path / "TestGtk"
+    (theme_dir / "gtk-3.0").mkdir(parents=True)
+    (theme_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
+
+    types = detect_theme_types(theme_dir)
+    assert ThemeType.GTK in types
+
+
+def test_detect_theme_types_shell(tmp_path: Path) -> None:
+    """Verifica il rilevamento di un tema GNOME Shell."""
+    theme_dir = tmp_path / "TestShell"
+    (theme_dir / "gnome-shell").mkdir(parents=True)
+    (theme_dir / "gnome-shell" / "gnome-shell.css").write_text("/* CSS */")
+
+    types = detect_theme_types(theme_dir)
+    assert ThemeType.SHELL in types
+
+
+def test_detect_theme_types_icon_and_cursor(tmp_path: Path) -> None:
+    """Verifica il rilevamento di temi icone e cursori."""
+    theme_dir = tmp_path / "TestIcon"
+    (theme_dir / "cursors").mkdir(parents=True)
+    (theme_dir / "index.theme").write_text("[Icon Theme]\nName=TestIcon\n")
+
+    types = detect_theme_types(theme_dir)
+    assert ThemeType.CURSOR in types
+    assert ThemeType.ICON in types
+
+
+def test_inspect_extracted_tree_single_root(tmp_path: Path) -> None:
+    """Verifica layout a radice singola (es. Nord-GTK/gtk-3.0)."""
+    extracted_root = tmp_path / "extracted"
+    (extracted_root / "Nord-GTK" / "gtk-3.0").mkdir(parents=True)
+
+    targets = inspect_extracted_tree(extracted_root, fallback_name="Fallback")
+    assert len(targets) == 1
+    assert targets[0][0] == "Nord-GTK"
+    assert targets[0][2] == ThemeType.GTK
+
+
+def test_inspect_extracted_tree_flat_layout(tmp_path: Path) -> None:
+    """Verifica layout flat (file del tema direttamente nella radice dell'archivio)."""
+    extracted_root = tmp_path / "extracted"
+    (extracted_root / "gtk-3.0").mkdir(parents=True)
+
+    targets = inspect_extracted_tree(extracted_root, fallback_name="CustomFlatTheme")
+    assert len(targets) == 1
+    assert targets[0][0] == "CustomFlatTheme"
+    assert targets[0][2] == ThemeType.GTK
+
+
+def test_inspect_extracted_tree_multi_root(tmp_path: Path) -> None:
+    """Verifica layout multi-tema (es. Tema-Light/ e Tema-Dark/)."""
+    extracted_root = tmp_path / "extracted"
+    (extracted_root / "Nord-Light" / "gtk-3.0").mkdir(parents=True)
+    (extracted_root / "Nord-Dark" / "gtk-3.0").mkdir(parents=True)
+
+    targets = inspect_extracted_tree(extracted_root, fallback_name="Fallback")
+    assert len(targets) == 2
+    names = {t[0] for t in targets}
+    assert names == {"Nord-Light", "Nord-Dark"}
+
+
+def test_inspect_extracted_tree_invalid(tmp_path: Path) -> None:
+    """Verifica che un archivio privo di cartelle di temi valide sollevi ThemeValidationError."""
+    extracted_root = tmp_path / "extracted"
+    (extracted_root / "random_folder").mkdir(parents=True)
+    (extracted_root / "random_folder" / "hello.txt").write_text("world")
+
+    with pytest.raises(ThemeValidationError):
+        inspect_extracted_tree(extracted_root, fallback_name="Fallback")
+
+
+# =============================================================================
+# 3. Test ThemeInstaller (Install & Uninstall)
+# =============================================================================
+
+
+def test_installer_install_gtk_theme(tmp_path: Path) -> None:
+    """Test di installazione di un tema GTK in una directory utente temporanea."""
+    user_themes = tmp_path / "user_themes"
+    user_icons = tmp_path / "user_icons"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    archive = tmp_path / "Nordic.zip"
+    create_mock_zip(archive, {"Nordic/gtk-3.0/gtk.css": "/* Nordic CSS */"})
+
+    installed = installer.install(archive)
+    assert len(installed) == 1
+    theme = installed[0]
+
+    assert theme.name == "Nordic"
+    assert theme.theme_type == ThemeType.GTK
+    assert (user_themes / "Nordic" / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_install_custom_name(tmp_path: Path) -> None:
+    """Test di installazione con nome personalizzato (custom_name)."""
+    user_themes = tmp_path / "user_themes"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
+
+    archive = tmp_path / "theme.zip"
+    create_mock_zip(archive, {"gtk-3.0/gtk.css": "/* Flat CSS */"})
+
+    installed = installer.install(archive, custom_name="MyCustomNord")
+    assert len(installed) == 1
+    assert installed[0].name == "MyCustomNord"
+    assert (user_themes / "MyCustomNord" / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_install_overwrite_conflict(tmp_path: Path) -> None:
+    """Test gestione conflitto se il tema esiste già e overwrite=False."""
+    user_themes = tmp_path / "user_themes"
+    (user_themes / "Nordic").mkdir(parents=True)
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
+
+    archive = tmp_path / "Nordic.zip"
+    create_mock_zip(archive, {"Nordic/gtk-3.0/gtk.css": "/* CSS */"})
+
+    with pytest.raises(FileExistsError, match="esiste già"):
+        installer.install(archive, overwrite=False)
+
+    # Con overwrite=True deve sovrascrivere con successo
+    installed = installer.install(archive, overwrite=True)
+    assert len(installed) == 1
+    assert (user_themes / "Nordic" / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_uninstall_success(tmp_path: Path) -> None:
+    """Test disinstallazione di un tema utente esistente."""
+    user_themes = tmp_path / "user_themes"
+    target_theme = user_themes / "ThemeToRemove"
+    (target_theme / "gtk-3.0").mkdir(parents=True)
+
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
+
+    result = installer.uninstall("ThemeToRemove", ThemeType.GTK)
+    assert result is True
+    assert not target_theme.exists()
+
+
+def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
+    """Test disinstallazione tema inesistente solleva ThemeNotFoundError."""
+    user_themes = tmp_path / "user_themes"
+    user_themes.mkdir(parents=True)
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
+
+    with pytest.raises(ThemeNotFoundError, match="Impossibile disinstallare"):
+        installer.uninstall("NonExistentTheme", ThemeType.GTK)
