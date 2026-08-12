@@ -5,9 +5,9 @@ interfacciandosi con il core (`ThemeScanner`, `GSettingsClient` e `GTK4ThemeLink
 la formattazione dell'output e le eccezioni in modo elegante e pulito.
 """
 
-from pathlib import Path
 import sys
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from pathlib import Path
 
 from ..core.errors import (
     ArchiveExtractionError,
@@ -22,7 +22,6 @@ from ..core.installer import ThemeInstaller
 from ..core.models import Theme, ThemeSet, ThemeType
 from ..core.scanner import ThemeScanner
 from .args import create_parser
-
 
 
 def format_table(headers: list[str], rows: list[list[str]]) -> str:
@@ -46,11 +45,12 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
     separator = "+" + "+".join("-" * (w + 2) for w in col_widths) + "+"
     header_line = "| " + " | ".join(f"{h:<{w}}" for h, w in zip(headers, col_widths)) + " |"
     data_lines = [
-        "| " + " | ".join(f"{str(cell):<{w}}" for cell, w in zip(row, col_widths)) + " |"
+        "| " + " | ".join(f"{cell!s:<{w}}" for cell, w in zip(row, col_widths)) + " |"
         for row in rows
     ]
 
     return "\n".join([separator, header_line, separator] + data_lines + [separator])
+
 
 
 # -----------------------------------------------------------------------------
@@ -125,12 +125,13 @@ def handle_list_command(theme_type: str, user_only: bool) -> int:
 
 
 def handle_apply_command(
-    gtk: Optional[str],
-    icon: Optional[str],
-    cursor: Optional[str],
-    shell: Optional[str],
-    color_scheme: Optional[str],
+    gtk: str | None,
+    icon: str | None,
+    cursor: str | None,
+    shell: str | None,
+    color_scheme: str | None,
     no_gtk4_override: bool = False,
+    theme: str | None = None,
 ) -> int:
     """Gestisce il comando `apply` validando l'esistenza dei temi e applicandoli.
 
@@ -141,22 +142,38 @@ def handle_apply_command(
         shell: Nome del tema GNOME Shell da applicare (opzionale).
         color_scheme: Valore dello schema colori ('default' o 'prefer-dark', opzionale).
         no_gtk4_override: Se True, non applica l'override dei symlink in ~/.config/gtk-4.0.
+        theme: Nome del tema unificato da applicare a GTK, Shell e Libadwaita (opzionale).
 
     Raises:
         ThemeNotFoundError: Se uno dei temi specificati non esiste sul filesystem.
     """
-    if not any([gtk, icon, cursor, shell, color_scheme]):
+    if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
             "Errore: Specificare almeno un'opzione da applicare "
-            "(--gtk, --icon, --cursor, --shell o --color-scheme).",
+            "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme).",
             file=sys.stderr,
         )
         return 1
 
     scanner = ThemeScanner()
 
+    if theme is not None:
+        has_gtk = bool(scanner.find_theme(theme, ThemeType.GTK))
+        has_shell = bool(scanner.find_theme(theme, ThemeType.SHELL))
+
+        if not has_gtk and not has_shell:
+            raise ThemeNotFoundError(
+                f"Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema."
+            )
+
+        if has_gtk:
+            gtk = theme
+        if has_shell:
+            shell = theme
+
     # 1. Validazione preventiva dell'esistenza dei temi richiesti
-    found_gtk_theme: Optional[Theme] = None
+    found_gtk_theme: Theme | None = None
+
     if gtk is not None:
         found_gtk_theme = scanner.find_theme(gtk, ThemeType.GTK)
         if not found_gtk_theme:
@@ -216,8 +233,8 @@ def handle_apply_command(
 
 def handle_install_command(
     archive_file: str,
-    theme_type_str: Optional[str] = None,
-    custom_name: Optional[str] = None,
+    theme_type_str: str | None = None,
+    custom_name: str | None = None,
     overwrite: bool = False,
 ) -> int:
     """Gestisce il comando `install` estraendo e installando temi da un archivio.
@@ -285,7 +302,7 @@ def handle_uninstall_command(
 # -----------------------------------------------------------------------------
 
 
-def main(argv: Optional[Sequence[str]] = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     """Esegue l'interfaccia a riga di comando.
 
     Args:
@@ -314,7 +331,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 shell=args.shell,
                 color_scheme=args.color_scheme,
                 no_gtk4_override=args.no_gtk4_override,
+                theme=args.theme,
             )
+
         elif args.command == "install":
             return handle_install_command(
                 archive_file=args.file,
@@ -350,9 +369,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except GnomeThemeManagerError as err:
         print(f"\n[ERRORE GNOME THEME MANAGER] {err}\n", file=sys.stderr)
         return 1
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001
         print(f"\n[ERRORE IMPREVISTO] {err}\n", file=sys.stderr)
         return 1
+
 
 
 

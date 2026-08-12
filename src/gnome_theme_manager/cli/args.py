@@ -1,6 +1,7 @@
 """Definizione e configurazione del parser argomenti CLI con argparse."""
 
 import argparse
+
 from gnome_theme_manager import __version__
 
 
@@ -56,6 +57,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Nome del tema GTK da applicare",
     )
     apply_parser.add_argument(
+        "--theme",
+        metavar="NOME",
+        help="Applica un tema unificato (GTK, Shell e override GTK4/Libadwaita) con lo stesso nome",
+    )
+    apply_parser.add_argument(
         "--icon",
         metavar="NOME",
         help="Nome del tema di icone da applicare",
@@ -80,6 +86,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Non applicare l'override GTK4 in ~/.config/gtk-4.0 quando si imposta un tema GTK",
     )
+
 
     # Subcomando: install
     install_parser = subparsers.add_parser(

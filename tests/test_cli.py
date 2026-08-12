@@ -8,10 +8,8 @@ Verifica il funzionamento end-to-end dei comandi:
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import pytest
 
 from gnome_theme_manager.cli.main import format_table, main
-from gnome_theme_manager.core.errors import GSettingsUnavailableError
 from gnome_theme_manager.core.models import Theme, ThemeSet, ThemeType
 
 
@@ -153,7 +151,57 @@ def test_cli_apply_no_gtk4_override_flag(capsys, tmp_path: Path):
         mock_linker_cls.return_value = mock_linker
 
         exit_code = main(["apply", "--gtk", "Nordic", "--no-gtk4-override"])
+        _ = capsys.readouterr()
+
+        assert exit_code == 0
+
+        mock_linker.apply_override.assert_not_called()
+
+
+def test_cli_apply_unified_theme(capsys, tmp_path: Path):
+    """Verifica che il parametro --theme applichi sia GTK che GNOME Shell con lo stesso nome."""
+    valid_gtk = Theme(
+        name="Nordic",
+        theme_type=ThemeType.GTK,
+        path=tmp_path / "Nordic",
+        is_user_level=True,
+    )
+    valid_shell = Theme(
+        name="Nordic",
+        theme_type=ThemeType.SHELL,
+        path=tmp_path / "Nordic",
+        is_user_level=True,
+    )
+
+    with (
+        patch("gnome_theme_manager.cli.main.ThemeScanner") as mock_scanner_cls,
+        patch("gnome_theme_manager.cli.main.GSettingsClient") as mock_client_cls,
+        patch("gnome_theme_manager.cli.main.GTK4ThemeLinker") as mock_linker_cls,
+    ):
+        mock_scanner = MagicMock()
+        # Ritorna valid_gtk quando cerca GTK, valid_shell quando cerca SHELL
+        mock_scanner.find_theme.side_effect = lambda name, t_type: (
+            valid_gtk if t_type == ThemeType.GTK else valid_shell
+        )
+        mock_scanner_cls.return_value = mock_scanner
+
+        mock_client = MagicMock()
+        mock_client_cls.return_value = mock_client
+
+        mock_linker = MagicMock()
+        mock_linker.apply_override.return_value = True
+        mock_linker_cls.return_value = mock_linker
+
+        exit_code = main(["apply", "--theme", "Nordic"])
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        mock_linker.apply_override.assert_not_called()
+        assert "Tema GTK impostato su:         Nordic" in captured.out
+        assert "Tema GNOME Shell impostato su: Nordic" in captured.out
+        assert "Override GTK4/Libadwaita applicato" in captured.out
+
+        mock_client.apply.assert_called_once()
+        applied_set: ThemeSet = mock_client.apply.call_args[0][0]
+        assert applied_set.gtk_theme == "Nordic"
+        assert applied_set.shell_theme == "Nordic"
+
