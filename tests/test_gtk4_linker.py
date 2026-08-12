@@ -1,7 +1,7 @@
 """Test unitari per il modulo GTK4ThemeLinker.
 
-Verifica la corretta creazione, sostituzione e rimozione dei collegamenti simbolici
-(symlink) nella directory di configurazione utente ~/.config/gtk-4.0/.
+Verifica la corretta creazione, sostituzione, rimozione e verifica di integrità
+dei collegamenti simbolici (symlink) nella directory di configurazione utente ~/.config/gtk-4.0/.
 """
 
 from pathlib import Path
@@ -96,3 +96,55 @@ def test_gtk4_linker_remove_override(mock_gtk4_environment):
     assert not (env["config_dir"] / "gtk.css").exists()
     assert not (env["config_dir"] / "gtk-dark.css").exists()
     assert not (env["config_dir"] / "assets").exists()
+
+
+def test_gtk4_linker_is_override_active_true(mock_gtk4_environment):
+    """Verifica che is_override_active ritorni True quando i symlink sono validi."""
+    env = mock_gtk4_environment
+    linker = GTK4ThemeLinker(config_dir=env["config_dir"])
+
+    assert linker.is_override_active() is False
+
+    linker.apply_override(env["theme_dir"])
+    assert linker.is_override_active() is True
+
+
+def test_gtk4_linker_is_override_active_false_when_empty(tmp_path: Path):
+    """Verifica che is_override_active ritorni False su una directory vuota o inesistente."""
+    config_dir = tmp_path / "non_existent_gtk4"
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    assert linker.is_override_active() is False
+
+
+def test_gtk4_linker_is_override_active_false_when_dangling_symlink(tmp_path: Path):
+    """Verifica che is_override_active ritorni False se gtk.css è un symlink rotto/dangling."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    target_css = config_dir / "gtk.css"
+    non_existent_source = tmp_path / "deleted_theme" / "gtk.css"
+    target_css.symlink_to(non_existent_source)
+
+    assert target_css.is_symlink()
+    assert not target_css.exists()  # dangling symlink
+
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    assert linker.is_override_active() is False
+
+
+def test_gtk4_linker_is_override_active_false_when_secondary_symlink_dangling(tmp_path: Path):
+    """Verifica che is_override_active ritorni False se un file opzionale collegato è dangling."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    # gtk.css valido
+    valid_css_source = tmp_path / "valid_theme" / "gtk.css"
+    valid_css_source.parent.mkdir(parents=True, exist_ok=True)
+    valid_css_source.write_text("/* valid */")
+    (config_dir / "gtk.css").symlink_to(valid_css_source)
+
+    # gtk-dark.css rotto
+    (config_dir / "gtk-dark.css").symlink_to(tmp_path / "deleted" / "gtk-dark.css")
+
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    assert linker.is_override_active() is False

@@ -55,7 +55,11 @@ def launch_gui(
 
     # Convertiamo gli argomenti per l'API GApplication.run()
     args_list = list(argv) if argv is not None else [sys.argv[0]]
-    return app.run(args_list)
+    try:
+        return app.run(args_list)
+    except KeyboardInterrupt:
+        logger.debug("Interruzione dell'applicazione da terminale (SIGINT/Ctrl+C).")
+        return 130
 
 
 __all__ = [

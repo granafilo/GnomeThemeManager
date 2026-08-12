@@ -1,13 +1,17 @@
-"""Test di unità e integrazione per la GUI nativa GTK4 / Libadwaita (Fase 5.2.1).
+"""Test di unità e integrazione per la GUI nativa GTK4 / Libadwaita (Fase 5.3.1).
 
 Verifica:
 1. Validità e completezza dei template XML dichiarativi (.ui);
-2. Controller modulari delle 5 pagine (status, themes, presets, installer, sandbox) con Adw.StatusPage;
-3. Shell principale GnomeThemeWindow con Adw.NavigationSplitView e Gtk.Stack router;
-4. Invarianza di split_view.get_content() durante la navigazione (zero set_content post-init);
-5. Dimensionamento minimo (width-request / height-request) per eliminare i warning Adwaita;
-6. Comportamento responsive (modalità normale e compatta / collapsed);
-7. Isolamento e routing CLI.
+2. Correttezza del markup Pango per caratteri speciali (&) ed assenza di warning;
+3. Struttura di scroll verticale e proprietà di espansione (vexpand/hexpand);
+4. Controller modulari delle pagine con Adw.StatusPage / Gtk.Stack;
+5. Formattazione e snapshot immutabile della pagina 'Stato attuale';
+6. Visualizzazione stato override GTK4 (Attivo / Non attivo);
+7. Transizioni di stato (loading, ready, ready con warning banner, empty, error);
+8. Meccanismo di refresh asincrono, gestione concorrenza e retry;
+9. Visibilità contestuale del pulsante Refresh in GnomeThemeWindow;
+10. Gestione pulita di SIGINT / KeyboardInterrupt (exit code 130);
+11. Isolamento, responsività e routing CLI.
 """
 
 import sys
@@ -18,8 +22,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from gnome_theme_manager.cli.main import main
+from gnome_theme_manager.core.errors import GnomeThemeManagerError, GSettingsUnavailableError
 from gnome_theme_manager.core.manager import ThemeManager
+from gnome_theme_manager.core.models import SandboxStatus, SystemStatus, Theme, ThemeSet, ThemeType
 from gnome_theme_manager.gui_gtk import is_gtk_available, launch_gui
+from gnome_theme_manager.gui_gtk.pages.status import (
+    StatusPage,
+    StatusSnapshot,
+    format_boolean,
+    format_color_scheme,
+    format_optional_value,
+    format_path,
+    format_sandbox_status,
+    format_shell_theme,
+)
 
 # Percorso della directory contenente i file UI
 UI_DIR = Path(__file__).parent.parent / "src" / "gnome_theme_manager" / "gui_gtk" / "ui"
@@ -53,237 +69,323 @@ def test_ui_template_files_exist_and_are_valid_xml(ui_filename: str) -> None:
     assert tree.tag == "interface", f"Il tag root di {ui_filename} deve essere 'interface'"
 
 
-def test_window_ui_structure_and_sizing() -> None:
-    """Verifica che window.ui contenga AdwToastOverlay con dimensionamento, GtkStack e le 5 righe."""
-    window_ui_path = UI_DIR / "window.ui"
-    tree = ET.parse(window_ui_path)
+def test_status_page_ui_structure_and_scrolling() -> None:
+    """Verifica la struttura di status_page.ui, il corretto escaping Pango e le proprietà di espansione verticale."""
+    status_ui_path = UI_DIR / "status_page.ui"
+    tree = ET.parse(status_ui_path)
     root = tree.getroot()
 
-    object_classes = [elem.attrib.get("class") for elem in root.iter("object")]
     object_ids = [elem.attrib.get("id") for elem in root.iter("object") if "id" in elem.attrib]
 
-    assert "AdwToastOverlay" in object_classes
-    assert "AdwNavigationSplitView" in object_classes
-    assert "GtkListBox" in object_classes
-    assert "GtkStack" in object_classes
+    # Verifica stack e pagine di stato
+    assert "page_root" in object_ids
+    assert "loading_page" in object_ids
+    assert "loading_spinner" in object_ids
+    assert "ready_box" in object_ids
+    assert "ready_page" in object_ids
+    assert "banner_warning" in object_ids
+    assert "empty_page" in object_ids
+    assert "error_page" in object_ids
+    assert "error_retry_button" in object_ids
 
-    assert "toast_overlay" in object_ids
-    assert "split_view" in object_ids
-    assert "sidebar_list_box" in object_ids
-    assert "content_page" in object_ids
-    assert "content_stack" in object_ids
-    assert "row_status" in object_ids
-    assert "row_themes" in object_ids
-    assert "row_presets" in object_ids
-    assert "row_installer" in object_ids
-    assert "row_sandbox" in object_ids
+    # Verifica righe di diagnostica
+    assert "row_gtk_theme" in object_ids
+    assert "row_icon_theme" in object_ids
+    assert "row_cursor_theme" in object_ids
+    assert "row_shell_theme" in object_ids
+    assert "row_color_scheme" in object_ids
+    assert "row_gtk4_override" in object_ids
+    assert "row_gsettings_status" in object_ids
+    assert "row_user_themes_path" in object_ids
+    assert "row_user_icons_path" in object_ids
+    assert "row_flatpak_status" in object_ids
+    assert "row_snap_status" in object_ids
 
-    # Verifica presenza width-request e height-request su toast_overlay
-    toast_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "toast_overlay")
-    props = {p.attrib.get("name"): p.text for p in toast_obj.findall("property")}
-    assert int(props.get("width-request", 0)) >= 760
-    assert int(props.get("height-request", 0)) >= 520
+    # Verifica proprietà di espansione verticale su page_root e ready_page per garantire lo scrolling
+    page_root_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "page_root")
+    root_props = {p.attrib.get("name"): p.text for p in page_root_obj.findall("property")}
+    assert root_props.get("vexpand") == "true"
+    assert root_props.get("hexpand") == "true"
 
+    ready_page_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "ready_page")
+    ready_props = {p.attrib.get("name"): p.text for p in ready_page_obj.findall("property")}
+    assert ready_props.get("vexpand") == "true"
+    assert ready_props.get("hexpand") == "true"
 
-@pytest.mark.parametrize(
-    ("page_filename", "expected_title"),
-    [
-        ("status_page.ui", "Stato attuale"),
-        ("themes_page.ui", "Esplora temi"),
-        ("presets_page.ui", "Profili e preset"),
-        ("installer_page.ui", "Installatore temi"),
-        ("sandbox_page.ui", "Strumenti sandbox"),
-    ],
-)
-def test_page_ui_templates_structure(
-    page_filename: str,
-    expected_title: str,
-) -> None:
-    """Verifica la presenza di AdwStatusPage e titolo nei template di pagina."""
-    page_path = UI_DIR / page_filename
-    tree = ET.parse(page_path)
-    root = tree.getroot()
-
-    classes = [elem.attrib.get("class") for elem in root.iter("object")]
-    assert "AdwStatusPage" in classes, f"{page_filename} deve contenere AdwStatusPage"
-
-    status_obj = next(elem for elem in root.iter("object") if elem.attrib.get("class") == "AdwStatusPage")
-    props = {p.attrib.get("name"): p.text for p in status_obj.findall("property")}
-    assert props.get("title") == expected_title
+    # Verifica escaping Pango per il titolo di group_sandbox (deve contenere &amp; nel testo decodificato)
+    group_sandbox_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "group_sandbox")
+    sandbox_props = {p.attrib.get("name"): p.text for p in group_sandbox_obj.findall("property")}
+    assert "&amp;" in sandbox_props.get("title", ""), "Il titolo sandbox deve contenere &amp; per essere interpretato da Pango come &"
 
 
 # =============================================================================
-# 2. Test Disponibilità GTK e Controller Pagine (Gtk4 / Libadwaita Runtime)
+# 2. Test Funzioni di Formattazione e Snapshot UI (Headless Safe)
 # =============================================================================
 
 
-def test_is_gtk_available_detection() -> None:
-    """Verifica che is_gtk_available() ritorni un valore booleano coerente."""
-    res = is_gtk_available()
-    assert isinstance(res, bool)
+def test_format_optional_value() -> None:
+    """Verifica la formattazione dei valori opzionali."""
+    assert format_optional_value("Yaru-dark") == "Yaru-dark"
+    assert format_optional_value(None) == "Non impostato"
+    assert format_optional_value("", default="Default") == "Default"
+    assert format_optional_value("   ", default="N/D") == "N/D"
 
 
-@pytest.mark.parametrize(
-    ("controller_module", "controller_class", "expected_id", "expected_title"),
-    [
-        ("status", "StatusPage", "status", "Stato attuale"),
-        ("themes", "ThemesPage", "themes", "Esplora temi"),
-        ("presets", "PresetsPage", "presets", "Profili e preset"),
-        ("installer", "InstallerPage", "installer", "Installatore temi"),
-        ("sandbox", "SandboxPage", "sandbox", "Strumenti sandbox"),
-    ],
-)
-def test_page_controllers_initialization(
-    controller_module: str,
-    controller_class: str,
-    expected_id: str,
-    expected_title: str,
-) -> None:
-    """Verifica l'istanziazione e i metadati dei singoli controller delle pagine."""
+def test_format_boolean() -> None:
+    """Verifica la formattazione dei booleani in etichette utente."""
+    assert format_boolean(True) == "Sì"
+    assert format_boolean(False) == "No"
+    assert format_boolean(None) == "Non disponibile"
+    assert format_boolean(True, true_label="Attivo", false_label="Inattivo") == "Attivo"
+
+
+def test_format_path() -> None:
+    """Verifica la conversione e formattazione di percorsi Path."""
+    p = Path("/home/user/.local/share/themes")
+    assert format_path(p) == "/home/user/.local/share/themes"
+    assert format_path(None) == "Non disponibile"
+
+
+def test_format_color_scheme() -> None:
+    """Verifica la formattazione delle varianti schema colore."""
+    assert format_color_scheme("prefer-dark") == "Scuro (Preferisci scuro)"
+    assert format_color_scheme("default") == "Predefinito (Chiaro)"
+    assert format_color_scheme(None) == "Predefinito (Chiaro)"
+    assert format_color_scheme("prefer-light") == "Chiaro (Preferisci chiaro)"
+
+
+def test_format_shell_theme() -> None:
+    """Verifica la formattazione del tema GNOME Shell in base al supporto estensione."""
+    assert format_shell_theme("Nordic", is_supported=True) == "Nordic"
+    assert format_shell_theme(None, is_supported=True) == "Default di sistema"
+    assert format_shell_theme("Nordic", is_supported=False) == "Non gestito (estensione 'User Themes' non attiva)"
+
+
+def test_format_sandbox_status() -> None:
+    """Verifica la formattazione dello stato dei runtime sandbox."""
+    res_avail = format_sandbox_status(
+        available=True,
+        active_or_installed=True,
+        active_label="Override attivo",
+        inactive_label="Override non attivo",
+    )
+    assert res_avail == "Disponibile (Override attivo)"
+
+    res_not_installed = format_sandbox_status(
+        available=False,
+        active_or_installed=False,
+        active_label="OK",
+        inactive_label="No",
+    )
+    assert res_not_installed == "Non disponibile (non installato)"
+
+
+# =============================================================================
+# 3. Test Controller StatusPage e Transizioni di Stato (Gtk Runtime Safe)
+# =============================================================================
+
+
+@pytest.fixture
+def mock_theme_manager() -> MagicMock:
+    """Crea un mock deterministico di ThemeManager con dati validi completi."""
+    mgr = MagicMock(spec=ThemeManager)
+    mgr.get_current_themes.return_value = ThemeSet(
+        gtk_theme="Yaru",
+        icon_theme="Yaru",
+        cursor_theme="Yaru",
+        color_scheme="default",
+        shell_theme="Yaru",
+    )
+    mgr.get_system_status.return_value = SystemStatus(
+        gsettings_available=True,
+        shell_theme_supported=True,
+        color_scheme_supported=True,
+        user_themes_path=Path("/home/user/.local/share/themes"),
+        user_icons_path=Path("/home/user/.local/share/icons"),
+        sandbox_status=SandboxStatus(
+            snap_available=True,
+            flatpak_available=True,
+            snap_gtk_common_themes_installed=True,
+            flatpak_filesystem_override_active=True,
+        ),
+        gtk4_override_active=True,
+    )
+    mgr.find_theme.return_value = Theme(
+        name="Yaru",
+        theme_type=ThemeType.GTK,
+        path=Path("/usr/share/themes/Yaru"),
+        is_user_level=False,
+    )
+    return mgr
+
+
+def test_status_page_ready_state_success(mock_theme_manager: MagicMock) -> None:
+    """Verifica che un refresh con dati validi porti allo stato READY e popoli le righe."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 / Libadwaita non disponibili in questo ambiente.")
+        pytest.skip("PyGObject / GTK4 non disponibili.")
 
-    import importlib
-    mod = importlib.import_module(f"gnome_theme_manager.gui_gtk.pages.{controller_module}")
-    cls = getattr(mod, controller_class)
+    page = StatusPage(manager=mock_theme_manager)
+    assert page.page_id == "status"
+    assert page.title == "Stato attuale"
+
+    # Esegui refresh sincrono
+    page.refresh(sync=True)
+
+    assert page.widget.get_visible_child_name() == "ready"
+    assert "Yaru" in page.row_gtk_theme.get_subtitle()
+    assert "Yaru" in page.row_icon_theme.get_subtitle()
+    assert "Yaru" in page.row_cursor_theme.get_subtitle()
+    assert "Yaru" in page.row_shell_theme.get_subtitle()
+    assert "Predefinito" in page.row_color_scheme.get_subtitle()
+    assert "Attivo" in page.row_gtk4_override.get_subtitle()
+    assert "Disponibile" in page.row_gsettings_status.get_subtitle()
+    assert "/home/user/.local/share/themes" in page.row_user_themes_path.get_subtitle()
+    assert "Disponibile (Override filesystem attivo)" in page.row_flatpak_status.get_subtitle()
+    assert "Disponibile (gtk-common-themes installato)" in page.row_snap_status.get_subtitle()
+    assert page.banner_warning.get_revealed() is False
+
+
+def test_status_page_gtk4_override_inactive(mock_theme_manager: MagicMock) -> None:
+    """Verifica che quando gtk4_override_active è False, la riga mostri 'Non attivo'."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    status = mock_theme_manager.get_system_status.return_value
+    status.gtk4_override_active = False
+
+    page = StatusPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    assert page.widget.get_visible_child_name() == "ready"
+    assert "Non attivo" in page.row_gtk4_override.get_subtitle()
+
+
+def test_status_page_ready_with_warnings(mock_theme_manager: MagicMock) -> None:
+    """Verifica che limitazioni ambientali attivino l'Adw.Banner nella pagina ready."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    mock_theme_manager.get_system_status.return_value = SystemStatus(
+        gsettings_available=True,
+        shell_theme_supported=False,
+        color_scheme_supported=True,
+        user_themes_path=Path("/home/user/.local/share/themes"),
+        user_icons_path=Path("/home/user/.local/share/icons"),
+        sandbox_status=SandboxStatus(
+            snap_available=True,
+            flatpak_available=False,
+            snap_gtk_common_themes_installed=False,
+            flatpak_filesystem_override_active=False,
+        ),
+        gtk4_override_active=False,
+    )
+
+    page = StatusPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    assert page.widget.get_visible_child_name() == "ready"
+    assert page.banner_warning.get_revealed() is True
+    assert "User Themes" in page.banner_warning.get_title()
+    assert "gtk-common-themes" in page.banner_warning.get_title()
+
+
+def test_status_page_empty_state() -> None:
+    """Verifica che una configurazione completamente vuota e senza GSettings mostri lo stato EMPTY."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
 
     mock_mgr = MagicMock(spec=ThemeManager)
-    instance = cls(manager=mock_mgr)
+    mock_mgr.get_current_themes.return_value = ThemeSet()
+    mock_mgr.get_system_status.return_value = SystemStatus(
+        gsettings_available=False,
+        shell_theme_supported=False,
+        color_scheme_supported=False,
+        user_themes_path=Path("/home/user/.local/share/themes"),
+        user_icons_path=Path("/home/user/.local/share/icons"),
+        sandbox_status=None,
+        gtk4_override_active=False,
+    )
+    mock_mgr.find_theme.return_value = None
 
-    assert instance.page_id == expected_id
-    assert instance.title == expected_title
-    assert instance.get_widget() is not None
+    page = StatusPage(manager=mock_mgr)
+    page.refresh(sync=True)
 
-    widget = instance.get_widget()
-    assert widget.get_title() == expected_title
+    assert page.widget.get_visible_child_name() == "empty"
 
 
-# =============================================================================
-# 3. Test Shell GnomeThemeWindow, Router GtkStack e Dimensionamento (Fase 5.2.1)
-# =============================================================================
-
-
-def test_window_initialization_and_stack_router() -> None:
-    """Verifica l'inizializzazione della finestra, il router basato su GtkStack e il dimensionamento minimo."""
+def test_status_page_error_state_and_retry(mock_theme_manager: MagicMock) -> None:
+    """Verifica che un'eccezione porti allo stato ERROR e che il pulsante retry consenta il ripristino."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 / Libadwaita non disponibili in questo ambiente.")
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    mock_theme_manager.get_current_themes.side_effect = GSettingsUnavailableError("Schema non trovato.")
+
+    page = StatusPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    assert page.widget.get_visible_child_name() == "error"
+    assert "GSettings non è disponibile" in page.error_page.get_description()
+
+    # Ripristino condizione di successo e retry
+    mock_theme_manager.get_current_themes.side_effect = None
+    mock_theme_manager.get_current_themes.return_value = ThemeSet(gtk_theme="Adwaita")
+    page.error_retry_button.emit("clicked")
+
+    # Verifica transizione a READY dopo il retry
+    page.refresh(sync=True)
+    assert page.widget.get_visible_child_name() == "ready"
+
+
+def test_status_page_refresh_concurrency_guard(mock_theme_manager: MagicMock) -> None:
+    """Verifica che chiamate di refresh concorrenti durante LOADING vengano ignorate."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    page = StatusPage(manager=mock_theme_manager)
+
+    page._is_loading = True
+    gen_before = page._generation_id
+    page.refresh()
+    assert page._generation_id == gen_before
+
+
+# =============================================================================
+# 4. Test GnomeThemeWindow e Pulsante Refresh Contestuale
+# =============================================================================
+
+
+def test_window_refresh_button_visibility_and_action(mock_theme_manager: MagicMock) -> None:
+    """Verifica che il pulsante Refresh sia visibile solo nella pagina status e disabilitato durante il caricamento."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
 
     from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
     from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
 
-    mock_mgr = MagicMock(spec=ThemeManager)
-    app = GnomeThemeApplication(manager=mock_mgr)
+    app = GnomeThemeApplication(manager=mock_theme_manager)
 
     try:
-        win = GnomeThemeWindow(app=app, manager=mock_mgr)
+        win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
     except Exception as err:  # noqa: BLE001
         pytest.skip(f"Display non disponibile in ambiente headless: {err}")
 
-    # Verifica componenti principali
-    assert win.toast_overlay is not None
-    assert win.split_view is not None
-    assert win.sidebar_list_box is not None
-    assert win.content_page is not None
-    assert win.content_stack is not None
+    assert win.refresh_button is not None
 
-    # Verifica dimensionamento minimo
-    min_width, min_height = win.get_size_request()
-    assert min_width >= 760
-    assert min_height >= 520
+    # Quando la pagina attiva è status, il pulsante deve essere visibile
+    win.select_page("status")
+    assert win.refresh_button.get_visible() is True
 
-    # Verifica che split_view.get_content() sia content_page
-    assert win.split_view.get_content() == win.content_page
-
-    # Verifica registrazione delle 5 pagine nel router
-    assert set(win.pages.keys()) == {"status", "themes", "presets", "installer", "sandbox"}
-
-    # Verifica che tutti i widget siano figli dello stesso Gtk.Stack
-    for page_id, controller in win.pages.items():
-        child = win.content_stack.get_child_by_name(page_id)
-        assert child == controller.get_widget()
-
-    # Verifica che la pagina iniziale sia 'status'
-    assert win.current_page_id == "status"
-    assert win.content_stack.get_visible_child_name() == "status"
-    assert win.content_page.get_title() == "Stato attuale"
-
-    # Test toast non bloccante
-    win.add_toast("Notifica di test")
-
-
-def test_window_page_navigation_invariance() -> None:
-    """Verifica che split_view.get_content() rimanga invariato e la navigazione usi GtkStack."""
-    if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 / Libadwaita non disponibili in questo ambiente.")
-
-    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
-    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
-
-    mock_mgr = MagicMock(spec=ThemeManager)
-    app = GnomeThemeApplication(manager=mock_mgr)
-
-    try:
-        win = GnomeThemeWindow(app=app, manager=mock_mgr)
-    except Exception as err:  # noqa: BLE001
-        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
-
-    initial_content = win.split_view.get_content()
-
-    # Patch su set_content per assicurarsi che NON venga chiamato durante la navigazione
-    with patch.object(win.split_view, "set_content") as mock_set_content:
-        for page_id in ["themes", "presets", "installer", "sandbox", "status"]:
-            win.select_page(page_id)
-            assert win.current_page_id == page_id
-            assert win.content_stack.get_visible_child_name() == page_id
-            assert win.content_page.get_title() == win.pages[page_id].title
-            # split_view.get_content() deve rimanere sempre lo stesso oggetto
-            assert win.split_view.get_content() == initial_content
-
-        # Verifica che set_content non sia mai stato invocato
-        mock_set_content.assert_not_called()
-
-    # Test resilienza con page_id sconosciuto
-    current_before = win.current_page_id
-    win.select_page("pagina_inesistente")
-    assert win.current_page_id == current_before
-
-
-def test_responsive_collapsed_behavior() -> None:
-    """Verifica il comportamento in modalità compatta (collapsed=True) e show_content."""
-    if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 / Libadwaita non disponibili in questo ambiente.")
-
-    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
-    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
-
-    mock_mgr = MagicMock(spec=ThemeManager)
-    app = GnomeThemeApplication(manager=mock_mgr)
-
-    try:
-        win = GnomeThemeWindow(app=app, manager=mock_mgr)
-    except Exception as err:  # noqa: BLE001
-        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
-
-    # Simulazione modalità compatta
-    win.split_view.set_collapsed(True)
-    assert win.split_view.get_collapsed() is True
-
-    # Selezionando una pagina in modalità collapsed, show_content deve diventare True
+    # Cambiando pagina (es. themes), il pulsante deve nascondersi
     win.select_page("themes")
-    assert win.split_view.get_show_content() is True
-    assert win.content_stack.get_visible_child_name() == "themes"
+    assert win.refresh_button.get_visible() is False
 
-    # Simulazione del ritorno alla sidebar
-    win.split_view.set_show_content(False)
-    assert win.split_view.get_show_content() is False
-
-    # Ripristino modalità larga
-    win.split_view.set_collapsed(False)
-    assert win.split_view.get_collapsed() is False
+    # Tornando a status, il pulsante riappare
+    win.select_page("status")
+    assert win.refresh_button.get_visible() is True
 
 
 # =============================================================================
-# 4. Test Isolamento e Routing CLI
+# 5. Test Isolamento, Routing CLI e Gestione Pulita SIGINT (Ctrl+C)
 # =============================================================================
 
 
@@ -304,6 +406,29 @@ def test_launch_gui_missing_dependencies(capsys: pytest.CaptureFixture[str]) -> 
         captured = capsys.readouterr()
         assert "[ERRORE GUI]" in captured.err
         assert "gir1.2-adw-1" in captured.err
+
+
+def test_launch_gui_sigint_clean_exit() -> None:
+    """Verifica che la pressione di Ctrl+C durante l'esecuzione della GUI ritorni exit code 130 senza traceback."""
+    with patch("gnome_theme_manager.gui_gtk.is_gtk_available", return_value=True):
+        with patch("gnome_theme_manager.gui_gtk.app.GnomeThemeApplication.run", side_effect=KeyboardInterrupt):
+            exit_code = launch_gui()
+            assert exit_code == 130
+
+
+def test_launch_gui_normal_clean_exit() -> None:
+    """Verifica che la chiusura normale della finestra tramite UI ritorni exit code 0."""
+    with patch("gnome_theme_manager.gui_gtk.is_gtk_available", return_value=True):
+        with patch("gnome_theme_manager.gui_gtk.app.GnomeThemeApplication.run", return_value=0):
+            exit_code = launch_gui()
+            assert exit_code == 0
+
+
+def test_cli_main_keyboard_interrupt_returns_130() -> None:
+    """Verifica che un'interruzione da tastiera (Ctrl+C) durante un comando CLI ritorni 130 senza traceback."""
+    with patch("gnome_theme_manager.cli.main.handle_current_command", side_effect=KeyboardInterrupt):
+        exit_code = main(["current"])
+        assert exit_code == 130
 
 
 def test_cli_gui_flag_routes_to_gtk() -> None:

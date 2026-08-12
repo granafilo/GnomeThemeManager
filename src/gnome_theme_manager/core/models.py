@@ -149,3 +149,4 @@ class SystemStatus:
     user_themes_path: Path
     user_icons_path: Path
     sandbox_status: SandboxStatus | None = None
+    gtk4_override_active: bool = False

@@ -1,10 +1,11 @@
 """Modulo contenente la finestra principale dell'applicazione (GnomeThemeWindow).
 
-Gestisce la shell principale con GTK4 e Libadwaita (Fase 5.2.1):
+Gestisce la shell principale con GTK4 e Libadwaita (Fase 5.3):
 - Adw.ToastOverlay per notifiche temporanee e dimensionamento minimo;
 - Adw.NavigationSplitView con sidebar a sinistra (Gtk.ListBox) e content fisso a destra;
 - Router centralizzato basato su Gtk.Stack all'interno del content Adw.NavigationPage;
 - Aggiornamento della pagina visibile tramite set_visible_child_name() senza ri-parenting;
+- Pulsante Refresh dedicato visibile unicamente quando la pagina attiva è 'status';
 - Gestione della responsività adattiva tramite Adw.Breakpoint (collasso sotto i 700px).
 """
 
@@ -75,6 +76,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.content_page: Adw.NavigationPage = self.builder.get_object("content_page")
         self.content_header_bar: Adw.HeaderBar = self.builder.get_object("content_header_bar")
         self.content_stack: Gtk.Stack = self.builder.get_object("content_stack")
+        self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
 
         # Recupero delle righe della sidebar per la navigazione
         self.row_status: Gtk.ListBoxRow = self.builder.get_object("row_status")
@@ -121,16 +123,24 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         # Connessione del segnale di cambio selezione della sidebar
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
 
+        # Connessione del pulsante Refresh
+        self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
+
+        # Connessione callback di caricamento per sincronizzare la sensibilità del pulsante Refresh
+        status_ctrl: StatusPage = self.pages["status"]
+        status_ctrl.on_loading_changed = self._on_status_loading_changed
+
         # Selezione iniziale della pagina Stato all'avvio dell'applicazione
         self.select_page("status")
+
+        # Avvio del primo caricamento diagnostico della pagina Stato
+        status_ctrl.refresh()
 
     def _setup_breakpoint(self) -> None:
         """Configura il breakpoint responsive di Libadwaita per il collasso automatico."""
         try:
-            # Crea un Adw.Breakpoint con la condizione di larghezza massima (700px)
             condition = Adw.BreakpointCondition.parse(f"max-width: {COLLAPSE_BREAKPOINT_WIDTH}px")
             breakpoint = Adw.Breakpoint.new(condition)
-            # Quando la finestra scende sotto la soglia, imposta collapsed=True su split_view
             breakpoint.add_setter(self.split_view, "collapsed", True)
             self.add_breakpoint(breakpoint)
         except Exception as err:
@@ -155,15 +165,33 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         else:
             logger.warning("Riga della sidebar selezionata priva di associazione page_id: %s", row)
 
+    def _on_refresh_button_clicked(self, button: Gtk.Button) -> None:
+        """Gestore del click sul pulsante Refresh della testata.
+
+        Args:
+            button: Widget Gtk.Button cliccato.
+        """
+        if self._current_page_id == "status":
+            self.pages["status"].refresh()
+
+    def _on_status_loading_changed(self, is_loading: bool) -> None:
+        """Aggiorna lo stato di abilitazione del pulsante Refresh durante il caricamento.
+
+        Args:
+            is_loading: True se un refresh è in corso, False altrimenti.
+        """
+        self.refresh_button.set_sensitive(not is_loading)
+
     def select_page(self, page_id: str) -> None:
         """Seleziona e visualizza la pagina specificata nel Gtk.Stack dei contenuti.
 
-        Flusso operativo (Fase 5.2.1):
+        Flusso operativo:
             1. Validazione dell'identificatore (se non valido, emette un warning e lascia intatta la vista);
             2. Cambio del figlio visibile in Gtk.Stack tramite set_visible_child_name();
             3. Aggiornamento del titolo di content_page;
-            4. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
-            5. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
+            4. Gestione della visibilità del pulsante Refresh (visibile solo per 'status');
+            5. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
+            6. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
 
         Args:
             page_id: Identificatore della pagina ('status', 'themes', 'presets', 'installer', 'sandbox').
@@ -181,6 +209,9 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.content_stack.set_visible_child_name(page_id)
         self.content_page.set_title(controller.title)
         self._current_page_id = page_id
+
+        # Il pulsante refresh è specifico per la pagina Stato
+        self.refresh_button.set_visible(page_id == "status")
 
         # Sincronizza la selezione visiva nella Gtk.ListBox senza generare loop ricorsivi
         target_row = self._page_id_to_row.get(page_id)

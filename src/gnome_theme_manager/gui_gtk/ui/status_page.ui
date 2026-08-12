@@ -1,13 +1,273 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Template dichiarativo per la pagina 'Stato attuale' (Fase 5.2.1) -->
+<!-- Template dichiarativo per la pagina 'Stato attuale' con GtkStack a 4 stati (Fase 5.3.1) -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
-  <object class="AdwStatusPage" id="page_root">
+  <object class="GtkStack" id="page_root">
+    <property name="transition-type">crossfade</property>
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
-    <property name="icon-name">preferences-desktop-theme-symbolic</property>
-    <property name="title">Stato attuale</property>
-    <property name="description">La diagnostica del sistema e i temi attivi saranno collegati nella Fase 5.3.</property>
+
+    <!-- 1. Stato LOADING -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">loading</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="loading_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">preferences-desktop-theme-symbolic</property>
+            <property name="title">Caricamento in corso...</property>
+            <property name="description">Recupero dello stato attuale dei temi e della diagnostica di sistema.</property>
+            <property name="child">
+              <object class="GtkSpinner" id="loading_spinner">
+                <property name="spinning">true</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="width-request">32</property>
+                <property name="height-request">32</property>
+                <property name="margin-top">12</property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 2. Stato READY (GtkBox verticale con AdwBanner e AdwPreferencesPage scrollabile) -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">ready</property>
+        <property name="child">
+          <object class="GtkBox" id="ready_box">
+            <property name="orientation">vertical</property>
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+
+            <!-- Banner informativo per avvisi e limitazioni -->
+            <child>
+              <object class="AdwBanner" id="banner_warning">
+                <property name="revealed">false</property>
+              </object>
+            </child>
+
+            <!-- Pagina preferenze con scrolling nativo Libadwaita -->
+            <child>
+              <object class="AdwPreferencesPage" id="ready_page">
+                <property name="vexpand">true</property>
+                <property name="hexpand">true</property>
+
+                <!-- Gruppo 1: Temi Attivi -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_themes">
+                    <property name="title">Temi Attivi su GNOME</property>
+                    <property name="description">Configurazione corrente letta tramite GSettings.</property>
+                    <child>
+                      <object class="AdwActionRow" id="row_gtk_theme">
+                        <property name="title">Tema GTK (Applicazioni)</property>
+                        <property name="subtitle">Non impostato</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_icon_theme">
+                        <property name="title">Tema Icone</property>
+                        <property name="subtitle">Non impostato</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">applications-graphics-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_cursor_theme">
+                        <property name="title">Tema Cursori</property>
+                        <property name="subtitle">Non impostato</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">input-mouse-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_shell_theme">
+                        <property name="title">Tema GNOME Shell</property>
+                        <property name="subtitle">Default di sistema</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">preferences-system-windows-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_color_scheme">
+                        <property name="title">Schema Colori</property>
+                        <property name="subtitle">Predefinito</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">weather-clear-night-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Gruppo 2: GTK4 / Libadwaita -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_gtk4">
+                    <property name="title">GTK4 / Libadwaita</property>
+                    <property name="description">Compatibilità con le applicazioni moderne GNOME.</property>
+                    <child>
+                      <object class="AdwActionRow" id="row_gtk4_override">
+                        <property name="title">Stato Override GTK4</property>
+                        <property name="subtitle">Non disponibile (applicato durante il cambio tema)</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">system-run-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Gruppo 3: Ambiente Desktop e Percorsi -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_environment">
+                    <property name="title">Ambiente Desktop e Percorsi</property>
+                    <property name="description">Stato di GSettings e percorsi utente per l'installazione.</property>
+                    <child>
+                      <object class="AdwActionRow" id="row_gsettings_status">
+                        <property name="title">GSettings / Gio</property>
+                        <property name="subtitle">Disponibile</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">emblem-default-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_user_themes_path">
+                        <property name="title">Cartella Temi Utente</property>
+                        <property name="subtitle">~/.local/share/themes</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">folder-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_user_icons_path">
+                        <property name="title">Cartella Icone Utente</property>
+                        <property name="subtitle">~/.local/share/icons</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">folder-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Gruppo 4: Sandbox (Flatpak e Snap) con escaping corretto per Pango markup -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_sandbox">
+                    <property name="title">Integrazione Sandbox (Snap &amp;amp; Flatpak)</property>
+                    <property name="description">Stato di accesso delle applicazioni isolate ai temi.</property>
+                    <child>
+                      <object class="AdwActionRow" id="row_flatpak_status">
+                        <property name="title">Flatpak</property>
+                        <property name="subtitle">Disponibile</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">application-x-executable-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_snap_status">
+                        <property name="title">Snap</property>
+                        <property name="subtitle">Disponibile</property>
+                        <child type="prefix">
+                          <object class="GtkImage">
+                            <property name="icon-name">package-x-generic-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 3. Stato EMPTY -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">empty</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="empty_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">dialog-information-symbolic</property>
+            <property name="title">Nessuna configurazione trovata</property>
+            <property name="description">Non è stata rilevata alcuna impostazione per i temi attivi sul sistema.</property>
+            <property name="child">
+              <object class="GtkButton" id="empty_retry_button">
+                <property name="label">Ricarica</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <style>
+                  <class name="pill"/>
+                  <class name="suggested-action"/>
+                </style>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 4. Stato ERROR -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">error</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="error_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">dialog-error-symbolic</property>
+            <property name="title">Errore di lettura</property>
+            <property name="description">Impossibile recuperare lo stato del sistema.</property>
+            <property name="child">
+              <object class="GtkButton" id="error_retry_button">
+                <property name="label">Riprova</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <style>
+                  <class name="pill"/>
+                  <class name="suggested-action"/>
+                </style>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
   </object>
 </interface>

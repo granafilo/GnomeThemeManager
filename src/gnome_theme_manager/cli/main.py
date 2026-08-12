@@ -362,45 +362,45 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
 
-    # Se è stato specificato il flag legacy --tk-gui o il subcomando 'gui-tk' (Rollback provvisorio)
-    if getattr(args, "tk_gui", False) or args.command == "gui-tk":
-        try:
-            from ..gui_tk import launch_gui as launch_gui_tk
-        except (ImportError, ModuleNotFoundError) as err:
-            print(
-                f"\n[ERRORE GUI TKINTER] Impossibile avviare l'interfaccia legacy Tkinter: {err}\n"
-                "Installa python3-tk con:\n"
-                "    sudo apt update && sudo apt install -y python3-tk\n",
-                file=sys.stderr,
-            )
-            return 1
-
-        manager = ThemeManager()
-        return launch_gui_tk(manager=manager)
-
-    # Se è stato specificato il flag --gui o il subcomando 'gui', avvia la nuova GUI nativa GTK4/Libadwaita
-    if getattr(args, "gui", False) or args.command == "gui":
-        try:
-            from ..gui_gtk import launch_gui as launch_gui_gtk
-        except (ImportError, ModuleNotFoundError) as err:
-            print(
-                f"\n[ERRORE GUI GTK4] Impossibile avviare l'interfaccia grafica GTK4/Libadwaita: {err}\n"
-                "Installa le dipendenze richieste con:\n"
-                "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n",
-                file=sys.stderr,
-            )
-            return 1
-
-        manager = ThemeManager()
-        return launch_gui_gtk(manager=manager)
-
-    if not args.command:
-        parser.print_help()
-        return 0
-
-    manager = ThemeManager()
-
     try:
+        # Se è stato specificato il flag legacy --tk-gui o il subcomando 'gui-tk' (Rollback provvisorio)
+        if getattr(args, "tk_gui", False) or args.command == "gui-tk":
+            try:
+                from ..gui_tk import launch_gui as launch_gui_tk
+            except (ImportError, ModuleNotFoundError) as err:
+                print(
+                    f"\n[ERRORE GUI TKINTER] Impossibile avviare l'interfaccia legacy Tkinter: {err}\n"
+                    "Installa python3-tk con:\n"
+                    "    sudo apt update && sudo apt install -y python3-tk\n",
+                    file=sys.stderr,
+                )
+                return 1
+
+            manager = ThemeManager()
+            return launch_gui_tk(manager=manager)
+
+        # Se è stato specificato il flag --gui o il subcomando 'gui', avvia la nuova GUI nativa GTK4/Libadwaita
+        if getattr(args, "gui", False) or args.command == "gui":
+            try:
+                from ..gui_gtk import launch_gui as launch_gui_gtk
+            except (ImportError, ModuleNotFoundError) as err:
+                print(
+                    f"\n[ERRORE GUI GTK4] Impossibile avviare l'interfaccia grafica GTK4/Libadwaita: {err}\n"
+                    "Installa le dipendenze richieste con:\n"
+                    "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n",
+                    file=sys.stderr,
+                )
+                return 1
+
+            manager = ThemeManager()
+            return launch_gui_gtk(manager=manager)
+
+        if not args.command:
+            parser.print_help()
+            return 0
+
+        manager = ThemeManager()
+
         if args.command == "current":
             return handle_current_command(manager)
         elif args.command == "sandbox-status":
@@ -440,6 +440,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             parser.print_help()
             return 0
 
+    except KeyboardInterrupt:
+        # Interruzione pulita dell'utente tramite Ctrl+C / SIGINT (exit code standard POSIX 130)
+        return 130
     except GSettingsUnavailableError as err:
         print(f"\n[ERRORE GSETTINGS] {err}\n", file=sys.stderr)
         return 1

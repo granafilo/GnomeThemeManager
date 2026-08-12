@@ -84,6 +84,34 @@ class GTK4ThemeLinker:
         self._safe_remove(target_dark_css)
         self._safe_remove(target_assets)
 
+    def is_override_active(self) -> bool:
+        """Verifica se l'override GTK4 è attualmente attivo e valido in ~/.config/gtk-4.0/.
+
+        Controlla che 'gtk.css' esista e sia un file valido (o symlink risolvibile)
+        e che gli eventuali file opzionali 'gtk-dark.css' e 'assets' non siano symlink rotti.
+
+        Returns:
+            True se l'override è attivo e coerente, False altrimenti.
+        """
+        target_css = self.config_dir / "gtk.css"
+        target_dark_css = self.config_dir / "gtk-dark.css"
+        target_assets = self.config_dir / "assets"
+
+        # 1. 'gtk.css' è obbligatorio per considerare l'override attivo
+        # In Python, Path.exists() ritorna False se il file non esiste o se è un symlink rotto
+        if not target_css.exists() or not target_css.is_file():
+            return False
+
+        # 2. Controllo integrità per 'gtk-dark.css' se presente come symlink
+        if target_dark_css.is_symlink() and not target_dark_css.exists():
+            return False
+
+        # 3. Controllo integrità per 'assets' se presente come symlink
+        if target_assets.is_symlink() and not target_assets.exists():
+            return False
+
+        return True
+
     # -------------------------------------------------------------------------
     # Metodi di Supporto per Symlink Sicuri
     # -------------------------------------------------------------------------

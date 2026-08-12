@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Template dichiarativo per la finestra principale GnomeThemeWindow (Fase 5.2.1) -->
+<!-- Template dichiarativo per la finestra principale GnomeThemeWindow (Fase 5.3.1) -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
@@ -180,11 +180,22 @@
                   <object class="AdwHeaderBar" id="content_header_bar">
                     <property name="show-start-title-buttons">false</property>
                     <property name="show-end-title-buttons">true</property>
+                    <child type="end">
+                      <object class="GtkButton" id="refresh_button">
+                        <property name="icon-name">view-refresh-symbolic</property>
+                        <property name="tooltip-text">Aggiorna stato attuale</property>
+                        <style>
+                          <class name="flat"/>
+                        </style>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <property name="content">
                   <object class="GtkStack" id="content_stack">
                     <property name="transition-type">crossfade</property>
+                    <property name="vexpand">true</property>
+                    <property name="hexpand">true</property>
                   </object>
                 </property>
               </object>
