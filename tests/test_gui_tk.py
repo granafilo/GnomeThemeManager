@@ -10,7 +10,6 @@ Verifica il corretto funzionamento di:
 """
 
 from pathlib import Path
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -25,7 +24,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from gnome_theme_manager.cli.main import main
-from gnome_theme_manager.core.errors import GSettingsUnavailableError, ThemeNotFoundError
+from gnome_theme_manager.core.errors import GSettingsUnavailableError
 from gnome_theme_manager.core.models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
 from gnome_theme_manager.gui_tk.app import ThemeManagerWindow, launch_gui
 from gnome_theme_manager.gui_tk.views import (
@@ -42,7 +41,7 @@ try:
     _test_tk.withdraw()
     _test_tk.destroy()
     _TK_DISPLAY_AVAILABLE = True
-except Exception:
+except (tk.TclError, Exception):  # noqa: BLE001
     _TK_DISPLAY_AVAILABLE = False
 
 
@@ -120,7 +119,7 @@ def tk_root():
     yield root
     try:
         root.destroy()
-    except Exception:
+    except Exception:  # noqa: S110, BLE001
         pass
 
 
