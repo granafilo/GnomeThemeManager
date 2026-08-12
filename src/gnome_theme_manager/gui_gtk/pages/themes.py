@@ -248,6 +248,7 @@ class ThemesPage:
         Args:
             category: Tipologia di tema da visualizzare (ThemeType.SHELL, GTK, ICON, CURSOR).
         """
+        self._clear_toast()
         self.active_category = category
         self.title = CATEGORY_LABELS.get(category, "Temi")
         self._selected_theme = None
@@ -358,11 +359,13 @@ class ThemesPage:
 
     def _on_filter_criteria_changed(self, *args: Any) -> None:
         """Gestore dei cambiamenti nel testo di ricerca."""
+        self._clear_toast()
         if self._snapshot is not None and self.widget.get_visible_child_name() == "ready":
             self._update_filtered_list()
 
     def _on_row_selected(self, list_box: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         """Gestore della selezione di una riga nella lista dei temi disponibili."""
+        self._clear_toast()
         if row is not None and hasattr(row, "_theme_item"):
             self._selected_theme = row._theme_item
             self.apply_button.set_sensitive(not self._is_applying and not self._is_loading)
@@ -689,13 +692,13 @@ class ThemesPage:
 
             if error is not None:
                 logger.error("Errore durante l'applicazione del tema '%s': %s", item.name, error)
-                self._show_toast(f"Errore durante l'applicazione di '{item.name}': {error}")
+                self._show_toast(f"Impossibile applicare il tema «{item.name}»: {error}")
             elif apply_result is not None:
                 # 1. Verifica specifica per GNOME Shell (estensione User Themes mancante)
                 if item.theme_type == ThemeType.SHELL and apply_result.shell_theme is None:
                     warning_text = (
-                        f"Impossibile applicare il tema Shell '{item.name}': "
-                        "estensione 'User Themes' non attiva o non supportata."
+                        f"Tema «{item.name}» applicato parzialmente.\n"
+                        "Shell non applicato: estensione 'User Themes' non attiva o non supportata."
                     )
                     logger.warning(warning_text)
                     self._show_toast(warning_text)
@@ -714,25 +717,30 @@ class ThemesPage:
                     # 4. Aggiornamento visivo della Card e della Lista (esclusione nuovo tema attivo)
                     self._update_filtered_list()
 
-                    # 5. Notifica di successo univoca
+                    # 5. Notifica di successo univoca persistente nella parte alta
                     if item.theme_type == ThemeType.CURSOR:
-                        logger.info("Tema cursore '%s' applicato: mostro alert informativo", item.name)
-                        self._show_cursor_info_alert(item.name)
+                        msg = (
+                            f"Tema cursore «{item.name}» applicato.\n"
+                            "Potrebbe essere necessario cambiare finestra o riaprire alcune applicazioni."
+                        )
+                    elif item.theme_type == ThemeType.GTK:
+                        if apply_result.gtk4_override_applied:
+                            msg = f"Tema GTK «{item.name}» applicato (con override GTK4/Libadwaita)."
+                        else:
+                            msg = f"Tema GTK «{item.name}» applicato."
+                    elif item.theme_type == ThemeType.SHELL:
+                        msg = f"Tema GNOME Shell «{item.name}» applicato."
+                    elif item.theme_type == ThemeType.ICON:
+                        msg = f"Tema icone «{item.name}» applicato."
                     else:
                         cat_name = CATEGORY_LABELS.get(item.theme_type, "Tema")
-                        if item.theme_type == ThemeType.GTK:
-                            if apply_result.gtk4_override_applied:
-                                msg = f"Tema GTK «{item.name}» applicato (con override GTK4/Libadwaita)"
-                            else:
-                                msg = f"Tema GTK «{item.name}» applicato"
-                        else:
-                            msg = f"Tema {cat_name} «{item.name}» applicato"
+                        msg = f"Tema {cat_name} «{item.name}» applicato."
 
-                        if apply_result.warnings:
-                            msg += f" (Avvisi: {'; '.join(apply_result.warnings)})"
+                    if apply_result.warnings:
+                        msg += f"\nAvvisi: {'; '.join(apply_result.warnings)}"
 
-                        logger.info("Tema '%s' applicato: %s", item.name, msg)
-                        self._show_toast(msg)
+                    logger.info("Tema '%s' applicato: %s", item.name, msg)
+                    self._show_toast(msg)
 
                     # Notifica listener esterno (StatusPage) senza duplicare il Toast
                     if self.on_theme_applied:
@@ -850,11 +858,19 @@ class ThemesPage:
         else:
             self.apply_button.set_sensitive(False)
 
+    def _clear_toast(self) -> None:
+        """Richiede la chiusura del feedback persistente alla finestra principale."""
+        root = self.widget.get_root()
+        if root is not None and hasattr(root, "clear_feedback"):
+            root.clear_feedback()
+
     def _show_toast(self, message: str) -> None:
-        """Invia un toast unico alla finestra principale se disponibile."""
+        """Invia una notifica di feedback persistente alla finestra principale."""
         root = self.widget.get_root()
         if root is not None and hasattr(root, "add_toast"):
             root.add_toast(message)
+        else:
+            logger.info("Feedback [ThemesPage]: %s", message)
 
     def _handle_error(self, error: Exception) -> None:
         """Gestisce gli errori di scansione impostando la schermata 'error'.

@@ -77,6 +77,17 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.content_stack: Gtk.Stack = self.builder.get_object("content_stack")
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
 
+        # Recupero dei widget di notifica superiore (Top Responsive Feedback)
+        self.feedback_revealer: Gtk.Revealer = self.builder.get_object("feedback_revealer")
+        self.feedback_box: Gtk.Box = self.builder.get_object("feedback_box")
+        self.feedback_icon: Gtk.Image = self.builder.get_object("feedback_icon")
+        self.feedback_label: Gtk.Label = self.builder.get_object("feedback_label")
+        self.feedback_close_button: Gtk.Button = self.builder.get_object("feedback_close_button")
+        self._feedback_timeout_id: int | None = None
+
+        if self.feedback_close_button is not None:
+            self.feedback_close_button.connect("clicked", self._on_feedback_close_clicked)
+
         # Recupero delle righe della sidebar per la navigazione
         self.row_status: Gtk.ListBoxRow = self.builder.get_object("row_status")
         self.row_themes_shell: Gtk.ListBoxRow = self.builder.get_object("row_themes_shell")
@@ -250,17 +261,21 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         Flusso operativo:
             1. Validazione dell'identificatore (se non valido, emette un warning e lascia intatta la vista);
-            2. Configurazione della categoria attiva in ThemesPage per le 4 viste di temi;
-            3. Cambio del figlio visibile in Gtk.Stack tramite set_visible_child_name();
-            4. Aggiornamento del titolo di content_page;
-            5. Gestione della visibilità del pulsante Refresh;
-            6. Caricamento automatico al primo accesso se la pagina non è ancora stata popolata;
-            7. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
-            8. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
+            2. Chiusura del banner di feedback precedente (clear_feedback);
+            3. Configurazione della categoria attiva in ThemesPage per le 4 viste di temi;
+            4. Cambio del figlio visibile in Gtk.Stack tramite set_visible_child_name();
+            5. Aggiornamento del titolo di content_page;
+            6. Gestione della visibilità del pulsante Refresh;
+            7. Caricamento automatico al primo accesso se la pagina non è ancora stata popolata;
+            8. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
+            9. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
 
         Args:
             page_id: Identificatore della pagina ('status', 'themes_shell', 'themes_gtk', etc.).
         """
+        # Chiude il feedback persistente al cambio pagina
+        self.clear_feedback()
+
         if page_id == "themes":
             page_id = "themes_gtk"
 
@@ -311,17 +326,19 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             and not self.themes_page.is_loading
         ):
             self.themes_page.refresh()
-
-        # Caricamento automatico al primo accesso della pagina Preset
-        if (
+        elif (
+            page_id == "status"
+            and self.status_page.current_snapshot is None
+            and not self.status_page.is_loading
+        ):
+            self.status_page.refresh()
+        elif (
             page_id == "presets"
             and not self.presets_page.has_loaded
             and not self.presets_page.is_loading
         ):
             self.presets_page.refresh()
-
-        # Caricamento automatico al primo accesso della pagina Sandbox
-        if (
+        elif (
             page_id == "sandbox"
             and self.sandbox_page._current_sandbox_status is None
             and not self.sandbox_page._is_loading
@@ -342,13 +359,65 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         """Restituisce l'identificatore della pagina attualmente visualizzata."""
         return self._current_page_id
 
-    def add_toast(self, message: str, timeout: int = 3) -> None:
-        """Visualizza una notifica non bloccante Adw.Toast sull'overlay.
+    def clear_feedback(self) -> None:
+        """Chiude e nasconde la notifica di feedback superiore corrente."""
+        if self._feedback_timeout_id is not None:
+            GLib.source_remove(self._feedback_timeout_id)
+            self._feedback_timeout_id = None
+        if self.feedback_revealer is not None:
+            self.feedback_revealer.set_reveal_child(False)
+
+    def _on_feedback_close_clicked(self, _btn: Gtk.Button | None = None) -> None:
+        """Chiude manualmente la notifica di feedback superiore tramite il pulsante [✕]."""
+        self.clear_feedback()
+
+    def add_toast(self, message: str, timeout: int = 0) -> None:
+        """Visualizza una notifica di feedback persistente nella parte alta della finestra.
+
+        La notifica compare con animazione slide-down sotto l'header bar, ha una
+        larghezza massima controllata da Adw.Clamp (560px), supporta il testo
+        multilinea con wrapping automatico e rimane visibile fino alla successiva
+        azione dell'utente (o click sul pulsante di chiusura).
 
         Args:
             message: Testo del messaggio da visualizzare.
-            timeout: Secondi di permanenza del toast a schermo (default: 3).
+            timeout: Secondi di permanenza del messaggio (default: 0 = persistente fino alla prossima azione).
         """
-        toast = Adw.Toast.new(message)
-        toast.set_timeout(timeout)
-        self.toast_overlay.add_toast(toast)
+        # Annulla eventuale timer o messaggio precedente
+        if self._feedback_timeout_id is not None:
+            GLib.source_remove(self._feedback_timeout_id)
+            self._feedback_timeout_id = None
+
+        if self.feedback_label is not None:
+            self.feedback_label.set_label(message)
+
+        # Scelta dell'icona in base alla severità del messaggio
+        if self.feedback_icon is not None:
+            msg_lower = message.lower()
+            if "errore" in msg_lower or "fallit" in msg_lower or "impossibile" in msg_lower:
+                self.feedback_icon.set_from_icon_name("dialog-error-symbolic")
+            elif "avvis" in msg_lower or "parziale" in msg_lower or "limitat" in msg_lower:
+                self.feedback_icon.set_from_icon_name("dialog-warning-symbolic")
+            elif "rimoss" in msg_lower or "eliminat" in msg_lower:
+                self.feedback_icon.set_from_icon_name("user-trash-symbolic")
+            else:
+                self.feedback_icon.set_from_icon_name("emblem-ok-symbolic")
+
+        if self.feedback_revealer is not None:
+            self.feedback_revealer.set_reveal_child(True)
+
+        if timeout > 0:
+            def _auto_hide() -> bool:
+                if self.feedback_revealer is not None:
+                    self.feedback_revealer.set_reveal_child(False)
+                self._feedback_timeout_id = None
+                return GLib.SOURCE_REMOVE
+
+            self._feedback_timeout_id = GLib.timeout_add_seconds(timeout, _auto_hide)
+
+        # Fallback sull'overlay Adw.Toast per ambienti che non caricano GtkRevealer
+        if self.feedback_revealer is None and self.toast_overlay is not None:
+            toast = Adw.Toast.new(message)
+            if timeout > 0:
+                toast.set_timeout(timeout)
+            self.toast_overlay.add_toast(toast)

@@ -269,6 +269,62 @@
                     </child>
                   </object>
                 </child>
+                <child type="top">
+                  <object class="GtkRevealer" id="feedback_revealer">
+                    <property name="reveal-child">false</property>
+                    <property name="transition-type">slide-down</property>
+                    <property name="child">
+                      <object class="AdwClamp">
+                        <property name="maximum-size">560</property>
+                        <property name="margin-start">16</property>
+                        <property name="margin-end">16</property>
+                        <property name="margin-top">8</property>
+                        <property name="margin-bottom">8</property>
+                        <property name="child">
+                          <object class="GtkBox" id="feedback_box">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">12</property>
+                            <property name="margin-start">12</property>
+                            <property name="margin-end">12</property>
+                            <property name="margin-top">8</property>
+                            <property name="margin-bottom">8</property>
+                            <style>
+                              <class name="card"/>
+                            </style>
+                            <child>
+                              <object class="GtkImage" id="feedback_icon">
+                                <property name="icon-name">emblem-ok-symbolic</property>
+                                <property name="pixel-size">20</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="feedback_label">
+                                <property name="label">Notifica</property>
+                                <property name="wrap">true</property>
+                                <property name="wrap-mode">word-char</property>
+                                <property name="xalign">0</property>
+                                <property name="hexpand">true</property>
+                                <property name="selectable">true</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="feedback_close_button">
+                                <property name="icon-name">window-close-symbolic</property>
+                                <property name="tooltip-text">Chiudi notifica</property>
+                                <property name="valign">center</property>
+                                <style>
+                                  <class name="flat"/>
+                                  <class name="circular"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </property>
+                  </object>
+                </child>
                 <property name="content">
                   <object class="GtkStack" id="content_stack">
                     <property name="transition-type">crossfade</property>

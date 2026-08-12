@@ -697,8 +697,8 @@ def test_themes_page_sorting_user_first_then_alphabetical() -> None:
     assert rendered_titles == ["alpha-user", "Zeta-User", "alpha-sys", "Zeta-Sys"]
 
 
-def test_themes_page_cursor_application_shows_alert_and_no_toast(mock_theme_manager: MagicMock) -> None:
-    """Verifica che dopo l'applicazione riuscita di un tema cursore compaia solo l'alert informativo (nessun toast)."""
+def test_themes_page_cursor_application_shows_informative_toast(mock_theme_manager: MagicMock) -> None:
+    """Verifica che l'applicazione del tema cursore emetta un feedback persistente con nota informativa."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
@@ -716,21 +716,19 @@ def test_themes_page_cursor_application_shows_alert_and_no_toast(mock_theme_mana
         is_user_level=False,
     )
 
-    with (
-        patch.object(page, "_show_toast") as mock_toast,
-        patch.object(page, "_show_cursor_info_alert") as mock_alert,
-    ):
+    with patch.object(page, "_show_toast") as mock_toast:
         page.apply_theme(item_cursor, sync=True)
-        # Deve comparire l'alert informativo esclusivo
-        mock_alert.assert_called_once_with("Bibata-Modern-Classic")
-        # NON deve comparire alcun Toast
-        mock_toast.assert_not_called()
+        # Deve comparire il toast informativo dedicato
+        mock_toast.assert_called_once()
+        msg = mock_toast.call_args[0][0]
+        assert "Bibata-Modern-Classic" in msg
+        assert "cambiare finestra" in msg.lower() or "riaprire" in msg.lower()
         # Controlli riabilitati
         assert page.is_applying is False
 
 
-def test_themes_page_cursor_application_error_shows_error_toast_only(mock_theme_manager: MagicMock) -> None:
-    """Verifica che in caso di errore nell'applicazione del tema cursore venga mostrato solo l'errore (nessun alert)."""
+def test_themes_page_cursor_application_error_shows_error_toast(mock_theme_manager: MagicMock) -> None:
+    """Verifica che in caso di errore nell'applicazione del tema cursore venga mostrato il messaggio di errore."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
@@ -750,14 +748,10 @@ def test_themes_page_cursor_application_error_shows_error_toast_only(mock_theme_
         is_user_level=False,
     )
 
-    with (
-        patch.object(page, "_show_toast") as mock_toast,
-        patch.object(page, "_show_cursor_info_alert") as mock_alert,
-    ):
+    with patch.object(page, "_show_toast") as mock_toast:
         page.apply_theme(item_cursor, sync=True)
         mock_toast.assert_called_once()
-        assert "Errore" in mock_toast.call_args[0][0]
-        mock_alert.assert_not_called()
+        assert "Impossibile" in mock_toast.call_args[0][0] or "Errore" in mock_toast.call_args[0][0]
         assert page.is_applying is False
 
 
@@ -2601,6 +2595,197 @@ def test_sandbox_page_window_wiring(mock_theme_manager: MagicMock) -> None:
     with patch.object(win.status_page, "refresh") as mock_status_refresh:
         win.sandbox_page.on_sandbox_propagated()
         mock_status_refresh.assert_called_once()
+
+
+# =============================================================================
+# Test Suite: Top Responsive Feedback (Revisione UI Feedback)
+# =============================================================================
+
+
+def test_window_top_feedback_structure_and_wrapping(mock_theme_manager: MagicMock) -> None:
+    """Verifica che la finestra configuri il feedback superiore con clamp responsive e wrapping."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
+    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
+
+    app = GnomeThemeApplication(manager=mock_theme_manager)
+    try:
+        win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
+    except Exception as err:  # noqa: BLE001
+        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+
+    assert win.feedback_revealer is not None
+    assert win.feedback_label is not None
+    assert win.feedback_label.get_wrap() is True
+    assert win.feedback_close_button is not None
+
+
+def test_window_top_feedback_show_and_close(mock_theme_manager: MagicMock) -> None:
+    """Verifica visualizzazione del feedback in alto, selezione icona e chiusura manuale."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
+    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
+
+    app = GnomeThemeApplication(manager=mock_theme_manager)
+    try:
+        win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
+    except Exception as err:  # noqa: BLE001
+        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+
+    # Successo
+    win.add_toast("Tema applicato con successo.", timeout=0)
+    assert win.feedback_label.get_label() == "Tema applicato con successo."
+    assert win.feedback_revealer.get_reveal_child() is True
+    assert win.feedback_icon.get_icon_name() == "emblem-ok-symbolic"
+
+    # Chiusura manuale
+    win._on_feedback_close_clicked()
+    assert win.feedback_revealer.get_reveal_child() is False
+
+    # Errore
+    win.add_toast("Errore: Impossibile installare il tema.", timeout=0)
+    assert win.feedback_label.get_label() == "Errore: Impossibile installare il tema."
+    assert win.feedback_icon.get_icon_name() == "dialog-error-symbolic"
+    assert win.feedback_revealer.get_reveal_child() is True
+
+    # Avviso / parziale
+    win.add_toast("Avviso: Applicazione parziale dei componenti.", timeout=0)
+    assert win.feedback_icon.get_icon_name() == "dialog-warning-symbolic"
+
+
+def test_window_top_feedback_long_multiline_message(mock_theme_manager: MagicMock) -> None:
+    """Verifica che messaggi molto lunghi vengano impostati integralmente con wrapping abilitato."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
+    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
+
+    app = GnomeThemeApplication(manager=mock_theme_manager)
+    try:
+        win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
+    except Exception as err:  # noqa: BLE001
+        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+
+    long_msg = (
+        "Tema 'Nordic-Extra-Large-Custom-Theme-Name' applicato con successo.\n"
+        "Alcuni componenti sandbox potrebbero richiedere il riavvio delle applicazioni Flatpak/Snap "
+        "per riflettere i nuovi cursori e le icone modificate."
+    )
+
+    win.add_toast(long_msg, timeout=0)
+    assert win.feedback_label.get_label() == long_msg
+    assert win.feedback_label.get_wrap() is True
+    assert win.feedback_revealer.get_reveal_child() is True
+
+
+def test_window_top_feedback_cleared_on_page_change(mock_theme_manager: MagicMock) -> None:
+    """Verifica che il cambio pagina chiuda il banner di feedback persistente."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
+    from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
+
+    app = GnomeThemeApplication(manager=mock_theme_manager)
+    try:
+        win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
+    except Exception as err:  # noqa: BLE001
+        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+
+    win.add_toast("Messaggio di stato", timeout=0)
+    assert win.feedback_revealer.get_reveal_child() is True
+
+    # Cambio pagina
+    win.select_page("presets")
+    assert win.feedback_revealer.get_reveal_child() is False
+
+
+def test_themes_page_category_specific_feedback_messages(mock_theme_manager: MagicMock) -> None:
+    """Verifica che ogni categoria emetta un messaggio di successo chiaro e specifico."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    page = ThemesPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    toasts: list[str] = []
+    page._show_toast = lambda msg, **kwargs: toasts.append(msg)
+
+    # 1. GTK con override
+    mock_theme_manager.apply_themes.return_value = ApplyResult(gtk4_override_applied=True)
+    item_gtk = ThemeItemPresentation(
+        name="Nordic",
+        theme_type=ThemeType.GTK,
+        category_display="Applicazioni (GTK)",
+        icon_name="preferences-desktop-theme-symbolic",
+        path_display="/usr/share/themes/Nordic",
+        origin_display="Sistema",
+        is_user_level=False,
+    )
+    page.apply_theme(item_gtk, sync=True)
+    assert len(toasts) == 1
+    assert "Tema GTK «Nordic» applicato" in toasts[-1]
+    assert "override GTK4" in toasts[-1]
+
+    # 2. GNOME Shell
+    mock_theme_manager.apply_themes.return_value = ApplyResult(shell_theme="Colloid")
+    item_shell = ThemeItemPresentation(
+        name="Colloid",
+        theme_type=ThemeType.SHELL,
+        category_display="GNOME Shell",
+        icon_name="preferences-system-windows-symbolic",
+        path_display="/usr/share/themes/Colloid",
+        origin_display="Sistema",
+        is_user_level=False,
+    )
+    page.apply_theme(item_shell, sync=True)
+    assert len(toasts) == 2
+    assert "Tema GNOME Shell «Colloid» applicato" in toasts[-1]
+
+    # 3. Icone
+    mock_theme_manager.apply_themes.return_value = ApplyResult()
+    item_icon = ThemeItemPresentation(
+        name="Papirus",
+        theme_type=ThemeType.ICON,
+        category_display="Icone",
+        icon_name="applications-graphics-symbolic",
+        path_display="/usr/share/icons/Papirus",
+        origin_display="Sistema",
+        is_user_level=False,
+    )
+    page.apply_theme(item_icon, sync=True)
+    assert len(toasts) == 3
+    assert "Tema icone «Papirus» applicato" in toasts[-1]
+
+    # 4. Cursore
+    mock_theme_manager.apply_themes.return_value = ApplyResult()
+    item_cursor = ThemeItemPresentation(
+        name="Bibata",
+        theme_type=ThemeType.CURSOR,
+        category_display="Cursori",
+        icon_name="input-mouse-symbolic",
+        path_display="/usr/share/icons/Bibata",
+        origin_display="Sistema",
+        is_user_level=False,
+    )
+    page.apply_theme(item_cursor, sync=True)
+    assert len(toasts) == 4
+    assert "Tema cursore «Bibata» applicato" in toasts[-1]
+    assert "cambiare finestra" in toasts[-1] or "riaprire" in toasts[-1]
+
+    # 5. GNOME Shell parziale (no user themes)
+    mock_theme_manager.apply_themes.return_value = ApplyResult(shell_theme=None)
+    page.apply_theme(item_shell, sync=True)
+    assert len(toasts) == 5
+    assert "parzialmente" in toasts[-1].lower()
+    assert "User Themes" in toasts[-1]
+
+
 
 
 

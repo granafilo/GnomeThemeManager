@@ -437,18 +437,21 @@ class SandboxPage:
             return root
         return None
 
-    def _show_toast(self, message: str, timeout: int = 4) -> None:
-        """Mostra una notifica toast tramite l'Adw.ToastOverlay della finestra principale.
+    def _clear_toast(self) -> None:
+        """Richiede la chiusura del feedback persistente alla finestra principale."""
+        root = self.widget.get_root()
+        if root is not None and hasattr(root, "clear_feedback"):
+            root.clear_feedback()
+
+    def _show_toast(self, message: str, timeout: int = 0) -> None:
+        """Mostra una notifica di feedback persistente tramite la finestra principale.
 
         Args:
             message: Testo della notifica da mostrare.
-            timeout: Durata di visualizzazione in secondi.
+            timeout: Durata di visualizzazione in secondi (0 = persistente).
         """
         root = self.widget.get_root()
-        overlay = getattr(root, "toast_overlay", None)
-        if overlay and hasattr(overlay, "add_toast"):
-            toast = Adw.Toast.new(message)
-            toast.set_timeout(timeout)
-            overlay.add_toast(toast)
+        if root is not None and hasattr(root, "add_toast"):
+            root.add_toast(message, timeout=timeout)
         else:
-            logger.info("Toast [SandboxPage]: %s", message)
+            logger.info("Feedback [SandboxPage]: %s", message)

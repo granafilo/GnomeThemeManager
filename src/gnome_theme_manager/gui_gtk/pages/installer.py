@@ -669,15 +669,21 @@ class InstallerPage:
             return root
         return None
 
-    def _show_toast(self, message: str, timeout: int = 3) -> None:
-        """Mostra un Adw.Toast sull'overlay della finestra principale.
+    def _clear_toast(self) -> None:
+        """Richiede la chiusura del feedback persistente alla finestra principale."""
+        root_window = self._get_root_window()
+        if root_window is not None and hasattr(root_window, "clear_feedback"):
+            root_window.clear_feedback()
+
+    def _show_toast(self, message: str, timeout: int = 0) -> None:
+        """Mostra una notifica di feedback persistente tramite la finestra principale.
 
         Args:
             message: Messaggio di testo da visualizzare.
-            timeout: Secondi di permanenza del toast.
+            timeout: Secondi di permanenza del messaggio (0 = persistente).
         """
         root_window = self._get_root_window()
         if root_window is not None and hasattr(root_window, "add_toast"):
             root_window.add_toast(message, timeout=timeout)
         else:
-            logger.info("Notifica toast (senza root overlay): %s", message)
+            logger.info("Feedback [InstallerPage]: %s", message)

@@ -838,38 +838,21 @@ class PresetsPage:
         self.empty_save_button.set_sensitive(sensitive)
         self.error_retry_button.set_sensitive(sensitive)
 
-    def _show_toast(self, message: str, timeout: int = 3) -> None:
-        """Mostra un Adw.Toast sull'overlay della finestra principale.
+    def _clear_toast(self) -> None:
+        """Richiede la chiusura del feedback persistente alla finestra principale."""
+        root = self.widget.get_root()
+        if root is not None and hasattr(root, "clear_feedback"):
+            root.clear_feedback()
 
-        Recupera l'Adw.ToastOverlay risalendo la gerarchia dei widget.
-        Se non trovato, registra il messaggio nel log.
+    def _show_toast(self, message: str, timeout: int = 0) -> None:
+        """Mostra una notifica di feedback persistente tramite la finestra principale.
 
         Args:
             message: Testo del messaggio da mostrare.
-            timeout: Durata del toast in secondi.
+            timeout: Durata della notifica in secondi (0 = persistente).
         """
-        # Cerca il ToastOverlay nella gerarchia dei widget padri
-        widget: Gtk.Widget | None = self.widget.get_root()
-        overlay: Adw.ToastOverlay | None = None
-        if widget is not None:
-            # Percorriamo i padri per trovare il ToastOverlay
-            current: Gtk.Widget | None = widget
-            while current is not None:
-                if isinstance(current, Adw.ToastOverlay):
-                    overlay = current
-                    break
-                # Adw.ApplicationWindow → .get_content() per trovare ToastOverlay interno
-                if hasattr(current, "get_content"):
-                    content = current.get_content()
-                    if isinstance(content, Adw.ToastOverlay):
-                        overlay = content
-                        break
-                current = current.get_parent() if hasattr(current, "get_parent") else None
-
-        if overlay is not None:
-            toast = Adw.Toast.new(message)
-            toast.set_timeout(timeout)
-            overlay.add_toast(toast)
+        root = self.widget.get_root()
+        if root is not None and hasattr(root, "add_toast"):
+            root.add_toast(message, timeout=timeout)
         else:
-            # Fallback: log del messaggio se l'overlay non è raggiungibile
-            logger.info("[Toast] %s", message)
+            logger.info("[Feedback PresetsPage]: %s", message)
