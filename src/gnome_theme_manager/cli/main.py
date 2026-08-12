@@ -1,10 +1,12 @@
 """Entry point logico per l'interfaccia a riga di comando (CLI).
 
-Questo modulo gestisce il routing dei comandi dell'utente (`current`, `list`, `apply`),
-interfacciandosi con il core (`ThemeScanner`, `GSettingsClient` e `GTK4ThemeLinker`) e gestendo
-la formattazione dell'output e le eccezioni in modo elegante e pulito.
+Questo modulo gestisce il routing dei comandi dell'utente (`current`, `list`, `apply`,
+`install`, `uninstall`, `preset`), delegando interamente la logica di business alla
+classe Facade `ThemeManager` e occupandosi esclusivamente dell'I/O con l'utente
+(formattazione tabellare ASCII, messaggi di stato, gestione delle eccezioni).
 """
 
+import argparse
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -16,11 +18,8 @@ from ..core.errors import (
     ThemeNotFoundError,
     ThemeValidationError,
 )
-from ..core.gsettings import GSettingsClient
-from ..core.gtk4_linker import GTK4ThemeLinker
-from ..core.installer import ThemeInstaller
-from ..core.models import Theme, ThemeSet, ThemeType
-from ..core.scanner import ThemeScanner
+from ..core.manager import ThemeManager
+from ..core.models import ApplyResult, Theme, ThemeSet, ThemeType
 from .args import create_parser
 
 
@@ -52,23 +51,22 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
     return "\n".join([separator, header_line, separator] + data_lines + [separator])
 
 
-
 # -----------------------------------------------------------------------------
-# Handlers per i singoli comandi CLI
+# Handlers per i singoli comandi CLI (consumano ThemeManager)
 # -----------------------------------------------------------------------------
 
 
-def handle_current_command() -> int:
+def handle_current_command(manager: ThemeManager) -> int:
     """Gestisce il comando `current` mostrando i temi attivi sul desktop."""
-    client = GSettingsClient()
-    current = client.get_current()
+    current = manager.get_current_themes()
+    status = manager.get_system_status()
 
     print("\nTemi attualmente attivi su GNOME:")
     print(f"  Tema GTK (Applicazioni):  {current.gtk_theme or 'Non impostato'}")
     print(f"  Tema Icone:               {current.icon_theme or 'Non impostato'}")
     print(f"  Tema Cursori:             {current.cursor_theme or 'Non impostato'}")
 
-    if client.is_shell_theme_supported:
+    if status.shell_theme_supported:
         shell_val = current.shell_theme if current.shell_theme else "Default di sistema"
         print(f"  Tema GNOME Shell:         {shell_val}")
     else:
@@ -80,32 +78,20 @@ def handle_current_command() -> int:
     return 0
 
 
-def handle_list_command(theme_type: str, user_only: bool) -> int:
+def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool) -> int:
     """Gestisce il comando `list` scansionando e mostrando i temi disponibili.
 
     Args:
+        manager: Istanza coordinatrice ThemeManager.
         theme_type: Tipologia di tema da elencare ('all', 'gtk', 'icon', 'cursor', 'shell').
         user_only: Se True, mostra esclusivamente i temi a livello utente.
     """
-    scanner = ThemeScanner()
-    themes: list[Theme] = []
-
-    if theme_type == "gtk":
-        themes = scanner.scan_gtk_themes(user_only=user_only)
-    elif theme_type == "icon":
-        themes = scanner.scan_icon_themes(user_only=user_only)
-    elif theme_type == "cursor":
-        themes = scanner.scan_cursor_themes(user_only=user_only)
-    elif theme_type == "shell":
-        themes = scanner.scan_shell_themes(user_only=user_only)
-    else:
-        themes = scanner.scan_all(user_only=user_only)
+    t_type = ThemeType(theme_type) if theme_type != "all" else None
+    themes: list[Theme] = manager.list_themes(theme_type=t_type, user_only=user_only)
 
     if not themes:
         print(f"\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n")
         return 0
-
-    themes.sort(key=lambda t: (t.theme_type.value, t.name.lower()))
 
     headers = ["NOME", "TIPO", "ORIGINE", "PERCORSO"]
     rows = [
@@ -124,7 +110,31 @@ def handle_list_command(theme_type: str, user_only: bool) -> int:
     return 0
 
 
+def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> None:
+    """Stampa un riepilogo leggibile dell'esito di applicazione temi all'utente."""
+    print("\n✓ Modifiche applicate con successo:")
+    if result.gtk_theme:
+        print(f"  - Tema GTK impostato su:         {result.gtk_theme}")
+        if result.gtk4_override_applied:
+            print("    └─ Override GTK4/Libadwaita applicato in ~/.config/gtk-4.0")
+        elif not no_gtk4_override:
+            print("    └─ Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)")
+    if result.icon_theme:
+        print(f"  - Tema Icone impostato su:       {result.icon_theme}")
+    if result.cursor_theme:
+        print(f"  - Tema Cursori impostato su:     {result.cursor_theme}")
+    if result.shell_theme:
+        print(f"  - Tema GNOME Shell impostato su: {result.shell_theme}")
+    if result.color_scheme:
+        print(f"  - Schema Colori impostato su:    {result.color_scheme}")
+
+    for warning in result.warnings:
+        print(f"\n[AVVISO] {warning}")
+    print()
+
+
 def handle_apply_command(
+    manager: ThemeManager,
     gtk: str | None,
     icon: str | None,
     cursor: str | None,
@@ -136,16 +146,14 @@ def handle_apply_command(
     """Gestisce il comando `apply` validando l'esistenza dei temi e applicandoli.
 
     Args:
+        manager: Istanza coordinatrice ThemeManager.
         gtk: Nome del tema GTK da applicare (opzionale).
         icon: Nome del tema di icone da applicare (opzionale).
         cursor: Nome del tema dei cursori da applicare (opzionale).
         shell: Nome del tema GNOME Shell da applicare (opzionale).
         color_scheme: Valore dello schema colori ('default' o 'prefer-dark', opzionale).
         no_gtk4_override: Se True, non applica l'override dei symlink in ~/.config/gtk-4.0.
-        theme: Nome del tema unificato da applicare a GTK, Shell e Libadwaita (opzionale).
-
-    Raises:
-        ThemeNotFoundError: Se uno dei temi specificati non esiste sul filesystem.
+        theme: Nome del tema unificato da applicare a GTK e Shell (opzionale).
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
@@ -155,11 +163,9 @@ def handle_apply_command(
         )
         return 1
 
-    scanner = ThemeScanner()
-
     if theme is not None:
-        has_gtk = bool(scanner.find_theme(theme, ThemeType.GTK))
-        has_shell = bool(scanner.find_theme(theme, ThemeType.SHELL))
+        has_gtk = bool(manager.find_theme(theme, ThemeType.GTK))
+        has_shell = bool(manager.find_theme(theme, ThemeType.SHELL))
 
         if not has_gtk and not has_shell:
             raise ThemeNotFoundError(
@@ -171,67 +177,21 @@ def handle_apply_command(
         if has_shell:
             shell = theme
 
-    # 1. Validazione preventiva dell'esistenza dei temi richiesti
-    found_gtk_theme: Theme | None = None
-
-    if gtk is not None:
-        found_gtk_theme = scanner.find_theme(gtk, ThemeType.GTK)
-        if not found_gtk_theme:
-            raise ThemeNotFoundError(f"Il tema GTK '{gtk}' non è stato trovato nel sistema.")
-
-    if icon is not None:
-        found_icon = scanner.find_theme(icon, ThemeType.ICON)
-        if not found_icon:
-            raise ThemeNotFoundError(f"Il tema icone '{icon}' non è stato trovato nel sistema.")
-
-    if cursor is not None:
-        found_cursor = scanner.find_theme(cursor, ThemeType.CURSOR)
-        if not found_cursor:
-            raise ThemeNotFoundError(f"Il tema cursori '{cursor}' non è stato trovato nel sistema.")
-
-    if shell is not None:
-        found_shell = scanner.find_theme(shell, ThemeType.SHELL)
-        if not found_shell:
-            raise ThemeNotFoundError(f"Il tema GNOME Shell '{shell}' non è stato trovato nel sistema.")
-
-    # 2. Applicazione tramite GSettingsClient
-    client = GSettingsClient()
-    new_theme_set = ThemeSet(
+    target_set = ThemeSet(
         gtk_theme=gtk,
         icon_theme=icon,
         cursor_theme=cursor,
         color_scheme=color_scheme,
         shell_theme=shell,
     )
-    client.apply(new_theme_set)
 
-    # 3. Override GTK4 / Libadwaita (se impostato un tema GTK e non disabilitato da flag)
-    gtk4_applied = False
-    if found_gtk_theme is not None and not no_gtk4_override:
-        linker = GTK4ThemeLinker()
-        gtk4_applied = linker.apply_override(found_gtk_theme.path)
-
-    # 4. Notifica all'utente
-    print("\n✓ Modifiche applicate con successo:")
-    if gtk:
-        print(f"  - Tema GTK impostato su:         {gtk}")
-        if gtk4_applied:
-            print("    └─ Override GTK4/Libadwaita applicato in ~/.config/gtk-4.0")
-        elif not no_gtk4_override:
-            print("    └─ Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)")
-    if icon:
-        print(f"  - Tema Icone impostato su:       {icon}")
-    if cursor:
-        print(f"  - Tema Cursori impostato su:     {cursor}")
-    if shell:
-        print(f"  - Tema GNOME Shell impostato su: {shell}")
-    if color_scheme:
-        print(f"  - Schema Colori impostato su:    {color_scheme}")
-    print()
+    result = manager.apply_themes(target_set, apply_gtk4_override=not no_gtk4_override)
+    _print_apply_result(result, no_gtk4_override=no_gtk4_override)
     return 0
 
 
 def handle_install_command(
+    manager: ThemeManager,
     archive_file: str,
     theme_type_str: str | None = None,
     custom_name: str | None = None,
@@ -240,6 +200,7 @@ def handle_install_command(
     """Gestisce il comando `install` estraendo e installando temi da un archivio.
 
     Args:
+        manager: Istanza coordinatrice ThemeManager.
         archive_file: Percorso del file archivio da installare.
         theme_type_str: Tipologia di tema opzionale ('gtk', 'icon', 'cursor', 'shell').
         custom_name: Nome personalizzato della cartella di destinazione.
@@ -248,8 +209,7 @@ def handle_install_command(
     archive_path = Path(archive_file)
     theme_type = ThemeType(theme_type_str) if theme_type_str else None
 
-    installer = ThemeInstaller()
-    installed_themes = installer.install(
+    installed_themes = manager.install_theme_archive(
         archive_path=archive_path,
         theme_type=theme_type,
         custom_name=custom_name,
@@ -269,6 +229,7 @@ def handle_install_command(
 
 
 def handle_uninstall_command(
+    manager: ThemeManager,
     name: str,
     theme_type_str: str,
     assume_yes: bool = False,
@@ -276,6 +237,7 @@ def handle_uninstall_command(
     """Gestisce il comando `uninstall` per rimuovere temi utente.
 
     Args:
+        manager: Istanza coordinatrice ThemeManager.
         name: Nome del tema da disinstallare.
         theme_type_str: Tipologia del tema ('gtk', 'icon', 'cursor', 'shell').
         assume_yes: Se True, disinstalla senza richiedere conferma interattiva.
@@ -290,11 +252,59 @@ def handle_uninstall_command(
             print("\nOperazione annullata dall'utente.\n")
             return 0
 
-    installer = ThemeInstaller()
-    installer.uninstall(theme_name=name, theme_type=theme_type)
-
+    manager.uninstall_theme(name=name, theme_type=theme_type)
     print(f"\n✓ Tema '{name}' ({theme_type.value}) disinstallato con successo.\n")
     return 0
+
+
+def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> int:
+    """Gestisce le azioni del comando `preset` (list, save, apply, delete).
+
+    Args:
+        manager: Istanza coordinatrice ThemeManager.
+        args: Argomenti parsati della CLI.
+    """
+    action = getattr(args, "preset_action", None)
+
+    if action == "list":
+        presets = manager.list_presets()
+        if not presets:
+            print("\nNessun preset salvato.\n")
+            return 0
+
+        rows = [[p] for p in presets]
+        print("\nPreset salvati disponibili:")
+        print(format_table(["NOME PRESET"], rows))
+        print(f"\nTotale preset: {len(presets)}\n")
+        return 0
+
+    elif action == "save":
+        saved_path = manager.save_current_as_preset(args.name, overwrite=args.overwrite)
+        print(f"\n✓ Preset '{args.name}' salvato con successo in:\n  {saved_path}\n")
+        return 0
+
+    elif action == "apply":
+        result = manager.apply_preset(args.name, apply_gtk4_override=not args.no_gtk4_override)
+        print(f"\n✓ Preset '{args.name}' applicato con successo:")
+        _print_apply_result(result, no_gtk4_override=args.no_gtk4_override)
+        return 0
+
+    elif action == "delete":
+        if not args.yes:
+            confirm = input(
+                f"Sei sicuro di voler eliminare il preset '{args.name}'? [s/N]: "
+            ).strip().lower()
+            if confirm not in ("s", "si", "y", "yes"):
+                print("\nOperazione annullata dall'utente.\n")
+                return 0
+
+        manager.delete_preset(args.name)
+        print(f"\n✓ Preset '{args.name}' eliminato con successo.\n")
+        return 0
+
+    else:
+        print("Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete').", file=sys.stderr)
+        return 1
 
 
 # -----------------------------------------------------------------------------
@@ -318,13 +328,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.print_help()
         return 0
 
+    manager = ThemeManager()
+
     try:
         if args.command == "current":
-            return handle_current_command()
+            return handle_current_command(manager)
         elif args.command == "list":
-            return handle_list_command(theme_type=args.type, user_only=args.user_only)
+            return handle_list_command(manager, theme_type=args.type, user_only=args.user_only)
         elif args.command == "apply":
             return handle_apply_command(
+                manager=manager,
                 gtk=args.gtk,
                 icon=args.icon,
                 cursor=args.cursor,
@@ -333,9 +346,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 no_gtk4_override=args.no_gtk4_override,
                 theme=args.theme,
             )
-
         elif args.command == "install":
             return handle_install_command(
+                manager=manager,
                 archive_file=args.file,
                 theme_type_str=args.type,
                 custom_name=args.name,
@@ -343,10 +356,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "uninstall":
             return handle_uninstall_command(
+                manager=manager,
                 name=args.name,
                 theme_type_str=args.type,
                 assume_yes=args.yes,
             )
+        elif args.command == "preset":
+            return handle_preset_command(manager=manager, args=args)
         else:
             parser.print_help()
             return 0
@@ -366,14 +382,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     except FileExistsError as err:
         print(f"\n[ERRORE FILE GIA ESISTENTE] {err}\n", file=sys.stderr)
         return 1
+    except FileNotFoundError as err:
+        print(f"\n[ERRORE FILE NON TROVATO] {err}\n", file=sys.stderr)
+        return 1
+    except ValueError as err:
+        print(f"\n[ERRORE VALORE NON VALIDO] {err}\n", file=sys.stderr)
+        return 1
     except GnomeThemeManagerError as err:
         print(f"\n[ERRORE GNOME THEME MANAGER] {err}\n", file=sys.stderr)
         return 1
     except Exception as err:  # noqa: BLE001
         print(f"\n[ERRORE IMPREVISTO] {err}\n", file=sys.stderr)
         return 1
-
-
 
 
 if __name__ == "__main__":

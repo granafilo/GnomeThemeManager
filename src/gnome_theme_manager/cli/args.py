@@ -138,5 +138,70 @@ def create_parser() -> argparse.ArgumentParser:
         help="Conferma la disinstallazione senza prompt interattivo",
     )
 
+    # Subcomando: preset
+    preset_parser = subparsers.add_parser(
+        "preset",
+        help="Gestione di preset e profili di configurazione temi",
+    )
+    preset_subparsers = preset_parser.add_subparsers(
+        title="azioni preset",
+        dest="preset_action",
+        help="Azione da eseguire sul preset",
+    )
+
+    # preset list
+    preset_subparsers.add_parser(
+        "list",
+        help="Elenca tutti i preset memorizzati",
+    )
+
+    # preset save <nome> [--overwrite]
+    save_parser = preset_subparsers.add_parser(
+        "save",
+        help="Salva la combinazione di temi corrente come nuovo preset",
+    )
+    save_parser.add_argument(
+        "name",
+        metavar="NOME",
+        help="Nome identificativo del preset da salvare",
+    )
+    save_parser.add_argument(
+        "-y", "--overwrite",
+        action="store_true",
+        help="Sovrascrive il preset se già esistente",
+    )
+
+    # preset apply <nome> [--no-gtk4-override]
+    apply_preset_parser = preset_subparsers.add_parser(
+        "apply",
+        help="Applica un preset salvato",
+    )
+    apply_preset_parser.add_argument(
+        "name",
+        metavar="NOME",
+        help="Nome del preset da applicare",
+    )
+    apply_preset_parser.add_argument(
+        "--no-gtk4-override",
+        action="store_true",
+        help="Non applicare l'override GTK4 in ~/.config/gtk-4.0",
+    )
+
+    # preset delete <nome> [-y]
+    delete_preset_parser = preset_subparsers.add_parser(
+        "delete",
+        help="Elimina un preset memorizzato",
+    )
+    delete_preset_parser.add_argument(
+        "name",
+        metavar="NOME",
+        help="Nome del preset da eliminare",
+    )
+    delete_preset_parser.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Conferma l'eliminazione senza prompt interattivo",
+    )
+
     return parser
 
