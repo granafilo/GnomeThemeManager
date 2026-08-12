@@ -324,6 +324,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
 
+    # Se è stato specificato il flag --gui o il subcomando 'gui', avvia la GUI Tkinter
+    if getattr(args, "gui", False) or args.command == "gui":
+        try:
+            from ..gui_tk import launch_gui
+        except (ImportError, ModuleNotFoundError) as err:
+            print(
+                f"\n[ERRORE GUI] Impossibile avviare l'interfaccia grafica: {err}\n"
+                "Su distribuzioni Ubuntu / Debian, il supporto Tkinter per Python va installato con:\n"
+                "    sudo apt update && sudo apt install -y python3-tk\n",
+                file=sys.stderr,
+            )
+            return 1
+
+        manager = ThemeManager()
+        return launch_gui(manager=manager)
+
     if not args.command:
         parser.print_help()
         return 0

@@ -37,14 +37,14 @@ fi
 PYTHON_VERSION=$(python3 --version 2>&1)
 echo -e "${GREEN}✓ Trovato:${NC} $PYTHON_VERSION"
 
-# 2. Controllo dipendenze di sistema Ubuntu per PyGObject (GSettings / Gio)
-echo -e "\n${BLUE}[1/4] Verifica dipendenze di sistema GNOME/PyGObject...${NC}"
-if ! dpkg -s python3-gi &> /dev/null; then
-    echo -e "${YELLOW}[AVVISO] Il pacchetto 'python3-gi' non sembra installato a livello di sistema.${NC}"
-    echo "Per garantire la piena compatibilità con GSettings su Ubuntu, esegui:"
-    echo -e "${YELLOW}  sudo apt install -y python3-gi libglib2.0-0 gnome-shell-extension-user-theme${NC}"
+# 2. Controllo dipendenze di sistema Ubuntu per PyGObject (GSettings / Gio) e Tkinter (GUI)
+echo -e "\n${BLUE}[1/4] Verifica dipendenze di sistema GNOME/PyGObject e Tkinter...${NC}"
+if ! dpkg -s python3-gi &> /dev/null || ! dpkg -s python3-tk &> /dev/null; then
+    echo -e "${YELLOW}[AVVISO] Alcuni pacchetti di sistema consigliati non sembrano installati.${NC}"
+    echo "Per garantire la piena compatibilità con GSettings e la GUI Tkinter su Ubuntu, esegui:"
+    echo -e "${YELLOW}  sudo apt update && sudo apt install -y python3-gi python3-tk libglib2.0-0 gnome-shell-extension-user-theme${NC}"
 else
-    echo -e "${GREEN}✓ Pacchetto di sistema python3-gi presente.${NC}"
+    echo -e "${GREEN}✓ Pacchetti di sistema python3-gi e python3-tk presenti.${NC}"
 fi
 
 # 3. Creazione del Virtual Environment (.venv)

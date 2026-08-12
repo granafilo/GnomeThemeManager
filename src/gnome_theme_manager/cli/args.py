@@ -16,11 +16,22 @@ def create_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"%(prog)s {__version__}",
     )
+    parser.add_argument(
+        "-g", "--gui",
+        action="store_true",
+        help="Avvia l'interfaccia grafica utente desktop (Tkinter)",
+    )
 
     subparsers = parser.add_subparsers(
         title="comandi",
         dest="command",
         help="Comando da eseguire",
+    )
+
+    # Subcomando: gui
+    subparsers.add_parser(
+        "gui",
+        help="Avvia l'interfaccia grafica utente desktop (Tkinter)",
     )
 
     # Subcomando: current

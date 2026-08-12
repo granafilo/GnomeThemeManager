@@ -2,56 +2,53 @@
 
 ## Obiettivi della Fase
 
-Sviluppare un primo prototipo grafico leggero utilizzando `tkinter` e `tkinter.ttk` (libreria standard Python):
-1. Verificare l'ergonomia dell'interfaccia utente e il flusso operativo (selezione tema -> anteprima/info -> applica).
-2. Collaudare l'integrazione del layer `core` con un ciclo degli eventi (Event Loop GUI).
-3. Gestire lo stato asincrono (es. estrazione archivi) senza bloccare l'interfaccia grafica.
+Sviluppare un prototipo grafico completo e leggero utilizzando `tkinter` e `tkinter.ttk` (libreria standard Python):
+1. Verificare l'ergonomia dell'interfaccia utente e il flusso operativo (selezione tema -> info -> applica / installa / gestisci preset).
+2. Collaudare l'integrazione del layer `core` (`ThemeManager` Facade) con un ciclo degli eventi (Event Loop GUI).
+3. Fornire un'esperienza desktop ricca e intuitiva strutturata a schede (`ttk.Notebook`).
 
 ---
 
 ## Layout e Struttura della Finestra
 
 ```text
-+-------------------------------------------------------------+
-| Gnome Theme Manager (Tkinter Prototype)                     |
-+-------------------------------------------------------------+
-| [ Schede: Temi GTK | Icone | Cursori | Gestione/Installa ]  |
-|                                                             |
-| +-------------------------+  +----------------------------+ |
-| | Temi Disponibili:       |  | Dettagli Tema:             | |
-| | > Adwaita               |  | Nome: Nordic               | |
-| |   Adwaita-dark          |  | Percorso: ~/.local/share...| |
-| |   Nordic                |  | Tipo: GTK 3.0 / GTK 4.0    | |
-| |   Yaru                  |  | Livello: Utente            | |
-| |                         |  +----------------------------+ |
-| |                         |  | Stato: [ Inattivo ]        | |
-| +-------------------------+  | [ Applica Tema ]           | |
-|                              +----------------------------+ |
-|                                                             |
-| [ Barra di stato: Tema GTK attivo: Adwaita-dark           ] |
-+-------------------------------------------------------------+
++--------------------------------------------------------------------------+
+| 🎨 Gnome Theme Manager v0.1.0                          [🔄 Aggiorna Tutto]|
+| Gestione avanzata e modulare dei temi per Ubuntu / GNOME                 |
++--------------------------------------------------------------------------+
+| [ 📊 Stato Attuale | 📂 Temi Disponibili | ⭐ Gestione Preset | 📦 Installa ] |
+|                                                                          |
+| (Contenuto della scheda selezionata)                                      |
+|                                                                          |
++--------------------------------------------------------------------------+
+| Pronto.                                                                  |
++--------------------------------------------------------------------------+
 ```
 
 ---
 
-## Architettura e Moduli Coinvolti
+## Architettura e Moduli Implementati
 
 ```text
 src/gnome_theme_manager/
 └── gui_tk/
-    ├── __init__.py
-    ├── app.py              # Classe principale Tkinter Application
-    ├── tabs/
-    │   ├── theme_list_tab.py
-    │   └── installer_tab.py
-    └── dialogs.py          # Messaggi di conferma ed errori
+    ├── __init__.py         # Esportazione di ThemeManagerWindow e launch_gui
+    ├── app.py              # Finestra principale, configurazione TTK e coordinamento
+    └── views.py            # Viste dedicate:
+                            #  - CurrentStatusView
+                            #  - AvailableThemesView
+                            #  - PresetManagerView
+                            #  - ThemeInstallerView
 ```
 
 ---
 
 ## Checklist di Implementazione
 
-- [ ] Creazione classe `ThemeManagerTkApp`.
-- [ ] Binding delle azioni di selezione e clic con `ThemeManager` del core.
-- [ ] Gestione threading con `concurrent.futures.ThreadPoolExecutor` per le operazioni di I/O pesanti.
-- [ ] Aggiornamento dinamico delle liste post-installazione.
+- [x] Creazione classe principale `ThemeManagerWindow` con `ttk.Notebook` e styling `clam`.
+- [x] Scheda "Stato Attuale" con visualizzazione diagnostica e impostazioni attive.
+- [x] Scheda "Temi Disponibili" con `ttk.Treeview`, filtri per tipologia/ricerca e applicazione/disinstallazione.
+- [x] Scheda "Gestione Preset" con salvataggio, anteprima, applicazione ed eliminazione profili.
+- [x] Scheda "Installer" con file dialog, opzioni di sovrascrittura e feedback visivo.
+- [x] Integrazione CLI (`--gui` / `-g` e subcomando `gui`).
+- [x] Suite di test automatizzati (`tests/test_gui_tk.py`).
