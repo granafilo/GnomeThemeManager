@@ -17,8 +17,9 @@ from .errors import GSettingsUnavailableError, ThemeNotFoundError
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import ThemeInstaller
-from .models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
+from .models import ApplyResult, PropagationResult, SystemStatus, Theme, ThemeSet, ThemeType
 from .presets import PresetManager
+from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
 
 logger = logging.getLogger("gnome_theme_manager.core")
@@ -28,7 +29,7 @@ class ThemeManager:
     """Classe Facade di coordinamento per tutte le operazioni sui temi di GNOME.
 
     Astrae e disaccoppia la complessità dei singoli sottosistemi (GSettings, Filesystem,
-    Linker, Installer, Presets) fornendo un'API pulita, priva di dipendenze UI,
+    Linker, Installer, Presets, SandboxBridge) fornendo un'API pulita, priva di dipendenze UI,
     altamente testabile con iniezione opzionale delle dipendenze.
     """
 
@@ -39,6 +40,7 @@ class ThemeManager:
         gtk4_linker: GTK4ThemeLinker | None = None,
         installer: ThemeInstaller | None = None,
         presets: PresetManager | None = None,
+        sandbox_bridge: SandboxBridge | None = None,
     ) -> None:
         """Inizializza il coordinatore Facade con iniezione opzionale dei componenti.
 
@@ -48,11 +50,13 @@ class ThemeManager:
             gtk4_linker: Istanza custom di GTK4ThemeLinker (opzionale).
             installer: Istanza custom di ThemeInstaller (opzionale).
             presets: Istanza custom di PresetManager (opzionale).
+            sandbox_bridge: Istanza custom di SandboxBridge (opzionale).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
         self._installer = installer or ThemeInstaller()
         self._presets = presets or PresetManager()
+        self._sandbox = sandbox_bridge or SandboxBridge()
 
         # Inizializzazione protetta di GSettingsClient
         if gsettings is not None:
@@ -89,6 +93,11 @@ class ThemeManager:
         """Restituisce il gestore dei preset associato."""
         return self._presets
 
+    @property
+    def sandbox(self) -> SandboxBridge:
+        """Restituisce il bridge sandbox associato."""
+        return self._sandbox
+
     def _ensure_gsettings(self) -> GSettingsClient:
         """Verifica la disponibilità di GSettingsClient e lo restituisce.
 
@@ -124,7 +133,7 @@ class ThemeManager:
         """Verifica e restituisce la compatibilità e lo stato dell'ambiente desktop corrente.
 
         Returns:
-            Istanza di SystemStatus con informazioni su GSettings, estensioni e percorsi.
+            Istanza di SystemStatus con informazioni su GSettings, estensioni, percorsi e sandbox.
         """
         gsettings_avail = self._gsettings is not None
         shell_supported = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
@@ -135,12 +144,15 @@ class ThemeManager:
                 self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME  # noqa: SLF001
             )
 
+        sandbox_stat = self._sandbox.get_sandbox_status()
+
         return SystemStatus(
             gsettings_available=gsettings_avail,
             shell_theme_supported=shell_supported,
             color_scheme_supported=color_scheme_supported,
             user_themes_path=self._installer.user_themes_dir,
             user_icons_path=self._installer.user_icons_dir,
+            sandbox_status=sandbox_stat,
         )
 
     def list_themes(
@@ -191,15 +203,18 @@ class ThemeManager:
         self,
         theme_set: ThemeSet,
         apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
     ) -> ApplyResult:
         """Valida e applica un insieme di temi al desktop GNOME.
 
-        Verifica l'esistenza fisica dei temi prima di modificare GSettings e applica
-        opzionalmente i symlink per GTK4 / Libadwaita.
+        Verifica l'esistenza fisica dei temi prima di modificare GSettings, applica
+        opzionalmente i symlink per GTK4 / Libadwaita e propaga la configurazione
+        alle applicazioni Snap e Flatpak.
 
         Args:
             theme_set: Insieme di temi da applicare.
             apply_gtk4_override: Se True, applica i symlink in ~/.config/gtk-4.0 per temi GTK.
+            propagate_sandbox: Se True, propaga i temi alle app Flatpak e Snap.
 
         Returns:
             ApplyResult contenente i dettagli dei componenti applicati e gli eventuali warning.
@@ -209,7 +224,12 @@ class ThemeManager:
             ValueError: Se lo schema colore non è supportato.
             GSettingsUnavailableError: Se GSettings non è disponibile.
         """
-        logger.info("Richiesta applicazione temi: %s (gtk4_override=%s)", theme_set, apply_gtk4_override)
+        logger.info(
+            "Richiesta applicazione temi: %s (gtk4_override=%s, propagate_sandbox=%s)",
+            theme_set,
+            apply_gtk4_override,
+            propagate_sandbox,
+        )
         client = self._ensure_gsettings()
         warnings: list[str] = []
 
@@ -272,6 +292,16 @@ class ThemeManager:
             else:
                 logger.debug("Nessuna cartella CSS compatibile con GTK4/3 trovata in '%s'", found_gtk.name)
 
+        # 6. Propagazione automatica agli ambienti sandbox (Flatpak e Snap)
+        propagation_result: PropagationResult | None = None
+        if propagate_sandbox:
+            propagation_result = self._sandbox.propagate_all(
+                gtk_theme=theme_set.gtk_theme,
+                icon_theme=theme_set.icon_theme,
+            )
+            if propagation_result.warnings:
+                warnings.extend(propagation_result.warnings)
+
         return ApplyResult(
             gtk_theme=theme_set.gtk_theme,
             gtk4_override_applied=gtk4_applied,
@@ -280,6 +310,7 @@ class ThemeManager:
             shell_theme=shell_to_apply,
             color_scheme=theme_set.color_scheme,
             warnings=warnings,
+            sandbox_propagation=propagation_result,
         )
 
     def apply_unified_theme(
@@ -287,6 +318,7 @@ class ThemeManager:
         theme_name: str,
         color_scheme: str | None = None,
         apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
     ) -> ApplyResult:
         """Applica un tema globale unificato (GTK e Shell con lo stesso nome).
 
@@ -294,6 +326,7 @@ class ThemeManager:
             theme_name: Nome del tema da cercare come GTK e Shell.
             color_scheme: Schema colore opzionale ('default', 'prefer-dark', 'prefer-light').
             apply_gtk4_override: Se True, applica l'override GTK4 se disponibile.
+            propagate_sandbox: Se True, propaga i temi alle app Flatpak e Snap.
 
         Returns:
             ApplyResult contenente i dettagli dei temi applicati.
@@ -315,18 +348,24 @@ class ThemeManager:
             color_scheme=color_scheme,
         )
 
-        return self.apply_themes(theme_set, apply_gtk4_override=apply_gtk4_override)
+        return self.apply_themes(
+            theme_set,
+            apply_gtk4_override=apply_gtk4_override,
+            propagate_sandbox=propagate_sandbox,
+        )
 
     def apply_preset(
         self,
         preset_name: str,
         apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
     ) -> ApplyResult:
         """Carica e applica un preset memorizzato.
 
         Args:
             preset_name: Nome identificativo del preset salvato.
             apply_gtk4_override: Se True, applica l'override GTK4 per il tema GTK del preset.
+            propagate_sandbox: Se True, propaga i temi alle app Flatpak e Snap.
 
         Returns:
             ApplyResult con l'esito dell'applicazione.
@@ -337,7 +376,11 @@ class ThemeManager:
         """
         theme_set = self._presets.load_preset(preset_name)
         logger.info("Applicazione preset '%s': %s", preset_name, theme_set)
-        return self.apply_themes(theme_set, apply_gtk4_override=apply_gtk4_override)
+        return self.apply_themes(
+            theme_set,
+            apply_gtk4_override=apply_gtk4_override,
+            propagate_sandbox=propagate_sandbox,
+        )
 
     # -------------------------------------------------------------------------
     # Gestione Preset / Profili

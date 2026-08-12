@@ -32,8 +32,9 @@ from .installer import (
     safe_extract,
 )
 from .manager import ThemeManager
-from .models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
+from .models import ApplyResult, PropagationResult, SandboxStatus, SystemStatus, Theme, ThemeSet, ThemeType
 from .presets import PresetManager
+from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
 
 __all__ = [
@@ -58,6 +59,9 @@ __all__ = [
     "GTK4ThemeLinker",
     "GnomeThemeManagerError",
     "PresetManager",
+    "PropagationResult",
+    "SandboxBridge",
+    "SandboxStatus",
     "SystemStatus",
     "Theme",
     "ThemeInstaller",

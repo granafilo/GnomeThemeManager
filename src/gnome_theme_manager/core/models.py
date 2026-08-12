@@ -109,6 +109,25 @@ class ThemeSet:
 
 
 @dataclass
+class SandboxStatus:
+    """Stato dei runtime sandbox (Snap/Flatpak) rilevati sul sistema."""
+    snap_available: bool = False
+    flatpak_available: bool = False
+    snap_gtk_common_themes_installed: bool = False
+    flatpak_filesystem_override_active: bool = False
+
+
+@dataclass
+class PropagationResult:
+    """Risultato della propagazione tema ai sistemi sandbox."""
+    flatpak_success: bool = False
+    snap_success: bool = False
+    flatpak_messages: list[str] = field(default_factory=list)
+    snap_messages: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
+@dataclass
 class ApplyResult:
     """Risultato dettagliato dell'applicazione di un set o preset di temi."""
     gtk_theme: str | None = None
@@ -118,6 +137,7 @@ class ApplyResult:
     shell_theme: str | None = None
     color_scheme: str | None = None
     warnings: list[str] = field(default_factory=list)
+    sandbox_propagation: PropagationResult | None = None
 
 
 @dataclass
@@ -128,3 +148,4 @@ class SystemStatus:
     color_scheme_supported: bool
     user_themes_path: Path
     user_icons_path: Path
+    sandbox_status: SandboxStatus | None = None
