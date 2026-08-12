@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template dichiarativo per la pagina 'Stato attuale' (Fase 5.2.1) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwStatusPage" id="page_root">
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <property name="icon-name">preferences-desktop-theme-symbolic</property>
+    <property name="title">Stato attuale</property>
+    <property name="description">La diagnostica del sistema e i temi attivi saranno collegati nella Fase 5.3.</property>
+  </object>
+</interface>

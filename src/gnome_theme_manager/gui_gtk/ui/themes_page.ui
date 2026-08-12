@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template dichiarativo per la pagina 'Esplora temi' (Fase 5.2.1) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwStatusPage" id="page_root">
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <property name="icon-name">applications-graphics-symbolic</property>
+    <property name="title">Esplora temi</property>
+    <property name="description">L'esplorazione dei temi sarà collegata nella Fase 5.4.</property>
+  </object>
+</interface>

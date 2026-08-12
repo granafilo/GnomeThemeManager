@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template dichiarativo per la pagina 'Strumenti sandbox' (Fase 5.2.1) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwStatusPage" id="page_root">
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <property name="icon-name">security-high-symbolic</property>
+    <property name="title">Strumenti sandbox</property>
+    <property name="description">La diagnostica Flatpak e Snap sarà collegata nella Fase 5.7.</property>
+  </object>
+</interface>

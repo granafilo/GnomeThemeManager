@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template dichiarativo per la pagina 'Installatore temi' (Fase 5.2.1) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwStatusPage" id="page_root">
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <property name="icon-name">system-software-install-symbolic</property>
+    <property name="title">Installatore temi</property>
+    <property name="description">L'installazione dei temi sarà collegata nella Fase 5.6.</property>
+  </object>
+</interface>

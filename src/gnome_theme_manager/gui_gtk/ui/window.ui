@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template dichiarativo per la finestra principale GnomeThemeWindow (Fase 5.2.1) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="AdwToastOverlay" id="toast_overlay">
+    <property name="width-request">760</property>
+    <property name="height-request">520</property>
+    <property name="child">
+      <object class="AdwNavigationSplitView" id="split_view">
+        <property name="min-sidebar-width">200</property>
+        <property name="max-sidebar-width">280</property>
+        <property name="sidebar">
+          <object class="AdwNavigationPage" id="sidebar_page">
+            <property name="title">Gnome Theme Manager</property>
+            <property name="tag">sidebar</property>
+            <property name="child">
+              <object class="AdwToolbarView" id="sidebar_toolbar_view">
+                <child type="top">
+                  <object class="AdwHeaderBar" id="sidebar_header_bar">
+                    <property name="show-end-title-buttons">false</property>
+                    <property name="show-start-title-buttons">true</property>
+                  </object>
+                </child>
+                <property name="content">
+                  <object class="GtkScrolledWindow" id="sidebar_scrolled_window">
+                    <property name="hscrollbar-policy">never</property>
+                    <property name="vscrollbar-policy">automatic</property>
+                    <property name="child">
+                      <object class="GtkListBox" id="sidebar_list_box">
+                        <property name="selection-mode">single</property>
+                        <style>
+                          <class name="navigation-sidebar"/>
+                        </style>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_status">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Stato attuale</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_themes">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">applications-graphics-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Esplora temi</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_presets">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">document-save-as-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Profili e preset</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_installer">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">system-software-install-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Installatore temi</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_sandbox">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">security-high-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Strumenti sandbox</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+        <property name="content">
+          <object class="AdwNavigationPage" id="content_page">
+            <property name="title">Stato attuale</property>
+            <property name="tag">content</property>
+            <property name="child">
+              <object class="AdwToolbarView" id="content_toolbar_view">
+                <child type="top">
+                  <object class="AdwHeaderBar" id="content_header_bar">
+                    <property name="show-start-title-buttons">false</property>
+                    <property name="show-end-title-buttons">true</property>
+                  </object>
+                </child>
+                <property name="content">
+                  <object class="GtkStack" id="content_stack">
+                    <property name="transition-type">crossfade</property>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </property>
+  </object>
+</interface>
