@@ -8,7 +8,7 @@ def create_parser() -> argparse.ArgumentParser:
     """Crea e configura l'ArgumentParser principale per l'applicazione."""
     parser = argparse.ArgumentParser(
         prog="gnome-theme-manager",
-        description="Manager modulare per temi GTK, icone e cursori su GNOME.",
+        description="Manager modulare per temi GTK, icone, cursori e GNOME Shell.",
     )
     parser.add_argument(
         "-v", "--version",
@@ -35,7 +35,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     list_parser.add_argument(
         "-t", "--type",
-        choices=["all", "gtk", "icon", "cursor"],
+        choices=["all", "gtk", "icon", "cursor", "shell"],
         default="all",
         help="Filtra per tipologia di tema (default: all)",
     )
@@ -65,6 +65,21 @@ def create_parser() -> argparse.ArgumentParser:
         metavar="NOME",
         help="Nome del tema dei cursori da applicare",
     )
+    apply_parser.add_argument(
+        "--shell",
+        metavar="NOME",
+        help="Nome del tema per la GNOME Shell da applicare",
+    )
+    apply_parser.add_argument(
+        "--color-scheme",
+        choices=["default", "prefer-dark"],
+        help="Schema colore (default o prefer-dark per GNOME 42+)",
+    )
+    apply_parser.add_argument(
+        "--no-gtk4-override",
+        action="store_true",
+        help="Non applicare l'override GTK4 in ~/.config/gtk-4.0 quando si imposta un tema GTK",
+    )
 
     # Subcomando: install
     install_parser = subparsers.add_parser(
@@ -79,7 +94,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     install_parser.add_argument(
         "-t", "--type",
-        choices=["gtk", "icon", "cursor"],
+        choices=["gtk", "icon", "cursor", "shell"],
         help="Tipo di tema (se non specificato, verrà effettuato il rilevamento automatico)",
     )
 
