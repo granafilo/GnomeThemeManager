@@ -20,6 +20,9 @@ GSETTINGS_COLOR_SCHEMES = ("default", "prefer-dark", "prefer-light")
 # Percorso configurazione utente GTK4 / Libadwaita
 GTK4_CONFIG_DIR = Path.home() / ".config" / "gtk-4.0"
 
+# Percorso per i preset/profili salvati dall'utente
+PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
+
 # Directory temi e icone utente (XDG Data Home + Legacy fallback)
 USER_THEMES_DIRS = [
     Path.home() / ".local" / "share" / "themes",

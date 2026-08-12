@@ -1,0 +1,424 @@
+"""Modulo Facade principale per l'orchestrazione delle operazioni sui temi in GNOME.
+
+La classe `ThemeManager` implementa il Facade Pattern, costituendo il punto di ingresso
+unico e ad alto livello per consumare tutte le funzionalità del package core:
+- Scansione e rilevamento dei temi sul filesystem (`ThemeScanner`)
+- Lettura e scrittura delle impostazioni dconf/GSettings (`GSettingsClient`)
+- Override symlink per applicazioni moderne GTK4 / Libadwaita (`GTK4ThemeLinker`)
+- Estrazione sicura e installazione di archivi di temi (`ThemeInstaller`)
+- Salvataggio e gestione di profili e preset (`PresetManager`)
+"""
+
+import logging
+from pathlib import Path
+
+from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
+from .errors import GSettingsUnavailableError, ThemeNotFoundError
+from .gsettings import GSettingsClient
+from .gtk4_linker import GTK4ThemeLinker
+from .installer import ThemeInstaller
+from .models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
+from .presets import PresetManager
+from .scanner import ThemeScanner
+
+logger = logging.getLogger("gnome_theme_manager.core")
+
+
+class ThemeManager:
+    """Classe Facade di coordinamento per tutte le operazioni sui temi di GNOME.
+
+    Astrae e disaccoppia la complessità dei singoli sottosistemi (GSettings, Filesystem,
+    Linker, Installer, Presets) fornendo un'API pulita, priva di dipendenze UI,
+    altamente testabile con iniezione opzionale delle dipendenze.
+    """
+
+    def __init__(
+        self,
+        scanner: ThemeScanner | None = None,
+        gsettings: GSettingsClient | None = None,
+        gtk4_linker: GTK4ThemeLinker | None = None,
+        installer: ThemeInstaller | None = None,
+        presets: PresetManager | None = None,
+    ) -> None:
+        """Inizializza il coordinatore Facade con iniezione opzionale dei componenti.
+
+        Args:
+            scanner: Istanza custom di ThemeScanner (opzionale).
+            gsettings: Istanza custom o mock di GSettingsClient (opzionale).
+            gtk4_linker: Istanza custom di GTK4ThemeLinker (opzionale).
+            installer: Istanza custom di ThemeInstaller (opzionale).
+            presets: Istanza custom di PresetManager (opzionale).
+        """
+        self._scanner = scanner or ThemeScanner()
+        self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
+        self._installer = installer or ThemeInstaller()
+        self._presets = presets or PresetManager()
+
+        # Inizializzazione protetta di GSettingsClient
+        if gsettings is not None:
+            self._gsettings: GSettingsClient | None = gsettings
+        else:
+            try:
+                self._gsettings = GSettingsClient()
+            except GSettingsUnavailableError as err:
+                logger.warning("GSettingsClient non inizializzabile: %s", err)
+                self._gsettings = None
+
+    @property
+    def scanner(self) -> ThemeScanner:
+        """Restituisce lo scanner dei temi associato."""
+        return self._scanner
+
+    @property
+    def gsettings(self) -> GSettingsClient | None:
+        """Restituisce il client GSettings associato (None se non disponibile)."""
+        return self._gsettings
+
+    @property
+    def gtk4_linker(self) -> GTK4ThemeLinker:
+        """Restituisce il gestore dei collegamenti GTK4 associato."""
+        return self._gtk4_linker
+
+    @property
+    def installer(self) -> ThemeInstaller:
+        """Restituisce l'installer dei temi associato."""
+        return self._installer
+
+    @property
+    def presets(self) -> PresetManager:
+        """Restituisce il gestore dei preset associato."""
+        return self._presets
+
+    def _ensure_gsettings(self) -> GSettingsClient:
+        """Verifica la disponibilità di GSettingsClient e lo restituisce.
+
+        Raises:
+            GSettingsUnavailableError: Se GSettings non è disponibile nell'ambiente corrente.
+        """
+        if self._gsettings is None:
+            raise GSettingsUnavailableError(
+                "GSettings non è disponibile in questo ambiente. "
+                "Assicurati di eseguire su GNOME e che PyGObject (Gio) sia installato."
+            )
+        return self._gsettings
+
+    # -------------------------------------------------------------------------
+    # Interrogazione e Diagnostica di Sistema
+    # -------------------------------------------------------------------------
+
+    def get_current_themes(self) -> ThemeSet:
+        """Recupera la configurazione dei temi attualmente attivi sul desktop GNOME.
+
+        Returns:
+            Istanza di ThemeSet con i valori correnti.
+
+        Raises:
+            GSettingsUnavailableError: Se GSettings non è disponibile.
+        """
+        client = self._ensure_gsettings()
+        current = client.get_current()
+        logger.debug("Recuperati temi attivi: %s", current)
+        return current
+
+    def get_system_status(self) -> SystemStatus:
+        """Verifica e restituisce la compatibilità e lo stato dell'ambiente desktop corrente.
+
+        Returns:
+            Istanza di SystemStatus con informazioni su GSettings, estensioni e percorsi.
+        """
+        gsettings_avail = self._gsettings is not None
+        shell_supported = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
+
+        color_scheme_supported = False
+        if self._gsettings and hasattr(self._gsettings, "_has_key") and hasattr(self._gsettings, "_settings"):
+            color_scheme_supported = self._gsettings._has_key(  # noqa: SLF001
+                self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME  # noqa: SLF001
+            )
+
+        return SystemStatus(
+            gsettings_available=gsettings_avail,
+            shell_theme_supported=shell_supported,
+            color_scheme_supported=color_scheme_supported,
+            user_themes_path=self._installer.user_themes_dir,
+            user_icons_path=self._installer.user_icons_dir,
+        )
+
+    def list_themes(
+        self,
+        theme_type: ThemeType | None = None,
+        user_only: bool = False,
+    ) -> list[Theme]:
+        """Elenca i temi installati sul sistema, con opzioni di filtro.
+
+        Args:
+            theme_type: Filtra per tipologia specifica (GTK, ICON, CURSOR, SHELL) o None per tutti.
+            user_only: Se True, include solo i temi installati nella home utente.
+
+        Returns:
+            Lista ordinata di oggetti Theme trovati.
+        """
+        themes: list[Theme]
+        if theme_type == ThemeType.GTK:
+            themes = self._scanner.scan_gtk_themes(user_only=user_only)
+        elif theme_type == ThemeType.ICON:
+            themes = self._scanner.scan_icon_themes(user_only=user_only)
+        elif theme_type == ThemeType.CURSOR:
+            themes = self._scanner.scan_cursor_themes(user_only=user_only)
+        elif theme_type == ThemeType.SHELL:
+            themes = self._scanner.scan_shell_themes(user_only=user_only)
+        else:
+            themes = self._scanner.scan_all(user_only=user_only)
+
+        return sorted(themes, key=lambda t: (t.theme_type.value, t.name.lower()))
+
+    def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
+        """Cerca un tema specifico per nome e tipologia nel filesystem.
+
+        Args:
+            name: Nome del tema cercato.
+            theme_type: Tipologia del tema.
+
+        Returns:
+            L'oggetto Theme corrispondente o None se non trovato.
+        """
+        return self._scanner.find_theme(name=name, theme_type=theme_type)
+
+    # -------------------------------------------------------------------------
+    # Applicazione Temi e Preset
+    # -------------------------------------------------------------------------
+
+    def apply_themes(
+        self,
+        theme_set: ThemeSet,
+        apply_gtk4_override: bool = True,
+    ) -> ApplyResult:
+        """Valida e applica un insieme di temi al desktop GNOME.
+
+        Verifica l'esistenza fisica dei temi prima di modificare GSettings e applica
+        opzionalmente i symlink per GTK4 / Libadwaita.
+
+        Args:
+            theme_set: Insieme di temi da applicare.
+            apply_gtk4_override: Se True, applica i symlink in ~/.config/gtk-4.0 per temi GTK.
+
+        Returns:
+            ApplyResult contenente i dettagli dei componenti applicati e gli eventuali warning.
+
+        Raises:
+            ThemeNotFoundError: Se uno dei temi specificati non esiste sul filesystem.
+            ValueError: Se lo schema colore non è supportato.
+            GSettingsUnavailableError: Se GSettings non è disponibile.
+        """
+        logger.info("Richiesta applicazione temi: %s (gtk4_override=%s)", theme_set, apply_gtk4_override)
+        client = self._ensure_gsettings()
+        warnings: list[str] = []
+
+        # 1. Validazione preventiva dell'esistenza dei temi sul filesystem
+        found_gtk: Theme | None = None
+        if theme_set.gtk_theme is not None:
+            found_gtk = self._scanner.find_theme(theme_set.gtk_theme, ThemeType.GTK)
+            if not found_gtk:
+                raise ThemeNotFoundError(f"Il tema GTK '{theme_set.gtk_theme}' non è stato trovato nel sistema.")
+
+        if theme_set.icon_theme is not None:
+            found_icon = self._scanner.find_theme(theme_set.icon_theme, ThemeType.ICON)
+            if not found_icon:
+                raise ThemeNotFoundError(f"Il tema icone '{theme_set.icon_theme}' non è stato trovato nel sistema.")
+
+        if theme_set.cursor_theme is not None:
+            found_cursor = self._scanner.find_theme(theme_set.cursor_theme, ThemeType.CURSOR)
+            if not found_cursor:
+                raise ThemeNotFoundError(f"Il tema cursori '{theme_set.cursor_theme}' non è stato trovato nel sistema.")
+
+        found_shell: Theme | None = None
+        if theme_set.shell_theme is not None:
+            found_shell = self._scanner.find_theme(theme_set.shell_theme, ThemeType.SHELL)
+            if not found_shell:
+                raise ThemeNotFoundError(f"Il tema GNOME Shell '{theme_set.shell_theme}' non è stato trovato nel sistema.")
+
+        # 2. Validazione schema colore
+        if theme_set.color_scheme is not None and theme_set.color_scheme not in GSETTINGS_COLOR_SCHEMES:
+            raise ValueError(
+                f"Schema colore '{theme_set.color_scheme}' non valido. Valori ammessi: {list(GSETTINGS_COLOR_SCHEMES)}"
+            )
+
+        # 3. Controllo supporto tema Shell
+        shell_to_apply = theme_set.shell_theme
+        if shell_to_apply is not None and not client.is_shell_theme_supported:
+            warning_msg = (
+                "Impossibile applicare il tema GNOME Shell: l'estensione 'User Themes' "
+                "(schema org.gnome.shell.extensions.user-theme) non è installata o attiva."
+            )
+            logger.warning(warning_msg)
+            warnings.append(warning_msg)
+            shell_to_apply = None
+
+        # 4. Applicazione tramite GSettings
+        target_set = ThemeSet(
+            gtk_theme=theme_set.gtk_theme,
+            icon_theme=theme_set.icon_theme,
+            cursor_theme=theme_set.cursor_theme,
+            color_scheme=theme_set.color_scheme,
+            shell_theme=shell_to_apply,
+        )
+        client.apply(target_set)
+
+        # 5. Applicazione override GTK4 / Libadwaita
+        gtk4_applied = False
+        if found_gtk is not None and apply_gtk4_override:
+            gtk4_applied = self._gtk4_linker.apply_override(found_gtk.path)
+            if gtk4_applied:
+                logger.info("Override GTK4/Libadwaita applicato per '%s'", found_gtk.name)
+            else:
+                logger.debug("Nessuna cartella CSS compatibile con GTK4/3 trovata in '%s'", found_gtk.name)
+
+        return ApplyResult(
+            gtk_theme=theme_set.gtk_theme,
+            gtk4_override_applied=gtk4_applied,
+            icon_theme=theme_set.icon_theme,
+            cursor_theme=theme_set.cursor_theme,
+            shell_theme=shell_to_apply,
+            color_scheme=theme_set.color_scheme,
+            warnings=warnings,
+        )
+
+    def apply_unified_theme(
+        self,
+        theme_name: str,
+        color_scheme: str | None = None,
+        apply_gtk4_override: bool = True,
+    ) -> ApplyResult:
+        """Applica un tema globale unificato (GTK e Shell con lo stesso nome).
+
+        Args:
+            theme_name: Nome del tema da cercare come GTK e Shell.
+            color_scheme: Schema colore opzionale ('default', 'prefer-dark', 'prefer-light').
+            apply_gtk4_override: Se True, applica l'override GTK4 se disponibile.
+
+        Returns:
+            ApplyResult contenente i dettagli dei temi applicati.
+
+        Raises:
+            ThemeNotFoundError: Se il tema non esiste né come GTK né come Shell.
+        """
+        has_gtk = bool(self._scanner.find_theme(theme_name, ThemeType.GTK))
+        has_shell = bool(self._scanner.find_theme(theme_name, ThemeType.SHELL))
+
+        if not has_gtk and not has_shell:
+            raise ThemeNotFoundError(
+                f"Il tema '{theme_name}' non è stato trovato come GTK o GNOME Shell nel sistema."
+            )
+
+        theme_set = ThemeSet(
+            gtk_theme=theme_name if has_gtk else None,
+            shell_theme=theme_name if has_shell else None,
+            color_scheme=color_scheme,
+        )
+
+        return self.apply_themes(theme_set, apply_gtk4_override=apply_gtk4_override)
+
+    def apply_preset(
+        self,
+        preset_name: str,
+        apply_gtk4_override: bool = True,
+    ) -> ApplyResult:
+        """Carica e applica un preset memorizzato.
+
+        Args:
+            preset_name: Nome identificativo del preset salvato.
+            apply_gtk4_override: Se True, applica l'override GTK4 per il tema GTK del preset.
+
+        Returns:
+            ApplyResult con l'esito dell'applicazione.
+
+        Raises:
+            FileNotFoundError: Se il preset non esiste.
+            ThemeNotFoundError: Se uno dei temi definiti nel preset non è installato.
+        """
+        theme_set = self._presets.load_preset(preset_name)
+        logger.info("Applicazione preset '%s': %s", preset_name, theme_set)
+        return self.apply_themes(theme_set, apply_gtk4_override=apply_gtk4_override)
+
+    # -------------------------------------------------------------------------
+    # Gestione Preset / Profili
+    # -------------------------------------------------------------------------
+
+    def save_current_as_preset(self, name: str, overwrite: bool = False) -> Path:
+        """Salva lo stato corrente dei temi del desktop come preset riutilizzabile.
+
+        Args:
+            name: Nome identificativo del preset.
+            overwrite: Se True, sovrascrive un preset esistente con lo stesso nome.
+
+        Returns:
+            Il percorso Path del file JSON creato.
+
+        Raises:
+            FileExistsError: Se il preset esiste già e overwrite=False.
+        """
+        current_set = self.get_current_themes()
+        return self._presets.save_preset(name, current_set, overwrite=overwrite)
+
+    def list_presets(self) -> list[str]:
+        """Restituisce l'elenco dei preset disponibili ordinati alfabeticamente."""
+        return self._presets.list_presets()
+
+    def delete_preset(self, name: str) -> bool:
+        """Elimina un preset esistente.
+
+        Args:
+            name: Nome del preset da rimuovere.
+
+        Returns:
+            True se il preset è stato rimosso.
+
+        Raises:
+            FileNotFoundError: Se il preset non esiste.
+        """
+        return self._presets.delete_preset(name)
+
+    # -------------------------------------------------------------------------
+    # Installazione e Disinstallazione Temi da Archivi
+    # -------------------------------------------------------------------------
+
+    def install_theme_archive(
+        self,
+        archive_path: Path,
+        theme_type: ThemeType | None = None,
+        custom_name: str | None = None,
+        overwrite: bool = False,
+    ) -> list[Theme]:
+        """Estrae, valida e installa temi da un archivio compresso (.zip, .tar.*).
+
+        Args:
+            archive_path: Percorso del file archivio da installare.
+            theme_type: Tipologia opzionale per filtrare l'installazione.
+            custom_name: Nome personalizzato per la cartella di destinazione.
+            overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+
+        Returns:
+            Lista delle istanze Theme installate con successo nelle directory utente.
+        """
+        logger.info("Installazione archivio richiesta: %s", archive_path)
+        return self._installer.install(
+            archive_path=archive_path,
+            theme_type=theme_type,
+            custom_name=custom_name,
+            overwrite=overwrite,
+        )
+
+    def uninstall_theme(self, name: str, theme_type: ThemeType) -> bool:
+        """Disinstalla un tema specifico dalle cartelle utente.
+
+        Args:
+            name: Nome della directory del tema da disinstallare.
+            theme_type: Tipologia del tema.
+
+        Returns:
+            True se il tema è stato rimosso con successo.
+
+        Raises:
+            ThemeNotFoundError: Se il tema non è presente nelle cartelle utente.
+        """
+        logger.info("Disinstallazione tema richiesta: '%s' (%s)", name, theme_type)
+        return self._installer.uninstall(theme_name=name, theme_type=theme_type)

@@ -10,6 +10,7 @@ from .constants import (
     GSETTINGS_SCHEMA_INTERFACE,
     GSETTINGS_SCHEMA_USER_THEME,
     GTK4_CONFIG_DIR,
+    PRESETS_DIR,
     SYSTEM_ICONS_DIRS,
     SYSTEM_THEMES_DIRS,
     USER_ICONS_DIRS,
@@ -30,10 +31,13 @@ from .installer import (
     inspect_extracted_tree,
     safe_extract,
 )
-from .models import Theme, ThemeSet, ThemeType
+from .manager import ThemeManager
+from .models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
+from .presets import PresetManager
 from .scanner import ThemeScanner
 
 __all__ = [
+    "PRESETS_DIR",
     "GSETTINGS_COLOR_SCHEMES",
     "GSETTINGS_KEY_COLOR_SCHEME",
     "GSETTINGS_KEY_CURSOR_THEME",
@@ -47,13 +51,17 @@ __all__ = [
     "SYSTEM_THEMES_DIRS",
     "USER_ICONS_DIRS",
     "USER_THEMES_DIRS",
+    "ApplyResult",
     "ArchiveExtractionError",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
     "GnomeThemeManagerError",
+    "PresetManager",
+    "SystemStatus",
     "Theme",
     "ThemeInstaller",
+    "ThemeManager",
     "ThemeNotFoundError",
     "ThemeScanner",
     "ThemeSet",
