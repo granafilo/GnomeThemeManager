@@ -1,0 +1,6 @@
+"""GnomeThemeManager package.
+
+Manager modulare per temi GTK, icone e cursori su GNOME.
+"""
+
+__version__ = "0.1.0"

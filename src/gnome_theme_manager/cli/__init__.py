@@ -1,0 +1,1 @@
+"""Modulo CLI per GnomeThemeManager."""
