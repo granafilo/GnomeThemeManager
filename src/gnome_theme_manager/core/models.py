@@ -11,6 +11,7 @@ class ThemeType(str, Enum):
     GTK = "gtk"
     ICON = "icon"
     CURSOR = "cursor"
+    SHELL = "shell"
 
     def __str__(self) -> str:
         return self.value
@@ -37,6 +38,7 @@ class ThemeSet:
     icon_theme: Optional[str] = None
     cursor_theme: Optional[str] = None
     color_scheme: Optional[str] = None
+    shell_theme: Optional[str] = None
 
     def as_dict(self) -> dict[str, Optional[str]]:
         """Converte il set di temi in un dizionario serializzabile."""
@@ -45,4 +47,5 @@ class ThemeSet:
             "icon_theme": self.icon_theme,
             "cursor_theme": self.cursor_theme,
             "color_scheme": self.color_scheme,
+            "shell_theme": self.shell_theme,
         }
