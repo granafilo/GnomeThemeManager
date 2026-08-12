@@ -342,6 +342,12 @@ def test_manager_preset_workflow(
     mock_presets.list_presets.return_value = ["MyPreset", "WorkPreset"]
     assert manager.list_presets() == ["MyPreset", "WorkPreset"]
 
+    # Load
+    mock_presets.load_preset.return_value = current_set
+    loaded = manager.load_preset("MyPreset")
+    assert loaded == current_set
+    mock_presets.load_preset.assert_called_with("MyPreset")
+
     # Apply
     mock_presets.load_preset.return_value = current_set
     mock_scanner.find_theme.side_effect = lambda name, t_type: Theme(name, t_type, tmp_path / name, True)
@@ -351,6 +357,7 @@ def test_manager_preset_workflow(
     # Delete
     mock_presets.delete_preset.return_value = True
     assert manager.delete_preset("MyPreset") is True
+    mock_presets.delete_preset.assert_called_once_with("MyPreset")
 
 
 def test_manager_install_and_uninstall(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:

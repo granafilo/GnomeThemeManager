@@ -1,13 +1,219 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Template dichiarativo per la pagina 'Profili e preset' (Fase 5.2.1) -->
+<!-- Template dichiarativo per la pagina 'Profili e preset' (Fase 5.6) -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
-  <object class="AdwStatusPage" id="page_root">
+
+  <!-- Stack principale con i 4 stati canonici: loading, ready, empty, error -->
+  <object class="GtkStack" id="page_root">
+    <property name="transition-type">crossfade</property>
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
-    <property name="icon-name">document-save-as-symbolic</property>
-    <property name="title">Profili e preset</property>
-    <property name="description">La gestione dei preset sarà collegata nella Fase 5.5.</property>
+
+    <!-- 1. Stato LOADING -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">loading</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="loading_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">document-save-as-symbolic</property>
+            <property name="title">Caricamento preset...</property>
+            <property name="description">Lettura dei profili di configurazione salvati.</property>
+            <property name="child">
+              <object class="GtkSpinner" id="loading_spinner">
+                <property name="spinning">true</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="width-request">32</property>
+                <property name="height-request">32</property>
+                <property name="margin-top">12</property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 2. Stato READY: area scrollabile con pulsanti e lista preset -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">ready</property>
+        <property name="child">
+          <object class="GtkScrolledWindow" id="presets_scrolled_window">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <property name="vscrollbar-policy">automatic</property>
+            <property name="child">
+              <object class="AdwClamp">
+                <property name="maximum-size">820</property>
+                <property name="tightening-threshold">560</property>
+                <property name="margin-start">16</property>
+                <property name="margin-end">16</property>
+                <property name="margin-top">24</property>
+                <property name="margin-bottom">24</property>
+                <property name="child">
+                  <object class="GtkBox" id="ready_main_box">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">24</property>
+
+                    <!-- Intestazione pagina -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">4</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label">Profili e preset</property>
+                            <property name="xalign">0</property>
+                            <style>
+                              <class name="title-1"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label">Salva e applica configurazioni complete dell'ambiente desktop GNOME.</property>
+                            <property name="xalign">0</property>
+                            <property name="wrap">true</property>
+                            <style>
+                              <class name="dim-label"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Pulsanti azioni principali -->
+                    <child>
+                      <object class="GtkBox" id="action_buttons_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <child>
+                          <object class="GtkButton" id="save_preset_button">
+                            <property name="label">Salva configurazione attuale</property>
+                            <property name="hexpand">false</property>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">list-add-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="reload_presets_button">
+                            <property name="label">Ricarica</property>
+                            <property name="hexpand">false</property>
+                            <property name="tooltip-text">Ricarica la lista dei preset dal disco</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">view-refresh-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Lista dei preset (ListBox in stile boxed-list) -->
+                    <child>
+                      <object class="AdwPreferencesGroup" id="presets_group">
+                        <property name="title">Preset salvati</property>
+                        <child>
+                          <object class="GtkListBox" id="presets_list_box">
+                            <property name="selection-mode">none</property>
+                            <property name="show-separators">false</property>
+                            <property name="vexpand">true</property>
+                            <style>
+                              <class name="boxed-list"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 3. Stato EMPTY: nessun preset salvato -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">empty</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="empty_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">document-save-as-symbolic</property>
+            <property name="title">Nessun preset salvato</property>
+            <property name="description">Salva la configurazione attuale per creare il primo preset e poterla ripristinare in qualsiasi momento.</property>
+            <property name="child">
+              <object class="GtkButton" id="empty_save_button">
+                <property name="label">Salva configurazione attuale</property>
+                <property name="halign">center</property>
+                <style>
+                  <class name="suggested-action"/>
+                  <class name="pill"/>
+                </style>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 4. Stato ERROR: errore di lettura preset -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">error</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="error_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">dialog-error-symbolic</property>
+            <property name="title">Impossibile caricare i preset</property>
+            <property name="child">
+              <object class="GtkBox">
+                <property name="orientation">vertical</property>
+                <property name="spacing">8</property>
+                <property name="halign">center</property>
+                <child>
+                  <object class="GtkLabel" id="error_message_label">
+                    <property name="label">Errore sconosciuto.</property>
+                    <property name="wrap">true</property>
+                    <property name="max-width-chars">60</property>
+                    <property name="halign">center</property>
+                    <style>
+                      <class name="dim-label"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="error_retry_button">
+                    <property name="label">Riprova</property>
+                    <property name="halign">center</property>
+                    <property name="margin-top">8</property>
+                    <style>
+                      <class name="pill"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
   </object>
 </interface>

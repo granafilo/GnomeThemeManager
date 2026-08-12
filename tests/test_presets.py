@@ -197,3 +197,170 @@ def test_apply_result_and_system_status_dataclasses() -> None:
     )
     assert status.gsettings_available is True
     assert status.shell_theme_supported is True
+
+
+# =============================================================================
+# Test per ThemeManager.load_preset — API pubblica
+# =============================================================================
+
+
+def _build_manager_with_presets_dir(tmp_path: Path):
+    """Crea un ThemeManager reale con PresetManager in una directory temporanea."""
+    from gnome_theme_manager.core.manager import ThemeManager
+    from gnome_theme_manager.core.presets import PresetManager
+
+    # Usiamo i componenti interni reali solo nell'infrastruttura del test,
+    # mai nella GUI. La GUI userà solo le API pubbliche del manager.
+    pm = PresetManager(presets_dir=tmp_path)
+    return ThemeManager(presets=pm), pm
+
+
+def test_manager_load_preset_valid(tmp_path: Path) -> None:
+    """Verifica che manager.load_preset() restituisca il ThemeSet corretto."""
+    manager, pm = _build_manager_with_presets_dir(tmp_path)
+    expected = ThemeSet(gtk_theme="Nordic", icon_theme="Papirus", cursor_theme="Bibata")
+    pm.save_preset("MioStile", expected)
+
+    loaded = manager.load_preset("MioStile")
+
+    assert loaded.gtk_theme == "Nordic"
+    assert loaded.icon_theme == "Papirus"
+    assert loaded.cursor_theme == "Bibata"
+
+
+def test_manager_load_preset_returns_themeset(tmp_path: Path) -> None:
+    """Verifica che load_preset() restituisca sempre un'istanza di ThemeSet."""
+    manager, pm = _build_manager_with_presets_dir(tmp_path)
+    pm.save_preset("Test", ThemeSet(gtk_theme="Adwaita"))
+
+    result = manager.load_preset("Test")
+    assert isinstance(result, ThemeSet)
+
+
+def test_manager_load_preset_not_found(tmp_path: Path) -> None:
+    """Verifica che manager.load_preset() sollevi FileNotFoundError per preset inesistente."""
+    manager, _ = _build_manager_with_presets_dir(tmp_path)
+
+    with pytest.raises(FileNotFoundError):
+        manager.load_preset("GhostPreset")
+
+
+def test_manager_load_preset_invalid_name(tmp_path: Path) -> None:
+    """Verifica che manager.load_preset() rifiuti nomi non validi."""
+    manager, _ = _build_manager_with_presets_dir(tmp_path)
+
+    # Nome vuoto o solo spazi
+    with pytest.raises(ValueError):
+        manager.load_preset("   ")
+
+    # Path traversal
+    with pytest.raises(ValueError):
+        manager.load_preset("../evil")
+
+    # Separatore di percorso
+    with pytest.raises(ValueError):
+        manager.load_preset("sub/preset")
+
+
+def test_manager_load_preset_corrupt_json(tmp_path: Path) -> None:
+    """Verifica che load_preset() sollevi ValueError su JSON corrotto."""
+    manager, _ = _build_manager_with_presets_dir(tmp_path)
+    (tmp_path / "Corrupt.json").write_text("{not: valid json}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="corrotto o illeggibile"):
+        manager.load_preset("Corrupt")
+
+
+def test_manager_load_preset_incomplete_json(tmp_path: Path) -> None:
+    """Verifica che un JSON incompleto restituisca un ThemeSet con None sui campi assenti."""
+    import json
+    manager, _ = _build_manager_with_presets_dir(tmp_path)
+
+    # Solo gtk_theme presente; gli altri devono restare None
+    (tmp_path / "Parziale.json").write_text(
+        json.dumps({"gtk_theme": "Nordic"}), encoding="utf-8"
+    )
+
+    loaded = manager.load_preset("Parziale")
+    assert loaded.gtk_theme == "Nordic"
+    assert loaded.icon_theme is None
+    assert loaded.cursor_theme is None
+
+
+# =============================================================================
+# Test validazione nomi — coerenza tra save/load/delete
+# =============================================================================
+
+
+def test_preset_name_with_spaces_and_accents(tmp_path: Path) -> None:
+    """Verifica che nomi con spazi, accenti e caratteri Unicode siano accettati."""
+    manager = PresetManager(presets_dir=tmp_path)
+    # Nomi validi per un utente normale
+    valid_names = [
+        "Il mio preset",
+        "Tema-scuro",
+        "Configurazione_lavoro",
+        "Stile 2025",
+    ]
+    ts = ThemeSet(gtk_theme="Nordic")
+    for name in valid_names:
+        path = manager.save_preset(name, ts)
+        assert path.is_file(), f"Il file non è stato creato per: {name!r}"
+        loaded = manager.load_preset(name)
+        assert loaded.gtk_theme == "Nordic"
+        manager.delete_preset(name)
+
+
+def test_preset_name_reject_path_separators(tmp_path: Path) -> None:
+    """Verifica il rifiuto di nomi che contengono separatori di percorso."""
+    manager = PresetManager(presets_dir=tmp_path)
+    ts = ThemeSet(gtk_theme="Nordic")
+
+    for bad_name in ["sub/dir", "..\\evil", "../escape", "a\\b"]:
+        with pytest.raises(ValueError):
+            manager.save_preset(bad_name, ts)
+
+
+def test_preset_name_reject_dot_and_dotdot(tmp_path: Path) -> None:
+    """Verifica il rifiuto di nomi che sono '.' o '..'."""
+    manager = PresetManager(presets_dir=tmp_path)
+    ts = ThemeSet(gtk_theme="Nordic")
+
+    for bad_name in ["..", "."]:
+        with pytest.raises(ValueError):
+            manager.save_preset(bad_name, ts)
+
+
+def test_preset_name_empty_or_whitespace(tmp_path: Path) -> None:
+    """Verifica il rifiuto di nomi vuoti o composti solo da spazi."""
+    manager = PresetManager(presets_dir=tmp_path)
+    ts = ThemeSet(gtk_theme="Nordic")
+
+    for bad_name in ["", "   ", "\t\n"]:
+        with pytest.raises(ValueError, match="non può essere vuoto"):
+            manager.save_preset(bad_name, ts)
+
+
+def test_preset_name_coherence_save_load_delete(tmp_path: Path) -> None:
+    """Verifica che save, load e delete usino regole di normalizzazione coerenti."""
+    manager = PresetManager(presets_dir=tmp_path)
+    ts = ThemeSet(gtk_theme="Adwaita")
+    name = "Tema Lavoro"
+
+    # Salvataggio
+    path = manager.save_preset(name, ts)
+    assert "Tema Lavoro.json" in path.name
+
+    # Caricamento con lo stesso nome
+    loaded = manager.load_preset(name)
+    assert loaded.gtk_theme == "Adwaita"
+
+    # Lista include il nome corretto
+    listing = manager.list_presets()
+    assert name in listing
+
+    # Eliminazione con lo stesso nome
+    result = manager.delete_preset(name)
+    assert result is True
+    assert manager.list_presets() == []
+

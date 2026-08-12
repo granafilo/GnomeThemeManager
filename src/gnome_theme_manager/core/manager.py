@@ -404,6 +404,21 @@ class ThemeManager:
         current_set = self.get_current_themes()
         return self._presets.save_preset(name, current_set, overwrite=overwrite)
 
+    def load_preset(self, name: str) -> ThemeSet:
+        """Carica un preset memorizzato restituendo il set di temi associato.
+
+        Args:
+            name: Nome del preset da caricare.
+
+        Returns:
+            L'istanza di ThemeSet corrispondente.
+
+        Raises:
+            ValueError: Se il nome del preset non è valido.
+            FileNotFoundError: Se il preset non esiste.
+        """
+        return self._presets.load_preset(name)
+
     def list_presets(self) -> list[str]:
         """Restituisce l'elenco dei preset disponibili ordinati alfabeticamente."""
         return self._presets.list_presets()

@@ -156,6 +156,16 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         self.themes_page.on_theme_applied = _on_theme_applied_callback
 
+        # Connessione callback di applicazione preset (aggiorna StatusPage e ThemesPage)
+        def _on_preset_applied_callback() -> None:
+            # Rinfreschiamo la pagina Stato per riflettere i nuovi temi attivi
+            self.status_page.refresh()
+            # Rinfreschiamo ThemesPage per aggiornare la card del tema attivo e le alternative
+            if self.themes_page.current_snapshot is not None or not self.themes_page.is_loading:
+                self.themes_page.refresh()
+
+        self.presets_page.on_preset_applied = _on_preset_applied_callback
+
         # Selezione iniziale della pagina Stato all'avvio dell'applicazione
         self.select_page("status")
 
@@ -282,6 +292,14 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             and not self.themes_page.is_loading
         ):
             self.themes_page.refresh()
+
+        # Caricamento automatico al primo accesso della pagina Preset
+        if (
+            page_id == "presets"
+            and not self.presets_page.has_loaded
+            and not self.presets_page.is_loading
+        ):
+            self.presets_page.refresh()
 
         # Sincronizza la selezione visiva nella Gtk.ListBox senza generare loop ricorsivi
         target_row = self._page_id_to_row.get(page_id)

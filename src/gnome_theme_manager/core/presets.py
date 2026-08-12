@@ -7,7 +7,6 @@ all'interno della cartella di configurazione utente (~/.config/gnome-theme-manag
 
 import json
 import logging
-import re
 from pathlib import Path
 
 from .constants import PRESETS_DIR
@@ -33,27 +32,58 @@ class PresetManager:
         )
 
     def _sanitize_name(self, name: str) -> str:
-        """Valida e ripulisce il nome del preset prevenendo Path Traversal.
+        """Valida e ripulisce il nome del preset prevenendo Path Traversal e nomi non validi.
+
+        Consente nomi utente normali inclusi spazi, trattini, underscore, accenti e
+        caratteri Unicode. Rifiuta esplicitamente:
+        - stringa vuota o composta solo da spazi;
+        - separatori di percorso '/' e '\\';
+        - sequenze di risalita di directory '..';
+        - nomi che sono esattamente '.' o '..';
+        - caratteri di controllo (ASCII 0-31 e 127);
+        - nomi con lunghezza superiore a 255 caratteri.
 
         Args:
             name: Nome del preset da verificare.
 
         Returns:
-            Nome valido senza spazi superflui.
+            Nome valido senza spazi superflui alle estremità.
 
         Raises:
-            ValueError: Se il nome è vuoto o contiene caratteri non validi/separatori di percorso.
+            ValueError: Se il nome è vuoto, contiene caratteri non validi o
+                        separatori di percorso filesystem.
         """
         cleaned = name.strip()
+
+        # Nome vuoto o solo spazi
         if not cleaned:
             raise ValueError("Il nome del preset non può essere vuoto.")
 
-        # Impediamo separatori di percorso o sequenze di risalita directory
-        if "/" in cleaned or "\\" in cleaned or ".." in cleaned:
-            raise ValueError(f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso.")
+        # Lunghezza eccessiva (limite del filesystem)
+        if len(cleaned) > 255:
+            raise ValueError(f"Nome preset troppo lungo ({len(cleaned)} caratteri, massimo 255).")
 
-        if not re.match(r"^[\w\-. ]+$", cleaned):
-            raise ValueError(f"Nome preset '{name}' contiene caratteri non consentiti.")
+        # Separatori di percorso filesystem (prevenzione Path Traversal)
+        if "/" in cleaned or "\\" in cleaned:
+            raise ValueError(
+                f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso."
+            )
+
+        # Sequenza di risalita directory
+        if ".." in cleaned:
+            raise ValueError(
+                f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso."
+            )
+
+        # Nomi riservati come '.' singolo
+        if cleaned == ".":
+            raise ValueError(
+                f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso."
+            )
+
+        # Caratteri di controllo ASCII (0-31 e 127)
+        if any(ord(c) < 32 or ord(c) == 127 for c in cleaned):
+            raise ValueError(f"Nome preset '{name}' contiene caratteri di controllo non consentiti.")
 
         return cleaned
 
