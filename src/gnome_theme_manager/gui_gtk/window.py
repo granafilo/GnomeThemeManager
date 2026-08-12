@@ -1,25 +1,27 @@
 """Modulo contenente la finestra principale dell'applicazione (GnomeThemeWindow).
 
-Gestisce la shell principale con GTK4 e Libadwaita (Fase 5.3):
-- Adw.ToastOverlay per notifiche temporanee e dimensionamento minimo;
+Gestisce la shell principale con GTK4 e Libadwaita (Fase 5.4 revisionata):
+- Adw.ToastOverlay per notifiche temporanee unificate;
 - Adw.NavigationSplitView con sidebar a sinistra (Gtk.ListBox) e content fisso a destra;
+- 4 sezioni dedicate per componente (GNOME Shell, GTK, Icone, Cursori) senza duplicazione di controller o widget;
 - Router centralizzato basato su Gtk.Stack all'interno del content Adw.NavigationPage;
-- Aggiornamento della pagina visibile tramite set_visible_child_name() senza ri-parenting;
-- Pulsante Refresh dedicato visibile unicamente quando la pagina attiva è 'status';
+- Pulsante Refresh contestuale visibile unicamente quando la pagina attiva è 'status' o una categoria 'themes';
 - Gestione della responsività adattiva tramite Adw.Breakpoint (collasso sotto i 700px).
 """
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk
+gi.require_version("GLib", "2.0")
+from gi.repository import Adw, GLib, Gtk
 
 from ..core.manager import ThemeManager
+from ..core.models import ThemeType
 from .pages import (
     InstallerPage,
     PresetsPage,
@@ -28,23 +30,20 @@ from .pages import (
     ThemesPage,
 )
 
-if TYPE_CHECKING:
-    pass
-
 logger = logging.getLogger("gnome_theme_manager.gui_gtk.window")
 
-# Percorso del template XML UI principale per la finestra
+# Percorso del file template UI associato
 UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 
-# Soglia di larghezza (in pixel) per il collasso automatico in modalità compatta/mobile
+# Soglia di larghezza minima per il collasso automatico in visualizzazione compatta (sidebar a scomparsa)
 COLLAPSE_BREAKPOINT_WIDTH: int = 700
 
 
 class GnomeThemeWindow(Adw.ApplicationWindow):
-    """Finestra principale dell'applicazione basata su Libadwaita e Adw.NavigationSplitView."""
+    """Finestra principale dell'applicazione GTK4 / Libadwaita."""
 
     def __init__(self, app: Adw.Application, manager: ThemeManager | None = None) -> None:
-        """Inizializza la finestra principale caricando il layout da GtkBuilder e impostando il router.
+        """Inizializza la finestra principale caricando il template window.ui.
 
         Args:
             app: Istanza di Adw.Application proprietaria della finestra.
@@ -80,7 +79,10 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         # Recupero delle righe della sidebar per la navigazione
         self.row_status: Gtk.ListBoxRow = self.builder.get_object("row_status")
-        self.row_themes: Gtk.ListBoxRow = self.builder.get_object("row_themes")
+        self.row_themes_shell: Gtk.ListBoxRow = self.builder.get_object("row_themes_shell")
+        self.row_themes_gtk: Gtk.ListBoxRow = self.builder.get_object("row_themes_gtk")
+        self.row_themes_icon: Gtk.ListBoxRow = self.builder.get_object("row_themes_icon")
+        self.row_themes_cursor: Gtk.ListBoxRow = self.builder.get_object("row_themes_cursor")
         self.row_presets: Gtk.ListBoxRow = self.builder.get_object("row_presets")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
@@ -91,23 +93,39 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         # Configurazione del comportamento responsive (Breakpoint)
         self._setup_breakpoint()
 
-        # Inizializzazione univoca dei controller delle 5 pagine modulari (Router stabile)
+        # Inizializzazione dei controller delle pagine (ThemesPage è unico e gestisce le 4 categorie)
+        self.status_page = StatusPage(manager=self.manager)
+        self.themes_page = ThemesPage(manager=self.manager)
+        self.presets_page = PresetsPage(manager=self.manager)
+        self.installer_page = InstallerPage(manager=self.manager)
+        self.sandbox_page = SandboxPage(manager=self.manager)
+
         self.pages: dict[str, Any] = {
-            "status": StatusPage(manager=self.manager),
-            "themes": ThemesPage(manager=self.manager),
-            "presets": PresetsPage(manager=self.manager),
-            "installer": InstallerPage(manager=self.manager),
-            "sandbox": SandboxPage(manager=self.manager),
+            "status": self.status_page,
+            "themes": self.themes_page,
+            "themes_shell": self.themes_page,
+            "themes_gtk": self.themes_page,
+            "themes_icon": self.themes_page,
+            "themes_cursor": self.themes_page,
+            "presets": self.presets_page,
+            "installer": self.installer_page,
+            "sandbox": self.sandbox_page,
         }
 
-        # Aggiunta univoca dei widget delle pagine nello Gtk.Stack condiviso
-        for page_id, controller in self.pages.items():
-            self.content_stack.add_named(controller.get_widget(), page_id)
+        # Aggiunta dei widget univoci nello Gtk.Stack condiviso
+        self.content_stack.add_named(self.status_page.get_widget(), "status")
+        self.content_stack.add_named(self.themes_page.get_widget(), "themes")
+        self.content_stack.add_named(self.presets_page.get_widget(), "presets")
+        self.content_stack.add_named(self.installer_page.get_widget(), "installer")
+        self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
         # Mappatura bidirezionale tra righe Gtk.ListBox e ID pagina
         self._row_to_page_id: dict[Gtk.ListBoxRow, str] = {
             self.row_status: "status",
-            self.row_themes: "themes",
+            self.row_themes_shell: "themes_shell",
+            self.row_themes_gtk: "themes_gtk",
+            self.row_themes_icon: "themes_icon",
+            self.row_themes_cursor: "themes_cursor",
             self.row_presets: "presets",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
@@ -116,6 +134,8 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self._page_id_to_row: dict[str, Gtk.ListBoxRow] = {
             pid: row for row, pid in self._row_to_page_id.items()
         }
+        # Alias per compatibilità con selezioni generiche 'themes'
+        self._page_id_to_row["themes"] = self.row_themes_gtk
 
         # Tracciamento della pagina attiva
         self._current_page_id: str | None = None
@@ -127,14 +147,20 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
         # Connessione callback di caricamento per sincronizzare la sensibilità del pulsante Refresh
-        status_ctrl: StatusPage = self.pages["status"]
-        status_ctrl.on_loading_changed = self._on_status_loading_changed
+        self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed("status", is_l)
+        self.themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed("themes", is_l)
+
+        # Connessione callback di applicazione tema (sincronizza la diagnostica senza duplicare il Toast)
+        def _on_theme_applied_callback(item: Any, result: Any) -> None:
+            self.status_page.refresh()
+
+        self.themes_page.on_theme_applied = _on_theme_applied_callback
 
         # Selezione iniziale della pagina Stato all'avvio dell'applicazione
         self.select_page("status")
 
         # Avvio del primo caricamento diagnostico della pagina Stato
-        status_ctrl.refresh()
+        self.status_page.refresh()
 
     def _setup_breakpoint(self) -> None:
         """Configura il breakpoint responsive di Libadwaita per il collasso automatico."""
@@ -143,7 +169,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             breakpoint = Adw.Breakpoint.new(condition)
             breakpoint.add_setter(self.split_view, "collapsed", True)
             self.add_breakpoint(breakpoint)
-        except Exception as err:
+        except (GLib.GError, AttributeError, TypeError, ValueError) as err:
             logger.warning(
                 "Impossibile registrare Adw.Breakpoint (possibile assenza supporto runtime): %s",
                 err,
@@ -172,30 +198,43 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             button: Widget Gtk.Button cliccato.
         """
         if self._current_page_id == "status":
-            self.pages["status"].refresh()
+            self.status_page.refresh()
+        elif self._current_page_id and (
+            self._current_page_id == "themes" or self._current_page_id.startswith("themes_")
+        ):
+            self.themes_page.refresh()
 
-    def _on_status_loading_changed(self, is_loading: bool) -> None:
-        """Aggiorna lo stato di abilitazione del pulsante Refresh durante il caricamento.
+    def _on_page_loading_changed(self, page_id: str, is_loading: bool) -> None:
+        """Aggiorna lo stato di abilitazione del pulsante Refresh durante il caricamento della pagina corrente.
 
         Args:
+            page_id: Identificatore della pagina che ha modificato lo stato.
             is_loading: True se un refresh è in corso, False altrimenti.
         """
-        self.refresh_button.set_sensitive(not is_loading)
+        if self._current_page_id == page_id or (
+            page_id == "themes" and self._current_page_id and self._current_page_id.startswith("themes_")
+        ):
+            self.refresh_button.set_sensitive(not is_loading)
 
     def select_page(self, page_id: str) -> None:
         """Seleziona e visualizza la pagina specificata nel Gtk.Stack dei contenuti.
 
         Flusso operativo:
             1. Validazione dell'identificatore (se non valido, emette un warning e lascia intatta la vista);
-            2. Cambio del figlio visibile in Gtk.Stack tramite set_visible_child_name();
-            3. Aggiornamento del titolo di content_page;
-            4. Gestione della visibilità del pulsante Refresh (visibile solo per 'status');
-            5. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
-            6. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
+            2. Configurazione della categoria attiva in ThemesPage per le 4 viste di temi;
+            3. Cambio del figlio visibile in Gtk.Stack tramite set_visible_child_name();
+            4. Aggiornamento del titolo di content_page;
+            5. Gestione della visibilità del pulsante Refresh;
+            6. Caricamento automatico al primo accesso se la pagina non è ancora stata popolata;
+            7. Sincronizzazione della riga selezionata nella sidebar Gtk.ListBox;
+            8. In modalità compatta (collapsed), imposta show_content=True per mostrare la pagina.
 
         Args:
-            page_id: Identificatore della pagina ('status', 'themes', 'presets', 'installer', 'sandbox').
+            page_id: Identificatore della pagina ('status', 'themes_shell', 'themes_gtk', etc.).
         """
+        if page_id == "themes":
+            page_id = "themes_gtk"
+
         if page_id not in self.pages:
             logger.warning(
                 "Tentativo di selezionare un page_id sconosciuto o non valido: '%s'",
@@ -203,15 +242,46 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             )
             return
 
-        controller = self.pages[page_id]
+        if page_id == "themes_shell":
+            self.themes_page.set_category(ThemeType.SHELL)
+            stack_id = "themes"
+            page_title = "GNOME Shell"
+        elif page_id == "themes_gtk":
+            self.themes_page.set_category(ThemeType.GTK)
+            stack_id = "themes"
+            page_title = "Applicazioni (GTK)"
+        elif page_id == "themes_icon":
+            self.themes_page.set_category(ThemeType.ICON)
+            stack_id = "themes"
+            page_title = "Icone"
+        elif page_id == "themes_cursor":
+            self.themes_page.set_category(ThemeType.CURSOR)
+            stack_id = "themes"
+            page_title = "Cursori"
+        else:
+            stack_id = page_id
+            page_title = self.pages[page_id].title
 
-        # Imposta la pagina visibile nello Gtk.Stack senza chiamare split_view.set_content()
-        self.content_stack.set_visible_child_name(page_id)
-        self.content_page.set_title(controller.title)
+        # Imposta la pagina visibile nello Gtk.Stack
+        self.content_stack.set_visible_child_name(stack_id)
+        self.content_page.set_title(page_title)
         self._current_page_id = page_id
 
-        # Il pulsante refresh è specifico per la pagina Stato
-        self.refresh_button.set_visible(page_id == "status")
+        # Il pulsante refresh è attivo per le pagine con caricamento dati (status e categorie themes)
+        is_refreshable = page_id in ("status", "themes_shell", "themes_gtk", "themes_icon", "themes_cursor")
+        self.refresh_button.set_visible(is_refreshable)
+        if is_refreshable:
+            ctrl = self.pages[page_id]
+            if hasattr(ctrl, "is_loading"):
+                self.refresh_button.set_sensitive(not ctrl.is_loading)
+
+        # Caricamento automatico al primo accesso se la pagina non è ancora stata popolata
+        if (
+            page_id.startswith("themes")
+            and self.themes_page.current_snapshot is None
+            and not self.themes_page.is_loading
+        ):
+            self.themes_page.refresh()
 
         # Sincronizza la selezione visiva nella Gtk.ListBox senza generare loop ricorsivi
         target_row = self._page_id_to_row.get(page_id)

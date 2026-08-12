@@ -59,7 +59,59 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkListBoxRow" id="row_themes">
+                          <object class="GtkListBoxRow" id="row_themes_shell">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">preferences-system-windows-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">GNOME Shell</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_themes_gtk">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Applicazioni (GTK)</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_themes_icon">
                             <property name="child">
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
@@ -75,7 +127,33 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label">Esplora temi</property>
+                                    <property name="label">Icone</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkListBoxRow" id="row_themes_cursor">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">input-mouse-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label">Cursori</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>

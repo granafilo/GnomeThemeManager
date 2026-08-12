@@ -11,7 +11,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import gi
 
@@ -260,7 +260,7 @@ class StatusPage:
         Args:
             sync: Se True, esegue l'operazione in modo sincrono e deterministico (usato nei test).
         """
-        if self._is_loading:
+        if self._is_loading and not sync:
             logger.debug("Refresh già in corso: richiesta ignorata.")
             return
 
