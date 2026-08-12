@@ -129,17 +129,17 @@ def tk_root():
 
 
 def test_cli_gui_flag_routing() -> None:
-    """Verifica che il flag -g / --gui invochi launch_gui."""
+    """Verifica che il flag --tk-gui invochi il fallback launch_gui di Tkinter."""
     with patch("gnome_theme_manager.gui_tk.launch_gui", return_value=0) as mock_launch:
-        exit_code = main(["--gui"])
+        exit_code = main(["--tk-gui"])
         assert exit_code == 0
         mock_launch.assert_called_once()
 
 
 def test_cli_gui_subcommand_routing() -> None:
-    """Verifica che il subcomando 'gui' invochi launch_gui."""
+    """Verifica che il subcomando 'gui-tk' invochi il fallback launch_gui di Tkinter."""
     with patch("gnome_theme_manager.gui_tk.launch_gui", return_value=0) as mock_launch:
-        exit_code = main(["gui"])
+        exit_code = main(["gui-tk"])
         assert exit_code == 0
         mock_launch.assert_called_once()
 

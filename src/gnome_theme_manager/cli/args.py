@@ -19,7 +19,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-g", "--gui",
         action="store_true",
-        help="Avvia l'interfaccia grafica utente desktop (Tkinter)",
+        help="Avvia l'interfaccia grafica nativa GNOME GTK4/Libadwaita",
+    )
+    parser.add_argument(
+        "--tk-gui",
+        action="store_true",
+        help="Avvia temporaneamente la GUI legacy Tkinter (fallback di rollback)",
     )
 
     subparsers = parser.add_subparsers(
@@ -28,10 +33,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="Comando da eseguire",
     )
 
-    # Subcomando: gui
+    # Subcomando: gui (GTK4/Libadwaita)
     subparsers.add_parser(
         "gui",
-        help="Avvia l'interfaccia grafica utente desktop (Tkinter)",
+        help="Avvia l'interfaccia grafica nativa GNOME GTK4/Libadwaita",
+    )
+
+    # Subcomando: gui-tk (Legacy Tkinter Fallback)
+    subparsers.add_parser(
+        "gui-tk",
+        help="Avvia temporaneamente la GUI legacy Tkinter (fallback di rollback)",
     )
 
     # Subcomando: current
