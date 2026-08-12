@@ -144,7 +144,7 @@ def test_manager_gsettings_unavailable() -> None:
     """Verifica che l'assenza di GSettings sollevi GSettingsUnavailableError."""
     # Inizializziamo senza passare gsettings mock e forzando _gsettings = None
     mgr = ThemeManager(gsettings=None)
-    mgr._gsettings = None  # noqa: SLF001
+    mgr._gsettings = None
 
     with pytest.raises(GSettingsUnavailableError):
         mgr.get_current_themes()

@@ -1,7 +1,7 @@
 """Test di unità per il modulo SandboxBridge e l'integrazione con Snap e Flatpak."""
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,7 +18,6 @@ from gnome_theme_manager.core.models import (
     ThemeType,
 )
 from gnome_theme_manager.core.sandbox_bridge import SandboxBridge
-
 
 # =============================================================================
 # 1. Test Rilevamento Disponibilità Binari ($PATH)
@@ -62,7 +61,7 @@ def test_sandbox_status_all_active() -> None:
     """Verifica la corretta generazione di SandboxStatus quando entrambi i runtime sono attivi."""
     bridge = SandboxBridge()
 
-    def mock_subprocess_run(cmd: list[str], **kwargs) -> MagicMock:  # noqa: ARG001
+    def mock_subprocess_run(cmd: list[str], **kwargs) -> MagicMock:
         res = MagicMock()
         res.returncode = 0
         if cmd[:3] == ["snap", "list", "gtk-common-themes"]:
@@ -101,7 +100,7 @@ def test_propagate_to_flatpak_success() -> None:
     bridge = SandboxBridge()
     executed_commands: list[list[str]] = []
 
-    def mock_run(cmd: list[str], **kwargs) -> MagicMock:  # noqa: ARG001
+    def mock_run(cmd: list[str], **kwargs) -> MagicMock:
         executed_commands.append(cmd)
         res = MagicMock()
         res.returncode = 0

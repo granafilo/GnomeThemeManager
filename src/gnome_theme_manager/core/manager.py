@@ -140,8 +140,8 @@ class ThemeManager:
 
         color_scheme_supported = False
         if self._gsettings and hasattr(self._gsettings, "_has_key") and hasattr(self._gsettings, "_settings"):
-            color_scheme_supported = self._gsettings._has_key(  # noqa: SLF001
-                self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME  # noqa: SLF001
+            color_scheme_supported = self._gsettings._has_key(
+                self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME
             )
 
         sandbox_stat = self._sandbox.get_sandbox_status()

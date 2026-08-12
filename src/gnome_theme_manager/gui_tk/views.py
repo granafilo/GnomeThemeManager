@@ -10,10 +10,11 @@ Ciascuna vista è disaccoppiata e interagisce esclusivamente con l'istanza di `T
 """
 
 import logging
-from pathlib import Path
 import tkinter as tk
+from collections.abc import Callable
+from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from ..core.errors import (
     ArchiveExtractionError,
