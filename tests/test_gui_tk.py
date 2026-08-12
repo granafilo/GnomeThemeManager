@@ -197,6 +197,7 @@ def test_current_status_view_refresh(tk_root: tk.Tk, mock_manager: MagicMock) ->
     assert view.var_shell.get() == "Nordic"
     assert view.var_color_scheme.get() == "prefer-dark"
     assert "✅" in view.var_gsettings_status.get()
+    assert "Disponibile" in view.var_snap_status.get() or "Non" in view.var_snap_status.get()
 
 
 def test_current_status_view_gsettings_unavailable(tk_root: tk.Tk, mock_manager: MagicMock) -> None:
@@ -282,7 +283,11 @@ def test_available_themes_view_apply_unified(tk_root: tk.Tk, mock_manager: Magic
     # Test applicazione tema globale in un solo clic
     with patch("tkinter.messagebox.showinfo") as mock_info:
         view._on_apply_unified()
-        mock_manager.apply_unified_theme.assert_called_with(theme_name="Nordic", apply_gtk4_override=True)
+        mock_manager.apply_unified_theme.assert_called_with(
+            theme_name="Nordic",
+            apply_gtk4_override=True,
+            propagate_sandbox=True,
+        )
         mock_info.assert_called_once()
         callback_mock.assert_called_once()
 
@@ -309,7 +314,11 @@ def test_preset_manager_view_operations(tk_root: tk.Tk, mock_manager: MagicMock)
     # Test applicazione preset
     with patch("tkinter.messagebox.showinfo") as mock_info:
         view._on_apply_preset()
-        mock_manager.apply_preset.assert_called_with("Dark-Nordic", apply_gtk4_override=True)
+        mock_manager.apply_preset.assert_called_with(
+            "Dark-Nordic",
+            apply_gtk4_override=True,
+            propagate_sandbox=True,
+        )
         mock_info.assert_called_once()
         callback_mock.assert_called_once()
 

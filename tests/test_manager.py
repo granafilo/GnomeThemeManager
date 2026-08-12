@@ -7,7 +7,15 @@ import pytest
 
 from gnome_theme_manager.core.errors import GSettingsUnavailableError, ThemeNotFoundError
 from gnome_theme_manager.core.manager import ThemeManager
-from gnome_theme_manager.core.models import ApplyResult, SystemStatus, Theme, ThemeSet, ThemeType
+from gnome_theme_manager.core.models import (
+    ApplyResult,
+    PropagationResult,
+    SandboxStatus,
+    SystemStatus,
+    Theme,
+    ThemeSet,
+    ThemeType,
+)
 
 
 @pytest.fixture
@@ -57,12 +65,33 @@ def mock_presets() -> MagicMock:
 
 
 @pytest.fixture
+def mock_sandbox() -> MagicMock:
+    """Mock per SandboxBridge."""
+    sandbox = MagicMock()
+    sandbox.get_sandbox_status.return_value = SandboxStatus(
+        snap_available=True,
+        flatpak_available=True,
+        snap_gtk_common_themes_installed=True,
+        flatpak_filesystem_override_active=True,
+    )
+    sandbox.propagate_all.return_value = PropagationResult(
+        flatpak_success=True,
+        snap_success=True,
+        flatpak_messages=["Flatpak OK"],
+        snap_messages=["Snap OK"],
+        warnings=[],
+    )
+    return sandbox
+
+
+@pytest.fixture
 def manager(
     mock_scanner: MagicMock,
     mock_gsettings: MagicMock,
     mock_gtk4_linker: MagicMock,
     mock_installer: MagicMock,
     mock_presets: MagicMock,
+    mock_sandbox: MagicMock,
 ) -> ThemeManager:
     """Istanza di ThemeManager con componenti iniettati (mock)."""
     return ThemeManager(
@@ -71,6 +100,7 @@ def manager(
         gtk4_linker=mock_gtk4_linker,
         installer=mock_installer,
         presets=mock_presets,
+        sandbox_bridge=mock_sandbox,
     )
 
 
@@ -79,13 +109,19 @@ def manager(
 # -----------------------------------------------------------------------------
 
 
-def test_manager_properties(manager: ThemeManager, mock_scanner: MagicMock, mock_gsettings: MagicMock) -> None:
+def test_manager_properties(
+    manager: ThemeManager,
+    mock_scanner: MagicMock,
+    mock_gsettings: MagicMock,
+    mock_sandbox: MagicMock,
+) -> None:
     """Verifica che i componenti siano accessibili tramite le relative proprietà."""
     assert manager.scanner == mock_scanner
     assert manager.gsettings == mock_gsettings
     assert manager.gtk4_linker is not None
     assert manager.installer is not None
     assert manager.presets is not None
+    assert manager.sandbox == mock_sandbox
 
 
 def test_manager_get_system_status(manager: ThemeManager, mock_installer: MagicMock) -> None:

@@ -124,6 +124,7 @@ def test_cli_apply_no_gtk4_override_flag(capsys) -> None:
         mock_mgr.apply_themes.assert_called_once_with(
             ThemeSet(gtk_theme="Nordic"),
             apply_gtk4_override=False,
+            propagate_sandbox=True,
         )
 
 
@@ -220,7 +221,11 @@ def test_cli_preset_apply_success(capsys) -> None:
         assert exit_code == 0
         assert "Preset 'NordicPreset' applicato con successo" in captured.out
         assert "Tema GTK impostato su:         Nordic" in captured.out
-        mock_mgr.apply_preset.assert_called_once_with("NordicPreset", apply_gtk4_override=True)
+        mock_mgr.apply_preset.assert_called_once_with(
+            "NordicPreset",
+            apply_gtk4_override=True,
+            propagate_sandbox=True,
+        )
 
 
 def test_cli_preset_delete_with_yes(capsys) -> None:
