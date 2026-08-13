@@ -14,13 +14,13 @@ Un pacchetto **AppImage** è un singolo file eseguibile portabile che contiene l
 2. Apri il terminale nella cartella di download e assegna i permessi di esecuzione:
 
 ```bash
-chmod +x GNOMEThemeManager-0.1.0-x86_64.AppImage
+chmod +x GNOMEThemeManager-0.9.0-beta1-x86_64.AppImage
 ```
 
 3. Avvia l'applicazione:
 
 ```bash
-./GNOMEThemeManager-0.1.0-x86_64.AppImage
+./GNOMEThemeManager-0.9.0-beta1-x86_64.AppImage
 ```
 
 ---
@@ -84,7 +84,7 @@ sudo apt install -y libfuse2t64 || sudo apt install -y libfuse2
 
 In alternativa, puoi estrarre l'AppImage ed eseguirla direttamente senza FUSE:
 ```bash
-./GNOMEThemeManager-0.1.0-x86_64.AppImage --appimage-extract
+./GNOMEThemeManager-0.9.0-beta1-x86_64.AppImage --appimage-extract
 ./squashfs-root/AppRun
 ```
 

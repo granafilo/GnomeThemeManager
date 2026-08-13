@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -354,3 +355,57 @@ def test_subprocess_execution_handling():
                 cmd = args[0]
                 assert isinstance(cmd, list)
                 assert kwargs.get("shell") is not True
+
+
+def test_gtk4_linker_comprehensive_filesystem_rollback(linker, temp_env):
+    """Verifica l'intero ciclo di vita sul filesystem reale in caso di rollback e conservazione di modifiche manuali."""
+    # 1. Configurazione originale dell'utente
+    gtk_css = temp_env["config_dir"] / "gtk.css"
+    gtk_css.write_text("/* original gtk.css */")
+
+    gtk_dark_css = temp_env["config_dir"] / "gtk-dark.css"
+    gtk_dark_css.write_text("/* original gtk-dark.css */")
+
+    assets_dir = temp_env["config_dir"] / "assets"
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    (assets_dir / "logo.png").write_text("logo")
+
+    # 2. Applicazione override parziale che fallisce
+    original_symlink_to = Path.symlink_to
+    original_copytree = shutil.copytree
+
+    def mock_symlink_to(self_path, target_path):
+        if "assets" in str(self_path):
+            raise OSError("Errore simulato di scrittura assets")
+        return original_symlink_to(self_path, target_path)
+
+    def mock_copytree(src, dst, *args, **kwargs):
+        if "assets" in str(dst):
+            raise OSError("Errore simulato di scrittura assets copytree")
+        return original_copytree(src, dst, *args, **kwargs)
+
+    with (
+        patch.object(Path, "symlink_to", mock_symlink_to),
+        patch("shutil.copytree", mock_copytree),
+        patch("shutil.copy2", side_effect=OSError("Copy failed")),
+    ):
+        with pytest.raises(ThemeApplyError):
+            linker.apply_override(temp_env["theme_dir"])
+
+    # 3. Verifica del rollback: il filesystem deve essere identico allo stato originale
+    assert gtk_css.exists() and not gtk_css.is_symlink()
+    assert gtk_css.read_text() == "/* original gtk.css */"
+
+    assert gtk_dark_css.exists() and not gtk_dark_css.is_symlink()
+    assert gtk_dark_css.read_text() == "/* original gtk-dark.css */"
+
+    assert assets_dir.is_dir()
+    assert (assets_dir / "logo.png").read_text() == "logo"
+
+    # Nessun file temporaneo in config_dir o config_root
+    temp_files = list(linker.config_dir.glob("*.tmp")) + list(linker.config_root.glob("*.tmp"))
+    assert len(temp_files) == 0
+
+    # Il manifest deve essere pulito / vuoto o coerente
+    manifest = linker._load_manifest()
+    assert manifest["active_theme"] is None

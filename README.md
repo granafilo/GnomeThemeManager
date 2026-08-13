@@ -6,7 +6,13 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
 ![License](https://img.shields.io/badge/License-MIT-success)
-![Status](https://img.shields.io/badge/Status-Active%20Development-orange)
+![Status](https://img.shields.io/badge/Status-Beta-orange)
+
+## Stato del progetto
+
+La versione 0.9.0-beta1 è una release destinata ai test pubblici.
+Non viene ancora garantita la compatibilità con tutte le distribuzioni,
+versioni di GNOME o temi non conformi agli standard attesi.
 
 Manager modulare in Python per gestire temi GTK, icone, cursori e GNOME Shell su desktop GNOME.
 
@@ -35,7 +41,7 @@ Il progetto include:
 - GUI nativa GNOME con GTK4/Libadwaita.
 - GUI Tkinter legacy come fallback temporaneo.
 
-Versione pacchetto attuale: 0.1.0
+Versione pacchetto attuale: 0.9.0-beta1 (PEP 440: 0.9.0b1)
 
 ## Feature
 
@@ -75,8 +81,8 @@ Pacchetti GUI Tkinter fallback (opzionale):
 Scarica il file eseguibile `.AppImage` dalle [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) e avvialo:
 
 ```bash
-chmod +x GNOMEThemeManager-0.1.0-x86_64.AppImage
-./GNOMEThemeManager-0.1.0-x86_64.AppImage
+chmod +x GNOMEThemeManager-0.9.0-beta1-x86_64.AppImage
+./GNOMEThemeManager-0.9.0-beta1-x86_64.AppImage
 ```
 
 Per le istruzioni dettagliate sui prerequisiti e compilazione locale, consulta **[INSTALL.md](INSTALL.md)**.
@@ -170,6 +176,37 @@ Script utili:
 - scripts/run_all_tests.sh — suite completa pytest + ruff
 - scripts/test_env.sh — bootstrap ambiente di sviluppo (.venv + dipendenze)
 - scripts/cleanup-repo.sh — pulizia artefatti di build/cache locali
+
+## Configurazione, Backup e Ripristino
+
+Theme Manager memorizza i suoi dati e i backup in percorsi XDG standard:
+- **Manifest GTK4**: `$XDG_CONFIG_HOME/gnome-theme-manager/gtk4_manifest.json` (di default `~/.config/gnome-theme-manager/gtk4_manifest.json`).
+- **File di backup**: `$XDG_DATA_HOME/gnome-theme-manager/backups/` (di default `~/.local/share/gnome-theme-manager/backups/`).
+- **Preset**: `$XDG_CONFIG_HOME/gnome-theme-manager/presets/` (di default `~/.config/gnome-theme-manager/presets/`).
+
+### Procedura di Rollback manuale
+Se per qualsiasi motivo si desidera rimuovere l'override di Theme Manager e ripristinare i file originali manualmente:
+1. Rimuovere i collegamenti simbolici correnti:
+   `rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/gtk-dark.css`
+   `rm -rf ~/.config/gtk-4.0/assets`
+2. Copiare i file di backup dalla directory `backups` (se presenti) ripristinandoli con il nome originale in `~/.config/gtk-4.0/`.
+
+## Matrice di Compatibilità
+Gli ambienti testati e convalidati per questa release beta sono:
+
+| Distribuzione | Versione | GNOME | GTK | Installazione | GUI | CLI | GTK4 override | Esito |
+|---|---|---|---|---|---|---|---|---|
+| Ubuntu | 24.04 LTS | GNOME 46 | GTK4 / GTK3 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
+| Ubuntu | 22.04 LTS | GNOME 42 | GTK4 / GTK3 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
+| Fedora | 40 | GNOME 46 | GTK4 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
+| Arch Linux | Rolling | GNOME 46 | GTK4 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
+| Debian | 12 | GNOME 43 | GTK4 / GTK3 | Non testato | Non testato | Non testato | Non testato | Parzialmente testato |
+
+### Limitazioni Sandbox (Snap & Flatpak)
+Le applicazioni all'interno di sandbox isolate (come Firefox in formato Snap o Flatpak) potrebbero non riflettere immediatamente i temi GTK installati nella cartella utente. Theme Manager include la propagazione automatica (tramite comandi `flatpak override` ed il controllo di `gtk-common-themes` per Snap), ma temi non standard richiedono pacchetti specifici della distribuzione.
+
+### Dipendenze residue dell'AppImage
+L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime GTK4/Libadwaita o GObject Introspection host. Pertanto, l'ambiente host deve disporre di `python3-gi`, `gir1.2-gtk-4.0` e `gir1.2-adw-1` installati per garantire l'avvio della GUI nativa.
 
 ## Struttura repository
 

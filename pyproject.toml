@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gnome-theme-manager"
-version = "0.1.0"
+version = "0.9.0b1"
 description = "Manager modulare in Python per temi GTK, icone e cursori su ambiente desktop GNOME."
 readme = "README.md"
 requires-python = ">=3.10"

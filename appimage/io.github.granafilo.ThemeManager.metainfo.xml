@@ -46,6 +46,11 @@
   </provides>
 
   <releases>
+    <release version="0.9.0~beta1" date="2026-08-13">
+      <description>
+        <p>Beta release introducing safe GTK4 override backups, automatic filesystem rollback, strict theme name input validation, and robust error handling.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-08-13">
       <description>
         <p>Initial release featuring GTK4/Libadwaita GUI, theme archive installer, sandbox propagation, and preset management.</p>

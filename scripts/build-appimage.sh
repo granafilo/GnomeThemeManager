@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 APP_NAME="GNOMEThemeManager"
 APP_ID="io.github.granafilo.ThemeManager"
-VERSION="0.1.0"
+VERSION="0.9.0-beta1"
 ARCH="${ARCH:-x86_64}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
