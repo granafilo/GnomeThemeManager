@@ -1,18 +1,12 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
 dist/
-AppDir/
-*.AppImage
 downloads/
 eggs/
 .eggs/
@@ -22,70 +16,35 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# PyInstaller / cx_Freeze
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django / Flask (se rilevanti)
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-.ipython/
-profile_default/
-ipython_config.py
-
-# Environments (Virtual Environments)
-.env
-.venv
+# Virtual Environments
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 
-# IDE / Editors
+# AppImage & Packaging
+AppDir/
+*.AppImage
+*.appimage
+squashfs-root/
+appimagetool-*.AppImage
+
+# Testing & Linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
@@ -95,24 +54,32 @@ venv.bak/
 .project
 .pydevproject
 .settings/
-
-# macOS / OS specific
 .DS_Store
-.DS_Store?
-._*
+
+# Build artifacts & C extensions
+*.o
+*.a
+*.so.*
+*.dylib
+
+# Temporary files & Logs
+*.log
+*.tmp
+*.bak
+*.backup
+gtk414-warnings.txt
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
+
+# OS specific
+Thumbs.db
+.DS_Store
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
-
-# Flatpak / Meson build temporary files
-.flatpak-builder/
-_build/
-builddir/
-subprojects/
-
-# Scratch & Temporary local files
-tmp/
-*.bak
-*.tmp
-gtk414-warnings.txt
