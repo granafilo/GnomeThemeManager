@@ -64,7 +64,6 @@ source .venv/bin/activate
 
 pip install --upgrade pip --quiet
 pip install -e .[dev] --quiet
-pip install -e . --quiet
 
 echo -e "${GREEN}✓ Dipendenze installate (pytest, pytest-cov, ruff, gnome_theme_manager).${NC}"
 
