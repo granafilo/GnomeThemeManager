@@ -1,0 +1,68 @@
+name: Build AppImage
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-appimage:
+    name: Build AppImage (x86_64)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies (GTK4 & Libadwaita)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-gi \
+            python3-gi-cairo \
+            gir1.2-gtk-4.0 \
+            gir1.2-adw-1 \
+            libgtk-4-dev \
+            libadwaita-1-dev \
+            desktop-file-utils \
+            appstream \
+            curl \
+            file
+
+      - name: Install appimagetool
+        run: |
+          sudo curl -sLO "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          sudo chmod +x appimagetool-x86_64.AppImage
+          sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
+
+      - name: Make build script executable
+        run: chmod +x scripts/build-appimage.sh
+
+      - name: Build AppImage package
+        run: ./scripts/build-appimage.sh
+
+      - name: Display generated AppImage details
+        run: |
+          ls -la dist/
+          echo "AppImage Size:"
+          du -h dist/*.AppImage
+
+      - name: Upload AppImage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GNOMEThemeManager-x86_64.AppImage
+          path: dist/*.AppImage
+          retention-days: 14
+
+      - name: Upload AppImage to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

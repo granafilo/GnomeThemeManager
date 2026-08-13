@@ -1,5 +1,7 @@
 # GNOME Theme Manager
 
+![Build AppImage](https://github.com/granafilo/GnomeThemeManager/actions/workflows/build-appimage.yml/badge.svg)
+![AppImage](https://img.shields.io/badge/AppImage-Portable-blue?logo=appimage&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
 ![License](https://img.shields.io/badge/License-MIT-success)
@@ -67,7 +69,20 @@ Pacchetti GUI Tkinter fallback (opzionale):
 
 ## Installazione
 
-	git clone <repo-url>
+### Opzione A: AppImage Portabile (Consigliata)
+
+Scarica il file eseguibile `.AppImage` dalle [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) e avvialo:
+
+```bash
+chmod +x GNOMEThemeManager-0.1.0-x86_64.AppImage
+./GNOMEThemeManager-0.1.0-x86_64.AppImage
+```
+
+Per le istruzioni dettagliate sui prerequisiti e compilazione locale, consulta **[INSTALL.md](INSTALL.md)**.
+
+### Opzione B: Installazione da sorgenti (Venv)
+
+	git clone https://github.com/granafilo/GnomeThemeManager.git
 	cd GnomeThemeManager
 
 	python3 -m venv .venv
@@ -164,6 +179,7 @@ Script utili:
 
 ## Documentazione
 
+- [Guida Installazione AppImage](INSTALL.md)
 - [Changelog](CHANGELOG.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Fase 1 - CLI MVP](docs/phases/01-cli-mvp.md)

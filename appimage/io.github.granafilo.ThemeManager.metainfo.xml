@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.granafilo.ThemeManager</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>GNOME Theme Manager</name>
+  <summary>Modern GTK4 &amp; Libadwaita theme, icon, cursor and shell manager for GNOME</summary>
+  
+  <description>
+    <p>
+      GNOME Theme Manager is a modern desktop application for Ubuntu and GNOME Linux distributions.
+      It allows users to discover, install, apply, and manage GTK4/3 themes, icon packs, cursor sets,
+      and GNOME Shell themes seamlessly through a native Libadwaita user interface or a powerful CLI.
+    </p>
+    <p>Main features include:</p>
+    <ul>
+      <li>Scanning and management of user (~/.local/share) and system themes</li>
+      <li>One-click GTK4 and Libadwaita theme overrides via CSS symlinking</li>
+      <li>Archive theme installer supporting .tar.gz, .tar.xz, and .zip archives</li>
+      <li>Preset management to save and restore complete desktop theme configurations</li>
+      <li>Snap and Flatpak compatibility checks and sandbox theme propagation</li>
+      <li>Native GNOME Libadwaita GUI and fast Command Line Interface (CLI)</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.granafilo.ThemeManager.desktop</launchable>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main Window of GNOME Theme Manager displaying active themes and preset management</caption>
+      <image type="source">https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/docs/screenshots/main-window.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/granafilo/GnomeThemeManager</url>
+  <url type="bugtracker">https://github.com/granafilo/GnomeThemeManager/issues</url>
+  
+  <categories>
+    <category>Settings</category>
+    <category>DesktopSettings</category>
+    <category>GTK</category>
+  </categories>
+
+  <provides>
+    <binary>gnome-theme-manager</binary>
+  </provides>
+
+  <releases>
+    <release version="0.1.0" date="2026-08-13">
+      <description>
+        <p>Initial release featuring GTK4/Libadwaita GUI, theme archive installer, sandbox propagation, and preset management.</p>
+      </description>
+    </release>
+  </releases>
+</component>
