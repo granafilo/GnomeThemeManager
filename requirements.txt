@@ -1,2 +1,0 @@
-# Dipendenze a runtime
-PyGObject>=3.42.0
