@@ -3,4 +3,4 @@
 Manager modulare per temi GTK, icone e cursori su GNOME.
 """
 
-__version__ = "0.9.0b1"
+__version__ = "0.9.0b2"

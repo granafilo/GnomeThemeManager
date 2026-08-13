@@ -52,17 +52,17 @@ def check_version():
     print(f"  metainfo.xml (AppStream):           {xml_ver}")
 
     # Controlli di corrispondenza esatta
-    if pyproject_ver != "0.9.0b1":
-        print(f"Errore: versione pyproject.toml non è 0.9.0b1 (trovato: {pyproject_ver})", file=sys.stderr)
+    if pyproject_ver != "0.9.0b2":
+        print(f"Errore: versione pyproject.toml non è 0.9.0b2 (trovato: {pyproject_ver})", file=sys.stderr)
         return 1
-    if init_ver != "0.9.0b1":
-        print(f"Errore: versione __init__.py non è 0.9.0b1 (trovato: {init_ver})", file=sys.stderr)
+    if init_ver != "0.9.0b2":
+        print(f"Errore: versione __init__.py non è 0.9.0b2 (trovato: {init_ver})", file=sys.stderr)
         return 1
-    if build_ver != "0.9.0-beta1":
-        print(f"Errore: versione build-appimage.sh non è 0.9.0-beta1 (trovato: {build_ver})", file=sys.stderr)
+    if build_ver != "0.9.0-beta2":
+        print(f"Errore: versione build-appimage.sh non è 0.9.0-beta2 (trovato: {build_ver})", file=sys.stderr)
         return 1
-    if xml_ver != "0.9.0~beta1":
-        print(f"Errore: versione metainfo.xml non è 0.9.0~beta1 (trovato: {xml_ver})", file=sys.stderr)
+    if xml_ver != "0.9.0~beta2":
+        print(f"Errore: versione metainfo.xml non è 0.9.0~beta2 (trovato: {xml_ver})", file=sys.stderr)
         return 1
 
     print("✓ Tutte le versioni sono coerenti!")

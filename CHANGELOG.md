@@ -4,6 +4,13 @@ Tutte le modifiche rilevanti a questo progetto sono documentate in questo file.
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.0-beta2] - 2026-08-13
+
+### Fixed
+- Added working `--version` support to the CLI and AppImage.
+- Fixed argument forwarding from the AppImage launcher wrapper script.
+- Prevented unnecessary GUI or configuration initialization for version checks.
+
 ## [0.9.0-beta1] - 2026-08-13
 
 ### Added

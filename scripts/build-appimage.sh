@@ -18,7 +18,7 @@ NC='\033[0m' # No Color
 
 APP_NAME="GNOMEThemeManager"
 APP_ID="io.github.granafilo.ThemeManager"
-VERSION="0.9.0-beta1"
+VERSION="0.9.0-beta2"
 ARCH="${ARCH:-x86_64}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -112,8 +112,12 @@ export PYTHONPATH="${APPDIR}/usr/lib/python3/site-packages:${PYTHONPATH}"
 export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export XDG_CONFIG_DIRS="${APPDIR}/etc:${XDG_CONFIG_DIRS:-/etc/xdg}"
 
-# Esegui la GUI automaticamente
-exec "${APPDIR}/usr/bin/gnome-theme-manager" gui "$@"
+# Esegui la GUI se non vengono passati argomenti, altrimenti esegui il comando richiesto
+if [ $# -eq 0 ]; then
+    exec "${APPDIR}/usr/bin/gnome-theme-manager" gui
+else
+    exec "${APPDIR}/usr/bin/gnome-theme-manager" "$@"
+fi
 EOF
 chmod +x "$APP_DIR/AppRun"
 

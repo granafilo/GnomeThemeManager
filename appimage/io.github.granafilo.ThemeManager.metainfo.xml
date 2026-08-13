@@ -46,6 +46,11 @@
   </provides>
 
   <releases>
+    <release version="0.9.0~beta2" date="2026-08-13">
+      <description>
+        <p>Beta release fixing command line argument forwarding in AppImage wrapper and enabling Working --version CLI flag.</p>
+      </description>
+    </release>
     <release version="0.9.0~beta1" date="2026-08-13">
       <description>
         <p>Beta release introducing safe GTK4 override backups, automatic filesystem rollback, strict theme name input validation, and robust error handling.</p>
