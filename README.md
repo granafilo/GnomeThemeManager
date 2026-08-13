@@ -164,8 +164,11 @@ Script unico:
 	bash scripts/run_all_tests.sh
 
 Script utili:
-- scripts/run_cli.sh
-- scripts/run_all_tests.sh
+
+- scripts/run_cli.sh — esegue la CLI senza installare il pacchetto
+- scripts/run_all_tests.sh — suite completa pytest + ruff
+- scripts/test_env.sh — bootstrap ambiente di sviluppo (.venv + dipendenze)
+- scripts/cleanup-repo.sh — pulizia artefatti di build/cache locali
 
 ## Struttura repository
 
