@@ -17,6 +17,8 @@ from typing import Any
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
@@ -54,7 +56,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         Raises:
             FileNotFoundError: Se il template window.ui non viene trovato.
         """
-        super().__init__(application=app, title="Gnome Theme Manager")
+        super().__init__(application=app, title=_("Gnome Theme Manager"))
 
         # Dimensionamento minimo (richiesto da Libadwaita) e dimensione iniziale consigliata
         self.set_size_request(760, 520)
@@ -297,19 +299,19 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         if page_id == "themes_shell":
             self.themes_page.set_category(ThemeType.SHELL)
             stack_id = "themes"
-            page_title = "GNOME Shell"
+            page_title = _("GNOME Shell")
         elif page_id == "themes_gtk":
             self.themes_page.set_category(ThemeType.GTK)
             stack_id = "themes"
-            page_title = "Applicazioni (GTK)"
+            page_title = _("Applicazioni (GTK)")
         elif page_id == "themes_icon":
             self.themes_page.set_category(ThemeType.ICON)
             stack_id = "themes"
-            page_title = "Icone"
+            page_title = _("Icone")
         elif page_id == "themes_cursor":
             self.themes_page.set_category(ThemeType.CURSOR)
             stack_id = "themes"
-            page_title = "Cursori"
+            page_title = _("Cursori")
         else:
             stack_id = page_id
             page_title = self.pages[page_id].title

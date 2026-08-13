@@ -87,19 +87,19 @@ def handle_sandbox_status_command(manager: ThemeManager) -> int:
     status = manager.get_system_status()
     sb = status.sandbox_status
 
-    print("\n=== Stato Integrazione Sandbox (Snap & Flatpak) ===")
+    print(_("\n=== Stato Integrazione Sandbox (Snap & Flatpak) ==="))
     if sb is not None:
-        snap_str = "✅ Disponibile" if sb.snap_available else "❌ Non disponibile"
+        snap_str = _("✅ Disponibile") if sb.snap_available else _("❌ Non disponibile")
         snap_themes_str = (
-            "✅ Installato" if sb.snap_gtk_common_themes_installed else "❌ Non installato"
+            _("✅ Installato") if sb.snap_gtk_common_themes_installed else _("❌ Non installato")
         )
-        flatpak_str = "✅ Disponibile" if sb.flatpak_available else "❌ Non disponibile"
-        flatpak_ov_str = "✅ Attivo" if sb.flatpak_filesystem_override_active else "❌ Non attivo"
+        flatpak_str = _("✅ Disponibile") if sb.flatpak_available else _("❌ Non disponibile")
+        flatpak_ov_str = _("✅ Attivo") if sb.flatpak_filesystem_override_active else _("❌ Non attivo")
 
         print(f"  Snap:    {snap_str:<16} | gtk-common-themes:   {snap_themes_str}")
         print(f"  Flatpak: {flatpak_str:<16} | Filesystem override: {flatpak_ov_str}")
     else:
-        print("  Stato sandbox non disponibile.")
+        print(_("  Stato sandbox non disponibile."))
     print()
     return 0
 
@@ -116,15 +116,15 @@ def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool)
     themes: list[Theme] = manager.list_themes(theme_type=t_type, user_only=user_only)
 
     if not themes:
-        print(f"\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n")
+        print(_("\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n").format(theme_type=theme_type, user_only=user_only))
         return 0
 
-    headers = ["NOME", "TIPO", "ORIGINE", "PERCORSO"]
+    headers = [_("NOME"), _("TIPO"), _("ORIGINE"), _("PERCORSO")]
     rows = [
         [
             t.name,
             t.theme_type.value,
-            "User" if t.is_user_level else "System",
+            _("User") if t.is_user_level else _("System"),
             str(t.path),
         ]
         for t in themes
@@ -132,39 +132,39 @@ def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool)
 
     print()
     print(format_table(headers, rows))
-    print(f"\nTotale temi trovati: {len(themes)}\n")
+    print(_("\nTotale temi trovati: {count}\n").format(count=len(themes)))
     return 0
 
 
 def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> None:
     """Stampa un riepilogo leggibile dell'esito di applicazione temi all'utente."""
-    print("\n✓ Modifiche applicate con successo:")
+    print(_("\n✓ Modifiche applicate con successo:"))
     if result.gtk_theme:
-        print(f"  - Tema GTK impostato su:         {result.gtk_theme}")
+        print(_("  - Tema GTK impostato su:         {theme}").format(theme=result.gtk_theme))
         if result.gtk4_override_applied:
-            print("    └─ Override GTK4/Libadwaita applicato in ~/.config/gtk-4.0")
+            print(_("    └─ Override GTK4/Libadwaita applicato in ~/.config/gtk-4.0"))
         elif not no_gtk4_override:
-            print("    └─ Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)")
+            print(_("    └─ Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)"))
     if result.icon_theme:
-        print(f"  - Tema Icone impostato su:       {result.icon_theme}")
+        print(_("  - Tema Icone impostato su:       {theme}").format(theme=result.icon_theme))
     if result.cursor_theme:
-        print(f"  - Tema Cursori impostato su:     {result.cursor_theme}")
+        print(_("  - Tema Cursori impostato su:     {theme}").format(theme=result.cursor_theme))
     if result.shell_theme:
-        print(f"  - Tema GNOME Shell impostato su: {result.shell_theme}")
+        print(_("  - Tema GNOME Shell impostato su: {theme}").format(theme=result.shell_theme))
     if result.color_scheme:
-        print(f"  - Schema Colori impostato su:    {result.color_scheme}")
+        print(_("  - Schema Colori impostato su:    {scheme}").format(scheme=result.color_scheme))
 
     if result.sandbox_propagation:
         sb = result.sandbox_propagation
         if sb.flatpak_success:
-            print("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati")
+            print(_("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati"))
         if sb.snap_success and not sb.warnings:
             print(
-                "  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes"
+                _("  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes")
             )
 
     for warning in result.warnings:
-        print(f"\n[AVVISO] {warning}")
+        print(f"\n{_('[AVVISO]')} {warning}")
     print()
 
 
@@ -194,8 +194,8 @@ def handle_apply_command(
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
-            "Errore: Specificare almeno un'opzione da applicare "
-            "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme).",
+            _("Errore: Specificare almeno un'opzione da applicare "
+            "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme)."),
             file=sys.stderr,
         )
         return 1
@@ -206,7 +206,7 @@ def handle_apply_command(
 
         if not has_gtk and not has_shell:
             raise ThemeNotFoundError(
-                f"Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema."
+                _("Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema.").format(theme=theme)
             )
 
         if has_gtk:
@@ -257,11 +257,11 @@ def handle_install_command(
         overwrite=overwrite,
     )
 
-    headers = ["NOME TEMA", "TIPO", "PERCORSO INSTALLATO"]
+    headers = [_("NOME TEMA"), _("TIPO"), _("PERCORSO INSTALLATO")]
     rows = [[t.name, t.theme_type.value, str(t.path)] for t in installed_themes]
 
     print(
-        f"\n✓ Installazione completata con successo ({len(installed_themes)} tema/i installato/i):"
+        _("\n✓ Installazione completata con successo ({count} tema/i installato/i):").format(count=len(installed_themes))
     )
     print(format_table(headers, rows))
     print()
@@ -287,17 +287,17 @@ def handle_uninstall_command(
     if not assume_yes:
         confirm = (
             input(
-                f"Sei sicuro di voler disinstallare il tema '{name}' ({theme_type.value})? [s/N]: "
+                _("Sei sicuro di voler disinstallare il tema '{name}' ({type})? [s/N]: ").format(name=name, type=theme_type.value)
             )
             .strip()
             .lower()
         )
         if confirm not in ("s", "si", "y", "yes"):
-            print("\nOperazione annullata dall'utente.\n")
+            print(_("\nOperazione annullata dall'utente.\n"))
             return 0
 
     manager.uninstall_theme(name=name, theme_type=theme_type)
-    print(f"\n✓ Tema '{name}' ({theme_type.value}) disinstallato con successo.\n")
+    print(_("\n✓ Tema '{name}' ({type}) disinstallato con successo.\n").format(name=name, type=theme_type.value))
     return 0
 
 
@@ -313,18 +313,18 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
     if action == "list":
         presets = manager.list_presets()
         if not presets:
-            print("\nNessun preset salvato.\n")
+            print(_("\nNessun preset salvato.\n"))
             return 0
 
         rows = [[p] for p in presets]
-        print("\nPreset salvati disponibili:")
-        print(format_table(["NOME PRESET"], rows))
-        print(f"\nTotale preset: {len(presets)}\n")
+        print(_("\nPreset salvati disponibili:"))
+        print(format_table([_("NOME PRESET")], rows))
+        print(_("\nTotale preset: {count}\n").format(count=len(presets)))
         return 0
 
     elif action == "save":
         saved_path = manager.save_current_as_preset(args.name, overwrite=args.overwrite)
-        print(f"\n✓ Preset '{args.name}' salvato con successo in:\n  {saved_path}\n")
+        print(_("\n✓ Preset '{name}' salvato con successo in:\n  {path}\n").format(name=args.name, path=saved_path))
         return 0
 
     elif action == "apply":
@@ -334,28 +334,28 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
             apply_gtk4_override=not args.no_gtk4_override,
             propagate_sandbox=not no_sb,
         )
-        print(f"\n✓ Preset '{args.name}' applicato con successo:")
+        print(_("\n✓ Preset '{name}' applicato con successo:").format(name=args.name))
         _print_apply_result(result, no_gtk4_override=args.no_gtk4_override)
         return 0
 
     elif action == "delete":
         if not args.yes:
             confirm = (
-                input(f"Sei sicuro di voler eliminare il preset '{args.name}'? [s/N]: ")
+                input(_("Sei sicuro di voler eliminare il preset '{name}'? [s/N]: ").format(name=args.name))
                 .strip()
                 .lower()
             )
             if confirm not in ("s", "si", "y", "yes"):
-                print("\nOperazione annullata dall'utente.\n")
+                print(_("\nOperazione annullata dall'utente.\n"))
                 return 0
 
         manager.delete_preset(args.name)
-        print(f"\n✓ Preset '{args.name}' eliminato con successo.\n")
+        print(_("\n✓ Preset '{name}' eliminato con successo.\n").format(name=args.name))
         return 0
 
     else:
         print(
-            "Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete').",
+            _("Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete')."),
             file=sys.stderr,
         )
         return 1
@@ -385,9 +385,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 from ..gui_gtk import launch_gui as launch_gui_gtk
             except (ImportError, ModuleNotFoundError) as err:
                 print(
-                    f"\n[ERRORE GUI GTK4] GTK4/Libadwaita is required to start the graphical interface. Dettagli: {err}\n"
+                    _("\n[ERRORE GUI GTK4] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\n"
                     "Installa le dipendenze richieste con:\n"
-                    "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n",
+                    "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n").format(err=err),
                     file=sys.stderr,
                 )
                 return 1
@@ -444,31 +444,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Interruzione pulita dell'utente tramite Ctrl+C / SIGINT (exit code standard POSIX 130)
         return 130
     except GSettingsUnavailableError as err:
-        print(f"\n[ERRORE GSETTINGS] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE GSETTINGS]')} {err}\n", file=sys.stderr)
         return 1
     except ThemeNotFoundError as err:
-        print(f"\n[ERRORE TEMA] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE TEMA]')} {err}\n", file=sys.stderr)
         return 1
     except ArchiveExtractionError as err:
-        print(f"\n[ERRORE ESTRAZIONE ARCHIVIO] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE ESTRAZIONE ARCHIVIO]')} {err}\n", file=sys.stderr)
         return 1
     except ThemeValidationError as err:
-        print(f"\n[ERRORE VALIDAZIONE TEMA] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE VALIDAZIONE TEMA]')} {err}\n", file=sys.stderr)
         return 1
     except FileExistsError as err:
-        print(f"\n[ERRORE FILE GIA ESISTENTE] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE FILE GIA ESISTENTE]')} {err}\n", file=sys.stderr)
         return 1
     except FileNotFoundError as err:
-        print(f"\n[ERRORE FILE NON TROVATO] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE FILE NON TROVATO]')} {err}\n", file=sys.stderr)
         return 1
     except ValueError as err:
-        print(f"\n[ERRORE VALORE NON VALIDO] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE VALORE NON VALIDO]')} {err}\n", file=sys.stderr)
         return 1
     except GnomeThemeManagerError as err:
-        print(f"\n[ERRORE GNOME THEME MANAGER] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE GNOME THEME MANAGER]')} {err}\n", file=sys.stderr)
         return 1
     except Exception as err:
-        print(f"\n[ERRORE IMPREVISTO] {err}\n", file=sys.stderr)
+        print(f"\n{_('[ERRORE IMPREVISTO]')} {err}\n", file=sys.stderr)
         return 1
 
 

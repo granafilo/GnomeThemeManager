@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Any
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 gi.require_version("Adw", "1")
@@ -45,26 +47,26 @@ CATEGORY_ICONS: dict[ThemeType, str] = {
 
 # Etichette di presentazione per ciascuna categoria
 CATEGORY_LABELS: dict[ThemeType, str] = {
-    ThemeType.GTK: "Applicazioni (GTK)",
-    ThemeType.ICON: "Icone",
-    ThemeType.CURSOR: "Cursori",
-    ThemeType.SHELL: "GNOME Shell",
+    ThemeType.GTK: _("Applicazioni (GTK)"),
+    ThemeType.ICON: _("Icone"),
+    ThemeType.CURSOR: _("Cursori"),
+    ThemeType.SHELL: _("GNOME Shell"),
 }
 
 # Nomi sintetici delle categorie per il dialogo di conferma
 DIALOG_CATEGORY_NAMES: dict[ThemeType, str] = {
-    ThemeType.SHELL: "GNOME Shell",
-    ThemeType.GTK: "GTK",
-    ThemeType.ICON: "Icone",
-    ThemeType.CURSOR: "Cursori",
+    ThemeType.SHELL: _("GNOME Shell"),
+    ThemeType.GTK: _("GTK"),
+    ThemeType.ICON: _("Icone"),
+    ThemeType.CURSOR: _("Cursori"),
 }
 
 # Titoli completi della testata di categoria
 CATEGORY_TITLES: dict[ThemeType, str] = {
-    ThemeType.GTK: "Temi per Applicazioni (GTK)",
-    ThemeType.ICON: "Temi Icone",
-    ThemeType.CURSOR: "Temi Cursori",
-    ThemeType.SHELL: "Temi GNOME Shell",
+    ThemeType.GTK: _("Temi per Applicazioni (GTK)"),
+    ThemeType.ICON: _("Temi Icone"),
+    ThemeType.CURSOR: _("Temi Cursori"),
+    ThemeType.SHELL: _("Temi GNOME Shell"),
 }
 
 
@@ -106,7 +108,7 @@ def build_theme_presentation(theme: Theme) -> ThemeItemPresentation:
     category_display = CATEGORY_LABELS.get(theme.theme_type, str(theme.theme_type.value).upper())
     icon_name = CATEGORY_ICONS.get(theme.theme_type, "applications-graphics-symbolic")
     origin_display = (
-        "Utente (~/.local/share/...)" if theme.is_user_level else "Sistema (/usr/share/...)"
+        _("Utente (~/.local/share/...)") if theme.is_user_level else _("Sistema (/usr/share/...)")
     )
 
     return ThemeItemPresentation(
@@ -129,7 +131,7 @@ class ThemesPage:
     """Controller per la visualizzazione separata di Tema Attivo e Altri Temi Disponibili."""
 
     PAGE_ID: str = "themes"
-    TITLE: str = "Esplora temi"
+    TITLE: str = _("Esplora temi")
     ICON_NAME: str = "applications-graphics-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
@@ -258,10 +260,10 @@ class ThemesPage:
         """
         self._clear_toast()
         self.active_category = category
-        self.title = CATEGORY_LABELS.get(category, "Temi")
+        self.title = CATEGORY_LABELS.get(category, _("Temi"))
         self._selected_theme = None
         self.apply_button.set_sensitive(False)
-        self.selection_info_label.set_text("Seleziona un tema dall'elenco per applicarlo")
+        self.selection_info_label.set_text(_("Seleziona un tema dall'elenco per applicarlo"))
         self._update_category_header()
 
         if self._snapshot is not None and self.widget.get_visible_child_name() == "ready":
@@ -269,7 +271,7 @@ class ThemesPage:
 
     def _update_category_header(self) -> None:
         """Aggiorna il titolo della categoria e della sezione temi disponibili."""
-        title_text = CATEGORY_TITLES.get(self.active_category, "Temi")
+        title_text = CATEGORY_TITLES.get(self.active_category, _("Temi"))
         self.category_title_label.set_text(title_text)
 
     def refresh(self, sync: bool = False) -> None:
@@ -298,7 +300,7 @@ class ThemesPage:
             try:
                 if self.manager is None:
                     raise GnomeThemeManagerError(
-                        "ThemeManager non disponibile o non inizializzato."
+                        _("ThemeManager non disponibile o non inizializzato.")
                     )
 
                 # Scansione di tutti i temi tramite API pubblica del Facade
@@ -341,7 +343,7 @@ class ThemesPage:
                 return None, err
             except Exception as err:
                 return None, GnomeThemeManagerError(
-                    f"Errore imprevisto durante la scansione: {err}"
+                    f"{_('Errore imprevisto durante la scansione:')} {err}"
                 )
 
         def on_fetch_completed(result: tuple[ThemesSnapshot | None, Exception | None]) -> bool:
@@ -402,11 +404,11 @@ class ThemesPage:
         if row is not None and hasattr(row, "_theme_item"):
             self._selected_theme = row._theme_item
             self.apply_button.set_sensitive(not self._is_applying and not self._is_loading)
-            self.selection_info_label.set_text(f"Selezionato: {self._selected_theme.name}")
+            self.selection_info_label.set_text(f"{_('Selezionato:')} {self._selected_theme.name}")
         else:
             self._selected_theme = None
             self.apply_button.set_sensitive(False)
-            self.selection_info_label.set_text("Seleziona un tema dall'elenco per applicarlo")
+            self.selection_info_label.set_text(_("Seleziona un tema dall'elenco per applicarlo"))
 
     def _on_row_activated(self, list_box: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         """Gestore dell'attivazione riga tramite doppio click (o tasto Invio).
@@ -425,7 +427,7 @@ class ThemesPage:
         list_box.select_row(row)
         self._selected_theme = item
         self.apply_button.set_sensitive(True)
-        self.selection_info_label.set_text(f"Selezionato: {item.name}")
+        self.selection_info_label.set_text(f"{_('Selezionato:')} {item.name}")
 
         self.confirm_and_apply_selected()
 
@@ -455,17 +457,17 @@ class ThemesPage:
             self.active_theme_row.set_subtitle(
                 f"{active_item.origin_display}\n{active_item.path_display}"
             )
-            self.active_theme_badge.set_text("In uso")
+            self.active_theme_badge.set_text(_("In uso"))
             self.active_theme_badge.set_visible(True)
         elif active_theme_name:
             self.active_theme_row.set_title(active_theme_name)
-            self.active_theme_row.set_subtitle("Tema non trovato nell'elenco locale")
-            self.active_theme_badge.set_text("Non presente")
+            self.active_theme_row.set_subtitle(_("Tema non trovato nell'elenco locale"))
+            self.active_theme_badge.set_text(_("Non presente"))
             self.active_theme_badge.set_visible(True)
         else:
-            self.active_theme_row.set_title("Non disponibile")
+            self.active_theme_row.set_title(_("Non disponibile"))
             self.active_theme_row.set_subtitle(
-                "Nessuna impostazione rilevata o backend non disponibile"
+                _("Nessuna impostazione rilevata o backend non disponibile")
             )
             self.active_theme_badge.set_visible(False)
 
@@ -498,21 +500,21 @@ class ThemesPage:
 
         self._selected_theme = None
         self.apply_button.set_sensitive(False)
-        self.selection_info_label.set_text("Seleziona un tema dall'elenco per applicarlo")
+        self.selection_info_label.set_text(_("Seleziona un tema dall'elenco per applicarlo"))
 
         # Aggiornamento widget risultati
-        cat_label = CATEGORY_LABELS.get(target_category, "temi").lower()
+        cat_label = CATEGORY_LABELS.get(target_category, _("temi")).lower()
         if not filtered:
             self.no_results_page.set_visible(True)
             self.themes_list_box.set_visible(False)
             if query:
-                self.count_label.set_text(f"Nessun tema corrispondente a '{query}'")
+                self.count_label.set_text(f"{_('Nessun tema corrispondente a')} '{query}'")
             else:
-                self.count_label.set_text(f"Nessun altro tema alternativo per {cat_label}")
+                self.count_label.set_text(f"{_('Nessun altro tema alternativo per')} {cat_label}")
         else:
             self.no_results_page.set_visible(False)
             self.themes_list_box.set_visible(True)
-            self.count_label.set_text(f"{len(filtered)} altri {cat_label} disponibili")
+            self.count_label.set_text(f"{len(filtered)} {_('altri')} {cat_label} {_('disponibili')}")
 
             for item in filtered:
                 row = Adw.ActionRow()
@@ -526,7 +528,7 @@ class ThemesPage:
                 img.set_pixel_size(24)
                 row.add_prefix(img)
 
-                badge = Gtk.Label(label="Utente" if item.is_user_level else "Sistema")
+                badge = Gtk.Label(label=_("Utente") if item.is_user_level else _("Sistema"))
                 badge.add_css_class("caption")
                 badge.add_css_class("dim-label")
                 badge.set_valign(Gtk.Align.CENTER)
@@ -575,7 +577,7 @@ class ThemesPage:
         win = parent_window or self.widget.get_root()
 
         cat_name = DIALOG_CATEGORY_NAMES.get(item.theme_type, item.category_display)
-        heading = f"Applicare “{item.name}” a {cat_name}?"
+        heading = f"{_('Applicare')} “{item.name}” {_('a')} {cat_name}?"
 
         # Recupero del tema attualmente attivo per la categoria corrente
         active_theme_raw = (
@@ -596,7 +598,7 @@ class ThemesPage:
         extra_box.set_margin_end(16)
         extra_box.set_halign(Gtk.Align.CENTER)
 
-        lbl_cat = Gtk.Label(label=f"Categoria: {cat_name}")
+        lbl_cat = Gtk.Label(label=f"{_('Categoria:')} {cat_name}")
         lbl_cat.set_wrap(False)
         if hasattr(Pango, "EllipsizeMode"):
             lbl_cat.set_ellipsize(Pango.EllipsizeMode.END)
@@ -604,7 +606,7 @@ class ThemesPage:
         extra_box.append(lbl_cat)
 
         if active_name:
-            lbl_active = Gtk.Label(label=f"Tema attualmente attivo: {active_name}")
+            lbl_active = Gtk.Label(label=f"{_('Tema attualmente attivo:')} {active_name}")
             lbl_active.set_wrap(False)
             if hasattr(Pango, "EllipsizeMode"):
                 lbl_active.set_ellipsize(Pango.EllipsizeMode.END)
@@ -618,8 +620,8 @@ class ThemesPage:
             dialog = Adw.AlertDialog.new(heading=heading, body="")
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(extra_box)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("apply", "Applica")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("apply", _("Applica"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -653,8 +655,8 @@ class ThemesPage:
             )
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(extra_box)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("apply", "Applica")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("apply", _("Applica"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -697,7 +699,7 @@ class ThemesPage:
         if self._is_applying:
             logger.warning("Un'applicazione tema è già in corso. Richiesta scartata.")
             if on_complete:
-                on_complete(None, GnomeThemeManagerError("Applicazione già in corso."))
+                on_complete(None, GnomeThemeManagerError(_("Applicazione già in corso.")))
             return
 
         self._is_applying = True
@@ -714,7 +716,7 @@ class ThemesPage:
             try:
                 if self.manager is None:
                     raise GnomeThemeManagerError(
-                        "ThemeManager non disponibile o non inizializzato."
+                        _("ThemeManager non disponibile o non inizializzato.")
                     )
 
                 result = self.manager.apply_themes(
@@ -739,13 +741,13 @@ class ThemesPage:
 
             if error is not None:
                 logger.error("Errore durante l'applicazione del tema '%s': %s", item.name, error)
-                self._show_toast(f"Impossibile applicare il tema «{item.name}»: {error}")
+                self._show_toast(f"{_('Impossibile applicare il tema')} «{item.name}»: {error}")
             elif apply_result is not None:
                 # 1. Verifica specifica per GNOME Shell (estensione User Themes mancante)
                 if item.theme_type == ThemeType.SHELL and apply_result.shell_theme is None:
                     warning_text = (
-                        f"Tema «{item.name}» applicato parzialmente.\n"
-                        "Shell non applicato: estensione 'User Themes' non attiva o non supportata."
+                        f"{_('Tema')} «{item.name}» {_('applicato parzialmente.')}\n"
+                        + _("Shell non applicato: estensione 'User Themes' non attiva o non supportata.")
                     )
                     logger.warning(warning_text)
                     self._show_toast(warning_text)
@@ -769,26 +771,26 @@ class ThemesPage:
                     # 5. Notifica di successo univoca persistente nella parte alta
                     if item.theme_type == ThemeType.CURSOR:
                         msg = (
-                            f"Tema cursore «{item.name}» applicato.\n"
-                            "Potrebbe essere necessario cambiare finestra o riaprire alcune applicazioni."
+                            f"{_('Tema cursore')} «{item.name}» {_('applicato.')}\n"
+                            + _("Potrebbe essere necessario cambiare finestra o riaprire alcune applicazioni.")
                         )
                     elif item.theme_type == ThemeType.GTK:
                         if apply_result.gtk4_override_applied:
                             msg = (
-                                f"Tema GTK «{item.name}» applicato (con override GTK4/Libadwaita)."
+                                f"{_('Tema GTK')} «{item.name}» {_('applicato (con override GTK4/Libadwaita).')}"
                             )
                         else:
-                            msg = f"Tema GTK «{item.name}» applicato."
+                            msg = f"{_('Tema GTK')} «{item.name}» {_('applicato.')}"
                     elif item.theme_type == ThemeType.SHELL:
-                        msg = f"Tema GNOME Shell «{item.name}» applicato."
+                        msg = f"{_('Tema GNOME Shell')} «{item.name}» {_('applicato.')}"
                     elif item.theme_type == ThemeType.ICON:
-                        msg = f"Tema icone «{item.name}» applicato."
+                        msg = f"{_('Tema icone')} «{item.name}» {_('applicato.')}"
                     else:
-                        cat_name = CATEGORY_LABELS.get(item.theme_type, "Tema")
-                        msg = f"Tema {cat_name} «{item.name}» applicato."
+                        cat_name = CATEGORY_LABELS.get(item.theme_type, _("Tema"))
+                        msg = f"{_('Tema')} {cat_name} «{item.name}» {_('applicato.')}"
 
                     if apply_result.warnings:
-                        msg += f"\nAvvisi: {'; '.join(apply_result.warnings)}"
+                        msg += f"\n{_('Avvisi:')} {'; '.join(apply_result.warnings)}"
 
                     logger.info("Tema '%s' applicato: %s", item.name, msg)
                     self._show_toast(msg)
@@ -858,16 +860,16 @@ class ThemesPage:
     def _show_cursor_info_alert(self, cursor_name: str) -> None:
         """Mostra un dialogo informativo non distruttivo dopo l'applicazione di un tema cursore."""
         win = self.widget.get_root()
-        heading = "Tema cursore applicato"
+        heading = _("Tema cursore applicato")
         body = (
-            f"Il tema dei cursori «{cursor_name}» è stato configurato nel sistema.\n\n"
-            "Il nuovo cursore potrebbe non essere visibile immediatamente in tutte le finestre.\n"
-            "Cambia finestra oppure riapri l'applicazione interessata per visualizzare sicuramente il cambiamento."
+            f"{_('Il tema dei cursori')} «{cursor_name}» {_('è stato configurato nel sistema.')}\n\n"
+            + _("Il nuovo cursore potrebbe non essere visibile immediatamente in tutte le finestre.\n"
+              "Cambia finestra oppure riapri l'applicazione interessata per visualizzare sicuramente il cambiamento.")
         )
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(heading=heading, body=body)
-            dialog.add_response("ok", "OK")
+            dialog.add_response("ok", _("OK"))
             dialog.set_default_response("ok")
             dialog.set_close_response("ok")
             dialog.present(win if isinstance(win, Gtk.Widget) else None)
@@ -877,7 +879,7 @@ class ThemesPage:
                 heading,
                 body,
             )
-            dialog.add_response("ok", "OK")
+            dialog.add_response("ok", _("OK"))
             dialog.set_default_response("ok")
             dialog.set_close_response("ok")
             dialog.present()
@@ -933,11 +935,11 @@ class ThemesPage:
         if isinstance(error, GnomeThemeManagerError):
             user_msg = str(error)
         elif isinstance(error, PermissionError):
-            user_msg = "Permessi insufficienti per accedere ad alcune cartelle dei temi."
+            user_msg = _("Permessi insufficienti per accedere ad alcune cartelle dei temi.")
         elif isinstance(error, OSError):
-            user_msg = f"Errore di accesso al filesystem: {error}"
+            user_msg = f"{_('Errore di accesso al filesystem:')} {error}"
         else:
-            user_msg = f"Si è verificato un errore durante la scansione: {error}"
+            user_msg = f"{_('Si è verificato un errore durante la scansione:')} {error}"
 
         self.error_page.set_description(user_msg)
         self.widget.set_visible_child_name("error")

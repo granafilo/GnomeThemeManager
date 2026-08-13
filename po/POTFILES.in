@@ -1,4 +1,5 @@
 src/gnome_theme_manager/cli/main.py
+src/gnome_theme_manager/cli/args.py
 src/gnome_theme_manager/gui_gtk/__init__.py
 src/gnome_theme_manager/gui_gtk/app.py
 src/gnome_theme_manager/gui_gtk/window.py

@@ -35,6 +35,7 @@ def test_translation_loading_it():
     # Test della traduzione di un'altra stringa
     orig_set = "Non impostato"
     assert trans.gettext(orig_set) == "Non impostato"
+    assert trans.gettext("Mostra i temi attualmente applicati sul desktop GNOME") == "Mostra i temi attualmente applicati sul desktop GNOME"
 
 def test_translation_loading_en():
     """Verifica che la traduzione inglese traduca correttamente dall'italiano all'inglese."""
@@ -49,6 +50,7 @@ def test_translation_loading_en():
     assert trans.gettext("\nTemi attualmente attivi su GNOME:") == "\nCurrently active GNOME themes:"
     assert trans.gettext("Non impostato") == "Not set"
     assert trans.gettext("Default di sistema") == "System Default"
+    assert trans.gettext("Mostra i temi attualmente applicati sul desktop GNOME") == "Show currently applied themes on GNOME desktop"
 
 def test_translation_fallback():
     """Verifica che il fallback restituisca la stringa originale se la lingua non esiste o non ha traduzioni."""

@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk
@@ -36,7 +38,7 @@ class SandboxPage:
     """Controller della vista 'Strumenti sandbox' per la GUI GTK4/Libadwaita."""
 
     PAGE_ID: str = "sandbox"
-    TITLE: str = "Strumenti sandbox"
+    TITLE: str = _("Strumenti sandbox")
     ICON_NAME: str = "security-high-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
@@ -89,9 +91,9 @@ class SandboxPage:
 
         # Configurazione etichette native e icone per i pulsanti
         self._button_configs: dict[str, tuple[str, str]] = {
-            "refresh_button": ("Ricarica stato", "view-refresh-symbolic"),
-            "propagate_button": ("Propaga tema alle applicazioni sandbox", "emblem-ok-symbolic"),
-            "error_retry_button": ("Riprova", "view-refresh-symbolic"),
+            "refresh_button": (_("Ricarica stato"), "view-refresh-symbolic"),
+            "propagate_button": (_("Propaga tema alle applicazioni sandbox"), "emblem-ok-symbolic"),
+            "error_retry_button": (_("Riprova"), "view-refresh-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
             btn = getattr(self, btn_attr, None)
@@ -202,7 +204,7 @@ class SandboxPage:
 
             if error is not None:
                 logger.error("Errore durante il recupero diagnostica sandbox: %s", error)
-                self.error_status_page.set_description(f"Errore diagnostica sandbox: {error}")
+                self.error_status_page.set_description(f"{_('Errore diagnostica sandbox:')} {error}")
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE
@@ -242,57 +244,57 @@ class SandboxPage:
 
         # 1. Flatpak Status
         if sb.flatpak_available:
-            self.flatpak_status_row.set_subtitle("Disponibile nel sistema")
+            self.flatpak_status_row.set_subtitle(_("Disponibile nel sistema"))
             if self.flatpak_status_icon is not None:
                 self.flatpak_status_icon.set_from_icon_name("emblem-default-symbolic")
         else:
-            self.flatpak_status_row.set_subtitle("Non installato")
+            self.flatpak_status_row.set_subtitle(_("Non installato"))
             if self.flatpak_status_icon is not None:
                 self.flatpak_status_icon.set_from_icon_name("dialog-information-symbolic")
 
         # 2. Flatpak Override
         if not sb.flatpak_available:
-            self.flatpak_override_row.set_subtitle("Non applicabile (Flatpak assente)")
+            self.flatpak_override_row.set_subtitle(_("Non applicabile (Flatpak assente)"))
         elif sb.flatpak_filesystem_override_active:
-            self.flatpak_override_row.set_subtitle("Attivo (~/.local/share/themes e icone)")
+            self.flatpak_override_row.set_subtitle(_("Attivo (~/.local/share/themes e icone)"))
         else:
-            self.flatpak_override_row.set_subtitle("Non configurato")
+            self.flatpak_override_row.set_subtitle(_("Non configurato"))
 
         # 3. Snap Status
         if sb.snap_available:
-            self.snap_status_row.set_subtitle("Disponibile nel sistema")
+            self.snap_status_row.set_subtitle(_("Disponibile nel sistema"))
             if self.snap_status_icon is not None:
                 self.snap_status_icon.set_from_icon_name("emblem-default-symbolic")
         else:
-            self.snap_status_row.set_subtitle("Non installato")
+            self.snap_status_row.set_subtitle(_("Non installato"))
             if self.snap_status_icon is not None:
                 self.snap_status_icon.set_from_icon_name("dialog-information-symbolic")
 
         # 4. Snap gtk-common-themes
         if not sb.snap_available:
-            self.snap_gtk_common_row.set_subtitle("Non applicabile (Snap assente)")
+            self.snap_gtk_common_row.set_subtitle(_("Non applicabile (Snap assente)"))
         elif sb.snap_gtk_common_themes_installed:
-            self.snap_gtk_common_row.set_subtitle("Installato")
+            self.snap_gtk_common_row.set_subtitle(_("Installato"))
         else:
-            self.snap_gtk_common_row.set_subtitle("Non installato (consigliato per temi GTK)")
+            self.snap_gtk_common_row.set_subtitle(_("Non installato (consigliato per temi GTK)"))
 
         # 5. Snap Theme Compatibility
         active_gtk = (themes.gtk_theme or "") if themes else ""
         if not sb.snap_available or not sb.snap_gtk_common_themes_installed:
             self.snap_theme_compat_row.set_subtitle(
-                "Non verificabile (Snap o gtk-common-themes assente)"
+                _("Non verificabile (Snap o gtk-common-themes assente)")
             )
         elif not active_gtk:
-            self.snap_theme_compat_row.set_subtitle("Nessun tema GTK attivo rilevato")
+            self.snap_theme_compat_row.set_subtitle(_("Nessun tema GTK attivo rilevato"))
         else:
             norm_name = active_gtk.strip().lower()
             if norm_name in KNOWN_SNAP_COMMON_THEMES:
                 self.snap_theme_compat_row.set_subtitle(
-                    f"Tema '{active_gtk}' supportato nativamente da gtk-common-themes"
+                    f"{_('Tema')} '{active_gtk}' {_('supportato nativamente da gtk-common-themes')}"
                 )
             else:
                 self.snap_theme_compat_row.set_subtitle(
-                    f"Tema '{active_gtk}' personalizzato (richiede snap dedicato)"
+                    f"{_('Tema')} '{active_gtk}' {_('personalizzato (richiede snap dedicato)')}"
                 )
 
     # -------------------------------------------------------------------------
@@ -306,8 +308,8 @@ class SandboxPage:
 
         self._confirm_dialog_open = True
         root_window = self._get_root_window()
-        heading = "Propagare il tema alle applicazioni sandbox?"
-        body = (
+        heading = _("Propagare il tema alle applicazioni sandbox?")
+        body = _(
             "Questa operazione configura gli override di filesystem per Flatpak e "
             "verifica la compatibilità dei temi attivi con Snap.\n\n"
             "Non tutte le applicazioni sandbox o tutti i temi possono essere aggiornati automaticamente."
@@ -315,8 +317,8 @@ class SandboxPage:
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(heading, body)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("propagate", "Propaga tema")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("propagate", _("Propaga tema"))
             dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("propagate")
             dialog.set_close_response("cancel")
@@ -344,8 +346,8 @@ class SandboxPage:
                 heading,
                 body,
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("propagate", "Propaga tema")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("propagate", _("Propaga tema"))
             dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("propagate")
             dialog.set_close_response("cancel")
@@ -402,16 +404,16 @@ class SandboxPage:
 
             if error is not None:
                 logger.error("Errore durante la propagazione sandbox: %s", error)
-                self._show_toast(f"Errore durante la propagazione: {error}")
+                self._show_toast(f"{_('Errore durante la propagazione:')} {error}")
             elif prop_res is not None:
                 # Valutazione esito
                 if prop_res.warnings:
                     warn_summary = "; ".join(prop_res.warnings[:2])
-                    self._show_toast(f"Propagazione completata con avvisi: {warn_summary}")
+                    self._show_toast(f"{_('Propagazione completata con avvisi:')} {warn_summary}")
                 elif prop_res.flatpak_success or prop_res.snap_success:
-                    self._show_toast("Tema propagato con successo alle applicazioni sandbox.")
+                    self._show_toast(_("Tema propagato con successo alle applicazioni sandbox."))
                 else:
-                    self._show_toast("Nessuna modifica applicata agli ambienti sandbox.")
+                    self._show_toast(_("Nessuna modifica applicata agli ambienti sandbox."))
 
                 if self.on_sandbox_propagated:
                     try:
