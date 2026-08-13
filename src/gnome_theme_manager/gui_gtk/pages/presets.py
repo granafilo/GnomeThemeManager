@@ -289,7 +289,7 @@ class PresetsPage:
                         logger.warning("Preset '%s' non leggibile: %s", name, err)
                         rows.append((name, None))
                 return rows, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, err
 
         # --- Callback: aggiorna la UI con i risultati ---
@@ -305,7 +305,8 @@ class PresetsPage:
             if current_generation != self._load_generation:
                 logger.debug(
                     "Callback preset tardivo scartato: gen %d != %d",
-                    current_generation, self._load_generation,
+                    current_generation,
+                    self._load_generation,
                 )
                 return GLib.SOURCE_REMOVE
 
@@ -356,7 +357,6 @@ class PresetsPage:
                 GLib.idle_add(on_fetch_completed, res)
 
             threading.Thread(target=thread_target, daemon=True).start()
-
 
     # -------------------------------------------------------------------------
     # Callbacks dei pulsanti della pagina
@@ -469,7 +469,7 @@ class PresetsPage:
         # Controllo duplicato: verifica tramite lista pubblica
         try:
             existing = self.manager.list_presets() if self.manager else []
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore durante il controllo duplicati: %s", err)
             existing = []
 
@@ -572,7 +572,7 @@ class PresetsPage:
         # Recupera il ThemeSet per il riepilogo nel dialogo
         try:
             ts = self.manager.load_preset(name) if self.manager else None
-        except Exception:  # noqa: BLE001
+        except Exception:
             ts = None
 
         summary = _build_preset_summary(ts) if ts else "Dettagli non disponibili."
@@ -688,7 +688,7 @@ class PresetsPage:
                 self._on_apply_done(name, result, None)
             else:
                 GLib.idle_add(self._on_apply_done, name, result, None)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore applicazione preset '%s': %s", name, err)
             if sync:
                 self._on_apply_done(name, None, err)
@@ -729,7 +729,7 @@ class PresetsPage:
         if self.on_preset_applied is not None:
             try:
                 self.on_preset_applied()
-            except Exception as cb_err:  # noqa: BLE001
+            except Exception as cb_err:
                 logger.warning("Errore nel callback on_preset_applied: %s", cb_err)
 
         return False

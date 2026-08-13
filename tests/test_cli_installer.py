@@ -8,7 +8,9 @@ from gnome_theme_manager.cli.main import main
 from tests.test_installer import create_mock_zip
 
 
-def test_cli_install_success(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_install_success(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test di esecuzione del comando `install` da CLI con successo."""
     user_themes = tmp_path / "themes"
     user_icons = tmp_path / "icons"
@@ -41,7 +43,9 @@ def test_cli_install_bad_archive(tmp_path: Path, capsys: pytest.CaptureFixture[s
     assert "[ERRORE ESTRAZIONE ARCHIVIO]" in captured.err
 
 
-def test_cli_uninstall_success_with_yes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_uninstall_success_with_yes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test disinstallazione via CLI con flag `-y` (senza prompt)."""
     user_themes = tmp_path / "themes"
     theme_dir = user_themes / "ThemeToUninstall"
@@ -57,7 +61,9 @@ def test_cli_uninstall_success_with_yes(tmp_path: Path, monkeypatch: pytest.Monk
     assert not theme_dir.exists()
 
 
-def test_cli_uninstall_interactive_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_uninstall_interactive_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test annullamento disinstallazione tramite prompt interattivo 'n'."""
     user_themes = tmp_path / "themes"
     theme_dir = user_themes / "ThemeToKeep"
@@ -74,7 +80,9 @@ def test_cli_uninstall_interactive_refused(tmp_path: Path, monkeypatch: pytest.M
     assert theme_dir.exists()
 
 
-def test_cli_uninstall_non_existent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_uninstall_non_existent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test disinstallazione di tema non esistente via CLI."""
     user_themes = tmp_path / "themes"
     user_themes.mkdir(parents=True)

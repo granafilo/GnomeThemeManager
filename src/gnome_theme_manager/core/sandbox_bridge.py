@@ -3,61 +3,65 @@
 Nelle distribuzioni Linux moderne (in particolare Ubuntu), molte applicazioni (come
 Firefox, Chromium, App Center) vengono eseguite all'interno di ambienti isolati
 (sandbox) gestiti da Flatpak o Snap.
-
-Quando un utente installa un tema personalizzato in directory utente come:
-  - ~/.local/share/themes/ oppure ~/.themes/
-  - ~/.local/share/icons/ oppure ~/.icons/
-
-le applicazioni sandbox non hanno i permessi di lettura per accedere a tali percorsi.
-Questo modulo fornisce `SandboxBridge`, che:
-1. Concede a Flatpak i permessi di lettura (read-only) sulle cartelle dei temi e imposta
-   le variabili d'ambiente GTK_THEME e ICON_THEME a livello utente (`--user`).
-2. Verifica la presenza di `gtk-common-themes` su Snap e notifica l'utente se un tema
-   personalizzato richiede un pacchetto snap dedicato.
-3. Opera interamente senza richiedere permessi root o comandi con `sudo`.
 """
 
 import logging
 import shutil
 import subprocess
 
+from .errors import SandboxCommandError, ThemeValidationError
 from .models import PropagationResult, SandboxStatus
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
-# Elenco dei temi GTK inclusi nel pacchetto standard Snap gtk-common-themes
-# (usato per verificare se il tema attivo è supportato senza snap aggiuntivi)
-KNOWN_SNAP_COMMON_THEMES: frozenset[str] = frozenset({
-    "adwaita",
-    "adwaita-dark",
-    "ambiance",
-    "communitheme",
-    "highcontrast",
-    "highcontrastinverse",
-    "mate",
-    "mint-y",
-    "mint-y-dark",
-    "radiance",
-    "yaru",
-    "yaru-dark",
-    "yaru-light",
-    "yaru-bark",
-    "yaru-bark-dark",
-    "yaru-magenta",
-    "yaru-magenta-dark",
-    "yaru-olive",
-    "yaru-olive-dark",
-    "yaru-prussiangreen",
-    "yaru-prussiangreen-dark",
-    "yaru-purple",
-    "yaru-purple-dark",
-    "yaru-red",
-    "yaru-red-dark",
-    "yaru-sage",
-    "yaru-sage-dark",
-    "yaru-viridian",
-    "yaru-viridian-dark",
-})
+KNOWN_SNAP_COMMON_THEMES: frozenset[str] = frozenset(
+    {
+        "adwaita",
+        "adwaita-dark",
+        "ambiance",
+        "communitheme",
+        "highcontrast",
+        "highcontrastinverse",
+        "mate",
+        "mint-y",
+        "mint-y-dark",
+        "radiance",
+        "yaru",
+        "yaru-dark",
+        "yaru-light",
+        "yaru-bark",
+        "yaru-bark-dark",
+        "yaru-magenta",
+        "yaru-magenta-dark",
+        "yaru-olive",
+        "yaru-olive-dark",
+        "yaru-prussiangreen",
+        "yaru-prussiangreen-dark",
+        "yaru-purple",
+        "yaru-purple-dark",
+        "yaru-red",
+        "yaru-red-dark",
+        "yaru-sage",
+        "yaru-sage-dark",
+        "yaru-viridian",
+        "yaru-viridian-dark",
+    }
+)
+
+
+def validate_theme_name(name: str) -> str:
+    """Valida la forma del nome del tema secondo le linee guida di sicurezza."""
+    if not name:
+        raise ThemeValidationError("Il nome del tema non può essere vuoto.")
+    if "/" in name or "\\" in name:
+        raise ThemeValidationError("Il nome del tema non può contenere barre o barre rovesciate.")
+    if "\n" in name or "\r" in name:
+        raise ThemeValidationError("Il nome del tema non può contenere caratteri di nuova riga.")
+    if any(ord(c) < 32 or ord(c) == 127 for c in name):
+        raise ThemeValidationError("Il nome del tema non può contenere caratteri di controllo.")
+    if name.startswith("-"):
+        raise ThemeValidationError("Il nome del tema non può iniziare con un trattino.")
+    return name
 
 
 class SandboxBridge:
@@ -68,40 +72,20 @@ class SandboxBridge:
         logger.debug("Inizializzazione SandboxBridge per Snap e Flatpak")
 
     def is_snap_available(self) -> bool:
-        """Controlla se il comando `snap` è installato e disponibile nel sistema ($PATH).
-
-        Returns:
-            True se il binario snap è presente, False altrimenti.
-        """
-        available = shutil.which("snap") is not None
-        logger.debug("Verifica disponibilità Snap: %s", available)
-        return available
+        """Controlla se il comando `snap` è installato e disponibile nel sistema ($PATH)."""
+        return shutil.which("snap") is not None
 
     def is_flatpak_available(self) -> bool:
-        """Controlla se il comando `flatpak` è installato e disponibile nel sistema ($PATH).
-
-        Returns:
-            True se il binario flatpak è presente, False altrimenti.
-        """
-        available = shutil.which("flatpak") is not None
-        logger.debug("Verifica disponibilità Flatpak: %s", available)
-        return available
+        """Controlla se il comando `flatpak` è installato e disponibile nel sistema ($PATH)."""
+        return shutil.which("flatpak") is not None
 
     def get_sandbox_status(self) -> SandboxStatus:
-        """Recupera lo stato diagnostico dei runtime sandbox rilevati sul sistema.
-
-        Verifica se i comandi snap e flatpak sono disponibili, se lo snap gtk-common-themes
-        è installato e se gli override filesystem per Flatpak sono già attivi.
-
-        Returns:
-            Istanza di SandboxStatus contenente i dati diagnostici.
-        """
+        """Recupera lo stato diagnostico dei runtime sandbox rilevati sul sistema."""
         snap_avail = self.is_snap_available()
         flatpak_avail = self.is_flatpak_available()
         snap_gtk_common_installed = False
         flatpak_override_active = False
 
-        # 1. Verifica snap gtk-common-themes
         if snap_avail:
             try:
                 res = subprocess.run(
@@ -111,12 +95,10 @@ class SandboxBridge:
                     timeout=10,
                     check=False,
                 )
-                snap_gtk_common_installed = (res.returncode == 0)
-            except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
-                logger.debug("Impossibile verificare snap list gtk-common-themes: %s", err)
+                snap_gtk_common_installed = res.returncode == 0
+            except (subprocess.SubprocessError, FileNotFoundError, OSError):
                 snap_gtk_common_installed = False
 
-        # 2. Verifica override globale utente di Flatpak
         if flatpak_avail:
             try:
                 res = subprocess.run(
@@ -127,12 +109,10 @@ class SandboxBridge:
                     check=False,
                 )
                 out_lower = res.stdout.lower()
-                flatpak_override_active = (
-                    res.returncode == 0
-                    and ("themes" in out_lower or "icons" in out_lower)
+                flatpak_override_active = res.returncode == 0 and (
+                    "themes" in out_lower or "icons" in out_lower
                 )
-            except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
-                logger.debug("Impossibile verificare flatpak override --show: %s", err)
+            except (subprocess.SubprocessError, FileNotFoundError, OSError):
                 flatpak_override_active = False
 
         return SandboxStatus(
@@ -142,23 +122,37 @@ class SandboxBridge:
             flatpak_filesystem_override_active=flatpak_override_active,
         )
 
+    def build_flatpak_command(
+        self,
+        app_id: str | None,
+        gtk_theme: str | None,
+        icon_theme: str | None,
+    ) -> list[str]:
+        """Costruisce il comando flatpak come lista di argomenti."""
+        cmd = ["flatpak", "override", "--user"]
+        if gtk_theme:
+            cmd.append(f"--env=GTK_THEME={gtk_theme}")
+        if icon_theme:
+            cmd.append(f"--env=ICON_THEME={icon_theme}")
+        if app_id:
+            cmd.append(app_id)
+        return cmd
+
+    def build_snap_command(
+        self,
+        app_name: str,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+    ) -> list[str]:
+        """Costruisce il comando snap come lista di argomenti."""
+        return ["snap", "list", app_name]
+
     def propagate_to_flatpak(
         self,
         gtk_theme: str | None = None,
         icon_theme: str | None = None,
     ) -> PropagationResult:
-        """Configura le autorizzazioni di filesystem e le variabili d'ambiente per Flatpak.
-
-        Esegue comandi `flatpak override --user` per concedere l'accesso in sola lettura
-        alle cartelle temi e icone utente, e imposta le variabili GTK_THEME e ICON_THEME.
-
-        Args:
-            gtk_theme: Nome del tema GTK da impostare (opzionale).
-            icon_theme: Nome del tema icone da impostare (opzionale).
-
-        Returns:
-            PropagationResult con l'esito delle operazioni e gli eventuali avvisi.
-        """
+        """Configura le autorizzazioni di filesystem e le variabili d'ambiente per Flatpak."""
         if not self.is_flatpak_available():
             logger.debug("Flatpak non disponibile nel sistema, propagazione saltata.")
             return PropagationResult(
@@ -166,7 +160,12 @@ class SandboxBridge:
                 flatpak_messages=["Flatpak non è installato sul sistema."],
             )
 
-        commands: list[list[str]] = [
+        if gtk_theme:
+            validate_theme_name(gtk_theme)
+        if icon_theme:
+            validate_theme_name(icon_theme)
+
+        base_commands: list[list[str]] = [
             ["flatpak", "override", "--user", "--filesystem=~/.local/share/themes:ro"],
             ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"],
             ["flatpak", "override", "--user", "--filesystem=~/.local/share/icons:ro"],
@@ -174,16 +173,16 @@ class SandboxBridge:
         ]
 
         if gtk_theme:
-            commands.append(["flatpak", "override", "--user", f"--env=GTK_THEME={gtk_theme}"])
+            base_commands.append(self.build_flatpak_command(None, gtk_theme, None))
         if icon_theme:
-            commands.append(["flatpak", "override", "--user", f"--env=ICON_THEME={icon_theme}"])
+            base_commands.append(self.build_flatpak_command(None, None, icon_theme))
 
         messages: list[str] = []
         warnings: list[str] = []
         has_error = False
 
-        for cmd in commands:
-            cmd_str = " ".join(cmd)
+        for cmd in base_commands:
+            " ".join(cmd)
             try:
                 subprocess.run(
                     cmd,
@@ -192,26 +191,30 @@ class SandboxBridge:
                     timeout=10,
                     check=True,
                 )
-                logger.debug("Comando Flatpak completato: %s", cmd_str)
-            except subprocess.TimeoutExpired:
-                warn_msg = f"Timeout durante l'esecuzione del comando Flatpak: {cmd_str}"
+            except subprocess.TimeoutExpired as err:
+                warn_msg = "Timeout durante l'esecuzione del comando Flatpak."
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
+                raise SandboxCommandError(warn_msg) from err
             except subprocess.CalledProcessError as err:
                 err_msg = err.stderr.strip() if err.stderr else str(err)
-                warn_msg = f"Errore durante l'override Flatpak ({cmd_str}): {err_msg}"
+                warn_msg = f"Errore durante l'override Flatpak: {err_msg}"
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
+                raise SandboxCommandError(warn_msg) from err
             except (FileNotFoundError, OSError) as err:
-                warn_msg = f"Impossibile eseguire il comando Flatpak ({cmd_str}): {err}"
+                warn_msg = "Impossibile eseguire il comando Flatpak."
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
+                raise SandboxCommandError(warn_msg) from err
 
         if not has_error:
-            messages.append("Override filesystem e variabili d'ambiente Flatpak configurati con successo.")
+            messages.append(
+                "Override filesystem e variabili d'ambiente Flatpak configurati con successo."
+            )
 
         return PropagationResult(
             flatpak_success=not has_error,
@@ -224,19 +227,7 @@ class SandboxBridge:
         gtk_theme: str | None = None,
         icon_theme: str | None = None,
     ) -> PropagationResult:
-        """Verifica la compatibilità dei temi con l'infrastruttura Snap.
-
-        Controlla se lo snap `gtk-common-themes` è installato nel sistema.
-        Se il tema attivo non è compreso tra quelli standard, notifica l'utente con
-        un avviso descrittivo e suggerisce l'installazione del relativo snap.
-
-        Args:
-            gtk_theme: Nome del tema GTK applicato (opzionale).
-            icon_theme: Nome del tema icone applicato (opzionale).
-
-        Returns:
-            PropagationResult con l'esito della verifica e gli avvisi informativi.
-        """
+        """Verifica la compatibilità dei temi con l'infrastruttura Snap."""
         if not self.is_snap_available():
             logger.debug("Snap non disponibile nel sistema, verifica saltata.")
             return PropagationResult(
@@ -244,27 +235,35 @@ class SandboxBridge:
                 snap_messages=["Snap non è installato sul sistema."],
             )
 
+        if gtk_theme:
+            validate_theme_name(gtk_theme)
+        if icon_theme:
+            validate_theme_name(icon_theme)
+
         messages: list[str] = []
         warnings: list[str] = []
 
         gtk_common_installed = False
+        cmd = self.build_snap_command("gtk-common-themes")
         try:
             res = subprocess.run(
-                ["snap", "list", "gtk-common-themes"],
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=10,
                 check=False,
             )
-            gtk_common_installed = (res.returncode == 0)
-        except subprocess.TimeoutExpired:
+            gtk_common_installed = res.returncode == 0
+        except subprocess.TimeoutExpired as err:
             warn_msg = "Timeout durante l'interrogazione dello snap 'gtk-common-themes'."
             logger.warning(warn_msg)
             warnings.append(warn_msg)
-        except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
-            warn_msg = f"Errore durante l'interrogazione di Snap: {err}"
+            raise SandboxCommandError(warn_msg) from err
+        except Exception as err:
+            warn_msg = "Errore durante l'interrogazione di Snap."
             logger.warning(warn_msg)
             warnings.append(warn_msg)
+            raise SandboxCommandError(warn_msg) from err
 
         if not gtk_common_installed:
             warn_msg = (
@@ -279,11 +278,12 @@ class SandboxBridge:
                 warnings=warnings,
             )
 
-        # Se gtk-common-themes è installato, verifichiamo la compatibilità del tema specifico
         if gtk_theme:
             theme_norm = gtk_theme.strip().lower()
             if theme_norm in KNOWN_SNAP_COMMON_THEMES:
-                messages.append(f"Il tema '{gtk_theme}' è supportato nativamente da gtk-common-themes in Snap.")
+                messages.append(
+                    f"Il tema '{gtk_theme}' è supportato nativamente da gtk-common-themes in Snap."
+                )
             else:
                 warn_msg = (
                     f"Il tema personalizzato '{gtk_theme}' non è incluso nel pacchetto standard "
@@ -292,7 +292,9 @@ class SandboxBridge:
                 )
                 logger.info(warn_msg)
                 warnings.append(warn_msg)
-                messages.append(f"Tema '{gtk_theme}' personalizzato (non incluso in gtk-common-themes).")
+                messages.append(
+                    f"Tema '{gtk_theme}' personalizzato (non incluso in gtk-common-themes)."
+                )
         else:
             messages.append("Verifica gtk-common-themes di Snap completata con successo.")
 
@@ -307,16 +309,11 @@ class SandboxBridge:
         gtk_theme: str | None = None,
         icon_theme: str | None = None,
     ) -> PropagationResult:
-        """Esegue la propagazione dei temi a entrambi gli ambienti sandbox (Flatpak e Snap).
+        """Esegue la propagazione dei temi a entrambi gli ambienti sandbox (Flatpak e Snap)."""
+        logger.info(
+            "Avvio propagazione temi a Snap e Flatpak (gtk=%s, icon=%s)", gtk_theme, icon_theme
+        )
 
-        Args:
-            gtk_theme: Nome del tema GTK da propagare.
-            icon_theme: Nome del tema icone da propagare.
-
-        Returns:
-            Istanza consolidata di PropagationResult contenente i messaggi e avvisi aggregati.
-        """
-        logger.info("Avvio propagazione temi a Snap e Flatpak (gtk=%s, icon=%s)", gtk_theme, icon_theme)
         flatpak_res = self.propagate_to_flatpak(gtk_theme=gtk_theme, icon_theme=icon_theme)
         snap_res = self.propagate_to_snap(gtk_theme=gtk_theme, icon_theme=icon_theme)
 

@@ -39,16 +39,19 @@ def safe_extract(archive_path: Path, target_dir: Path) -> Path:
     target_dir = Path(target_dir).resolve()
 
     if not archive_path.exists() or not archive_path.is_file():
-        raise ArchiveExtractionError(f"Il file archivio '{archive_path}' non esiste o non è un file valido.")
+        raise ArchiveExtractionError(
+            f"Il file archivio '{archive_path}' non esiste o non è un file valido."
+        )
 
     filename_lower = archive_path.name.lower()
 
     if filename_lower.endswith(".zip"):
         _extract_zip(archive_path, target_dir)
-    elif filename_lower.endswith((".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar")):
+    elif filename_lower.endswith(
+        (".tar.gz", ".tgz", ".tar.xz", ".txz", ".tar.bz2", ".tbz2", ".tar")
+    ):
         _extract_tar(archive_path, target_dir)
     else:
-
         raise ArchiveExtractionError(
             f"Formato archivio non supportato per '{archive_path.name}'. "
             "Formati supportati: .zip, .tar.gz, .tar.xz, .tar.bz2, .tar"
@@ -78,11 +81,15 @@ def _extract_zip(archive_path: Path, target_dir: Path) -> None:
                     )
             zip_ref.extractall(target_dir)
     except zipfile.BadZipFile as err:
-        raise ArchiveExtractionError(f"File ZIP non valido o corrotto '{archive_path.name}': {err}") from err
+        raise ArchiveExtractionError(
+            f"File ZIP non valido o corrotto '{archive_path.name}': {err}"
+        ) from err
     except ArchiveExtractionError:
         raise
     except Exception as err:
-        raise ArchiveExtractionError(f"Errore durante l'estrazione dell'archivio ZIP '{archive_path.name}': {err}") from err
+        raise ArchiveExtractionError(
+            f"Errore durante l'estrazione dell'archivio ZIP '{archive_path.name}': {err}"
+        ) from err
 
 
 def _extract_tar(archive_path: Path, target_dir: Path) -> None:
@@ -103,10 +110,13 @@ def _extract_tar(archive_path: Path, target_dir: Path) -> None:
     except ArchiveExtractionError:
         raise
     except tarfile.TarError as err:
-        raise ArchiveExtractionError(f"File TAR non valido o corrotto '{archive_path.name}': {err}") from err
+        raise ArchiveExtractionError(
+            f"File TAR non valido o corrotto '{archive_path.name}': {err}"
+        ) from err
     except Exception as err:
-        raise ArchiveExtractionError(f"Errore durante l'estrazione dell'archivio TAR '{archive_path.name}': {err}") from err
-
+        raise ArchiveExtractionError(
+            f"Errore durante l'estrazione dell'archivio TAR '{archive_path.name}': {err}"
+        ) from err
 
 
 def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
@@ -156,9 +166,19 @@ def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
         except (OSError, UnicodeDecodeError):
             pass
 
-
     if not is_icon and not (theme_dir / "cursors").is_dir():
-        icon_subdirs = ["scalable", "16x16", "22x22", "24x24", "32x32", "48x48", "64x64", "128x128", "256x256", "512x512"]
+        icon_subdirs = [
+            "scalable",
+            "16x16",
+            "22x22",
+            "24x24",
+            "32x32",
+            "48x48",
+            "64x64",
+            "128x128",
+            "256x256",
+            "512x512",
+        ]
         if any((theme_dir / sub).is_dir() for sub in icon_subdirs):
             is_icon = True
 
@@ -199,7 +219,8 @@ def inspect_extracted_tree(
 
     # 2. Esplora sottodirectory (singola radice o multi-tema)
     subdirs = [
-        p for p in extracted_root.iterdir()
+        p
+        for p in extracted_root.iterdir()
         if p.is_dir() and not p.name.startswith(".") and p.name != "__MACOSX"
     ]
 
@@ -211,7 +232,8 @@ def inspect_extracted_tree(
         else:
             # Controllo eventuale annidamento ulteriore (es. Archive/NestedFolder/ThemeFolder)
             nested_dirs = [
-                n for n in sub.iterdir()
+                n
+                for n in sub.iterdir()
                 if n.is_dir() and not n.name.startswith(".") and n.name != "__MACOSX"
             ]
             for nested in nested_dirs:
@@ -223,7 +245,6 @@ def inspect_extracted_tree(
         raise ThemeValidationError(
             "L'archivio non contiene una struttura di tema riconosciuta (GTK, Shell, Icone o Cursori)."
         )
-
 
     return targets
 
@@ -243,14 +264,10 @@ class ThemeInstaller:
             user_icons_dir: Directory utente per temi Icone e Cursori (default: ~/.local/share/icons).
         """
         self.user_themes_dir = (
-            Path(user_themes_dir).expanduser()
-            if user_themes_dir
-            else USER_THEMES_DIRS[0]
+            Path(user_themes_dir).expanduser() if user_themes_dir else USER_THEMES_DIRS[0]
         )
         self.user_icons_dir = (
-            Path(user_icons_dir).expanduser()
-            if user_icons_dir
-            else USER_ICONS_DIRS[0]
+            Path(user_icons_dir).expanduser() if user_icons_dir else USER_ICONS_DIRS[0]
         )
 
     def inspect_source(
@@ -287,7 +304,7 @@ class ThemeInstaller:
         name = fallback_name or source_path.name
         for ext in [".tar.gz", ".tar.xz", ".tar.bz2", ".tgz", ".txz", ".tbz2", ".zip", ".tar"]:
             if name.lower().endswith(ext):
-                name = name[:-len(ext)]
+                name = name[: -len(ext)]
                 break
 
         with tempfile.TemporaryDirectory() as tmp_dir_str:
@@ -415,7 +432,7 @@ class ThemeInstaller:
         fallback_name = custom_name or source_path.name
         for ext in [".tar.gz", ".tar.xz", ".tar.bz2", ".tgz", ".txz", ".tbz2", ".zip", ".tar"]:
             if fallback_name.lower().endswith(ext):
-                fallback_name = fallback_name[:-len(ext)]
+                fallback_name = fallback_name[: -len(ext)]
                 break
 
         installed_themes: list[Theme] = []
@@ -485,9 +502,7 @@ class ThemeInstaller:
             ThemeNotFoundError: Se il tema non viene trovato nelle directory utente.
         """
         base_user_dirs = (
-            USER_THEMES_DIRS
-            if theme_type in (ThemeType.GTK, ThemeType.SHELL)
-            else USER_ICONS_DIRS
+            USER_THEMES_DIRS if theme_type in (ThemeType.GTK, ThemeType.SHELL) else USER_ICONS_DIRS
         )
 
         custom_dir = (
@@ -516,4 +531,3 @@ class ThemeInstaller:
 
         shutil.rmtree(found_user_path)
         return True
-

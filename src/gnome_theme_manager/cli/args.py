@@ -12,12 +12,14 @@ def create_parser() -> argparse.ArgumentParser:
         description="Manager modulare per temi GTK, icone, cursori e GNOME Shell.",
     )
     parser.add_argument(
-        "-v", "--version",
+        "-v",
+        "--version",
         action="version",
         version=f"%(prog)s {__version__}",
     )
     parser.add_argument(
-        "-g", "--gui",
+        "-g",
+        "--gui",
         action="store_true",
         help="Avvia l'interfaccia grafica nativa GNOME GTK4/Libadwaita",
     )
@@ -63,7 +65,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="Elenca i temi disponibili nel sistema",
     )
     list_parser.add_argument(
-        "-t", "--type",
+        "-t",
+        "--type",
         choices=["all", "gtk", "icon", "cursor", "shell"],
         default="all",
         help="Filtra per tipologia di tema (default: all)",
@@ -120,30 +123,33 @@ def create_parser() -> argparse.ArgumentParser:
         help="Non propagare il tema alle app Snap/Flatpak",
     )
 
-
     # Subcomando: install
     install_parser = subparsers.add_parser(
         "install",
         help="Installa un tema a partire da un file archivio (.zip, .tar.*)",
     )
     install_parser.add_argument(
-        "-f", "--file",
+        "-f",
+        "--file",
         required=True,
         metavar="PERCORSO",
         help="Percorso del file archivio da installare",
     )
     install_parser.add_argument(
-        "-t", "--type",
+        "-t",
+        "--type",
         choices=["gtk", "icon", "cursor", "shell"],
         help="Tipo di tema (se non specificato, verrà effettuato il rilevamento automatico)",
     )
     install_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         metavar="NOME",
         help="Nome personalizzato per la cartella di destinazione del tema",
     )
     install_parser.add_argument(
-        "-y", "--overwrite",
+        "-y",
+        "--overwrite",
         action="store_true",
         help="Sovrascrive il tema se la cartella di destinazione esiste già",
     )
@@ -154,19 +160,22 @@ def create_parser() -> argparse.ArgumentParser:
         help="Disinstalla un tema specifico dalle directory utente",
     )
     uninstall_parser.add_argument(
-        "-n", "--name",
+        "-n",
+        "--name",
         required=True,
         metavar="NOME",
         help="Nome del tema da disinstallare",
     )
     uninstall_parser.add_argument(
-        "-t", "--type",
+        "-t",
+        "--type",
         choices=["gtk", "icon", "cursor", "shell"],
         required=True,
         help="Tipo del tema da disinstallare",
     )
     uninstall_parser.add_argument(
-        "-y", "--yes",
+        "-y",
+        "--yes",
         action="store_true",
         help="Conferma la disinstallazione senza prompt interattivo",
     )
@@ -199,7 +208,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="Nome identificativo del preset da salvare",
     )
     save_parser.add_argument(
-        "-y", "--overwrite",
+        "-y",
+        "--overwrite",
         action="store_true",
         help="Sovrascrive il preset se già esistente",
     )
@@ -236,10 +246,10 @@ def create_parser() -> argparse.ArgumentParser:
         help="Nome del preset da eliminare",
     )
     delete_preset_parser.add_argument(
-        "-y", "--yes",
+        "-y",
+        "--yes",
         action="store_true",
         help="Conferma l'eliminazione senza prompt interattivo",
     )
 
     return parser
-

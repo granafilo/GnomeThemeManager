@@ -21,6 +21,8 @@ def test_presets_page_instantiation_requires_ui_file(mock_theme_manager: MagicMo
     assert page.widget is not None
     assert page.page_id == "presets"
     assert page.title == "Profili e preset"
+
+
 def test_presets_page_initial_state_loading(mock_theme_manager: MagicMock) -> None:
     """Verifica che refresh() passi allo stato 'loading' prima di leggere i preset."""
     if not is_gtk_available():
@@ -35,6 +37,8 @@ def test_presets_page_initial_state_loading(mock_theme_manager: MagicMock) -> No
     page.refresh(sync=True)
     # La pagina non deve essere nello stato iniziale (deve aver aggiornato)
     assert page.widget.get_visible_child_name() != "loading"
+
+
 def test_presets_page_empty_state_when_no_presets(mock_theme_manager: MagicMock) -> None:
     """Verifica che la pagina passi allo stato 'empty' quando non ci sono preset."""
     if not is_gtk_available():
@@ -47,6 +51,8 @@ def test_presets_page_empty_state_when_no_presets(mock_theme_manager: MagicMock)
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "empty"
+
+
 def test_presets_page_ready_state_with_presets(mock_theme_manager: MagicMock) -> None:
     """Verifica che la pagina passi allo stato 'ready' quando ci sono preset."""
     if not is_gtk_available():
@@ -60,6 +66,8 @@ def test_presets_page_ready_state_with_presets(mock_theme_manager: MagicMock) ->
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
+
+
 def test_presets_page_error_state_on_list_failure(mock_theme_manager: MagicMock) -> None:
     """Verifica che la pagina passi allo stato 'error' in caso di eccezione su list_presets."""
     if not is_gtk_available():
@@ -72,6 +80,8 @@ def test_presets_page_error_state_on_list_failure(mock_theme_manager: MagicMock)
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "error"
+
+
 def test_presets_page_uses_only_public_api(mock_theme_manager: MagicMock) -> None:
     """Verifica che PresetsPage usi solo le API pubbliche di ThemeManager, senza accedere a _presets."""
     if not is_gtk_available():
@@ -91,6 +101,8 @@ def test_presets_page_uses_only_public_api(mock_theme_manager: MagicMock) -> Non
     assert ".json" not in source or "tomato" not in source, (
         "PresetsPage non deve costruire nomi di file con .json (la validazione è nel core)"
     )
+
+
 def test_presets_page_load_preset_called_via_public_api(mock_theme_manager: MagicMock) -> None:
     """Verifica che la lettura dei dettagli dei preset avvenga tramite manager.load_preset()."""
     if not is_gtk_available():
@@ -105,6 +117,8 @@ def test_presets_page_load_preset_called_via_public_api(mock_theme_manager: Magi
 
     # Deve essere stata chiamata l'API pubblica load_preset con il nome corretto
     mock_theme_manager.load_preset.assert_called_with("MioStile")
+
+
 def test_presets_page_corrupt_preset_shows_error_row(mock_theme_manager: MagicMock) -> None:
     """Verifica che un preset corrotto sia mostrato nella lista con riga di errore (senza crash)."""
     if not is_gtk_available():
@@ -133,6 +147,8 @@ def test_presets_page_corrupt_preset_shows_error_row(mock_theme_manager: MagicMo
         rows.append(child)
         child = child.get_next_sibling()
     assert len(rows) == 2
+
+
 def test_presets_page_save_calls_public_api(mock_theme_manager: MagicMock) -> None:
     """Verifica che il salvataggio di un preset chiami manager.save_current_as_preset()."""
     if not is_gtk_available():
@@ -147,7 +163,11 @@ def test_presets_page_save_calls_public_api(mock_theme_manager: MagicMock) -> No
     # Simula direttamente la validazione e il salvataggio (bypassando il dialogo UI)
     page._do_save_preset("NuovoPreset", overwrite=False)
 
-    mock_theme_manager.save_current_as_preset.assert_called_once_with("NuovoPreset", overwrite=False)
+    mock_theme_manager.save_current_as_preset.assert_called_once_with(
+        "NuovoPreset", overwrite=False
+    )
+
+
 def test_presets_page_save_empty_name_rejected(mock_theme_manager: MagicMock) -> None:
     """Verifica che un nome vuoto venga rifiutato senza chiamare il backend."""
     if not is_gtk_available():
@@ -161,6 +181,8 @@ def test_presets_page_save_empty_name_rejected(mock_theme_manager: MagicMock) ->
     # Un nome vuoto non deve mai raggiungere il backend
     page._validate_and_save("")
     mock_theme_manager.save_current_as_preset.assert_not_called()
+
+
 def test_presets_page_save_whitespace_only_rejected(mock_theme_manager: MagicMock) -> None:
     """Verifica che un nome composto solo da spazi venga rifiutato."""
     if not is_gtk_available():
@@ -173,6 +195,8 @@ def test_presets_page_save_whitespace_only_rejected(mock_theme_manager: MagicMoc
 
     page._validate_and_save("   ")
     mock_theme_manager.save_current_as_preset.assert_not_called()
+
+
 def test_presets_page_save_duplicate_without_overwrite(mock_theme_manager: MagicMock) -> None:
     """Verifica che un nome duplicato non sovrascriva silenziosamente il preset esistente."""
     if not is_gtk_available():
@@ -190,6 +214,8 @@ def test_presets_page_save_duplicate_without_overwrite(mock_theme_manager: Magic
 
     # Non deve aver chiamato il backend direttamente
     mock_theme_manager.save_current_as_preset.assert_not_called()
+
+
 def test_presets_page_save_with_overwrite_confirmed(mock_theme_manager: MagicMock) -> None:
     """Verifica che la sovrascrittura esplicita chiami save_current_as_preset con overwrite=True."""
     if not is_gtk_available():
@@ -205,6 +231,8 @@ def test_presets_page_save_with_overwrite_confirmed(mock_theme_manager: MagicMoc
 
     page._do_save_preset("Esiste", overwrite=True)
     mock_theme_manager.save_current_as_preset.assert_called_once_with("Esiste", overwrite=True)
+
+
 def test_presets_page_apply_uses_public_api(mock_theme_manager: MagicMock) -> None:
     """Verifica che l'applicazione di un preset chiami manager.apply_preset()."""
     if not is_gtk_available():
@@ -218,6 +246,8 @@ def test_presets_page_apply_uses_public_api(mock_theme_manager: MagicMock) -> No
     page._run_apply_preset("Nordic", sync=True)
 
     mock_theme_manager.apply_preset.assert_called_once_with("Nordic")
+
+
 def test_presets_page_apply_notifies_window(mock_theme_manager: MagicMock) -> None:
     """Verifica che after apply preset venga invocato on_preset_applied per aggiornare StatusPage e ThemesPage."""
     if not is_gtk_available():
@@ -234,6 +264,8 @@ def test_presets_page_apply_notifies_window(mock_theme_manager: MagicMock) -> No
     page._run_apply_preset("Nordic", sync=True)
 
     assert len(callback_called) == 1, "on_preset_applied deve essere invocato una sola volta"
+
+
 def test_presets_page_apply_partial_result_shows_warnings(mock_theme_manager: MagicMock) -> None:
     """Verifica che un risultato parziale con warnings mostri i dettagli e non 'successo'."""
     if not is_gtk_available():
@@ -250,7 +282,13 @@ def test_presets_page_apply_partial_result_shows_warnings(mock_theme_manager: Ma
         page._run_apply_preset("Nordic", sync=True)
 
     assert len(toasts) == 1
-    assert "avvisi" in toasts[0].lower() or "warning" in toasts[0].lower() or "Shell theme" in toasts[0]
+    assert (
+        "avvisi" in toasts[0].lower()
+        or "warning" in toasts[0].lower()
+        or "Shell theme" in toasts[0]
+    )
+
+
 def test_presets_page_apply_blocks_concurrent(mock_theme_manager: MagicMock) -> None:
     """Verifica che una seconda applicazione concorrente venga ignorata."""
     if not is_gtk_available():
@@ -267,6 +305,8 @@ def test_presets_page_apply_blocks_concurrent(mock_theme_manager: MagicMock) -> 
 
     # Il backend non deve essere stato chiamato
     mock_theme_manager.apply_preset.assert_not_called()
+
+
 def test_presets_page_apply_error_resets_controls(mock_theme_manager: MagicMock) -> None:
     """Verifica che dopo un errore di applicazione i controlli vengano riabilitati."""
     if not is_gtk_available():
@@ -284,6 +324,8 @@ def test_presets_page_apply_error_resets_controls(mock_theme_manager: MagicMock)
     # I controlli devono essere riabilitati anche dopo un errore
     assert page._is_applying is False
     assert page.save_preset_button.get_sensitive() is True
+
+
 def test_presets_page_delete_calls_public_api(mock_theme_manager: MagicMock) -> None:
     """Verifica che l'eliminazione di un preset chiami manager.delete_preset()."""
     if not is_gtk_available():
@@ -298,6 +340,8 @@ def test_presets_page_delete_calls_public_api(mock_theme_manager: MagicMock) -> 
     page._do_delete_preset("Nordic")
 
     mock_theme_manager.delete_preset.assert_called_once_with("Nordic")
+
+
 def test_presets_page_delete_refreshes_list(mock_theme_manager: MagicMock) -> None:
     """Verifica che dopo l'eliminazione la lista venga ricaricata."""
     if not is_gtk_available():
@@ -312,6 +356,8 @@ def test_presets_page_delete_refreshes_list(mock_theme_manager: MagicMock) -> No
     with patch.object(page, "refresh") as mock_refresh:
         page._do_delete_preset("Nordic")
         mock_refresh.assert_called_once()
+
+
 def test_presets_page_delete_not_found_shows_error(mock_theme_manager: MagicMock) -> None:
     """Verifica che FileNotFoundError durante l'eliminazione mostri un toast di errore."""
     if not is_gtk_available():
@@ -329,6 +375,8 @@ def test_presets_page_delete_not_found_shows_error(mock_theme_manager: MagicMock
 
     assert len(toasts) == 1
     assert "errore" in toasts[0].lower() or "Fantasma" in toasts[0]
+
+
 def test_presets_page_no_global_refresh_button(mock_theme_manager: MagicMock) -> None:
     """Verifica che la pagina Preset non abiliti il pulsante Refresh globale della finestra."""
     if not is_gtk_available():
@@ -340,12 +388,14 @@ def test_presets_page_no_global_refresh_button(mock_theme_manager: MagicMock) ->
     app = GnomeThemeApplication(manager=mock_theme_manager)
     try:
         win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
-    except Exception as err:  # noqa: BLE001 — GTK4 può sollevare eccezioni non specifiche senza display
+    except Exception as err:
         pytest.skip(f"Display non disponibile in ambiente headless: {err}")
 
     # Quando la pagina 'presets' è attiva, il pulsante Refresh globale deve essere nascosto
     win.select_page("presets")
     assert win.refresh_button.get_visible() is False
+
+
 def test_presets_page_reload_button_triggers_local_refresh(mock_theme_manager: MagicMock) -> None:
     """Verifica che il pulsante 'Ricarica' della pagina Preset invochi un refresh locale."""
     if not is_gtk_available():
@@ -359,6 +409,8 @@ def test_presets_page_reload_button_triggers_local_refresh(mock_theme_manager: M
     with patch.object(page, "refresh") as mock_refresh:
         page._on_reload_clicked(page.reload_presets_button)
         mock_refresh.assert_called_once()
+
+
 def test_presets_page_retry_after_error(mock_theme_manager: MagicMock) -> None:
     """Verifica che il pulsante 'Riprova' nello stato error avvii un nuovo refresh."""
     if not is_gtk_available():

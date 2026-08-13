@@ -37,7 +37,9 @@ def mock_filesystem_structure(tmp_path: Path):
     # Tema Icone Utente (es. "Papirus-Dark" con index.theme)
     papirus_icon = user_icons / "Papirus-Dark"
     papirus_icon.mkdir(parents=True, exist_ok=True)
-    (papirus_icon / "index.theme").write_text("[Icon Theme]\nName=Papirus-Dark\nDirectories=48x48\n")
+    (papirus_icon / "index.theme").write_text(
+        "[Icon Theme]\nName=Papirus-Dark\nDirectories=48x48\n"
+    )
     (papirus_icon / "48x48").mkdir(parents=True, exist_ok=True)
 
     # Tema Cursori Utente (es. "Capitaine" con cursors/)

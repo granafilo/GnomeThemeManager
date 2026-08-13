@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from gnome_theme_manager.cli.main import main
+from gnome_theme_manager.core.errors import SandboxCommandError
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
     ApplyResult,
@@ -70,8 +71,10 @@ def test_sandbox_status_all_active() -> None:
             res.stdout = "[Context]\nfilesystems=~/.local/share/themes;~/.icons;\n"
         return res
 
-    with patch("shutil.which", side_effect=lambda bin_name: f"/usr/bin/{bin_name}"), \
-         patch("subprocess.run", side_effect=mock_subprocess_run):
+    with (
+        patch("shutil.which", side_effect=lambda bin_name: f"/usr/bin/{bin_name}"),
+        patch("subprocess.run", side_effect=mock_subprocess_run),
+    ):
         status: SandboxStatus = bridge.get_sandbox_status()
         assert status.snap_available is True
         assert status.flatpak_available is True
@@ -108,17 +111,29 @@ def test_propagate_to_flatpak_success() -> None:
         res.stderr = ""
         return res
 
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), \
-         patch("subprocess.run", side_effect=mock_run):
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.run", side_effect=mock_run),
+    ):
         result = bridge.propagate_to_flatpak(gtk_theme="Nordic", icon_theme="Papirus")
 
         assert result.flatpak_success is True
         assert len(result.warnings) == 0
         assert len(result.flatpak_messages) > 0
         # Verifica che tutti i comandi di override e le variabili d'ambiente siano stati eseguiti
-        assert ["flatpak", "override", "--user", "--filesystem=~/.local/share/themes:ro"] in executed_commands
+        assert [
+            "flatpak",
+            "override",
+            "--user",
+            "--filesystem=~/.local/share/themes:ro",
+        ] in executed_commands
         assert ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"] in executed_commands
-        assert ["flatpak", "override", "--user", "--filesystem=~/.local/share/icons:ro"] in executed_commands
+        assert [
+            "flatpak",
+            "override",
+            "--user",
+            "--filesystem=~/.local/share/icons:ro",
+        ] in executed_commands
         assert ["flatpak", "override", "--user", "--filesystem=~/.icons:ro"] in executed_commands
         assert ["flatpak", "override", "--user", "--env=GTK_THEME=Nordic"] in executed_commands
         assert ["flatpak", "override", "--user", "--env=ICON_THEME=Papirus"] in executed_commands
@@ -127,8 +142,7 @@ def test_propagate_to_flatpak_success() -> None:
 def test_propagate_to_flatpak_not_installed() -> None:
     """Verifica che propagate_to_flatpak ritorni False senza chiamare subprocess se flatpak non esiste."""
     bridge = SandboxBridge()
-    with patch("shutil.which", return_value=None), \
-         patch("subprocess.run") as mock_run:
+    with patch("shutil.which", return_value=None), patch("subprocess.run") as mock_run:
         result = bridge.propagate_to_flatpak(gtk_theme="Adwaita")
         assert result.flatpak_success is False
         mock_run.assert_not_called()
@@ -145,8 +159,10 @@ def test_propagate_to_snap_with_gtk_common_themes() -> None:
     mock_res = MagicMock()
     mock_res.returncode = 0
 
-    with patch("shutil.which", return_value="/usr/bin/snap"), \
-         patch("subprocess.run", return_value=mock_res):
+    with (
+        patch("shutil.which", return_value="/usr/bin/snap"),
+        patch("subprocess.run", return_value=mock_res),
+    ):
         result = bridge.propagate_to_snap(gtk_theme="Yaru", icon_theme="Yaru")
         assert result.snap_success is True
         assert len(result.warnings) == 0
@@ -159,8 +175,10 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
     mock_res = MagicMock()
     mock_res.returncode = 0
 
-    with patch("shutil.which", return_value="/usr/bin/snap"), \
-         patch("subprocess.run", return_value=mock_res):
+    with (
+        patch("shutil.which", return_value="/usr/bin/snap"),
+        patch("subprocess.run", return_value=mock_res),
+    ):
         result = bridge.propagate_to_snap(gtk_theme="Nordic-Darker", icon_theme="Papirus")
         assert result.snap_success is True
         assert len(result.warnings) == 1
@@ -171,8 +189,7 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
 def test_propagate_to_snap_not_installed() -> None:
     """Verifica che propagate_to_snap ritorni False se snap non è disponibile."""
     bridge = SandboxBridge()
-    with patch("shutil.which", return_value=None), \
-         patch("subprocess.run") as mock_run:
+    with patch("shutil.which", return_value=None), patch("subprocess.run") as mock_run:
         result = bridge.propagate_to_snap(gtk_theme="Yaru")
         assert result.snap_success is False
         mock_run.assert_not_called()
@@ -184,8 +201,10 @@ def test_propagate_to_snap_no_gtk_common_themes() -> None:
     mock_res = MagicMock()
     mock_res.returncode = 1  # snap list fallito
 
-    with patch("shutil.which", return_value="/usr/bin/snap"), \
-         patch("subprocess.run", return_value=mock_res):
+    with (
+        patch("shutil.which", return_value="/usr/bin/snap"),
+        patch("subprocess.run", return_value=mock_res),
+    ):
         result = bridge.propagate_to_snap(gtk_theme="Yaru")
         assert result.snap_success is False
         assert len(result.warnings) > 0
@@ -212,8 +231,10 @@ def test_propagate_all_combines_results() -> None:
         warnings=["Avviso Snap custom theme."],
     )
 
-    with patch.object(bridge, "propagate_to_flatpak", return_value=flatpak_stub), \
-         patch.object(bridge, "propagate_to_snap", return_value=snap_stub):
+    with (
+        patch.object(bridge, "propagate_to_flatpak", return_value=flatpak_stub),
+        patch.object(bridge, "propagate_to_snap", return_value=snap_stub),
+    ):
         result = bridge.propagate_all(gtk_theme="Nordic", icon_theme="Papirus")
 
         assert result.flatpak_success is True
@@ -229,26 +250,31 @@ def test_propagate_all_combines_results() -> None:
 
 
 def test_subprocess_timeout_handling() -> None:
-    """Verifica che TimeoutExpired in subprocess.run venga gestito con warning senza crash."""
+    """Verifica che TimeoutExpired in subprocess.run venga gestito sollevando SandboxCommandError."""
     bridge = SandboxBridge()
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), \
-         patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="flatpak override", timeout=10)):
-        result = bridge.propagate_to_flatpak(gtk_theme="Nordic")
-        assert result.flatpak_success is False
-        assert len(result.warnings) > 0
-        assert any("Timeout" in w for w in result.warnings)
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch(
+            "subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="flatpak override", timeout=10),
+        ),
+    ):
+        with pytest.raises(SandboxCommandError):
+            bridge.propagate_to_flatpak(gtk_theme="Nordic")
 
 
 def test_subprocess_error_handling() -> None:
-    """Verifica che CalledProcessError in subprocess.run venga gestito con warning senza crash."""
+    """Verifica che CalledProcessError in subprocess.run venga gestito sollevando SandboxCommandError."""
     bridge = SandboxBridge()
-    err = subprocess.CalledProcessError(returncode=1, cmd="flatpak override", stderr="Permission denied")
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), \
-         patch("subprocess.run", side_effect=err):
-        result = bridge.propagate_to_flatpak(gtk_theme="Nordic")
-        assert result.flatpak_success is False
-        assert len(result.warnings) > 0
-        assert any("Permission denied" in w or "Errore" in w for w in result.warnings)
+    err = subprocess.CalledProcessError(
+        returncode=1, cmd="flatpak override", stderr="Permission denied"
+    )
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.run", side_effect=err),
+        pytest.raises(SandboxCommandError),
+    ):
+        bridge.propagate_to_flatpak(gtk_theme="Nordic")
 
 
 # =============================================================================
@@ -374,8 +400,10 @@ def test_cli_sandbox_status_command(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_cli_apply_no_sandbox_flag() -> None:
     """Verifica che il comando apply con flag --no-sandbox passi propagate_sandbox=False al manager."""
-    with patch("gnome_theme_manager.core.manager.ThemeManager.apply_themes") as mock_apply, \
-         patch("gnome_theme_manager.core.manager.ThemeManager.find_theme", return_value=True):
+    with (
+        patch("gnome_theme_manager.core.manager.ThemeManager.apply_themes") as mock_apply,
+        patch("gnome_theme_manager.core.manager.ThemeManager.find_theme", return_value=True),
+    ):
         mock_apply.return_value = ApplyResult(gtk_theme="Nordic", warnings=[])
 
         exit_code = main(["apply", "--gtk", "Nordic", "--no-sandbox"])

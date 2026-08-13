@@ -49,10 +49,12 @@ class MockGioSettings:
 def mock_gio_environment():
     """Fixture che fornisce un ambiente PyGObject / Gio simulato con successo."""
     mock_settings = MockGioSettings("org.gnome.desktop.interface")
-    mock_shell_settings = MockGioSettings("org.gnome.shell.extensions.user-theme", {"name": "Adwaita"})
-    
+    mock_shell_settings = MockGioSettings(
+        "org.gnome.shell.extensions.user-theme", {"name": "Adwaita"}
+    )
+
     mock_schema_source = MagicMock()
-    
+
     schema_interface = MagicMock()
     schema_interface.get_id.return_value = "org.gnome.desktop.interface"
 
@@ -68,18 +70,25 @@ def mock_gio_environment():
 
     mock_schema_source.lookup.side_effect = lookup_side_effect
 
-    with patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True), \
-         patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio:
-
+    with (
+        patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio,
+    ):
         mock_gio.SettingsSchemaSource.get_default.return_value = mock_schema_source
-        
+
         def settings_new_full(schema, backend, path):
-            if schema == schema_shell or getattr(schema, "get_id", lambda: "")() == "org.gnome.shell.extensions.user-theme":
+            if (
+                schema == schema_shell
+                or getattr(schema, "get_id", lambda: "")()
+                == "org.gnome.shell.extensions.user-theme"
+            ):
                 return mock_shell_settings
             return mock_settings
 
         mock_gio.Settings.new_full.side_effect = settings_new_full
-        mock_gio.Settings.new.side_effect = lambda s: mock_shell_settings if s == "org.gnome.shell.extensions.user-theme" else mock_settings
+        mock_gio.Settings.new.side_effect = lambda s: (
+            mock_shell_settings if s == "org.gnome.shell.extensions.user-theme" else mock_settings
+        )
 
         yield {
             "interface_settings": mock_settings,
@@ -116,7 +125,9 @@ def test_gsettings_apply_full(mock_gio_environment):
 
     assert mock_gio_environment["interface_settings"].get_string("gtk-theme") == "Nordic"
     assert mock_gio_environment["interface_settings"].get_string("icon-theme") == "Papirus-Dark"
-    assert mock_gio_environment["interface_settings"].get_string("cursor-theme") == "Capitaine-Cursors"
+    assert (
+        mock_gio_environment["interface_settings"].get_string("cursor-theme") == "Capitaine-Cursors"
+    )
     assert mock_gio_environment["interface_settings"].get_string("color-scheme") == "prefer-dark"
     assert mock_gio_environment["shell_settings"].get_string("name") == "Nordic-Shell"
 
@@ -133,12 +144,15 @@ def test_gsettings_extension_schema_in_directory(tmp_path: Path):
     mock_ext_source = MagicMock()
     mock_ext_source.lookup.return_value = MagicMock()  # Shell trovata nella cartella estensione
 
-    with patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True), \
-         patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio:
-
+    with (
+        patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio,
+    ):
         mock_gio.SettingsSchemaSource.get_default.return_value = mock_schema_source
         mock_gio.SettingsSchemaSource.new_from_directory.return_value = mock_ext_source
-        mock_gio.Settings.new_full.return_value = MockGioSettings("org.gnome.shell.extensions.user-theme", {"name": "Yaru"})
+        mock_gio.Settings.new_full.return_value = MockGioSettings(
+            "org.gnome.shell.extensions.user-theme", {"name": "Yaru"}
+        )
 
         client = GSettingsClient(custom_schema_dirs=[tmp_path / "extensions"])
         assert client.is_shell_theme_supported is True
@@ -147,7 +161,7 @@ def test_gsettings_extension_schema_in_directory(tmp_path: Path):
 def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
     """Verifica che set_shell_theme sollevi GSettingsUnavailableError se l'estensione non è presente."""
     mock_schema_source = MagicMock()
-    
+
     def lookup_side_effect(schema: str, recursive: bool):
         if schema == "org.gnome.shell.extensions.user-theme":
             return None
@@ -158,10 +172,11 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
     empty_dir = tmp_path / "empty_extensions"
     empty_dir.mkdir(parents=True, exist_ok=True)
 
-    with patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True), \
-         patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio, \
-         patch("pathlib.Path.home", return_value=empty_dir):
-
+    with (
+        patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio,
+        patch("pathlib.Path.home", return_value=empty_dir),
+    ):
         mock_gio.SettingsSchemaSource.get_default.return_value = mock_schema_source
         mock_gio.Settings.new_full.return_value = MockGioSettings()
 
@@ -181,4 +196,3 @@ def test_gsettings_unavailable_when_gio_missing():
         pytest.raises(GSettingsUnavailableError, match="PyGObject .* non è disponibile"),
     ):
         GSettingsClient()
-

@@ -113,8 +113,12 @@ class InstallerPage:
         # Widget dello stato READY
         self.source_name_row: Adw.ActionRow = self.builder.get_object("source_name_row")
         self.source_type_row: Adw.ActionRow = self.builder.get_object("source_type_row")
-        self.detected_theme_name_row: Adw.ActionRow = self.builder.get_object("detected_theme_name_row")
-        self.detected_components_row: Adw.ActionRow = self.builder.get_object("detected_components_row")
+        self.detected_theme_name_row: Adw.ActionRow = self.builder.get_object(
+            "detected_theme_name_row"
+        )
+        self.detected_components_row: Adw.ActionRow = self.builder.get_object(
+            "detected_components_row"
+        )
         self.change_source_button: Gtk.Button = self.builder.get_object("change_source_button")
         self.install_button: Gtk.Button = self.builder.get_object("install_button")
         self.install_apply_button: Gtk.Button = self.builder.get_object("install_apply_button")
@@ -125,12 +129,16 @@ class InstallerPage:
 
         # Widget dello stato SUCCESS
         self.success_status_page: Adw.StatusPage = self.builder.get_object("success_status_page")
-        self.success_new_source_button: Gtk.Button = self.builder.get_object("success_new_source_button")
+        self.success_new_source_button: Gtk.Button = self.builder.get_object(
+            "success_new_source_button"
+        )
 
         # Widget dello stato ERROR
         self.error_status_page: Adw.StatusPage = self.builder.get_object("error_status_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
-        self.error_new_source_button: Gtk.Button = self.builder.get_object("error_new_source_button")
+        self.error_new_source_button: Gtk.Button = self.builder.get_object(
+            "error_new_source_button"
+        )
 
         # --- Stato interno ---
         self._selected_source: Path | None = None
@@ -266,7 +274,16 @@ class InstallerPage:
             # Filtri di estensione per archivi supportati
             filter_archives = Gtk.FileFilter.new()
             filter_archives.set_name("Archivi di tema (*.zip, *.tar.*)")
-            for pattern in ["*.zip", "*.tar.gz", "*.tgz", "*.tar.xz", "*.txz", "*.tar.bz2", "*.tbz2", "*.tar"]:
+            for pattern in [
+                "*.zip",
+                "*.tar.gz",
+                "*.tgz",
+                "*.tar.xz",
+                "*.txz",
+                "*.tar.bz2",
+                "*.tbz2",
+                "*.tar",
+            ]:
                 filter_archives.add_pattern(pattern)
 
             filter_all = Gtk.FileFilter.new()
@@ -290,7 +307,15 @@ class InstallerPage:
             )
             filter_archives = Gtk.FileFilter.new()
             filter_archives.set_name("Archivi di tema")
-            for pattern in ["*.zip", "*.tar.gz", "*.tgz", "*.tar.xz", "*.txz", "*.tar.bz2", "*.tar"]:
+            for pattern in [
+                "*.zip",
+                "*.tar.gz",
+                "*.tgz",
+                "*.tar.xz",
+                "*.txz",
+                "*.tar.bz2",
+                "*.tar",
+            ]:
                 filter_archives.add_pattern(pattern)
             native.add_filter(filter_archives)
             native.connect(
@@ -306,7 +331,7 @@ class InstallerPage:
             if folder_file:
                 path = Path(folder_file.get_path())
                 self.select_source(path)
-        except (GLib.GError, Exception) as err:  # noqa: BLE001
+        except (GLib.GError, Exception) as err:
             logger.debug("Selezione cartella annullata o fallita: %s", err)
 
     def _on_archive_dialog_finish(self, dialog: Any, result: Any) -> None:
@@ -316,7 +341,7 @@ class InstallerPage:
             if archive_file:
                 path = Path(archive_file.get_path())
                 self.select_source(path)
-        except (GLib.GError, Exception) as err:  # noqa: BLE001
+        except (GLib.GError, Exception) as err:
             logger.debug("Selezione archivio annullata o fallita: %s", err)
 
     def _on_legacy_chooser_response(self, dialog: Any, response_id: int, is_folder: bool) -> None:
@@ -374,7 +399,7 @@ class InstallerPage:
                     return [], None
                 results = self.manager.inspect_theme_source(source_path)
                 return results, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, err
 
         # Callback di completamento sul main thread
@@ -421,10 +446,12 @@ class InstallerPage:
             short_path = str(source_path)
             home_str = str(Path.home())
             if short_path.startswith(home_str):
-                short_path = "~" + short_path[len(home_str):]
+                short_path = "~" + short_path[len(home_str) :]
 
             self.source_name_row.set_subtitle(short_path)
-            self.source_type_row.set_subtitle("Cartella" if source_path.is_dir() else "Archivio compresso")
+            self.source_type_row.set_subtitle(
+                "Cartella" if source_path.is_dir() else "Archivio compresso"
+            )
             self.detected_theme_name_row.set_subtitle(theme_name)
             self.detected_components_row.set_subtitle(format_components_label(components))
 
@@ -436,6 +463,7 @@ class InstallerPage:
             res = worker_inspect()
             on_inspect_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_inspect()
                 GLib.idle_add(on_inspect_completed, res)
@@ -512,7 +540,7 @@ class InstallerPage:
                     apply_result = self.manager.apply_themes(target_set)
 
                 return installed_themes, apply_result, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, None, err
 
         # Callback sul main context GTK
@@ -541,7 +569,9 @@ class InstallerPage:
 
             # --- Successo ---
             installed_list = installed or []
-            theme_name = self._detected_name or (installed_list[0].name if installed_list else "Tema")
+            theme_name = self._detected_name or (
+                installed_list[0].name if installed_list else "Tema"
+            )
 
             if apply_after and apply_res is not None:
                 if apply_res.warnings:
@@ -555,7 +585,7 @@ class InstallerPage:
                 if self.on_theme_applied:
                     try:
                         self.on_theme_applied()
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:
                         logger.warning("Errore callback on_theme_applied: %s", e)
             else:
                 desc = f"Tema '{theme_name}' installato con successo nelle directory utente."
@@ -564,7 +594,7 @@ class InstallerPage:
                 if self.on_theme_installed:
                     try:
                         self.on_theme_installed()
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:
                         logger.warning("Errore callback on_theme_installed: %s", e)
 
             # Pulizia stato sorgente dopo completamento con successo:
@@ -582,6 +612,7 @@ class InstallerPage:
             res = worker_install()
             on_install_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_install()
                 GLib.idle_add(on_install_completed, res)

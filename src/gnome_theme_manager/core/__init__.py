@@ -83,5 +83,3 @@ __all__ = [
     "inspect_extracted_tree",
     "safe_extract",
 ]
-
-

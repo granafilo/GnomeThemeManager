@@ -86,7 +86,9 @@ def handle_sandbox_status_command(manager: ThemeManager) -> int:
     print("\n=== Stato Integrazione Sandbox (Snap & Flatpak) ===")
     if sb is not None:
         snap_str = "✅ Disponibile" if sb.snap_available else "❌ Non disponibile"
-        snap_themes_str = "✅ Installato" if sb.snap_gtk_common_themes_installed else "❌ Non installato"
+        snap_themes_str = (
+            "✅ Installato" if sb.snap_gtk_common_themes_installed else "❌ Non installato"
+        )
         flatpak_str = "✅ Disponibile" if sb.flatpak_available else "❌ Non disponibile"
         flatpak_ov_str = "✅ Attivo" if sb.flatpak_filesystem_override_active else "❌ Non attivo"
 
@@ -153,7 +155,9 @@ def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> 
         if sb.flatpak_success:
             print("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati")
         if sb.snap_success and not sb.warnings:
-            print("  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes")
+            print(
+                "  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes"
+            )
 
     for warning in result.warnings:
         print(f"\n[AVVISO] {warning}")
@@ -250,12 +254,11 @@ def handle_install_command(
     )
 
     headers = ["NOME TEMA", "TIPO", "PERCORSO INSTALLATO"]
-    rows = [
-        [t.name, t.theme_type.value, str(t.path)]
-        for t in installed_themes
-    ]
+    rows = [[t.name, t.theme_type.value, str(t.path)] for t in installed_themes]
 
-    print(f"\n✓ Installazione completata con successo ({len(installed_themes)} tema/i installato/i):")
+    print(
+        f"\n✓ Installazione completata con successo ({len(installed_themes)} tema/i installato/i):"
+    )
     print(format_table(headers, rows))
     print()
     return 0
@@ -278,9 +281,13 @@ def handle_uninstall_command(
     theme_type = ThemeType(theme_type_str)
 
     if not assume_yes:
-        confirm = input(
-            f"Sei sicuro di voler disinstallare il tema '{name}' ({theme_type.value})? [s/N]: "
-        ).strip().lower()
+        confirm = (
+            input(
+                f"Sei sicuro di voler disinstallare il tema '{name}' ({theme_type.value})? [s/N]: "
+            )
+            .strip()
+            .lower()
+        )
         if confirm not in ("s", "si", "y", "yes"):
             print("\nOperazione annullata dall'utente.\n")
             return 0
@@ -329,9 +336,11 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
 
     elif action == "delete":
         if not args.yes:
-            confirm = input(
-                f"Sei sicuro di voler eliminare il preset '{args.name}'? [s/N]: "
-            ).strip().lower()
+            confirm = (
+                input(f"Sei sicuro di voler eliminare il preset '{args.name}'? [s/N]: ")
+                .strip()
+                .lower()
+            )
             if confirm not in ("s", "si", "y", "yes"):
                 print("\nOperazione annullata dall'utente.\n")
                 return 0
@@ -341,7 +350,10 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
         return 0
 
     else:
-        print("Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete').", file=sys.stderr)
+        print(
+            "Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete').",
+            file=sys.stderr,
+        )
         return 1
 
 
@@ -467,7 +479,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except GnomeThemeManagerError as err:
         print(f"\n[ERRORE GNOME THEME MANAGER] {err}\n", file=sys.stderr)
         return 1
-    except Exception as err:  # noqa: BLE001
+    except Exception as err:
         print(f"\n[ERRORE IMPREVISTO] {err}\n", file=sys.stderr)
         return 1
 

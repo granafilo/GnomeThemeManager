@@ -159,7 +159,9 @@ def test_manager_gsettings_unavailable() -> None:
 # -----------------------------------------------------------------------------
 
 
-def test_manager_list_themes_by_type(manager: ThemeManager, mock_scanner: MagicMock, tmp_path: Path) -> None:
+def test_manager_list_themes_by_type(
+    manager: ThemeManager, mock_scanner: MagicMock, tmp_path: Path
+) -> None:
     """Verifica che list_themes deleghi correttamente a scanner per i vari tipi."""
     t_gtk = Theme("ThemeGTK", ThemeType.GTK, tmp_path / "1", True)
     t_icon = Theme("ThemeIcon", ThemeType.ICON, tmp_path / "2", True)
@@ -240,7 +242,9 @@ def test_manager_apply_themes_success(
     mock_gtk4_linker.apply_override.assert_called_once_with(gtk_theme.path)
 
 
-def test_manager_apply_themes_missing_theme_raises(manager: ThemeManager, mock_scanner: MagicMock) -> None:
+def test_manager_apply_themes_missing_theme_raises(
+    manager: ThemeManager, mock_scanner: MagicMock
+) -> None:
     """Verifica che la mancanza di un tema sul filesystem sollevi ThemeNotFoundError."""
     mock_scanner.find_theme.return_value = None
 
@@ -308,7 +312,9 @@ def test_manager_apply_unified_theme(
     assert result.color_scheme == "prefer-dark"
 
 
-def test_manager_apply_unified_theme_not_found(manager: ThemeManager, mock_scanner: MagicMock) -> None:
+def test_manager_apply_unified_theme_not_found(
+    manager: ThemeManager, mock_scanner: MagicMock
+) -> None:
     """Verifica che un tema unificato inesistente sollevi ThemeNotFoundError."""
     mock_scanner.find_theme.return_value = None
 
@@ -350,7 +356,9 @@ def test_manager_preset_workflow(
 
     # Apply
     mock_presets.load_preset.return_value = current_set
-    mock_scanner.find_theme.side_effect = lambda name, t_type: Theme(name, t_type, tmp_path / name, True)
+    mock_scanner.find_theme.side_effect = lambda name, t_type: Theme(
+        name, t_type, tmp_path / name, True
+    )
     res = manager.apply_preset("MyPreset")
     assert res.gtk_theme == "Nordic"
 
@@ -360,7 +368,9 @@ def test_manager_preset_workflow(
     mock_presets.delete_preset.assert_called_once_with("MyPreset")
 
 
-def test_manager_install_and_uninstall(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+def test_manager_install_and_uninstall(
+    manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
+) -> None:
     """Verifica la delega dei metodi di installazione e disinstallazione a ThemeInstaller."""
     archive = tmp_path / "theme.zip"
     installed_theme = Theme("Installed", ThemeType.GTK, tmp_path / "Installed", True)
@@ -378,10 +388,14 @@ def test_manager_install_and_uninstall(manager: ThemeManager, mock_installer: Ma
 
     uninstalled = manager.uninstall_theme("Installed", ThemeType.GTK)
     assert uninstalled is True
-    mock_installer.uninstall.assert_called_once_with(theme_name="Installed", theme_type=ThemeType.GTK)
+    mock_installer.uninstall.assert_called_once_with(
+        theme_name="Installed", theme_type=ThemeType.GTK
+    )
 
 
-def test_manager_inspect_theme_source(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+def test_manager_inspect_theme_source(
+    manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
+) -> None:
     """Verifica che inspect_theme_source deleghi a ThemeInstaller.inspect_source."""
     source = tmp_path / "SomeSource"
     mock_installer.inspect_source.return_value = [("MyTheme", source, ThemeType.GTK)]
@@ -391,7 +405,9 @@ def test_manager_inspect_theme_source(manager: ThemeManager, mock_installer: Mag
     mock_installer.inspect_source.assert_called_once_with(source_path=source)
 
 
-def test_manager_install_theme_directory(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+def test_manager_install_theme_directory(
+    manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
+) -> None:
     """Verifica che install_theme_directory deleghi a ThemeInstaller.install_directory."""
     source_dir = tmp_path / "MyDir"
     installed_theme = Theme("MyDir", ThemeType.GTK, tmp_path / "MyDir", True)
@@ -407,7 +423,9 @@ def test_manager_install_theme_directory(manager: ThemeManager, mock_installer: 
     )
 
 
-def test_manager_install_theme_polymorphic(manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path) -> None:
+def test_manager_install_theme_polymorphic(
+    manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
+) -> None:
     """Verifica che install_theme accetti sia archivi che directory delegando a ThemeInstaller.install."""
     source = tmp_path / "generic_source"
     installed_theme = Theme("GenTheme", ThemeType.GTK, tmp_path / "GenTheme", True)
@@ -433,7 +451,9 @@ def test_manager_get_sandbox_status(manager: ThemeManager, mock_sandbox: MagicMo
     mock_sandbox.get_sandbox_status.assert_called_once()
 
 
-def test_manager_propagate_sandbox_with_explicit_themes(manager: ThemeManager, mock_sandbox: MagicMock) -> None:
+def test_manager_propagate_sandbox_with_explicit_themes(
+    manager: ThemeManager, mock_sandbox: MagicMock
+) -> None:
     """Verifica che propagate_sandbox deleghi a SandboxBridge.propagate_all con i temi specificati."""
     expected = PropagationResult(flatpak_success=True, snap_success=True)
     mock_sandbox.propagate_all.return_value = expected
@@ -449,12 +469,14 @@ def test_manager_propagate_sandbox_with_active_themes(
     mock_sandbox: MagicMock,
 ) -> None:
     """Verifica che propagate_sandbox usi i temi correnti se non specificati."""
-    mock_gsettings.get_current.return_value = ThemeSet(gtk_theme="ActiveGTK", icon_theme="ActiveIcons")
+    mock_gsettings.get_current.return_value = ThemeSet(
+        gtk_theme="ActiveGTK", icon_theme="ActiveIcons"
+    )
     expected = PropagationResult(flatpak_success=True, snap_success=True)
     mock_sandbox.propagate_all.return_value = expected
 
     res = manager.propagate_sandbox()
     assert res == expected
-    mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="ActiveGTK", icon_theme="ActiveIcons")
-
-
+    mock_sandbox.propagate_all.assert_called_once_with(
+        gtk_theme="ActiveGTK", icon_theme="ActiveIcons"
+    )

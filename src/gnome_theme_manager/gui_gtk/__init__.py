@@ -22,7 +22,7 @@ def is_gtk_available() -> bool:
 
         Adw.init()
         return True
-    except Exception:  # noqa: BLE001
+    except Exception:
         return False
 
 

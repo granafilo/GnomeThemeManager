@@ -274,12 +274,11 @@ def test_manager_load_preset_corrupt_json(tmp_path: Path) -> None:
 def test_manager_load_preset_incomplete_json(tmp_path: Path) -> None:
     """Verifica che un JSON incompleto restituisca un ThemeSet con None sui campi assenti."""
     import json
+
     manager, _ = _build_manager_with_presets_dir(tmp_path)
 
     # Solo gtk_theme presente; gli altri devono restare None
-    (tmp_path / "Parziale.json").write_text(
-        json.dumps({"gtk_theme": "Nordic"}), encoding="utf-8"
-    )
+    (tmp_path / "Parziale.json").write_text(json.dumps({"gtk_theme": "Nordic"}), encoding="utf-8")
 
     loaded = manager.load_preset("Parziale")
     assert loaded.gtk_theme == "Nordic"
@@ -363,4 +362,3 @@ def test_preset_name_coherence_save_load_delete(tmp_path: Path) -> None:
     result = manager.delete_preset(name)
     assert result is True
     assert manager.list_presets() == []
-

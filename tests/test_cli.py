@@ -65,7 +65,9 @@ def test_cli_current_success(capsys) -> None:
 def test_cli_list_with_shell_type(capsys, tmp_path: Path) -> None:
     """Verifica il filtro --type shell nel comando 'list'."""
     mock_themes = [
-        Theme(name="Nordic", theme_type=ThemeType.SHELL, path=tmp_path / "Nordic", is_user_level=True),
+        Theme(
+            name="Nordic", theme_type=ThemeType.SHELL, path=tmp_path / "Nordic", is_user_level=True
+        ),
     ]
 
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:

@@ -26,9 +26,7 @@ class PresetManager:
                          (default: ~/.config/gnome-theme-manager/presets).
         """
         self.presets_dir = (
-            Path(presets_dir).expanduser()
-            if presets_dir is not None
-            else PRESETS_DIR.expanduser()
+            Path(presets_dir).expanduser() if presets_dir is not None else PRESETS_DIR.expanduser()
         )
 
     def _sanitize_name(self, name: str) -> str:
@@ -83,7 +81,9 @@ class PresetManager:
 
         # Caratteri di controllo ASCII (0-31 e 127)
         if any(ord(c) < 32 or ord(c) == 127 for c in cleaned):
-            raise ValueError(f"Nome preset '{name}' contiene caratteri di controllo non consentiti.")
+            raise ValueError(
+                f"Nome preset '{name}' contiene caratteri di controllo non consentiti."
+            )
 
         return cleaned
 
@@ -147,7 +147,9 @@ class PresetManager:
             data = json.loads(content)
         except (json.JSONDecodeError, OSError) as err:
             logger.error("Errore durante la lettura del preset '%s': %s", preset_name, err)
-            raise ValueError(f"File preset '{preset_name}.json' corrotto o illeggibile: {err}") from err
+            raise ValueError(
+                f"File preset '{preset_name}.json' corrotto o illeggibile: {err}"
+            ) from err
 
         theme_set = ThemeSet.from_dict(data)
         logger.info("Preset caricato con successo: '%s'", preset_name)

@@ -38,3 +38,19 @@ class ArchiveExtractionError(GnomeThemeManagerError):
     Include casi di file corrotti, formati non supportati o rilevamenti di attacchi
     di tipo Path Traversal (es. ZipSlip).
     """
+
+
+class ThemeApplyError(GnomeThemeManagerError):
+    """Sollevata per errori durante l'applicazione dei temi."""
+
+
+class ThemeBackupError(GnomeThemeManagerError):
+    """Sollevata per errori nella creazione del backup dei temi."""
+
+
+class ThemeRollbackError(GnomeThemeManagerError):
+    """Sollevata quando il ripristino/rollback di un tema fallisce."""
+
+
+class SandboxCommandError(GnomeThemeManagerError):
+    """Sollevata per timeout, comandi non disponibili o exit code inattesi da Flatpak/Snap."""

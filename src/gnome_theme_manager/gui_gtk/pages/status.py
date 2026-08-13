@@ -277,7 +277,9 @@ class StatusPage:
             """Raccoglie i dati dal Facade ThemeManager in background."""
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError("ThemeManager non disponibile o non inizializzato.")
+                    raise GnomeThemeManagerError(
+                        "ThemeManager non disponibile o non inizializzato."
+                    )
 
                 # 1. Lettura temi correnti e stato di sistema tramite API pubbliche del Facade
                 themes = self.manager.get_current_themes()
@@ -331,14 +333,18 @@ class StatusPage:
                     warnings=warnings,
                 )
                 return snapshot, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, err
 
         def on_fetch_completed(result: tuple[StatusSnapshot | None, Exception | None]) -> bool:
             """Eseguito nel main context GTK per aggiornare i widget."""
             # Se è iniziato un nuovo refresh nel frattempo, scarta questo risultato obsoleto
             if current_generation != self._generation_id:
-                logger.debug("Callback tardivo scartato: gen %d != %d", current_generation, self._generation_id)
+                logger.debug(
+                    "Callback tardivo scartato: gen %d != %d",
+                    current_generation,
+                    self._generation_id,
+                )
                 return GLib.SOURCE_REMOVE
 
             self._is_loading = False

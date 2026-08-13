@@ -336,7 +336,9 @@ def test_installer_inspect_source_archive(tmp_path: Path) -> None:
     archive = tmp_path / "InspectTheme.zip"
     create_mock_zip(archive, {"InspectTheme/gtk-3.0/gtk.css": "/* CSS */"})
 
-    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    installer = ThemeInstaller(
+        user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons"
+    )
     results = installer.inspect_source(archive)
 
     assert len(results) == 1
@@ -352,7 +354,9 @@ def test_installer_inspect_source_directory(tmp_path: Path) -> None:
     (source_dir / "gtk-3.0").mkdir(parents=True)
     (source_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
 
-    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    installer = ThemeInstaller(
+        user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons"
+    )
     results = installer.inspect_source(source_dir)
 
     assert len(results) == 1
@@ -364,7 +368,9 @@ def test_installer_inspect_source_directory(tmp_path: Path) -> None:
 
 def test_installer_inspect_source_non_existent(tmp_path: Path) -> None:
     """Verifica che inspect_source sollevi FileNotFoundError se la sorgente non esiste."""
-    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons")
+    installer = ThemeInstaller(
+        user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons"
+    )
     with pytest.raises(FileNotFoundError):
         installer.inspect_source(tmp_path / "NonExistentPath")
 
@@ -411,5 +417,3 @@ def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> N
     installed = installer.install_directory(source_dir, overwrite=True)
     assert len(installed) == 1
     assert (user_themes / "ConflictTheme" / "gtk-3.0" / "gtk.css").read_text() == "/* v2 */"
-
-

@@ -287,7 +287,11 @@ class ThemeScanner:
         if index_file.is_file():
             try:
                 content = index_file.read_text(encoding="utf-8", errors="ignore")
-                if "GtkTheme" in content or "[Desktop Entry]" in content or "[X-GNOME-Metatheme]" in content:
+                if (
+                    "GtkTheme" in content
+                    or "[Desktop Entry]" in content
+                    or "[X-GNOME-Metatheme]" in content
+                ):
                     return True
             except OSError:
                 pass

@@ -33,7 +33,11 @@ PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
 def get_user_themes_dirs() -> list[Path]:
     """Restituisce le directory dei temi utente ($XDG_DATA_HOME/themes e ~/.themes)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
-    base = Path(xdg_data).expanduser() if xdg_data and xdg_data.strip() else Path.home() / ".local" / "share"
+    base = (
+        Path(xdg_data).expanduser()
+        if xdg_data and xdg_data.strip()
+        else Path.home() / ".local" / "share"
+    )
     dirs = [base / "themes", Path.home() / ".themes"]
     return list(dict.fromkeys(dirs))
 
@@ -41,7 +45,11 @@ def get_user_themes_dirs() -> list[Path]:
 def get_user_icons_dirs() -> list[Path]:
     """Restituisce le directory delle icone/cursori utente ($XDG_DATA_HOME/icons e ~/.icons)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
-    base = Path(xdg_data).expanduser() if xdg_data and xdg_data.strip() else Path.home() / ".local" / "share"
+    base = (
+        Path(xdg_data).expanduser()
+        if xdg_data and xdg_data.strip()
+        else Path.home() / ".local" / "share"
+    )
     dirs = [base / "icons", Path.home() / ".icons"]
     return list(dict.fromkeys(dirs))
 

@@ -41,7 +41,7 @@ try:
     _test_tk.withdraw()
     _test_tk.destroy()
     _TK_DISPLAY_AVAILABLE = True
-except (tk.TclError, Exception):  # noqa: BLE001
+except (tk.TclError, Exception):
     _TK_DISPLAY_AVAILABLE = False
 
 
@@ -70,9 +70,24 @@ def mock_manager(tmp_path: Path) -> MagicMock:
 
     # Configurazione list_themes
     manager.list_themes.return_value = [
-        Theme(name="Nordic", theme_type=ThemeType.GTK, path=tmp_path / "themes" / "Nordic", is_user_level=True),
-        Theme(name="Adwaita", theme_type=ThemeType.GTK, path=Path("/usr/share/themes/Adwaita"), is_user_level=False),
-        Theme(name="Papirus", theme_type=ThemeType.ICON, path=tmp_path / "icons" / "Papirus", is_user_level=True),
+        Theme(
+            name="Nordic",
+            theme_type=ThemeType.GTK,
+            path=tmp_path / "themes" / "Nordic",
+            is_user_level=True,
+        ),
+        Theme(
+            name="Adwaita",
+            theme_type=ThemeType.GTK,
+            path=Path("/usr/share/themes/Adwaita"),
+            is_user_level=False,
+        ),
+        Theme(
+            name="Papirus",
+            theme_type=ThemeType.ICON,
+            path=tmp_path / "icons" / "Papirus",
+            is_user_level=True,
+        ),
     ]
 
     # Configurazione apply_themes e apply_unified_theme
@@ -102,7 +117,12 @@ def mock_manager(tmp_path: Path) -> MagicMock:
 
     # Configurazione installer
     manager.install_theme_archive.return_value = [
-        Theme(name="Nordic", theme_type=ThemeType.GTK, path=tmp_path / "themes" / "Nordic", is_user_level=True)
+        Theme(
+            name="Nordic",
+            theme_type=ThemeType.GTK,
+            path=tmp_path / "themes" / "Nordic",
+            is_user_level=True,
+        )
     ]
     manager.uninstall_theme.return_value = True
 
@@ -113,13 +133,15 @@ def mock_manager(tmp_path: Path) -> MagicMock:
 def tk_root():
     """Fixture che fornisce una root window Tkinter nascosta o skippa se headless."""
     if not _TK_DISPLAY_AVAILABLE:
-        pytest.skip("Ambiente headless: nessun display X11/Wayland disponibile per istanziare Tkinter.")
+        pytest.skip(
+            "Ambiente headless: nessun display X11/Wayland disponibile per istanziare Tkinter."
+        )
     root = tk.Tk()
     root.withdraw()
     yield root
     try:
         root.destroy()
-    except Exception:  # noqa: S110, BLE001
+    except Exception:
         pass
 
 
@@ -213,7 +235,9 @@ def test_current_status_view_gsettings_unavailable(tk_root: tk.Tk, mock_manager:
 # =============================================================================
 
 
-def test_available_themes_view_population_and_filter(tk_root: tk.Tk, mock_manager: MagicMock) -> None:
+def test_available_themes_view_population_and_filter(
+    tk_root: tk.Tk, mock_manager: MagicMock
+) -> None:
     """Verifica il popolamento della tabella e il filtraggio per tipologia e nome."""
     notebook = ttk.Notebook(tk_root)
     view = AvailableThemesView(notebook, manager=mock_manager)
@@ -261,7 +285,10 @@ def test_available_themes_view_apply_and_uninstall(tk_root: tk.Tk, mock_manager:
         callback_mock.assert_called_once()
 
     # Test disinstallazione tema con conferma positiva
-    with patch("tkinter.messagebox.askyesno", return_value=True), patch("tkinter.messagebox.showinfo"):
+    with (
+        patch("tkinter.messagebox.askyesno", return_value=True),
+        patch("tkinter.messagebox.showinfo"),
+    ):
         view._on_uninstall_selected()
         mock_manager.uninstall_theme.assert_called_with(name="Nordic", theme_type=ThemeType.GTK)
 
@@ -331,7 +358,10 @@ def test_preset_manager_view_operations(tk_root: tk.Tk, mock_manager: MagicMock)
     # Test eliminazione preset con conferma (riseleziona il preset dopo il refresh della tabella)
     children = view.tree_presets.get_children()
     view.tree_presets.selection_set(children[0])
-    with patch("tkinter.messagebox.askyesno", return_value=True), patch("tkinter.messagebox.showinfo"):
+    with (
+        patch("tkinter.messagebox.askyesno", return_value=True),
+        patch("tkinter.messagebox.showinfo"),
+    ):
         view._on_delete_preset()
         mock_manager.delete_preset.assert_called_with("Dark-Nordic")
 

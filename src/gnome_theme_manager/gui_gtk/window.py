@@ -158,8 +158,12 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
         # Connessione callback di caricamento per sincronizzare la sensibilità del pulsante Refresh
-        self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed("status", is_l)
-        self.themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed("themes", is_l)
+        self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "status", is_l
+        )
+        self.themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "themes", is_l
+        )
 
         # Connessione callback di applicazione tema (sincronizza la diagnostica senza duplicare il Toast)
         def _on_theme_applied_callback(item: Any, result: Any) -> None:
@@ -252,7 +256,9 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             is_loading: True se un refresh è in corso, False altrimenti.
         """
         if self._current_page_id == page_id or (
-            page_id == "themes" and self._current_page_id and self._current_page_id.startswith("themes_")
+            page_id == "themes"
+            and self._current_page_id
+            and self._current_page_id.startswith("themes_")
         ):
             self.refresh_button.set_sensitive(not is_loading)
 
@@ -312,7 +318,13 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self._current_page_id = page_id
 
         # Il pulsante refresh è attivo per le pagine con caricamento dati (status e categorie themes)
-        is_refreshable = page_id in ("status", "themes_shell", "themes_gtk", "themes_icon", "themes_cursor")
+        is_refreshable = page_id in (
+            "status",
+            "themes_shell",
+            "themes_gtk",
+            "themes_icon",
+            "themes_cursor",
+        )
         self.refresh_button.set_visible(is_refreshable)
         if is_refreshable:
             ctrl = self.pages[page_id]
@@ -407,6 +419,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             self.feedback_revealer.set_reveal_child(True)
 
         if timeout > 0:
+
             def _auto_hide() -> bool:
                 if self.feedback_revealer is not None:
                     self.feedback_revealer.set_reveal_child(False)

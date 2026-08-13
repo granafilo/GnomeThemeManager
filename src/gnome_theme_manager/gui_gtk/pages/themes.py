@@ -103,7 +103,9 @@ def build_theme_presentation(theme: Theme) -> ThemeItemPresentation:
     """
     category_display = CATEGORY_LABELS.get(theme.theme_type, str(theme.theme_type.value).upper())
     icon_name = CATEGORY_ICONS.get(theme.theme_type, "applications-graphics-symbolic")
-    origin_display = "Utente (~/.local/share/...)" if theme.is_user_level else "Sistema (/usr/share/...)"
+    origin_display = (
+        "Utente (~/.local/share/...)" if theme.is_user_level else "Sistema (/usr/share/...)"
+    )
 
     return ThemeItemPresentation(
         name=theme.name,
@@ -160,7 +162,9 @@ class ThemesPage:
         self.category_title_label: Gtk.Label = self.builder.get_object("category_title_label")
 
         # Card del Tema Attivo
-        self.active_theme_group: Adw.PreferencesGroup = self.builder.get_object("active_theme_group")
+        self.active_theme_group: Adw.PreferencesGroup = self.builder.get_object(
+            "active_theme_group"
+        )
         self.active_theme_row: Adw.ActionRow = self.builder.get_object("active_theme_row")
         self.active_theme_icon: Gtk.Image = self.builder.get_object("active_theme_icon")
         self.active_theme_badge: Gtk.Label = self.builder.get_object("active_theme_badge")
@@ -168,7 +172,9 @@ class ThemesPage:
         # Sezione Altri Temi Disponibili e Ricerca
         self.available_section_title: Gtk.Label = self.builder.get_object("available_section_title")
         self.search_entry: Gtk.SearchEntry = self.builder.get_object("search_entry")
-        self.themes_scrolled_window: Gtk.ScrolledWindow = self.builder.get_object("themes_scrolled_window")
+        self.themes_scrolled_window: Gtk.ScrolledWindow = self.builder.get_object(
+            "themes_scrolled_window"
+        )
         self.count_label: Gtk.Label = self.builder.get_object("count_label")
         self.themes_list_box: Gtk.ListBox = self.builder.get_object("themes_list_box")
         self.no_results_page: Adw.StatusPage = self.builder.get_object("no_results_page")
@@ -289,7 +295,9 @@ class ThemesPage:
             """Esegue la scansione dei temi e il recupero dello stato attivo interrogando il Facade ThemeManager."""
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError("ThemeManager non disponibile o non inizializzato.")
+                    raise GnomeThemeManagerError(
+                        "ThemeManager non disponibile o non inizializzato."
+                    )
 
                 # Scansione di tutti i temi tramite API pubblica del Facade
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
@@ -301,25 +309,47 @@ class ThemesPage:
                     current_set = self.manager.get_current_themes()
                     if isinstance(current_set, ThemeSet):
                         active_map = {
-                            ThemeType.GTK: current_set.gtk_theme if isinstance(current_set.gtk_theme, str) else None,
-                            ThemeType.ICON: current_set.icon_theme if isinstance(current_set.icon_theme, str) else None,
-                            ThemeType.CURSOR: current_set.cursor_theme if isinstance(current_set.cursor_theme, str) else None,
-                            ThemeType.SHELL: current_set.shell_theme if isinstance(current_set.shell_theme, str) else None,
+                            ThemeType.GTK: current_set.gtk_theme
+                            if isinstance(current_set.gtk_theme, str)
+                            else None,
+                            ThemeType.ICON: current_set.icon_theme
+                            if isinstance(current_set.icon_theme, str)
+                            else None,
+                            ThemeType.CURSOR: current_set.cursor_theme
+                            if isinstance(current_set.cursor_theme, str)
+                            else None,
+                            ThemeType.SHELL: current_set.shell_theme
+                            if isinstance(current_set.shell_theme, str)
+                            else None,
                         }
-                except (GnomeThemeManagerError, OSError, PermissionError, GLib.GError, AttributeError, TypeError, ValueError) as err:
+                except (
+                    GnomeThemeManagerError,
+                    OSError,
+                    PermissionError,
+                    GLib.GError,
+                    AttributeError,
+                    TypeError,
+                    ValueError,
+                ) as err:
                     logger.warning("Impossibile recuperare i temi attivi correnti: %s", err)
 
                 snapshot = ThemesSnapshot(items=presentation_items, active_themes=active_map)
                 return snapshot, None
             except (GnomeThemeManagerError, OSError, PermissionError, TimeoutError) as err:
                 return None, err
-            except Exception as err:  # noqa: BLE001
-                return None, GnomeThemeManagerError(f"Errore imprevisto durante la scansione: {err}")
+            except Exception as err:
+                return None, GnomeThemeManagerError(
+                    f"Errore imprevisto durante la scansione: {err}"
+                )
 
         def on_fetch_completed(result: tuple[ThemesSnapshot | None, Exception | None]) -> bool:
             """Eseguito nel main context GTK per aggiornare i widget."""
             if current_generation != self._generation_id:
-                logger.debug("Callback tardivo scartato: gen %d != %d", current_generation, self._generation_id)
+                logger.debug(
+                    "Callback tardivo scartato: gen %d != %d",
+                    current_generation,
+                    self._generation_id,
+                )
                 return GLib.SOURCE_REMOVE
 
             self._is_loading = False
@@ -350,6 +380,7 @@ class ThemesPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)
@@ -419,7 +450,9 @@ class ThemesPage:
 
         if active_item is not None:
             self.active_theme_row.set_title(active_item.name)
-            self.active_theme_row.set_subtitle(f"{active_item.origin_display}\n{active_item.path_display}")
+            self.active_theme_row.set_subtitle(
+                f"{active_item.origin_display}\n{active_item.path_display}"
+            )
             self.active_theme_badge.set_text("In uso")
             self.active_theme_badge.set_visible(True)
         elif active_theme_name:
@@ -429,7 +462,9 @@ class ThemesPage:
             self.active_theme_badge.set_visible(True)
         else:
             self.active_theme_row.set_title("Non disponibile")
-            self.active_theme_row.set_subtitle("Nessuna impostazione rilevata o backend non disponibile")
+            self.active_theme_row.set_subtitle(
+                "Nessuna impostazione rilevata o backend non disponibile"
+            )
             self.active_theme_badge.set_visible(False)
 
         # ---------------------------------------------------------------------
@@ -497,7 +532,9 @@ class ThemesPage:
 
                 self.themes_list_box.append(row)
 
-    def confirm_and_apply_selected(self, parent_window: Gtk.Window | None = None, sync: bool = False) -> None:
+    def confirm_and_apply_selected(
+        self, parent_window: Gtk.Window | None = None, sync: bool = False
+    ) -> None:
         """Avvia la conferma e applicazione del tema attualmente selezionato."""
         if self._selected_theme is None:
             logger.warning("Tentativo di applicare un tema senza alcuna selezione attiva.")
@@ -539,8 +576,14 @@ class ThemesPage:
         heading = f"Applicare “{item.name}” a {cat_name}?"
 
         # Recupero del tema attualmente attivo per la categoria corrente
-        active_theme_raw = self._snapshot.active_themes.get(item.theme_type) if self._snapshot else None
-        active_name = active_theme_raw if isinstance(active_theme_raw, str) and active_theme_raw.strip() else None
+        active_theme_raw = (
+            self._snapshot.active_themes.get(item.theme_type) if self._snapshot else None
+        )
+        active_name = (
+            active_theme_raw
+            if isinstance(active_theme_raw, str) and active_theme_raw.strip()
+            else None
+        )
 
         # Costruzione del contenitore descrittivo con larghezza confortevole (500px) e senza a capo
         extra_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -668,7 +711,9 @@ class ThemesPage:
             """Esegue l'applicazione nel worker di background."""
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError("ThemeManager non disponibile o non inizializzato.")
+                    raise GnomeThemeManagerError(
+                        "ThemeManager non disponibile o non inizializzato."
+                    )
 
                 result = self.manager.apply_themes(
                     theme_set=theme_set,
@@ -676,7 +721,7 @@ class ThemesPage:
                     propagate_sandbox=True,
                 )
                 return result, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, err
 
         def on_apply_completed(result: tuple[ApplyResult | None, Exception | None]) -> bool:
@@ -708,7 +753,9 @@ class ThemesPage:
                     new_active_map[item.theme_type] = item.name
 
                     current_items = list(self._snapshot.items) if self._snapshot else [item]
-                    self._snapshot = ThemesSnapshot(items=current_items, active_themes=new_active_map)
+                    self._snapshot = ThemesSnapshot(
+                        items=current_items, active_themes=new_active_map
+                    )
 
                     # 3. Propagazione immediata del cursore in-process (per tema Cursore)
                     if item.theme_type == ThemeType.CURSOR:
@@ -725,7 +772,9 @@ class ThemesPage:
                         )
                     elif item.theme_type == ThemeType.GTK:
                         if apply_result.gtk4_override_applied:
-                            msg = f"Tema GTK «{item.name}» applicato (con override GTK4/Libadwaita)."
+                            msg = (
+                                f"Tema GTK «{item.name}» applicato (con override GTK4/Libadwaita)."
+                            )
                         else:
                             msg = f"Tema GTK «{item.name}» applicato."
                     elif item.theme_type == ThemeType.SHELL:
@@ -755,6 +804,7 @@ class ThemesPage:
             res = worker_apply()
             on_apply_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_apply()
                 GLib.idle_add(on_apply_completed, res)

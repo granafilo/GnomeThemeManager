@@ -186,7 +186,7 @@ class SandboxPage:
                     current_themes = ThemeSet()
 
                 return sb_status, current_themes, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, None, err
 
         def on_fetch_completed(
@@ -217,6 +217,7 @@ class SandboxPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)
@@ -276,7 +277,9 @@ class SandboxPage:
         # 5. Snap Theme Compatibility
         active_gtk = (themes.gtk_theme or "") if themes else ""
         if not sb.snap_available or not sb.snap_gtk_common_themes_installed:
-            self.snap_theme_compat_row.set_subtitle("Non verificabile (Snap o gtk-common-themes assente)")
+            self.snap_theme_compat_row.set_subtitle(
+                "Non verificabile (Snap o gtk-common-themes assente)"
+            )
         elif not active_gtk:
             self.snap_theme_compat_row.set_subtitle("Nessun tema GTK attivo rilevato")
         else:
@@ -380,7 +383,7 @@ class SandboxPage:
                     return PropagationResult(), None
                 res = self.manager.propagate_sandbox()
                 return res, None
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 return None, err
 
         def on_propagation_completed(
@@ -411,7 +414,7 @@ class SandboxPage:
                 if self.on_sandbox_propagated:
                     try:
                         self.on_sandbox_propagated()
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:
                         logger.warning("Errore nel callback on_sandbox_propagated: %s", e)
 
             return GLib.SOURCE_REMOVE
@@ -420,6 +423,7 @@ class SandboxPage:
             res = worker_propagate()
             on_propagation_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_propagate()
                 GLib.idle_add(on_propagation_completed, res)

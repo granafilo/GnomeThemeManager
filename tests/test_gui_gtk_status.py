@@ -81,48 +81,71 @@ def test_status_page_ui_structure_and_scrolling() -> None:
     assert "row_snap_status" in object_ids
 
     # Verifica proprietà di espansione verticale su page_root e ready_page per garantire lo scrolling
-    page_root_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "page_root")
+    page_root_obj = next(
+        elem for elem in root.iter("object") if elem.attrib.get("id") == "page_root"
+    )
     root_props = {p.attrib.get("name"): p.text for p in page_root_obj.findall("property")}
     assert root_props.get("vexpand") == "true"
     assert root_props.get("hexpand") == "true"
 
-    ready_page_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "ready_page")
+    ready_page_obj = next(
+        elem for elem in root.iter("object") if elem.attrib.get("id") == "ready_page"
+    )
     ready_props = {p.attrib.get("name"): p.text for p in ready_page_obj.findall("property")}
     assert ready_props.get("vexpand") == "true"
     assert ready_props.get("hexpand") == "true"
 
     # Verifica escaping Pango per il titolo di group_sandbox (deve contenere &amp; nel testo decodificato)
-    group_sandbox_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "group_sandbox")
+    group_sandbox_obj = next(
+        elem for elem in root.iter("object") if elem.attrib.get("id") == "group_sandbox"
+    )
     sandbox_props = {p.attrib.get("name"): p.text for p in group_sandbox_obj.findall("property")}
-    assert "&amp;" in sandbox_props.get("title", ""), "Il titolo sandbox deve contenere &amp; per essere interpretato da Pango come &"
+    assert "&amp;" in sandbox_props.get("title", ""), (
+        "Il titolo sandbox deve contenere &amp; per essere interpretato da Pango come &"
+    )
+
+
 def test_format_optional_value() -> None:
     """Verifica la formattazione dei valori opzionali."""
     assert format_optional_value("Yaru-dark") == "Yaru-dark"
     assert format_optional_value(None) == "Non impostato"
     assert format_optional_value("", default="Default") == "Default"
     assert format_optional_value("   ", default="N/D") == "N/D"
+
+
 def test_format_boolean() -> None:
     """Verifica la formattazione dei booleani in etichette utente."""
     assert format_boolean(True) == "Sì"
     assert format_boolean(False) == "No"
     assert format_boolean(None) == "Non disponibile"
     assert format_boolean(True, true_label="Attivo", false_label="Inattivo") == "Attivo"
+
+
 def test_format_path() -> None:
     """Verifica la conversione e formattazione di percorsi Path."""
     p = Path("/home/user/.local/share/themes")
     assert format_path(p) == "/home/user/.local/share/themes"
     assert format_path(None) == "Non disponibile"
+
+
 def test_format_color_scheme() -> None:
     """Verifica la formattazione delle varianti schema colore."""
     assert format_color_scheme("prefer-dark") == "Scuro (Preferisci scuro)"
     assert format_color_scheme("default") == "Predefinito (Chiaro)"
     assert format_color_scheme(None) == "Predefinito (Chiaro)"
     assert format_color_scheme("prefer-light") == "Chiaro (Preferisci chiaro)"
+
+
 def test_format_shell_theme() -> None:
     """Verifica la formattazione del tema GNOME Shell in base al supporto estensione."""
     assert format_shell_theme("Nordic", is_supported=True) == "Nordic"
     assert format_shell_theme(None, is_supported=True) == "Default di sistema"
-    assert format_shell_theme("Nordic", is_supported=False) == "Non gestito (estensione 'User Themes' non attiva)"
+    assert (
+        format_shell_theme("Nordic", is_supported=False)
+        == "Non gestito (estensione 'User Themes' non attiva)"
+    )
+
+
 def test_format_sandbox_status() -> None:
     """Verifica la formattazione dello stato dei runtime sandbox."""
     res_avail = format_sandbox_status(
@@ -140,6 +163,8 @@ def test_format_sandbox_status() -> None:
         inactive_label="No",
     )
     assert res_not_installed == "Non disponibile (non installato)"
+
+
 def test_build_theme_presentation() -> None:
     """Verifica la corretta trasformazione da Theme a ThemeItemPresentation."""
     theme = Theme(
@@ -154,6 +179,8 @@ def test_build_theme_presentation() -> None:
     assert pres.origin_display == "Utente (~/.local/share/...)"
     assert pres.icon_name == "preferences-desktop-theme-symbolic"
     assert pres.is_user_level is True
+
+
 def test_status_page_ready_state_success(mock_theme_manager: MagicMock) -> None:
     """Verifica che un refresh con dati validi porti allo stato READY e popoli le righe."""
     if not is_gtk_available():
@@ -178,6 +205,8 @@ def test_status_page_ready_state_success(mock_theme_manager: MagicMock) -> None:
     assert "Disponibile (Override filesystem attivo)" in page.row_flatpak_status.get_subtitle()
     assert "Disponibile (gtk-common-themes installato)" in page.row_snap_status.get_subtitle()
     assert page.banner_warning.get_revealed() is False
+
+
 def test_status_page_gtk4_override_inactive(mock_theme_manager: MagicMock) -> None:
     """Verifica che quando gtk4_override_active è False, la riga mostri 'Non attivo'."""
     if not is_gtk_available():
@@ -191,6 +220,8 @@ def test_status_page_gtk4_override_inactive(mock_theme_manager: MagicMock) -> No
 
     assert page.widget.get_visible_child_name() == "ready"
     assert "Non attivo" in page.row_gtk4_override.get_subtitle()
+
+
 def test_status_page_ready_with_warnings(mock_theme_manager: MagicMock) -> None:
     """Verifica che limitazioni ambientali attivino l'Adw.Banner nella pagina ready."""
     if not is_gtk_available():
@@ -218,6 +249,8 @@ def test_status_page_ready_with_warnings(mock_theme_manager: MagicMock) -> None:
     assert page.banner_warning.get_revealed() is True
     assert "User Themes" in page.banner_warning.get_title()
     assert "gtk-common-themes" in page.banner_warning.get_title()
+
+
 def test_status_page_empty_state() -> None:
     """Verifica che una configurazione completamente vuota e senza GSettings mostri lo stato EMPTY."""
     if not is_gtk_available():
@@ -240,12 +273,16 @@ def test_status_page_empty_state() -> None:
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "empty"
+
+
 def test_status_page_error_state_and_retry(mock_theme_manager: MagicMock) -> None:
     """Verifica che un'eccezione porti allo stato ERROR e che il pulsante retry consenta il ripristino."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
-    mock_theme_manager.get_current_themes.side_effect = GSettingsUnavailableError("Schema non trovato.")
+    mock_theme_manager.get_current_themes.side_effect = GSettingsUnavailableError(
+        "Schema non trovato."
+    )
 
     page = StatusPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -258,6 +295,8 @@ def test_status_page_error_state_and_retry(mock_theme_manager: MagicMock) -> Non
     mock_theme_manager.get_current_themes.return_value = ThemeSet(gtk_theme="Adwaita")
     page.refresh(sync=True)
     assert page.widget.get_visible_child_name() == "ready"
+
+
 def test_status_page_refresh_concurrency_guard(mock_theme_manager: MagicMock) -> None:
     """Verifica che chiamate di refresh concorrenti durante LOADING vengano ignorate."""
     if not is_gtk_available():

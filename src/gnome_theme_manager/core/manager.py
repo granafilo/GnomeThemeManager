@@ -147,7 +147,11 @@ class ThemeManager:
         shell_supported = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
 
         color_scheme_supported = False
-        if self._gsettings and hasattr(self._gsettings, "_has_key") and hasattr(self._gsettings, "_settings"):
+        if (
+            self._gsettings
+            and hasattr(self._gsettings, "_has_key")
+            and hasattr(self._gsettings, "_settings")
+        ):
             color_scheme_supported = self._gsettings._has_key(
                 self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME
             )
@@ -285,26 +289,37 @@ class ThemeManager:
         if theme_set.gtk_theme is not None:
             found_gtk = self._scanner.find_theme(theme_set.gtk_theme, ThemeType.GTK)
             if not found_gtk:
-                raise ThemeNotFoundError(f"Il tema GTK '{theme_set.gtk_theme}' non è stato trovato nel sistema.")
+                raise ThemeNotFoundError(
+                    f"Il tema GTK '{theme_set.gtk_theme}' non è stato trovato nel sistema."
+                )
 
         if theme_set.icon_theme is not None:
             found_icon = self._scanner.find_theme(theme_set.icon_theme, ThemeType.ICON)
             if not found_icon:
-                raise ThemeNotFoundError(f"Il tema icone '{theme_set.icon_theme}' non è stato trovato nel sistema.")
+                raise ThemeNotFoundError(
+                    f"Il tema icone '{theme_set.icon_theme}' non è stato trovato nel sistema."
+                )
 
         if theme_set.cursor_theme is not None:
             found_cursor = self._scanner.find_theme(theme_set.cursor_theme, ThemeType.CURSOR)
             if not found_cursor:
-                raise ThemeNotFoundError(f"Il tema cursori '{theme_set.cursor_theme}' non è stato trovato nel sistema.")
+                raise ThemeNotFoundError(
+                    f"Il tema cursori '{theme_set.cursor_theme}' non è stato trovato nel sistema."
+                )
 
         found_shell: Theme | None = None
         if theme_set.shell_theme is not None:
             found_shell = self._scanner.find_theme(theme_set.shell_theme, ThemeType.SHELL)
             if not found_shell:
-                raise ThemeNotFoundError(f"Il tema GNOME Shell '{theme_set.shell_theme}' non è stato trovato nel sistema.")
+                raise ThemeNotFoundError(
+                    f"Il tema GNOME Shell '{theme_set.shell_theme}' non è stato trovato nel sistema."
+                )
 
         # 2. Validazione schema colore
-        if theme_set.color_scheme is not None and theme_set.color_scheme not in GSETTINGS_COLOR_SCHEMES:
+        if (
+            theme_set.color_scheme is not None
+            and theme_set.color_scheme not in GSETTINGS_COLOR_SCHEMES
+        ):
             raise ValueError(
                 f"Schema colore '{theme_set.color_scheme}' non valido. Valori ammessi: {list(GSETTINGS_COLOR_SCHEMES)}"
             )
@@ -337,7 +352,9 @@ class ThemeManager:
             if gtk4_applied:
                 logger.info("Override GTK4/Libadwaita applicato per '%s'", found_gtk.name)
             else:
-                logger.debug("Nessuna cartella CSS compatibile con GTK4/3 trovata in '%s'", found_gtk.name)
+                logger.debug(
+                    "Nessuna cartella CSS compatibile con GTK4/3 trovata in '%s'", found_gtk.name
+                )
 
         # 6. Propagazione automatica agli ambienti sandbox (Flatpak e Snap)
         propagation_result: PropagationResult | None = None

@@ -144,15 +144,23 @@ class CurrentStatusView(ttk.Frame):
             self.var_cursor.set("Non disponibile")
             self.var_shell.set("Non disponibile")
             self.var_color_scheme.set("Non disponibile")
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore imprevisto nel recupero dei temi attivi: %s", err)
             self.var_gtk.set(f"Errore: {err}")
 
         try:
             # 2. Recupero diagnostica di sistema
             status: SystemStatus = self.manager.get_system_status()
-            gsettings_text = "✅ Disponibile e funzionante" if status.gsettings_available else "❌ Non disponibile"
-            shell_text = "✅ Installata e supportata" if status.shell_theme_supported else "⚠️ Non rilevata (schema assente)"
+            gsettings_text = (
+                "✅ Disponibile e funzionante"
+                if status.gsettings_available
+                else "❌ Non disponibile"
+            )
+            shell_text = (
+                "✅ Installata e supportata"
+                if status.shell_theme_supported
+                else "⚠️ Non rilevata (schema assente)"
+            )
 
             self.var_gsettings_status.set(gsettings_text)
             self.var_shell_extension.set(shell_text)
@@ -183,7 +191,7 @@ class CurrentStatusView(ttk.Frame):
 
             self.var_snap_status.set(snap_txt)
             self.var_flatpak_status.set(flatpak_txt)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.warning("Errore nel recupero dello stato di sistema: %s", err)
 
 
@@ -288,10 +296,20 @@ class AvailableThemesView(ttk.Frame):
         )
 
         # Configurazione colonne e intestazioni
-        self.tree.heading("name", text="Nome Tema", command=lambda: self._sort_by_column("name", False))
-        self.tree.heading("type", text="Tipologia", command=lambda: self._sort_by_column("type", False))
-        self.tree.heading("origin", text="Origine", command=lambda: self._sort_by_column("origin", False))
-        self.tree.heading("path", text="Percorso nel Filesystem", command=lambda: self._sort_by_column("path", False))
+        self.tree.heading(
+            "name", text="Nome Tema", command=lambda: self._sort_by_column("name", False)
+        )
+        self.tree.heading(
+            "type", text="Tipologia", command=lambda: self._sort_by_column("type", False)
+        )
+        self.tree.heading(
+            "origin", text="Origine", command=lambda: self._sort_by_column("origin", False)
+        )
+        self.tree.heading(
+            "path",
+            text="Percorso nel Filesystem",
+            command=lambda: self._sort_by_column("path", False),
+        )
 
         self.tree.column("name", width=180, anchor=tk.W)
         self.tree.column("type", width=110, anchor=tk.CENTER)
@@ -362,7 +380,7 @@ class AvailableThemesView(ttk.Frame):
             user_only = self.var_user_only.get()
             self._cached_themes = self.manager.list_themes(theme_type=None, user_only=user_only)
             self._apply_ui_filter()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore durante la scansione dei temi: %s", err)
             messagebox.showerror("Errore Scansione Temi", f"Impossibile scansionare i temi: {err}")
 
@@ -381,7 +399,10 @@ class AvailableThemesView(ttk.Frame):
                 continue
 
             # Controllo filtro ricerca testuale per nome o percorso
-            if search_query and (search_query not in theme.name.lower() and search_query not in str(theme.path).lower()):
+            if search_query and (
+                search_query not in theme.name.lower()
+                and search_query not in str(theme.path).lower()
+            ):
                 continue
 
             origin_text = "Utente" if theme.is_user_level else "Sistema"
@@ -513,7 +534,7 @@ class AvailableThemesView(ttk.Frame):
         except (GSettingsUnavailableError, ThemeNotFoundError, ValueError) as err:
             logger.warning("Impossibile applicare il tema '%s': %s", name, err)
             messagebox.showerror("Errore Applicazione Tema", str(err))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore imprevisto nell'applicazione del tema: %s", err)
             messagebox.showerror("Errore Imprevisto", f"Si è verificato un errore: {err}")
 
@@ -560,7 +581,7 @@ class AvailableThemesView(ttk.Frame):
         except (GSettingsUnavailableError, ThemeNotFoundError, ValueError) as err:
             logger.warning("Impossibile applicare il tema unificato '%s': %s", name, err)
             messagebox.showerror("Errore Tema Globale", str(err))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore imprevisto nell'applicazione unificata: %s", err)
             messagebox.showerror("Errore Imprevisto", f"Si è verificato un errore: {err}")
 
@@ -596,8 +617,10 @@ class AvailableThemesView(ttk.Frame):
                 self.on_theme_applied()
         except ThemeNotFoundError as err:
             messagebox.showerror("Tema Non Trovato", str(err))
-        except Exception as err:  # noqa: BLE001
-            messagebox.showerror("Errore Disinstallazione", f"Impossibile disinstallare il tema: {err}")
+        except Exception as err:
+            messagebox.showerror(
+                "Errore Disinstallazione", f"Impossibile disinstallare il tema: {err}"
+            )
 
     def _sort_by_column(self, col: str, reverse: bool) -> None:
         """Ordina la tabella cliccando sull'intestazione della colonna."""
@@ -652,7 +675,9 @@ class PresetManagerView(ttk.Frame):
     def _build_ui(self) -> None:
         """Costruisce i componenti dell'interfaccia utente."""
         # 1. Sezione Superiore: Salvataggio Preset Corrente
-        save_frame = ttk.LabelFrame(self, text=" Salva Configurazione Attuale come Preset ", padding=10)
+        save_frame = ttk.LabelFrame(
+            self, text=" Salva Configurazione Attuale come Preset ", padding=10
+        )
         save_frame.pack(fill=tk.X, expand=False, pady=(0, 10))
 
         ttk.Label(save_frame, text="Nome Nuovo Preset:").pack(side=tk.LEFT, padx=(4, 6))
@@ -674,11 +699,15 @@ class PresetManagerView(ttk.Frame):
         left_frame = ttk.LabelFrame(content_pane, text=" Preset Salvati ", padding=8)
         content_pane.add(left_frame, weight=1)
 
-        self.tree_presets = ttk.Treeview(left_frame, columns=("name",), show="headings", selectmode="browse")
+        self.tree_presets = ttk.Treeview(
+            left_frame, columns=("name",), show="headings", selectmode="browse"
+        )
         self.tree_presets.heading("name", text="Nome Preset")
         self.tree_presets.column("name", width=220, anchor=tk.W)
 
-        scroll_presets = ttk.Scrollbar(left_frame, orient=tk.VERTICAL, command=self.tree_presets.yview)
+        scroll_presets = ttk.Scrollbar(
+            left_frame, orient=tk.VERTICAL, command=self.tree_presets.yview
+        )
         self.tree_presets.configure(yscrollcommand=scroll_presets.set)
 
         self.tree_presets.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -745,7 +774,7 @@ class PresetManagerView(ttk.Frame):
 
             # Reset preview e pulsanti
             self._clear_preview()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.error("Errore nel recupero dei preset: %s", err)
             messagebox.showerror("Errore Preset", f"Impossibile leggere i preset: {err}")
 
@@ -786,7 +815,7 @@ class PresetManagerView(ttk.Frame):
 
             self.btn_apply_preset.configure(state=tk.NORMAL)
             self.btn_delete_preset.configure(state=tk.NORMAL)
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             logger.warning("Impossibile caricare l'anteprima del preset '%s': %s", name, err)
             self._clear_preview()
 
@@ -811,12 +840,14 @@ class PresetManagerView(ttk.Frame):
             if confirm:
                 try:
                     self.manager.save_current_as_preset(name, overwrite=True)
-                    messagebox.showinfo("Preset Aggiornato", f"Preset '{name}' sovrascritto con successo!")
+                    messagebox.showinfo(
+                        "Preset Aggiornato", f"Preset '{name}' sovrascritto con successo!"
+                    )
                     self.var_new_preset_name.set("")
                     self.refresh_presets()
-                except Exception as err:  # noqa: BLE001
+                except Exception as err:
                     messagebox.showerror("Errore Salvataggio", str(err))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             messagebox.showerror("Errore Salvataggio Preset", str(err))
 
     def _on_apply_preset(self) -> None:
@@ -826,7 +857,9 @@ class PresetManagerView(ttk.Frame):
             return
 
         try:
-            result = self.manager.apply_preset(name, apply_gtk4_override=True, propagate_sandbox=True)
+            result = self.manager.apply_preset(
+                name, apply_gtk4_override=True, propagate_sandbox=True
+            )
             msg_parts = [f"Preset '{name}' applicato con successo!"]
             if result.sandbox_propagation:
                 sb = result.sandbox_propagation
@@ -840,9 +873,14 @@ class PresetManagerView(ttk.Frame):
             messagebox.showinfo("Preset Applicato", "\n".join(msg_parts))
             if self.on_preset_applied:
                 self.on_preset_applied()
-        except (FileNotFoundError, ThemeNotFoundError, ValueError, GSettingsUnavailableError) as err:
+        except (
+            FileNotFoundError,
+            ThemeNotFoundError,
+            ValueError,
+            GSettingsUnavailableError,
+        ) as err:
             messagebox.showerror("Errore Applicazione Preset", str(err))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             messagebox.showerror("Errore Imprevisto", f"Impossibile applicare il preset: {err}")
 
     def _on_delete_preset(self) -> None:
@@ -862,7 +900,7 @@ class PresetManagerView(ttk.Frame):
             self.manager.delete_preset(name)
             messagebox.showinfo("Preset Eliminato", f"Preset '{name}' eliminato.")
             self.refresh_presets()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             messagebox.showerror("Errore Eliminazione Preset", str(err))
 
 
@@ -914,7 +952,9 @@ class ThemeInstallerView(ttk.Frame):
         file_frame = ttk.LabelFrame(self, text=" 1. File Archivio Compresso ", padding=12)
         file_frame.pack(fill=tk.X, expand=False, pady=(0, 12))
 
-        ttk.Label(file_frame, text="Percorso file (.zip, .tar.gz, .tar.xz, ...):").pack(anchor=tk.W, pady=(0, 4))
+        ttk.Label(file_frame, text="Percorso file (.zip, .tar.gz, .tar.xz, ...):").pack(
+            anchor=tk.W, pady=(0, 4)
+        )
 
         input_row = ttk.Frame(file_frame)
         input_row.pack(fill=tk.X, expand=True)
@@ -952,9 +992,9 @@ class ThemeInstallerView(ttk.Frame):
         ttk.Label(row_name, text="Nome cartella personalizzato:", width=22).pack(side=tk.LEFT)
         entry_custom_name = ttk.Entry(row_name, textvariable=self.var_custom_name, width=26)
         entry_custom_name.pack(side=tk.LEFT)
-        ttk.Label(row_name, text="(Opzionale, lascia vuoto per rilevamento automatico)", font=("Sans", 8)).pack(
-            side=tk.LEFT, padx=6
-        )
+        ttk.Label(
+            row_name, text="(Opzionale, lascia vuoto per rilevamento automatico)", font=("Sans", 8)
+        ).pack(side=tk.LEFT, padx=6)
 
         # Checkbox Sovrascrittura
         row_ow = ttk.Frame(options_frame)
@@ -977,7 +1017,9 @@ class ThemeInstallerView(ttk.Frame):
         )
         btn_install.pack(side=tk.LEFT, padx=(0, 10))
 
-        lbl_status = ttk.Label(exec_frame, textvariable=self.var_status_msg, font=("Sans", 9, "italic"))
+        lbl_status = ttk.Label(
+            exec_frame, textvariable=self.var_status_msg, font=("Sans", 9, "italic")
+        )
         lbl_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def _on_browse_file(self) -> None:
@@ -1000,12 +1042,17 @@ class ThemeInstallerView(ttk.Frame):
         """Esegue l'installazione del tema richiamando il Facade ThemeManager."""
         path_str = self.var_archive_path.get().strip()
         if not path_str:
-            messagebox.showwarning("File Mancante", "Seleziona un file archivio compresso prima di installare.")
+            messagebox.showwarning(
+                "File Mancante", "Seleziona un file archivio compresso prima di installare."
+            )
             return
 
         archive_path = Path(path_str)
         if not archive_path.is_file():
-            messagebox.showerror("File Non Trovato", f"Il percorso specificato non esiste o non è un file valido:\n{archive_path}")
+            messagebox.showerror(
+                "File Non Trovato",
+                f"Il percorso specificato non esiste o non è un file valido:\n{archive_path}",
+            )
             return
 
         theme_type = self.type_options.get(self.var_selected_type.get())
@@ -1043,7 +1090,9 @@ class ThemeInstallerView(ttk.Frame):
                 lines.append(f" • {th.name} ({th.theme_type.value.upper()}) -> {th.path}")
 
             msg_text = "\n".join(lines)
-            self.var_status_msg.set(f"Installazione completata: {len(installed_themes)} tema/i installati.")
+            self.var_status_msg.set(
+                f"Installazione completata: {len(installed_themes)} tema/i installati."
+            )
             messagebox.showinfo("Installazione Riuscita", msg_text)
 
             # Reset campi
@@ -1071,6 +1120,8 @@ class ThemeInstallerView(ttk.Frame):
         except (ArchiveExtractionError, ThemeValidationError, GnomeThemeManagerError) as err:
             self.var_status_msg.set("Errore durante l'installazione.")
             messagebox.showerror("Errore Installazione", str(err))
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             self.var_status_msg.set("Errore imprevisto.")
-            messagebox.showerror("Errore Imprevisto", f"Si è verificato un errore durante l'installazione:\n{err}")
+            messagebox.showerror(
+                "Errore Imprevisto", f"Si è verificato un errore durante l'installazione:\n{err}"
+            )

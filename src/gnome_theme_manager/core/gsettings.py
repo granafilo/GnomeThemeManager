@@ -27,6 +27,7 @@ try:
 
     gi.require_version("Gio", "2.0")
     from gi.repository import Gio
+
     _GIO_AVAILABLE = True
 except (ImportError, ValueError, AttributeError):
     Gio = None
@@ -99,16 +100,18 @@ class GSettingsClient:
                     if hasattr(Gio.Settings, "new_full"):
                         return Gio.Settings.new_full(schema, None, None)
                     return Gio.Settings.new(target_schema)
-                except Exception:  # noqa: S110, BLE001
+                except Exception:
                     pass
 
         # Percorsi delle estensioni GNOME (sia utente che di sistema)
         search_dirs = list(self.custom_schema_dirs)
-        search_dirs.extend([
-            Path.home() / ".local" / "share" / "gnome-shell" / "extensions",
-            Path("/usr/share/gnome-shell/extensions"),
-            Path("/usr/local/share/gnome-shell/extensions"),
-        ])
+        search_dirs.extend(
+            [
+                Path.home() / ".local" / "share" / "gnome-shell" / "extensions",
+                Path("/usr/share/gnome-shell/extensions"),
+                Path("/usr/local/share/gnome-shell/extensions"),
+            ]
+        )
 
         for base in search_dirs:
             if not base.is_dir():
@@ -129,11 +132,10 @@ class GSettingsClient:
                                 if hasattr(Gio.Settings, "new_full"):
                                     return Gio.Settings.new_full(schema, None, None)
                                 return Gio.Settings.new_with_path(target_schema, None)
-                        except Exception:  # noqa: S112, BLE001
+                        except Exception:  # noqa: S112
                             continue
-            except Exception:  # noqa: S112, BLE001
+            except Exception:  # noqa: S112
                 continue
-
 
         return None
 
@@ -250,7 +252,7 @@ class GSettingsClient:
                 return key in settings_obj.list_keys()
             if hasattr(settings_obj, "keys"):
                 return key in settings_obj
-        except Exception:  # noqa: S110, BLE001
+        except Exception:
             pass
         return False
 
@@ -258,6 +260,5 @@ class GSettingsClient:
         """Sincronizza le modifiche con il backend dconf."""
         try:
             Gio.Settings.sync()
-        except Exception:  # noqa: S110, BLE001
+        except Exception:
             pass
-

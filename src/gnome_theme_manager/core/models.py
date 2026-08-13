@@ -8,6 +8,7 @@ from typing import Any
 
 class ThemeType(str, Enum):
     """Tipologia di tema gestito."""
+
     GTK = "gtk"
     ICON = "icon"
     CURSOR = "cursor"
@@ -20,6 +21,7 @@ class ThemeType(str, Enum):
 @dataclass(frozen=True)
 class Theme:
     """Rappresentazione di un singolo tema installato sul filesystem."""
+
     name: str
     theme_type: ThemeType
     path: Path
@@ -34,6 +36,7 @@ class Theme:
 @dataclass
 class ThemeSet:
     """Insieme di temi configurati/attivi sul desktop GNOME."""
+
     gtk_theme: str | None = None
     icon_theme: str | None = None
     cursor_theme: str | None = None
@@ -82,13 +85,15 @@ class ThemeSet:
         Returns:
             True se tutte le proprietà sono None o stringhe vuote, False altrimenti.
         """
-        return not any([
-            self.gtk_theme,
-            self.icon_theme,
-            self.cursor_theme,
-            self.color_scheme,
-            self.shell_theme,
-        ])
+        return not any(
+            [
+                self.gtk_theme,
+                self.icon_theme,
+                self.cursor_theme,
+                self.color_scheme,
+                self.shell_theme,
+            ]
+        )
 
     def merge(self, other: "ThemeSet") -> "ThemeSet":
         """Fonde l'istanza corrente con un'altra, dando precedenza ai valori non nulli di other.
@@ -102,8 +107,12 @@ class ThemeSet:
         return ThemeSet(
             gtk_theme=other.gtk_theme if other.gtk_theme is not None else self.gtk_theme,
             icon_theme=other.icon_theme if other.icon_theme is not None else self.icon_theme,
-            cursor_theme=other.cursor_theme if other.cursor_theme is not None else self.cursor_theme,
-            color_scheme=other.color_scheme if other.color_scheme is not None else self.color_scheme,
+            cursor_theme=other.cursor_theme
+            if other.cursor_theme is not None
+            else self.cursor_theme,
+            color_scheme=other.color_scheme
+            if other.color_scheme is not None
+            else self.color_scheme,
             shell_theme=other.shell_theme if other.shell_theme is not None else self.shell_theme,
         )
 
@@ -111,6 +120,7 @@ class ThemeSet:
 @dataclass
 class SandboxStatus:
     """Stato dei runtime sandbox (Snap/Flatpak) rilevati sul sistema."""
+
     snap_available: bool = False
     flatpak_available: bool = False
     snap_gtk_common_themes_installed: bool = False
@@ -120,6 +130,7 @@ class SandboxStatus:
 @dataclass
 class PropagationResult:
     """Risultato della propagazione tema ai sistemi sandbox."""
+
     flatpak_success: bool = False
     snap_success: bool = False
     flatpak_messages: list[str] = field(default_factory=list)
@@ -130,6 +141,7 @@ class PropagationResult:
 @dataclass
 class ApplyResult:
     """Risultato dettagliato dell'applicazione di un set o preset di temi."""
+
     gtk_theme: str | None = None
     gtk4_override_applied: bool = False
     icon_theme: str | None = None
@@ -143,6 +155,7 @@ class ApplyResult:
 @dataclass
 class SystemStatus:
     """Stato di diagnostica, compatibilità e percorsi attivi del sistema GNOME."""
+
     gsettings_available: bool
     shell_theme_supported: bool
     color_scheme_supported: bool
