@@ -63,7 +63,7 @@ echo -e "\n${BLUE}[3/4] Installazione dipendenze e pacchetto locale...${NC}"
 source .venv/bin/activate
 
 pip install --upgrade pip --quiet
-pip install -r requirements-dev.txt --quiet
+pip install -e .[dev] --quiet
 pip install -e . --quiet
 
 echo -e "${GREEN}✓ Dipendenze installate (pytest, pytest-cov, ruff, gnome_theme_manager).${NC}"
