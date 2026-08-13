@@ -133,7 +133,8 @@ echo -e "\n${YELLOW}[5/6] Creazione pacchetto AppImage...${NC}"
 TARGET_FILE="$OUTPUT_DIR/${APP_NAME}-${VERSION}-${ARCH}.AppImage"
 rm -f "$TARGET_FILE"
 
-ARCH="$ARCH" "$APPIMAGETOOL_BIN" "$APP_DIR" "$TARGET_FILE"
+echo -e "${BLUE}Uso appimagetool in modalità extract-and-run per evitare la dipendenza FUSE del runner.${NC}"
+ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$APPIMAGETOOL_BIN" "$APP_DIR" "$TARGET_FILE"
 
 # ------------------------------------------------------------------------------
 # 6. Verifiche finali e riepilogo

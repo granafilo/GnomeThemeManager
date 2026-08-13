@@ -23,6 +23,22 @@ chmod +x GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
 ./GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
 ```
 
+### AppImage e FUSE
+
+La build dell'AppImage usa `appimagetool` in modalità `extract-and-run`, quindi la CI non richiede un mount FUSE.
+
+Per eseguire l'AppImage finale su Ubuntu 24.04 può essere necessaria la libreria FUSE 2 compatibile:
+
+```bash
+sudo apt install libfuse2t64
+```
+
+Per versioni Ubuntu precedenti (es. 22.04), utilizzare:
+
+```bash
+sudo apt install libfuse2
+```
+
 ---
 
 ## 📋 2. Prerequisiti di Sistema
