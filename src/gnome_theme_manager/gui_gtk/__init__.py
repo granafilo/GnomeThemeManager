@@ -20,8 +20,9 @@ def is_gtk_available() -> bool:
         gi.require_version("Adw", "1")
         from gi.repository import Adw, Gtk  # noqa: F401
 
+        Adw.init()
         return True
-    except (ImportError, ValueError, AttributeError):
+    except Exception:  # noqa: BLE001
         return False
 
 
