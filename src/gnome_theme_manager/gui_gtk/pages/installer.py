@@ -101,6 +101,7 @@ class InstallerPage:
             raise FileNotFoundError(f"File template UI non trovato: {UI_FILE}")
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Widget principale GtkStack con i 6 stati della pagina

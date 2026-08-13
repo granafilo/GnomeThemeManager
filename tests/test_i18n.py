@@ -85,6 +85,7 @@ def test_gtk_builder_uses_translation_domain():
     """Verifica che i builder GTK usino il dominio delle traduzioni corretto per il parsing dei file .ui."""
     for relative_path in [
         "src/gnome_theme_manager/gui_gtk/window.py",
+        "src/gnome_theme_manager/gui_gtk/pages/installer.py",
         "src/gnome_theme_manager/gui_gtk/pages/status.py",
         "src/gnome_theme_manager/gui_gtk/pages/themes.py",
     ]:
