@@ -1,0 +1,61 @@
+# Translation template for gnome-theme-manager.
+# Copyright (C) 2026 GnomeThemeManager Contributors
+# This file is distributed under the same license as the gnome-theme-manager project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gnome-theme-manager 0.9.0b2\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/gnome_theme_manager/cli/main.py:68
+msgid "\nTemi attualmente attivi su GNOME:"
+msgstr "\nCurrently active GNOME themes:"
+
+#: src/gnome_theme_manager/cli/main.py:77
+msgid "  Tema GNOME Shell:         Non gestito (richiede estensione 'User Themes')"
+msgstr "  GNOME Shell Theme:        Not managed (requires 'User Themes' extension)"
+
+#: src/gnome_theme_manager/cli/main.py:74
+msgid "Default di sistema"
+msgstr "System Default"
+
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:16
+msgid "Gnome Theme Manager"
+msgstr "Gnome Theme Manager"
+
+#: src/gnome_theme_manager/cli/main.py:41
+msgid "Nessun elemento da mostrare."
+msgstr "No elements to show."
+
+#: src/gnome_theme_manager/cli/main.py:69
+#: src/gnome_theme_manager/cli/main.py:70
+#: src/gnome_theme_manager/cli/main.py:71
+msgid "Non impostato"
+msgstr "Not set"
+
+#: src/gnome_theme_manager/cli/main.py:80
+msgid "Schema Colori"
+msgstr "Color Scheme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:53
+msgid "Stato attuale"
+msgstr "Current status"
+
+#: src/gnome_theme_manager/cli/main.py:71
+msgid "Tema Cursori"
+msgstr "Cursor Theme"
+
+#: src/gnome_theme_manager/cli/main.py:75
+msgid "Tema GNOME Shell"
+msgstr "GNOME Shell Theme"
+
+#: src/gnome_theme_manager/cli/main.py:69
+msgid "Tema GTK (Applicazioni)"
+msgstr "GTK Theme (Applications)"
+
+#: src/gnome_theme_manager/cli/main.py:70
+msgid "Tema Icone"
+msgstr "Icon Theme"

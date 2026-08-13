@@ -13,6 +13,8 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from gnome_theme_manager import _
+
 from ..core.errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
@@ -36,7 +38,7 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
         Stringa formattata con bordi ASCII e spaziatura calcolata dinamicamente.
     """
     if not rows:
-        return "Nessun elemento da mostrare."
+        return _("Nessun elemento da mostrare.")
 
     col_widths = [len(h) for h in headers]
     for row in rows:
@@ -63,19 +65,19 @@ def handle_current_command(manager: ThemeManager) -> int:
     current = manager.get_current_themes()
     status = manager.get_system_status()
 
-    print("\nTemi attualmente attivi su GNOME:")
-    print(f"  Tema GTK (Applicazioni):  {current.gtk_theme or 'Non impostato'}")
-    print(f"  Tema Icone:               {current.icon_theme or 'Non impostato'}")
-    print(f"  Tema Cursori:             {current.cursor_theme or 'Non impostato'}")
+    print(_("\nTemi attualmente attivi su GNOME:"))
+    print(f"  {_('Tema GTK (Applicazioni)')}:  {current.gtk_theme or _('Non impostato')}")
+    print(f"  {_('Tema Icone')}:               {current.icon_theme or _('Non impostato')}")
+    print(f"  {_('Tema Cursori')}:             {current.cursor_theme or _('Non impostato')}")
 
     if status.shell_theme_supported:
-        shell_val = current.shell_theme if current.shell_theme else "Default di sistema"
-        print(f"  Tema GNOME Shell:         {shell_val}")
+        shell_val = current.shell_theme if current.shell_theme else _("Default di sistema")
+        print(f"  {_('Tema GNOME Shell')}:         {shell_val}")
     else:
-        print("  Tema GNOME Shell:         Non gestito (richiede estensione 'User Themes')")
+        print(_("  Tema GNOME Shell:         Non gestito (richiede estensione 'User Themes')"))
 
     if current.color_scheme:
-        print(f"  Schema Colori:            {current.color_scheme}")
+        print(f"  {_('Schema Colori')}:            {current.color_scheme}")
     print()
     return 0
 
