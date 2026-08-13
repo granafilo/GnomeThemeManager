@@ -69,11 +69,6 @@ Pacchetti GUI GTK4/Libadwaita (Ubuntu/Debian):
 	sudo apt update
 	sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 
-Pacchetti GUI Tkinter fallback (opzionale):
-
-	sudo apt update
-	sudo apt install -y python3-tk
-
 ## Installazione
 
 ### Opzione A: AppImage Portabile (Consigliata)
@@ -144,17 +139,17 @@ Sandbox status:
 
 	gnome-theme-manager sandbox-status
 
-## Avvio GUI
+## Interfaccia grafica
 
-GUI nativa GTK4/Libadwaita:
+GNOME Theme Manager utilizza GTK4 e Libadwaita per l’interfaccia grafica.
+
+Tkinter non è più supportato.
+
+Avvio della GUI:
 
 	gnome-theme-manager --gui
 	gnome-theme-manager gui
 
-GUI Tkinter legacy (fallback):
-
-	gnome-theme-manager --tk-gui
-	gnome-theme-manager gui-tk
 
 ## Sviluppo e test
 
@@ -214,7 +209,6 @@ L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime 
 	  cli/        parser argomenti e routing comandi
 	  core/       logica dominio (scanner, manager, installer, gsettings, sandbox)
 	  gui_gtk/    GUI nativa GNOME (GTK4/Libadwaita)
-	  gui_tk/     GUI legacy Tkinter
 	tests/        test unitari e integrazione
 	docs/         roadmap e fasi implementative
 
@@ -226,7 +220,6 @@ L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime 
 - [Fase 1 - CLI MVP](docs/phases/01-cli-mvp.md)
 - [Fase 2 - Theme Installer](docs/phases/02-theme-installer.md)
 - [Fase 3 - Core Architecture](docs/phases/03-core-architecture.md)
-- [Fase 4 - GUI Tkinter](docs/phases/04-gui-tkinter.md)
 - [Fase 5 - GUI GTK Native](docs/phases/05-gui-gtk-native.md)
 - [Fase 6 - Sandboxing & Hardening](docs/phases/06-sandboxing-hardening.md)
 

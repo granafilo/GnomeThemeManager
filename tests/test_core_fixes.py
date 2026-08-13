@@ -409,3 +409,42 @@ def test_gtk4_linker_comprehensive_filesystem_rollback(linker, temp_env):
     # Il manifest deve essere pulito / vuoto o coerente
     manifest = linker._load_manifest()
     assert manifest["active_theme"] is None
+
+
+def test_cli_no_tkinter_references():
+    """Verifica che le opzioni Tkinter e il comando gui-tk non siano più validi e non compaiano nell'help."""
+    from gnome_theme_manager.cli.args import create_parser
+
+    parser = create_parser()
+
+    # 1. Verifica che gui-tk non sia tra i subcomandi
+    import argparse
+
+    subparsers_action = next(
+        (action for action in parser._actions if isinstance(action, argparse._SubParsersAction)),
+        None,
+    )
+    assert subparsers_action is not None
+    assert "gui-tk" not in subparsers_action.choices
+
+    # 2. Verifica che --tk-gui non sia tra le opzioni del parser
+    option_strings = []
+    for action in parser._actions:
+        option_strings.extend(action.option_strings)
+    assert "--tk-gui" not in option_strings
+
+    # 3. Verifica l'output dell'help
+    import io
+    from contextlib import redirect_stdout
+
+    f = io.StringIO()
+    with redirect_stdout(f):
+        try:
+            parser.print_help()
+        except SystemExit:
+            pass
+    help_text = f.getvalue().lower()
+    assert "gui-tk" not in help_text
+    assert "tkinter" not in help_text
+    assert "tk-gui" not in help_text
+    assert "tk_gui" not in help_text

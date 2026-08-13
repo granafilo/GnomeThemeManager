@@ -11,6 +11,11 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
 - Fixed argument forwarding from the AppImage launcher wrapper script.
 - Prevented unnecessary GUI or configuration initialization for version checks.
 
+### Removed
+- Removed the legacy Tkinter GUI.
+- Removed the `gui-tk` command and `--tk-gui` option.
+- GNOME Theme Manager now uses GTK4/Libadwaita as its only graphical interface.
+
 ## [0.9.0-beta1] - 2026-08-13
 
 ### Added
