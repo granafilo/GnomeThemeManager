@@ -79,3 +79,14 @@ def test_appimage_build_includes_locale_directory():
     build_script = (ROOT_DIR / "scripts" / "build-appimage.sh").read_text(encoding="utf-8")
     assert 'cp -r "$ROOT_DIR/src/gnome_theme_manager/locale"' in build_script
     assert 'TEXTDOMAINDIR' in build_script
+
+
+def test_gtk_builder_uses_translation_domain():
+    """Verifica che i builder GTK usino il dominio delle traduzioni corretto per il parsing dei file .ui."""
+    for relative_path in [
+        "src/gnome_theme_manager/gui_gtk/window.py",
+        "src/gnome_theme_manager/gui_gtk/pages/status.py",
+        "src/gnome_theme_manager/gui_gtk/pages/themes.py",
+    ]:
+        source = (ROOT_DIR / relative_path).read_text(encoding="utf-8")
+        assert 'set_translation_domain("gnomethememanager")' in source

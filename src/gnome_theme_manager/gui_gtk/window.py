@@ -69,6 +69,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         # Caricamento del layout tramite Gtk.Builder
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Recupero dei widget principali definiti nel template XML

@@ -201,6 +201,7 @@ class StatusPage:
 
         # Caricamento interfaccia tramite Gtk.Builder
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Recupero widget dello stack degli stati
