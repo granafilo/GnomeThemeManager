@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
 # Script wrapper per eseguire la CLI di GnomeThemeManager
 # ==============================================================================

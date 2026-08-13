@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo Facade principale per l'orchestrazione delle operazioni sui temi in GNOME.
 
 La classe `ThemeManager` implementa il Facade Pattern, costituendo il punto di ingresso

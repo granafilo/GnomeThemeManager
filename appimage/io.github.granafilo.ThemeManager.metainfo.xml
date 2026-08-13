@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <component type="desktop-application">
   <id>io.github.granafilo.ThemeManager</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>MIT</project_license>
+  <project_license>GPL-3.0-or-later</project_license>
   <name>GNOME Theme Manager</name>
   <summary>Modern GTK4 &amp; Libadwaita theme, icon, cursor and shell manager for GNOME</summary>
   

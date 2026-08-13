@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Controller per la pagina 'Stato attuale' e diagnostica di sistema (Fase 5.3).
 
 Questo modulo implementa la logica di presentazione dello stato dei temi e della

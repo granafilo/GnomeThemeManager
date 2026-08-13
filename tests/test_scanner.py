@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test unitari per lo scanner del filesystem (ThemeScanner).
 
 Verifica il corretto rilevamento di:

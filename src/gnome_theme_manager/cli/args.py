@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Definizione e configurazione del parser argomenti CLI con argparse."""
 
 import argparse

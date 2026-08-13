@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo per la scansione del filesystem e il rilevamento dei temi installati.
 
 Questo modulo implementa la classe `ThemeScanner`, responsabile di esplorare

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
 # Script per eseguire la suite di test globale (Pytest + Ruff)
 # ==============================================================================

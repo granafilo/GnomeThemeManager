@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo GUI Nativa GTK4 / Libadwaita (Fase 5)."""
 
 import logging

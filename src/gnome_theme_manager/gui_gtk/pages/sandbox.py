@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Controller per la pagina 'Strumenti sandbox' (Fase 5.8).
 
 Questo modulo gestisce la diagnostica dettagliata dei runtime sandbox (Flatpak e Snap),

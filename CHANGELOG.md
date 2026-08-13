@@ -4,6 +4,14 @@ Tutte le modifiche rilevanti a questo progetto sono documentate in questo file.
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.9.0-beta3] - 2026-08-13
+
+### Changed
+- Changed the project license from MIT to GPL-3.0-or-later.
+- Updated source headers and SPDX identifiers.
+- Updated project metadata and documentation.
+- Documented third-party dependency and asset licensing.
+
 ## [0.9.0-beta2] - 2026-08-13
 
 ### Fixed

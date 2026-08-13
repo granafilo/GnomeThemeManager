@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
 # GnomeThemeManager - Script di Inizializzazione Ambiente di Sviluppo e Test
 # =============================================================================

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modelli di dati del dominio per temi e configurazioni."""
 
 from dataclasses import dataclass, field

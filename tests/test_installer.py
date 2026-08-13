@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test unitari per la gestione sicura degli archivi e per l'installer dei temi."""
 
 import io

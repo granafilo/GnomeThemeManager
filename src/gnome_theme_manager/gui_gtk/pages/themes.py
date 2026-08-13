@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Controller per la pagina 'Esplora temi' con Card Tema Attivo e Lista Temi Disponibili (Fase 5.4.x).
 
 Questo modulo implementa la visualizzazione separata del tema attualmente applicato (Card)

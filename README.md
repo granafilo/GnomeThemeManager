@@ -5,7 +5,7 @@
 ![AppImage](https://img.shields.io/badge/AppImage-Portable-blue?logo=appimage&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
-![License](https://img.shields.io/badge/License-MIT-success)
+![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 ![Status](https://img.shields.io/badge/Status-Beta-orange)
 
 ## Stato del progetto
@@ -225,4 +225,8 @@ L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime 
 
 ## Licenza
 
-[MIT](LICENSE)
+GNOME Theme Manager è distribuito sotto licenza
+[GNU General Public License v3.0 or later](LICENSE).
+
+Il codice può essere utilizzato, studiato, modificato e redistribuito
+nel rispetto dei termini della GPL-3.0-or-later.

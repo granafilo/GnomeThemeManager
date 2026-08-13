@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Configurazione globale e fixture per pytest."""
 
 from pathlib import Path

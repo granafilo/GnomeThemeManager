@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo per la propagazione automatica dei temi GNOME alle applicazioni sandboxate.
 
 Nelle distribuzioni Linux moderne (in particolare Ubuntu), molte applicazioni (come

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test unitari per il wrapper GSettingsClient.
 
 Verifica l'interazione con Gio.Settings simulando (mocking):

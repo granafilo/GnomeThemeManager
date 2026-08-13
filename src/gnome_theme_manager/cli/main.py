@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Entry point logico per l'interfaccia a riga di comando (CLI).
 
 Questo modulo gestisce il routing dei comandi dell'utente (`current`, `list`, `apply`,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test unitari e di integrazione per i nuovi comportamenti di backup GTK4 e validazione sandbox."""
 
 import json

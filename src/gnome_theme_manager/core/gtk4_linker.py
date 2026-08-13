@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo per la gestione dei collegamenti simbolici (symlink) per temi GTK4 / Libadwaita.
 
 Nelle versioni recenti di GNOME (42+ su Ubuntu 22.04 e 24.04), le applicazioni

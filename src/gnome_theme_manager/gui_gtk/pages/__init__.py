@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Package contenente i controller delle pagine modulari della GUI GTK4/Libadwaita (Fase 5.2)."""
 
 from .installer import InstallerPage

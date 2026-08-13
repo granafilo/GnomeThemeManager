@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo per il salvataggio, caricamento ed eliminazione di preset/profili di temi.
 
 I preset consentono di memorizzare istantanee (snapshot) complete delle preferenze

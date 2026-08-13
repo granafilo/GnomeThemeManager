@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo contenente la finestra principale dell'applicazione (GnomeThemeWindow).
 
 Gestisce la shell principale con GTK4 e Libadwaita (Fase 5.4 revisionata):

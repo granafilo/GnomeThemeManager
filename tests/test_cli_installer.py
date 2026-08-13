@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test di integrazione CLI per i comandi `install` e `uninstall`."""
 
 from pathlib import Path

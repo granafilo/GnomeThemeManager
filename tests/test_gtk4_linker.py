@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test unitari per il modulo GTK4ThemeLinker.
 
 Verifica la corretta creazione, sostituzione, rimozione e verifica di integrità

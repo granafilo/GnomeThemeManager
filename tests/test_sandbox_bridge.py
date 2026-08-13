@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test di unità per il modulo SandboxBridge e l'integrazione con Snap e Flatpak."""
 
 import subprocess

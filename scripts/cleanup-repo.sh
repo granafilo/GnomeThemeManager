@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
 # Script di Pulizia Repository - GNOME Theme Manager
 # ==============================================================================

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test di base per i modelli e i percorsi costanti."""
 
 from pathlib import Path

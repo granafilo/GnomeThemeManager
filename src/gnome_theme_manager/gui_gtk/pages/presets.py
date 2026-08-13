@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Controller per la pagina 'Profili e preset' (Fase 5.6).
 
 Questo modulo implementa la gestione completa dei preset di configurazione desktop GNOME

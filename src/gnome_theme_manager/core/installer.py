@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Modulo per l'estrazione sicura, la validazione e l'installazione di temi da archivi.
 
 Questo modulo implementa la logica per:

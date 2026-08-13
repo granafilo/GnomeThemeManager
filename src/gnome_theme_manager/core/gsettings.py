@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Wrapper sicuro per l'interazione con GSettings tramite PyGObject (Gio).
 
 In ambiente GNOME, GSettings è il sistema centralizzato di memorizzazione

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test di unità per la gestione dei preset e i modelli ThemeSet, ApplyResult, SystemStatus."""
 
 from pathlib import Path

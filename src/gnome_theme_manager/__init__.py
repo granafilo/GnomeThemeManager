@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """GnomeThemeManager package.
 
 Manager modulare per temi GTK, icone e cursori su GNOME.

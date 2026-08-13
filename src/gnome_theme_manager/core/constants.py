@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Definizioni di costanti, percorsi XDG e schemi GSettings."""
 
 import os

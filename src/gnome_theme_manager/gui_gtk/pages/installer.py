@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Controller per la pagina 'Installatore temi' (Fase 5.7).
 
 Questo modulo gestisce l'analisi, la validazione, l'estrazione e l'installazione

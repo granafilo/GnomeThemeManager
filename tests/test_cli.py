@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Test di integrazione per i comandi dell'interfaccia a riga di comando (CLI).
 
 Verifica il funzionamento end-to-end dei comandi:
