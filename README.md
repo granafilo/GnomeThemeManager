@@ -1,6 +1,7 @@
 # GNOME Theme Manager
 
 ![Build AppImage](https://github.com/granafilo/GnomeThemeManager/actions/workflows/build-appimage.yml/badge.svg)
+![Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)
 ![AppImage](https://img.shields.io/badge/AppImage-Portable-blue?logo=appimage&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
