@@ -219,6 +219,18 @@ LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 python3 -m gnome_theme_manager
 LC_ALL=it_IT.UTF-8 LANG=it_IT.UTF-8 python3 -m gnome_theme_manager
 ```
 
+### AppImage e file di traduzione
+L'AppImage include i file `.mo` nell'installazione Python del package, sotto `gnome_theme_manager/locale/`. Durante la build viene effettuata una copia esplicita della directory locale e viene impostata la variabile `TEXTDOMAINDIR` per garantire che `gettext` trovi le traduzioni anche all'interno del filesystem montato dell'AppImage.
+
+```bash
+./scripts/build-appimage.sh
+./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage --appimage-extract
+find squashfs-root -name "*.mo"
+
+LANG=it_IT.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+LANG=en_US.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+```
+
 ### Come aggiungere o aggiornare le traduzioni
 Il progetto include script dedicati nella cartella `po/` per automatizzare l'estrazione e la compilazione delle stringhe senza dipendenze esterne:
 

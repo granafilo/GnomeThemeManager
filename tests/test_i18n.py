@@ -5,8 +5,14 @@
 import gettext
 from pathlib import Path
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    import tomli as tomllib
+
 # Trova il percorso locale_dir
-LOCALE_DIR = Path(__file__).parent.parent / "src" / "gnome_theme_manager" / "locale"
+ROOT_DIR = Path(__file__).parent.parent
+LOCALE_DIR = ROOT_DIR / "src" / "gnome_theme_manager" / "locale"
 
 def test_mo_files_exist():
     """Verifica che i file .mo per it ed en siano stati compilati e siano presenti."""
@@ -63,3 +69,13 @@ def test_translation_fallback():
     
     orig = "Test stringa non tradotta"
     assert trans.gettext(orig) == orig
+
+
+def test_appimage_build_includes_locale_directory():
+    """Verifica che la build AppImage copi la directory delle traduzioni e che il package data sia configurato."""
+    pyproject_data = (ROOT_DIR / "pyproject.toml").read_text(encoding="utf-8")
+    assert '"gnome_theme_manager" = ["locale/*/LC_MESSAGES/*.mo"]' in pyproject_data
+
+    build_script = (ROOT_DIR / "scripts" / "build-appimage.sh").read_text(encoding="utf-8")
+    assert 'cp -r "$ROOT_DIR/src/gnome_theme_manager/locale"' in build_script
+    assert 'TEXTDOMAINDIR' in build_script
