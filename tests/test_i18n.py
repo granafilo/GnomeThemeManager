@@ -74,7 +74,7 @@ def test_translation_fallback():
 def test_appimage_build_includes_locale_directory():
     """Verifica che la build AppImage copi la directory delle traduzioni e che il package data sia configurato."""
     pyproject_data = (ROOT_DIR / "pyproject.toml").read_text(encoding="utf-8")
-    assert '"gnome_theme_manager" = ["locale/*/LC_MESSAGES/*.mo"]' in pyproject_data
+    assert '"gnome_theme_manager" = ["locale/**/*", "locale/*/LC_MESSAGES/*.mo"]' in pyproject_data
 
     build_script = (ROOT_DIR / "scripts" / "build-appimage.sh").read_text(encoding="utf-8")
     assert 'cp -r "$ROOT_DIR/src/gnome_theme_manager/locale"' in build_script
