@@ -90,3 +90,63 @@ def test_gtk_builder_uses_translation_domain():
     ]:
         source = (ROOT_DIR / relative_path).read_text(encoding="utf-8")
         assert 'set_translation_domain("gnomethememanager")' in source
+
+
+def test_english_catalogue_has_key_gui_translations():
+    """Verifica che le stringhe principali della GUI siano effettivamente tradotte in inglese."""
+    en_po = (ROOT_DIR / "po" / "en.po").read_text(encoding="utf-8")
+    translations = {
+        "Stato attuale": "Current status",
+        "Configurazione corrente letta tramite GSettings.": "Current configuration read via GSettings.",
+        "Compatibilità con le applicazioni moderne GNOME.": "Compatibility with modern GNOME applications.",
+        "GSettings / Gio": "GSettings / Gio",
+        "Cartella Temi Utente": "User Themes Folder",
+        "Cartella Icone Utente": "User Icons Folder",
+        "Ambiente Desktop e Percorsi": "Desktop Environment and Paths",
+        "Temi Attivi su GNOME": "Currently Active GNOME Themes",
+    }
+    for msgid, expected in translations.items():
+        pattern = f'msgid "{msgid}"\nmsgstr "{expected}"'
+        assert pattern in en_po, f"Voce mancante in en.po: {msgid}"
+
+
+def test_english_catalogue_has_only_intentional_identical_entries():
+    """Verifica che le voci msgid==msgstr in en.po siano solo termini neutri/intenzionali."""
+    en_po = (ROOT_DIR / "po" / "en.po").read_text(encoding="utf-8")
+
+    entries = []
+    msgid = None
+    msgstr = None
+    for line in en_po.splitlines():
+        if line.startswith("msgid "):
+            if msgid is not None:
+                entries.append((msgid, msgstr if msgstr is not None else ""))
+            msgid = line[len("msgid ") :].strip().strip('"')
+            msgstr = None
+        elif line.startswith("msgstr "):
+            msgstr = line[len("msgstr ") :].strip().strip('"')
+    if msgid is not None:
+        entries.append((msgid, msgstr if msgstr is not None else ""))
+
+    identical = {mid for mid, mstr in entries if mid and mid == mstr}
+    allowed = {
+        "-",
+        "Flatpak",
+        "GNOME Shell",
+        "GSettings / Gio",
+        "GTK",
+        "GTK4 / Libadwaita",
+        "Gnome Theme Manager",
+        "No",
+        "OK",
+        "Preset",
+        "Snap",
+        "System",
+        "User",
+        "~/.local/share/icons",
+        "~/.local/share/themes",
+    }
+    assert identical == allowed, (
+        "Voci non tradotte inattese in en.po: "
+        f"{sorted(identical - allowed)}"
+    )
