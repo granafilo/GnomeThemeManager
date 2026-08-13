@@ -1,151 +1,178 @@
 # GNOME Theme Manager
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
+![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
+![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
+![License](https://img.shields.io/badge/License-MIT-success)
+![Status](https://img.shields.io/badge/Status-Active%20Development-orange)
 
-Un'applicazione modulare in Python per la scansione, gestione, installazione e applicazione di temi GTK, set di icone e cursori su ambiente desktop **GNOME**.
+Manager modulare in Python per gestire temi GTK, icone, cursori e GNOME Shell su desktop GNOME.
 
-Il progetto è strutturato a strati incrementali: parte da un core riutilizzabile e una CLI minimale, fino ad arrivare a una GUI nativa GTK4/Libadwaita e al packaging Flatpak.
+## Tag
 
----
+GNOME, GTK4, Libadwaita, PyGObject, Themes, CLI, Linux Desktop, Snap, Flatpak
 
-## 📑 Indice
+## Indice
 
-- [Caratteristiche Principali](#-caratteristiche-principali)
-- [Architettura del Repository](#-architettura-del-repository)
-- [Prerequisiti di Sistema](#-prerequisiti-di-sistema)
-- [Installazione e Setup Sviluppo](#-installazione-e-setup-sviluppo)
-- [Guida all'Uso Rapido (CLI)](#-guida-alluso-rapido-cli)
-- [Roadmap di Sviluppo](#-roadmap-di-sviluppo)
-- [Testing e Qualità del Codice](#-testing-e-qualit-del-codice)
-- [Licenza](#-licenza)
+- [Panoramica](#panoramica)
+- [Feature](#feature)
+- [Requisiti](#requisiti)
+- [Installazione](#installazione)
+- [Quick Start](#quick-start)
+- [Comandi CLI principali](#comandi-cli-principali)
+- [Avvio GUI](#avvio-gui)
+- [Sviluppo e test](#sviluppo-e-test)
+- [Struttura repository](#struttura-repository)
+- [Documentazione](#documentazione)
+- [Licenza](#licenza)
 
----
+## Panoramica
 
-## ✨ Caratteristiche Principali
+Il progetto include:
+- CLI completa per automazione e scripting.
+- GUI nativa GNOME con GTK4/Libadwaita.
+- GUI Tkinter legacy come fallback temporaneo.
 
-- 🔍 **Scansione Intelligente**: Individua automaticamente i temi installati a livello utente (`~/.local/share/themes`, `~/.local/share/icons`) e di sistema (`/usr/share/...`).
-- ⚙️ **Integrazione Nativa GSettings**: Gestione diretta dello schema `org.gnome.desktop.interface` tramite `PyGObject` (`Gio.Settings`).
-- 📦 **Gestione & Installazione Archivi**: Estrazione e validazione automatica di file `.zip`, `.tar.gz`, `.tar.xz` con protezione da path traversal.
-- 🧩 **Architettura Modulare Disaccoppiata**: Layer `core` puro, privo di I/O UI, facilmente integrabile con CLI, script esterni o interfacce grafiche (Tkinter, GTK4/Libadwaita).
+Versione pacchetto attuale: 0.1.0
 
----
+## Feature
 
-## 📂 Architettura del Repository
+- Lettura stato temi correnti con current
+- Elenco temi installati per tipo con list
+- Applicazione temi GTK, icone, cursori, shell con apply
+- Installazione temi da archivio con install
+- Disinstallazione temi utente con uninstall
+- Gestione preset con preset list, save, apply, delete
+- Stato integrazione sandbox Snap/Flatpak con sandbox-status
+- Propagazione tema verso runtime sandbox (opzionale)
+- Override GTK4 in ~/.config/gtk-4.0 quando applicabile
 
-```text
-GnomeThemeManager/
-├── .gitignore                      # Esclusioni Python, virtualenv, build e IDE
-├── README.md                       # Questa documentazione
-├── pyproject.toml                  # Configurazione package PEP 517/621 & entrypoints
-├── requirements.txt                # Dipendenze runtime
-├── requirements-dev.txt            # Dipendenze sviluppo e test
-├── docs/                           # Documentazione e specifiche
-│   ├── roadMap.md                  # Roadmap generale
-│   └── phases/                     # Documenti dettagliati per ciascuna fase
-│       ├── 01-cli-mvp.md
-│       ├── 02-theme-installer.md
-│       ├── 03-core-architecture.md
-│       ├── 04-gui-tkinter.md
-│       ├── 05-gui-gtk-native.md
-│       └── 06-sandboxing-hardening.md
-├── src/
-│   └── gnome_theme_manager/        # Package principale
-│       ├── core/                   # Logica di dominio, scansione e GSettings
-│       ├── cli/                    # Interfaccia da riga di comando
-│       ├── gui_tk/                 # Prototipo grafico Tkinter
-│       └── gui_gtk/                # GUI Nativa GTK4 / Libadwaita
-└── tests/                          # Suite di test unitari e fixture
-```
+## Requisiti
 
----
+- Python >= 3.10
+- Linux con ambiente desktop GNOME
+- gsettings disponibile nel sistema
 
-## 🛠️ Prerequisiti di Sistema
+Dipendenze Python:
+- PyGObject >= 3.42.0
 
-`GnomeThemeManager` interagisce con le librerie di sistema GNOME tramite **PyGObject** (`gi.repository`).
+Pacchetti GUI GTK4/Libadwaita (Ubuntu/Debian):
 
-### Ubuntu / Debian / Pop!_OS
-```bash
-sudo apt update
-sudo apt install python3 python3-gi python3-gi-cairo gir1.2-glib-2.0 gir1.2-gtk-3.0
-```
+	sudo apt update
+	sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 
-### Fedora / RHEL
-```bash
-sudo dnf install python3 python3-gobject gtk3
-```
+Pacchetti GUI Tkinter fallback (opzionale):
 
-### Arch Linux / Manjaro
-```bash
-sudo pacman -S python python-gobject gtk3
-```
+	sudo apt update
+	sudo apt install -y python3-tk
 
----
+## Installazione
 
-## 🚀 Installazione e Setup Sviluppo
+	git clone <repo-url>
+	cd GnomeThemeManager
 
-Poiché `PyGObject` si interfaccia con i binding C del sistema, si consiglia di creare il virtual environment abilitando l'accesso ai package di sistema (`--system-site-packages`):
+	python3 -m venv .venv
+	source .venv/bin/activate
 
-```bash
-# 1. Clona la repository
-git clone https://github.com/tuo-username/GnomeThemeManager.git
-cd GnomeThemeManager
+	pip install --upgrade pip
+	pip install -e .
 
-# 2. Crea e attiva l'ambiente virtuale
-python3 -m venv --system-site-packages .venv
-source .venv/bin/activate
+Per strumenti di sviluppo:
 
-# 3. Installa il progetto in modalità modificabile (editable) con dipendenze dev
-pip install -e ".[dev]"
-```
+	pip install -e .[dev]
 
----
+## Quick Start
 
-## 💻 Guida all'Uso Rapido (CLI)
+	gnome-theme-manager --help
+	gnome-theme-manager current
+	gnome-theme-manager list
 
-Una volta installato, il comando `gnome-theme-manager` sarà disponibile nel tuo path (oppure invocabile con `python3 -m gnome_theme_manager.cli`):
+## Comandi CLI principali
 
-```bash
-# Mostra i temi attualmente applicati
-gnome-theme-manager current
+Mostra temi correnti:
 
-# Elenca tutti i temi GTK disponibili
-gnome-theme-manager list --type gtk
+	gnome-theme-manager current
 
-# Applica un nuovo tema GTK e set di icone
-gnome-theme-manager apply --gtk "Adwaita-dark" --icon "Papirus"
-```
+Elenca solo temi GTK utente:
 
----
+	gnome-theme-manager list --type gtk --user-only
 
-## 🗺️ Roadmap di Sviluppo
+Applica tema GTK e icone:
 
-| Fase | Descrizione | Documentazione | Stato |
-| :--- | :--- | :--- | :--- |
-| **Fase 1** | MVP CLI (Scanner + Switcher GSettings) | [docs/phases/01-cli-mvp.md](docs/phases/01-cli-mvp.md) | 🟡 *In pianificazione* |
-| **Fase 2** | Installer temi da archivi (.zip / .tar.*) | [docs/phases/02-theme-installer.md](docs/phases/02-theme-installer.md) | ⚪ *Pianificato* |
-| **Fase 3** | Core Library & Facade API | [docs/phases/03-core-architecture.md](docs/phases/03-core-architecture.md) | ⚪ *Pianificato* |
-| **Fase 4** | Prototipo GUI semplice (Tkinter) | [docs/phases/04-gui-tkinter.md](docs/phases/04-gui-tkinter.md) | ⚪ *Pianificato* |
-| **Fase 5** | GUI Nativa GNOME (GTK4 / Libadwaita) | [docs/phases/05-gui-gtk-native.md](docs/phases/05-gui-gtk-native.md) | ⚪ *Pianificato* |
-| **Fase 6** | Packaging Flatpak & Hardening | [docs/phases/06-sandboxing-hardening.md](docs/phases/06-sandboxing-hardening.md) | ⚪ *Pianificato* |
+	gnome-theme-manager apply --gtk Nordic-dark --icon Papirus-Dark
 
-Consulta [docs/roadMap.md](docs/roadMap.md) per la visione d'insieme.
+Applica tema unificato (stesso nome per GTK/Shell se presenti):
 
----
+	gnome-theme-manager apply --theme Catppuccin-Mocha
 
-## 🧪 Testing e Qualità del Codice
+Installa tema da archivio:
 
-```bash
-# Esecuzione dei test unitari
-pytest
+	gnome-theme-manager install --file ~/Scaricati/Nordic.tar.xz
 
-# Verifica del codice con Ruff linter
-ruff check .
-```
+Disinstalla tema utente:
 
----
+	gnome-theme-manager uninstall --name Nordic --type gtk --yes
 
-## 📄 Licenza
+Preset:
 
-Rilasciato sotto licenza MIT. Consulta il file `LICENSE` per maggiori dettagli.
+	gnome-theme-manager preset save setup-lavoro
+	gnome-theme-manager preset list
+	gnome-theme-manager preset apply setup-lavoro
+
+Sandbox status:
+
+	gnome-theme-manager sandbox-status
+
+## Avvio GUI
+
+GUI nativa GTK4/Libadwaita:
+
+	gnome-theme-manager --gui
+	gnome-theme-manager gui
+
+GUI Tkinter legacy (fallback):
+
+	gnome-theme-manager --tk-gui
+	gnome-theme-manager gui-tk
+
+## Sviluppo e test
+
+Esegui test:
+
+	pytest -v
+
+Lint con Ruff:
+
+	ruff check src tests
+
+Script unico:
+
+	bash scripts/run_all_tests.sh
+
+Script utili:
+- scripts/run_cli.sh
+- scripts/run_all_tests.sh
+
+## Struttura repository
+
+	src/gnome_theme_manager/
+	  cli/        parser argomenti e routing comandi
+	  core/       logica dominio (scanner, manager, installer, gsettings, sandbox)
+	  gui_gtk/    GUI nativa GNOME (GTK4/Libadwaita)
+	  gui_tk/     GUI legacy Tkinter
+	tests/        test unitari e integrazione
+	docs/         roadmap e fasi implementative
+
+## Documentazione
+
+- [Changelog](CHANGELOG.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Fase 1 - CLI MVP](docs/phases/01-cli-mvp.md)
+- [Fase 2 - Theme Installer](docs/phases/02-theme-installer.md)
+- [Fase 3 - Core Architecture](docs/phases/03-core-architecture.md)
+- [Fase 4 - GUI Tkinter](docs/phases/04-gui-tkinter.md)
+- [Fase 5 - GUI GTK Native](docs/phases/05-gui-gtk-native.md)
+- [Fase 6 - Sandboxing & Hardening](docs/phases/06-sandboxing-hardening.md)
+
+## Licenza
+
+[MIT](LICENSE)
