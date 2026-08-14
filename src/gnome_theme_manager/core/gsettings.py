@@ -9,6 +9,7 @@ Questo modulo astrae e incapsula tutte le chiamate di lettura e scrittura verso:
 - `org.gnome.shell.extensions.user-theme` (Tema della GNOME Shell)
 """
 
+from enum import Enum
 from pathlib import Path
 
 from .constants import (
@@ -19,6 +20,7 @@ from .constants import (
     GSETTINGS_KEY_SHELL_THEME,
     GSETTINGS_SCHEMA_INTERFACE,
     GSETTINGS_SCHEMA_USER_THEME,
+    GTK4_CONFIG_DIR,
 )
 from .errors import GSettingsUnavailableError
 from .models import ThemeSet
@@ -34,6 +36,13 @@ try:
 except (ImportError, ValueError, AttributeError):
     Gio = None
     _GIO_AVAILABLE = False
+
+
+class Gtk4OverrideStatus(Enum):
+    """Stato del file di override GTK4/Libadwaita."""
+
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
 
 
 class GSettingsClient:
@@ -264,3 +273,14 @@ class GSettingsClient:
             Gio.Settings.sync()
         except Exception:
             pass
+
+    def detect_gtk4_override(self) -> Gtk4OverrideStatus:
+        """Verifica se l'override GTK4 è attivo o inattivo.
+
+        Returns:
+            Gtk4OverrideStatus corrispondente allo stato reale del file gtk.css.
+        """
+        css_file = GTK4_CONFIG_DIR / "gtk.css"
+        if css_file.is_file():
+            return Gtk4OverrideStatus.ACTIVE
+        return Gtk4OverrideStatus.INACTIVE

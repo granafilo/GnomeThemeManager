@@ -165,3 +165,4 @@ class SystemStatus:
     user_icons_path: Path
     sandbox_status: SandboxStatus | None = None
     gtk4_override_active: bool = False
+    gtk4_override_status: "Gtk4OverrideStatus | None" = None

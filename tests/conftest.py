@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from gnome_theme_manager.core.gsettings import Gtk4OverrideStatus
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
     ApplyResult,
@@ -56,6 +57,7 @@ def mock_theme_manager() -> MagicMock:
             flatpak_filesystem_override_active=True,
         ),
         gtk4_override_active=True,
+        gtk4_override_status=Gtk4OverrideStatus.ACTIVE,
     )
     mgr.find_theme.return_value = Theme(
         name="Yaru",

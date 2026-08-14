@@ -25,6 +25,7 @@ gi.require_version("GLib", "2.0")
 from gi.repository import Adw, GLib, Gtk
 
 from ...core.errors import GnomeThemeManagerError, GSettingsUnavailableError
+from ...core.gsettings import Gtk4OverrideStatus
 from ...core.models import SystemStatus, ThemeSet, ThemeType
 
 if TYPE_CHECKING:
@@ -419,14 +420,10 @@ class StatusPage:
         self.row_color_scheme.set_subtitle(format_color_scheme(t.color_scheme))
 
         # 2. GTK4 Override (Letto tramite API pubblica del Facade ThemeManager)
-        self.row_gtk4_override.set_subtitle(
-            format_boolean(
-                s.gtk4_override_active,
-                true_label=_("Attivo (~/.config/gtk-4.0/gtk.css collegato)"),
-                false_label=_("Non attivo"),
-                default=_("Non disponibile"),
-            )
-        )
+        if s.gtk4_override_status == Gtk4OverrideStatus.ACTIVE:
+            self.row_gtk4_override.set_subtitle(_("Attivo"))
+        else:
+            self.row_gtk4_override.set_subtitle(_("Non attivo"))
 
         # 3. Ambiente desktop e percorsi utente
         self.row_gsettings_status.set_subtitle(

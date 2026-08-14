@@ -160,6 +160,11 @@ class ThemeManager:
 
         sandbox_stat = self._sandbox.get_sandbox_status()
         gtk4_override_stat = self._gtk4_linker.is_override_active()
+        
+        # Rileva lo stato di override tramite GSettingsClient se disponibile
+        override_status = None
+        if self._gsettings:
+            override_status = self._gsettings.detect_gtk4_override()
 
         return SystemStatus(
             gsettings_available=gsettings_avail,
@@ -169,6 +174,7 @@ class ThemeManager:
             user_icons_path=self._installer.user_icons_dir,
             sandbox_status=sandbox_stat,
             gtk4_override_active=gtk4_override_stat,
+            gtk4_override_status=override_status,
         )
 
     def get_sandbox_status(self) -> SandboxStatus:
