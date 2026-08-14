@@ -30,6 +30,7 @@ GNOME, GTK4, Libadwaita, PyGObject, Themes, CLI, Linux Desktop, Snap, Flatpak
 - [Comandi CLI principali](#comandi-cli-principali)
 - [Avvio GUI](#avvio-gui)
 - [Sviluppo e test](#sviluppo-e-test)
+- [Traduzioni (i18n)](#traduzioni-i18n)
 - [Struttura repository](#struttura-repository)
 - [Documentazione](#documentazione)
 - [Licenza](#licenza)
@@ -202,6 +203,60 @@ Le applicazioni all'interno di sandbox isolate (come Firefox in formato Snap o F
 
 ### Dipendenze residue dell'AppImage
 L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime GTK4/Libadwaita o GObject Introspection host. Pertanto, l'ambiente host deve disporre di `python3-gi`, `gir1.2-gtk-4.0` e `gir1.2-adw-1` installati per garantire l'avvio della GUI nativa.
+
+## Traduzioni (i18n)
+
+GNOME Theme Manager supporta la localizzazione (i18n) tramite `gettext`.
+
+### Come avviare l'applicazione in una lingua specifica
+Per avviare l'applicazione forzando una lingua (ad esempio l'inglese o l'italiano), imposta le variabili d'ambiente `LANG` e `LC_ALL`:
+
+```bash
+# Avvio in inglese
+LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 python3 -m gnome_theme_manager
+
+# Avvio in italiano
+LC_ALL=it_IT.UTF-8 LANG=it_IT.UTF-8 python3 -m gnome_theme_manager
+```
+
+### AppImage e file di traduzione
+L'AppImage include i file `.mo` nell'installazione Python del package, sotto `gnome_theme_manager/locale/`. Durante la build viene effettuata una copia esplicita della directory locale e viene impostata la variabile `TEXTDOMAINDIR` per garantire che `gettext` trovi le traduzioni anche all'interno del filesystem montato dell'AppImage.
+
+```bash
+./scripts/build-appimage.sh
+./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage --appimage-extract
+find squashfs-root -name "*.mo"
+
+LANG=it_IT.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+LANG=en_US.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+```
+
+### Come aggiungere o aggiornare le traduzioni
+Il progetto include script dedicati nella cartella `po/` per automatizzare l'estrazione e la compilazione delle stringhe senza dipendenze esterne:
+
+1. **Aggiungere una nuova lingua**: Aggiungi il codice locale a `po/LINGUAS` (es. `es` per lo spagnolo).
+2. **Estrarre le stringhe e aggiornare i file `.po`**:
+   Esegui lo script di aggiornamento:
+   ```bash
+   ./po/update-po.sh
+   ```
+   Questo genererà/aggiornerà i file `.po` (es. `po/it.po` o `po/es.po`).
+3. **Tradurre**: Apri il file `.po` appena aggiornato con un editor di testo o un tool come Poedit e traduci le coppie `msgid` -> `msgstr`.
+4. **Compilare**: Rielabora `./po/update-po.sh` per compilare i file `.mo` pronti all'uso dell'applicazione in `src/gnome_theme_manager/locale/`.
+
+### Come testare le traduzioni
+Per convalidare e testare il funzionamento delle traduzioni, sono disponibili due strumenti:
+
+1. **Test automatici**:
+   Esegui la suite di test unitari dedicati con pytest:
+   ```bash
+   pytest tests/test_i18n.py
+   ```
+2. **Script di convalida manuale**:
+   Esegui lo script che mostra l'output del comando `current` in italiano e in inglese per verificarne la traduzione a runtime:
+   ```bash
+   ./scripts/test-translation.sh
+   ```
 
 ## Struttura repository
 

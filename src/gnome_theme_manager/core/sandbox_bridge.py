@@ -11,7 +11,7 @@ import logging
 import shutil
 import subprocess
 
-from .errors import SandboxCommandError, ThemeValidationError
+from .errors import ThemeValidationError
 from .models import PropagationResult, SandboxStatus
 
 logger = logging.getLogger("gnome_theme_manager.core")
@@ -154,7 +154,11 @@ class SandboxBridge:
         gtk_theme: str | None = None,
         icon_theme: str | None = None,
     ) -> PropagationResult:
-        """Configura le autorizzazioni di filesystem e le variabili d'ambiente per Flatpak."""
+        """Configura le autorizzazioni di filesystem e le variabili d'ambiente per Flatpak.
+
+        Restituisce sempre un PropagationResult (anche in caso di errore dei comandi
+        Flatpak o timeout, popolando i warning senza sollevare eccezioni).
+        """
         if not self.is_flatpak_available():
             logger.debug("Flatpak non disponibile nel sistema, propagazione saltata.")
             return PropagationResult(
@@ -193,25 +197,25 @@ class SandboxBridge:
                     timeout=10,
                     check=True,
                 )
-            except subprocess.TimeoutExpired as err:
+            except subprocess.TimeoutExpired:
                 warn_msg = "Timeout durante l'esecuzione del comando Flatpak."
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
-                raise SandboxCommandError(warn_msg) from err
+                break
             except subprocess.CalledProcessError as err:
                 err_msg = err.stderr.strip() if err.stderr else str(err)
                 warn_msg = f"Errore durante l'override Flatpak: {err_msg}"
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
-                raise SandboxCommandError(warn_msg) from err
-            except (FileNotFoundError, OSError) as err:
+                break
+            except (FileNotFoundError, OSError):
                 warn_msg = "Impossibile eseguire il comando Flatpak."
                 logger.warning(warn_msg)
                 warnings.append(warn_msg)
                 has_error = True
-                raise SandboxCommandError(warn_msg) from err
+                break
 
         if not has_error:
             messages.append(
@@ -229,7 +233,11 @@ class SandboxBridge:
         gtk_theme: str | None = None,
         icon_theme: str | None = None,
     ) -> PropagationResult:
-        """Verifica la compatibilità dei temi con l'infrastruttura Snap."""
+        """Verifica la compatibilità dei temi con l'infrastruttura Snap.
+
+        Restituisce sempre un PropagationResult (anche in caso di errore dei comandi
+        Snap o timeout, popolando i warning senza sollevare eccezioni).
+        """
         if not self.is_snap_available():
             logger.debug("Snap non disponibile nel sistema, verifica saltata.")
             return PropagationResult(
@@ -256,16 +264,24 @@ class SandboxBridge:
                 check=False,
             )
             gtk_common_installed = res.returncode == 0
-        except subprocess.TimeoutExpired as err:
+        except subprocess.TimeoutExpired:
             warn_msg = "Timeout durante l'interrogazione dello snap 'gtk-common-themes'."
             logger.warning(warn_msg)
             warnings.append(warn_msg)
-            raise SandboxCommandError(warn_msg) from err
-        except Exception as err:
+            return PropagationResult(
+                snap_success=False,
+                snap_messages=["Errore durante l'interrogazione di Snap."],
+                warnings=warnings,
+            )
+        except Exception:
             warn_msg = "Errore durante l'interrogazione di Snap."
             logger.warning(warn_msg)
             warnings.append(warn_msg)
-            raise SandboxCommandError(warn_msg) from err
+            return PropagationResult(
+                snap_success=False,
+                snap_messages=["Errore durante l'interrogazione di Snap."],
+                warnings=warnings,
+            )
 
         if not gtk_common_installed:
             warn_msg = (

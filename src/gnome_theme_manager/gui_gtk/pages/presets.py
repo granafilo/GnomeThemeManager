@@ -29,6 +29,8 @@ from typing import TYPE_CHECKING, Any
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
@@ -51,11 +53,11 @@ PRESET_NAME_MAX_LEN: int = 255
 
 # Etichette leggibili per i componenti del ThemeSet nel riepilogo dei preset
 _COMPONENT_LABELS: dict[str, str] = {
-    "gtk_theme": "GTK",
-    "icon_theme": "Icone",
-    "cursor_theme": "Cursori",
-    "color_scheme": "Schema colori",
-    "shell_theme": "GNOME Shell",
+    "gtk_theme": _("GTK"),
+    "icon_theme": _("Icone"),
+    "cursor_theme": _("Cursori"),
+    "color_scheme": _("Schema colori"),
+    "shell_theme": _("GNOME Shell"),
 }
 
 
@@ -77,7 +79,7 @@ def _build_preset_summary(theme_set: ThemeSet) -> str:
         value = getattr(theme_set, field, None)
         if value:
             lines.append(f"{label}: {value}")
-    return "\n".join(lines) if lines else "Nessun componente valorizzato"
+    return "\n".join(lines) if lines else _("Nessun componente valorizzato")
 
 
 class _PresetRow(Adw.ActionRow):
@@ -114,7 +116,7 @@ class _PresetRow(Adw.ActionRow):
             self.set_subtitle(summary)
         else:
             # Preset corrotto: stato di errore visivo
-            self.set_subtitle("⚠ Preset non leggibile — dati corrotti o incompleti")
+            self.set_subtitle(_("⚠ Preset non leggibile — dati corrotti o incompleti"))
             self.add_css_class("error")
 
         # Icona del preset nella parte sinistra (prefix)
@@ -124,7 +126,7 @@ class _PresetRow(Adw.ActionRow):
 
         # Pulsante Applica (suffix destro)
         apply_btn = Gtk.Button()
-        apply_btn.set_label("Applica")
+        apply_btn.set_label(_("Applica"))
         apply_btn.set_valign(Gtk.Align.CENTER)
         apply_btn.add_css_class("suggested-action")
         # Disabilita il pulsante se il preset è corrotto
@@ -137,7 +139,7 @@ class _PresetRow(Adw.ActionRow):
         delete_btn.set_icon_name("user-trash-symbolic")
         delete_btn.set_valign(Gtk.Align.CENTER)
         delete_btn.add_css_class("destructive-action")
-        delete_btn.set_tooltip_text(f"Elimina il preset '{preset_name}'")
+        delete_btn.set_tooltip_text(f"{_('Elimina il preset')} '{preset_name}'")
         delete_btn.connect("clicked", lambda _: on_delete(self._preset_name))
         self.add_suffix(delete_btn)
 
@@ -156,7 +158,7 @@ class PresetsPage:
     """
 
     PAGE_ID: str = "presets"
-    TITLE: str = "Profili e preset"
+    TITLE: str = _("Profili e preset")
     ICON_NAME: str = "document-save-as-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
@@ -179,6 +181,7 @@ class PresetsPage:
             raise FileNotFoundError(f"File template UI non trovato: {UI_FILE}")
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Widget principale: GtkStack con i 4 stati
@@ -395,13 +398,13 @@ class PresetsPage:
         box.set_margin_end(8)
         box.set_size_request(400, -1)
 
-        lbl = Gtk.Label(label="Nome del preset:")
+        lbl = Gtk.Label(label=_("Nome del preset:"))
         lbl.set_halign(Gtk.Align.START)
         lbl.set_wrap(False)
         box.append(lbl)
 
         entry = Gtk.Entry()
-        entry.set_placeholder_text("es. Tema scuro lavoro")
+        entry.set_placeholder_text(_("es. Tema scuro lavoro"))
         entry.set_max_length(PRESET_NAME_MAX_LEN)
         entry.set_activates_default(True)
         if prefill_name:
@@ -409,11 +412,11 @@ class PresetsPage:
         box.append(entry)
 
         if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new("Salva configurazione attuale", "")
+            dialog = Adw.AlertDialog.new(_("Salva configurazione attuale"), "")
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(box)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("save", "Salva")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("save", _("Salva"))
             dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("save")
             dialog.set_close_response("cancel")
@@ -432,13 +435,13 @@ class PresetsPage:
             parent = self.widget.get_root()
             dialog = Adw.MessageDialog.new(
                 parent if isinstance(parent, Gtk.Window) else None,
-                "Salva configurazione attuale",
+                _("Salva configurazione attuale"),
                 "",
             )
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(box)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("save", "Salva")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("save", _("Salva"))
             dialog.set_response_appearance("save", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("save")
             dialog.set_close_response("cancel")
@@ -462,7 +465,7 @@ class PresetsPage:
         """
         # Controllo nome vuoto o composto solo da spazi
         if not name or not name.strip():
-            self._show_save_error_and_retry("Il nome del preset non può essere vuoto.", name)
+            self._show_save_error_and_retry(_("Il nome del preset non può essere vuoto."), name)
             return
 
         # Normalizzazione: rimuove spazi superflui alle estremità (coerente con il core)
@@ -500,11 +503,13 @@ class PresetsPage:
         """
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
-                f'Sovrascrivere il preset "{name}"?',
-                "Un preset con questo nome esiste già. Sovrascrivendolo i dati precedenti andranno persi.",
+                f'{_("Sovrascrivere il preset")} "{name}"?',
+                _(
+                    "Un preset con questo nome esiste già. Sovrascrivendolo i dati precedenti andranno persi."
+                ),
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("overwrite", "Sovrascrivi")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")
@@ -521,11 +526,11 @@ class PresetsPage:
             parent = self.widget.get_root()
             dialog = Adw.MessageDialog.new(
                 parent if isinstance(parent, Gtk.Window) else None,
-                f'Sovrascrivere il preset "{name}"?',
-                "Un preset con questo nome esiste già.",
+                f'{_("Sovrascrivere il preset")} "{name}"?',
+                _("Un preset con questo nome esiste già."),
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("overwrite", "Sovrascrivi")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")
@@ -551,11 +556,11 @@ class PresetsPage:
             return
         try:
             self.manager.save_current_as_preset(name, overwrite=overwrite)
-            self._show_toast(f'Preset "{name}" salvato.')
+            self._show_toast(f'{_("Preset")} "{name}" {_("salvato.")}')
             self.refresh()
         except (ValueError, FileExistsError, OSError, GnomeThemeManagerError) as err:
             logger.error("Errore salvataggio preset '%s': %s", name, err)
-            self._show_toast(f"Errore: {err}")
+            self._show_toast(f"{_('Errore:')} {err}")
 
     # -------------------------------------------------------------------------
     # Applicazione preset — dialogo di conferma e operazione asincrona
@@ -577,7 +582,7 @@ class PresetsPage:
         except Exception:
             ts = None
 
-        summary = _build_preset_summary(ts) if ts else "Dettagli non disponibili."
+        summary = _build_preset_summary(ts) if ts else _("Dettagli non disponibili.")
 
         self._confirm_dialog_open = True
 
@@ -597,11 +602,11 @@ class PresetsPage:
             extra_box.append(lbl)
 
         if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new(f'Applicare il preset "{name}"?', "")
+            dialog = Adw.AlertDialog.new(f'{_("Applicare il preset")} "{name}"?', "")
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(extra_box)
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("apply", "Applica")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("apply", _("Applica"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -621,11 +626,11 @@ class PresetsPage:
             parent = self.widget.get_root()
             dialog = Adw.MessageDialog.new(
                 parent if isinstance(parent, Gtk.Window) else None,
-                f'Applicare il preset "{name}"?',
+                f'{_("Applicare il preset")} "{name}"?',
                 summary,
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("apply", "Applica")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("apply", _("Applica"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -684,7 +689,7 @@ class PresetsPage:
         """
         try:
             if self.manager is None:
-                raise GnomeThemeManagerError("Manager non disponibile.")
+                raise GnomeThemeManagerError(_("Manager non disponibile."))
             result = self.manager.apply_preset(name)
             if sync:
                 self._on_apply_done(name, result, None)
@@ -712,7 +717,8 @@ class PresetsPage:
         self._set_controls_sensitive(True)
 
         if error is not None:
-            self._show_toast(f'Errore nell\'applicazione del preset "{name}": {error}')
+            err_msg = _("Errore nell'applicazione del preset")
+            self._show_toast(f'{err_msg} "{name}": {error}')
             return False
 
         # Costruisce il feedback finale
@@ -720,12 +726,12 @@ class PresetsPage:
             warnings = getattr(result, "warnings", [])
             if warnings:
                 self._show_toast(
-                    f'Preset "{name}" applicato con avvisi: {"; ".join(str(w) for w in warnings)}'
+                    f'{_("Preset")} "{name}" {_("applicato con avvisi:")} {"; ".join(str(w) for w in warnings)}'
                 )
             else:
-                self._show_toast(f'Preset "{name}" applicato con successo.')
+                self._show_toast(f'{_("Preset")} "{name}" {_("applicato con successo.")}')
         else:
-            self._show_toast(f'Preset "{name}" applicato.')
+            self._show_toast(f'{_("Preset")} "{name}" {_("applicato.")}')
 
         # Notifica la finestra principale per aggiornare StatusPage e ThemesPage
         if self.on_preset_applied is not None:
@@ -753,11 +759,13 @@ class PresetsPage:
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
-                f'Eliminare il preset "{name}"?',
-                "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati.",
+                f'{_("Eliminare il preset")} "{name}"?',
+                _(
+                    "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."
+                ),
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("delete", "Elimina")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("delete", _("Elimina"))
             dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")
@@ -777,11 +785,13 @@ class PresetsPage:
             parent = self.widget.get_root()
             dialog = Adw.MessageDialog.new(
                 parent if isinstance(parent, Gtk.Window) else None,
-                f'Eliminare il preset "{name}"?',
-                "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati.",
+                f'{_("Eliminare il preset")} "{name}"?',
+                _(
+                    "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."
+                ),
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("delete", "Elimina")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("delete", _("Elimina"))
             dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")
@@ -811,11 +821,12 @@ class PresetsPage:
             return
         try:
             self.manager.delete_preset(name)
-            self._show_toast(f'Preset "{name}" eliminato.')
+            self._show_toast(f'{_("Preset")} "{name}" {_("eliminato.")}')
             self.refresh()
         except (FileNotFoundError, ValueError, OSError, GnomeThemeManagerError) as err:
             logger.error("Errore eliminazione preset '%s': %s", name, err)
-            self._show_toast(f"Errore nell'eliminazione: {err}")
+            err_msg = _("Errore nell'eliminazione:")
+            self._show_toast(f"{err_msg} {err}")
 
     # -------------------------------------------------------------------------
     # Utility

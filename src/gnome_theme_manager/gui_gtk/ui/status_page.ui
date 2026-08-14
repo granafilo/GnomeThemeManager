@@ -18,8 +18,8 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">preferences-desktop-theme-symbolic</property>
-            <property name="title">Caricamento in corso...</property>
-            <property name="description">Recupero dello stato attuale dei temi e della diagnostica di sistema.</property>
+            <property name="title" translatable="yes">Caricamento in corso...</property>
+            <property name="description" translatable="yes">Recupero dello stato attuale dei temi e della diagnostica di sistema.</property>
             <property name="child">
               <object class="GtkSpinner" id="loading_spinner">
                 <property name="spinning">true</property>
@@ -61,12 +61,12 @@
                 <!-- Gruppo 1: Temi Attivi -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_themes">
-                    <property name="title">Temi Attivi su GNOME</property>
-                    <property name="description">Configurazione corrente letta tramite GSettings.</property>
+                    <property name="title" translatable="yes">Temi Attivi su GNOME</property>
+                    <property name="description" translatable="yes">Configurazione corrente letta tramite GSettings.</property>
                     <child>
                       <object class="AdwActionRow" id="row_gtk_theme">
-                        <property name="title">Tema GTK (Applicazioni)</property>
-                        <property name="subtitle">Non impostato</property>
+                        <property name="title" translatable="yes">Tema GTK (Applicazioni)</property>
+                        <property name="subtitle" translatable="yes">Non impostato</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">preferences-desktop-theme-symbolic</property>
@@ -76,8 +76,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_icon_theme">
-                        <property name="title">Tema Icone</property>
-                        <property name="subtitle">Non impostato</property>
+                        <property name="title" translatable="yes">Tema Icone</property>
+                        <property name="subtitle" translatable="yes">Non impostato</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">applications-graphics-symbolic</property>
@@ -87,8 +87,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_cursor_theme">
-                        <property name="title">Tema Cursori</property>
-                        <property name="subtitle">Non impostato</property>
+                        <property name="title" translatable="yes">Tema Cursori</property>
+                        <property name="subtitle" translatable="yes">Non impostato</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">input-mouse-symbolic</property>
@@ -98,8 +98,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_shell_theme">
-                        <property name="title">Tema GNOME Shell</property>
-                        <property name="subtitle">Default di sistema</property>
+                        <property name="title" translatable="yes">Tema GNOME Shell</property>
+                        <property name="subtitle" translatable="yes">Default di sistema</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">preferences-system-windows-symbolic</property>
@@ -109,8 +109,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_color_scheme">
-                        <property name="title">Schema Colori</property>
-                        <property name="subtitle">Predefinito</property>
+                        <property name="title" translatable="yes">Schema Colori</property>
+                        <property name="subtitle" translatable="yes">Predefinito</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">weather-clear-night-symbolic</property>
@@ -124,12 +124,12 @@
                 <!-- Gruppo 2: GTK4 / Libadwaita -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_gtk4">
-                    <property name="title">GTK4 / Libadwaita</property>
-                    <property name="description">Compatibilità con le applicazioni moderne GNOME.</property>
+                    <property name="title" translatable="yes">GTK4 / Libadwaita</property>
+                    <property name="description" translatable="yes">Compatibilità con le applicazioni moderne GNOME.</property>
                     <child>
                       <object class="AdwActionRow" id="row_gtk4_override">
-                        <property name="title">Stato Override GTK4</property>
-                        <property name="subtitle">Non disponibile (applicato durante il cambio tema)</property>
+                        <property name="title" translatable="yes">Stato Override GTK4</property>
+                        <property name="subtitle" translatable="yes">Non disponibile (applicato durante il cambio tema)</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">system-run-symbolic</property>
@@ -143,12 +143,12 @@
                 <!-- Gruppo 3: Ambiente Desktop e Percorsi -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_environment">
-                    <property name="title">Ambiente Desktop e Percorsi</property>
-                    <property name="description">Stato di GSettings e percorsi utente per l'installazione.</property>
+                    <property name="title" translatable="yes">Ambiente Desktop e Percorsi</property>
+                    <property name="description" translatable="yes">Stato di GSettings e percorsi utente per l'installazione.</property>
                     <child>
                       <object class="AdwActionRow" id="row_gsettings_status">
-                        <property name="title">GSettings / Gio</property>
-                        <property name="subtitle">Disponibile</property>
+                        <property name="title" translatable="yes">GSettings / Gio</property>
+                        <property name="subtitle" translatable="yes">Disponibile</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">emblem-default-symbolic</property>
@@ -158,8 +158,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_user_themes_path">
-                        <property name="title">Cartella Temi Utente</property>
-                        <property name="subtitle">~/.local/share/themes</property>
+                        <property name="title" translatable="yes">Cartella Temi Utente</property>
+                        <property name="subtitle" translatable="yes">~/.local/share/themes</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">folder-symbolic</property>
@@ -169,8 +169,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_user_icons_path">
-                        <property name="title">Cartella Icone Utente</property>
-                        <property name="subtitle">~/.local/share/icons</property>
+                        <property name="title" translatable="yes">Cartella Icone Utente</property>
+                        <property name="subtitle" translatable="yes">~/.local/share/icons</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">folder-symbolic</property>
@@ -184,12 +184,12 @@
                 <!-- Gruppo 4: Sandbox (Flatpak e Snap) con escaping corretto per Pango markup -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_sandbox">
-                    <property name="title">Integrazione Sandbox (Snap &amp;amp; Flatpak)</property>
-                    <property name="description">Stato di accesso delle applicazioni isolate ai temi.</property>
+                    <property name="title" translatable="yes">Integrazione Sandbox (Snap &amp;amp; Flatpak)</property>
+                    <property name="description" translatable="yes">Stato di accesso delle applicazioni isolate ai temi.</property>
                     <child>
                       <object class="AdwActionRow" id="row_flatpak_status">
-                        <property name="title">Flatpak</property>
-                        <property name="subtitle">Disponibile</property>
+                        <property name="title" translatable="yes">Flatpak</property>
+                        <property name="subtitle" translatable="yes">Disponibile</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">application-x-executable-symbolic</property>
@@ -199,8 +199,8 @@
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_snap_status">
-                        <property name="title">Snap</property>
-                        <property name="subtitle">Disponibile</property>
+                        <property name="title" translatable="yes">Snap</property>
+                        <property name="subtitle" translatable="yes">Disponibile</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">package-x-generic-symbolic</property>
@@ -226,11 +226,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">dialog-information-symbolic</property>
-            <property name="title">Nessuna configurazione trovata</property>
-            <property name="description">Non è stata rilevata alcuna impostazione per i temi attivi sul sistema.</property>
+            <property name="title" translatable="yes">Nessuna configurazione trovata</property>
+            <property name="description" translatable="yes">Non è stata rilevata alcuna impostazione per i temi attivi sul sistema.</property>
             <property name="child">
               <object class="GtkButton" id="empty_retry_button">
-                <property name="label">Ricarica</property>
+                <property name="label" translatable="yes">Ricarica</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
                 <style>
@@ -253,11 +253,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title">Errore di lettura</property>
-            <property name="description">Impossibile recuperare lo stato del sistema.</property>
+            <property name="title" translatable="yes">Errore di lettura</property>
+            <property name="description" translatable="yes">Impossibile recuperare lo stato del sistema.</property>
             <property name="child">
               <object class="GtkButton" id="error_retry_button">
-                <property name="label">Riprova</property>
+                <property name="label" translatable="yes">Riprova</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
                 <style>

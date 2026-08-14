@@ -86,6 +86,40 @@ def test_gtk4_linker_apply_no_css(tmp_path: Path):
     assert not (config_dir / "gtk.css").exists()
 
 
+def test_gtk4_linker_apply_no_css_removes_previous_override(mock_gtk4_environment):
+    """Verifica che applicare un tema senza stili GTK4/3 rimuova un override precedentemente attivo."""
+    env = mock_gtk4_environment
+    linker = GTK4ThemeLinker(config_dir=env["config_dir"])
+
+    # 1. Applica prima tema A con stili GTK4 validi
+    assert linker.apply_override(env["theme_dir"]) is True
+    assert linker.is_override_active() is True
+    assert (env["config_dir"] / "gtk.css").exists()
+
+    # 2. Applica tema B senza stili GTK4/3
+    empty_theme_dir = env["theme_dir"].parent / "EmptyTheme"
+    empty_theme_dir.mkdir(parents=True, exist_ok=True)
+
+    success = linker.apply_override(empty_theme_dir)
+    assert success is False
+    # L'override precedente deve essere stato rimosso
+    assert not (env["config_dir"] / "gtk.css").exists()
+    assert not (env["config_dir"] / "gtk-dark.css").exists()
+    assert not (env["config_dir"] / "assets").exists()
+    assert linker.is_override_active() is False
+
+
+def test_gtk4_linker_apply_no_css_when_no_previous_override(tmp_path: Path):
+    """Verifica che applicare un tema senza stili GTK4/3 quando non c'era nessun override non sollevi eccezioni."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    empty_theme_dir = tmp_path / "themes" / "EmptyTheme"
+    empty_theme_dir.mkdir(parents=True, exist_ok=True)
+
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    assert linker.apply_override(empty_theme_dir) is False
+    assert linker.is_override_active() is False
+
+
 def test_gtk4_linker_remove_override(mock_gtk4_environment):
     """Verifica che remove_override elimini i symlink precedentemente creati."""
     env = mock_gtk4_environment

@@ -20,8 +20,8 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">document-save-as-symbolic</property>
-            <property name="title">Caricamento preset...</property>
-            <property name="description">Lettura dei profili di configurazione salvati.</property>
+            <property name="title" translatable="yes">Caricamento preset...</property>
+            <property name="description" translatable="yes">Lettura dei profili di configurazione salvati.</property>
             <property name="child">
               <object class="GtkSpinner" id="loading_spinner">
                 <property name="spinning">true</property>
@@ -67,7 +67,7 @@
                         <property name="spacing">4</property>
                         <child>
                           <object class="GtkLabel">
-                            <property name="label">Profili e preset</property>
+                            <property name="label" translatable="yes">Profili e preset</property>
                             <property name="xalign">0</property>
                             <style>
                               <class name="title-1"/>
@@ -76,7 +76,7 @@
                         </child>
                         <child>
                           <object class="GtkLabel">
-                            <property name="label">Salva e applica configurazioni complete dell'ambiente desktop GNOME.</property>
+                            <property name="label" translatable="yes">Salva e applica configurazioni complete dell'ambiente desktop GNOME.</property>
                             <property name="xalign">0</property>
                             <property name="wrap">true</property>
                             <style>
@@ -94,7 +94,7 @@
                         <property name="spacing">8</property>
                         <child>
                           <object class="GtkButton" id="save_preset_button">
-                            <property name="label">Salva configurazione attuale</property>
+                            <property name="label" translatable="yes">Salva configurazione attuale</property>
                             <property name="hexpand">false</property>
                             <style>
                               <class name="suggested-action"/>
@@ -108,9 +108,9 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="reload_presets_button">
-                            <property name="label">Ricarica</property>
+                            <property name="label" translatable="yes">Ricarica</property>
                             <property name="hexpand">false</property>
-                            <property name="tooltip-text">Ricarica la lista dei preset dal disco</property>
+                            <property name="tooltip-text" translatable="yes">Ricarica la lista dei preset dal disco</property>
                             <child type="prefix">
                               <object class="GtkImage">
                                 <property name="icon-name">view-refresh-symbolic</property>
@@ -124,7 +124,7 @@
                     <!-- Lista dei preset (ListBox in stile boxed-list) -->
                     <child>
                       <object class="AdwPreferencesGroup" id="presets_group">
-                        <property name="title">Preset salvati</property>
+                        <property name="title" translatable="yes">Preset salvati</property>
                         <child>
                           <object class="GtkListBox" id="presets_list_box">
                             <property name="selection-mode">none</property>
@@ -156,11 +156,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">document-save-as-symbolic</property>
-            <property name="title">Nessun preset salvato</property>
-            <property name="description">Salva la configurazione attuale per creare il primo preset e poterla ripristinare in qualsiasi momento.</property>
+            <property name="title" translatable="yes">Nessun preset salvato</property>
+            <property name="description" translatable="yes">Salva la configurazione attuale per creare il primo preset e poterla ripristinare in qualsiasi momento.</property>
             <property name="child">
               <object class="GtkButton" id="empty_save_button">
-                <property name="label">Salva configurazione attuale</property>
+                <property name="label" translatable="yes">Salva configurazione attuale</property>
                 <property name="halign">center</property>
                 <style>
                   <class name="suggested-action"/>
@@ -182,7 +182,7 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title">Impossibile caricare i preset</property>
+            <property name="title" translatable="yes">Impossibile caricare i preset</property>
             <property name="child">
               <object class="GtkBox">
                 <property name="orientation">vertical</property>
@@ -190,7 +190,7 @@
                 <property name="halign">center</property>
                 <child>
                   <object class="GtkLabel" id="error_message_label">
-                    <property name="label">Errore sconosciuto.</property>
+                    <property name="label" translatable="yes">Errore sconosciuto.</property>
                     <property name="wrap">true</property>
                     <property name="max-width-chars">60</property>
                     <property name="halign">center</property>
@@ -201,7 +201,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="error_retry_button">
-                    <property name="label">Riprova</property>
+                    <property name="label" translatable="yes">Riprova</property>
                     <property name="halign">center</property>
                     <property name="margin-top">8</property>
                     <style>

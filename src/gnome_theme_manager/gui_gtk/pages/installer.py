@@ -27,6 +27,8 @@ from typing import TYPE_CHECKING, Any
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
@@ -57,13 +59,13 @@ def format_components_label(components: list[ThemeType]) -> str:
         Stringa formattata leggibile per l'interfaccia (es. 'GTK, GNOME Shell').
     """
     if not components:
-        return "Nessun componente riconosciuto"
+        return _("Nessun componente riconosciuto")
 
     labels_map = {
-        ThemeType.GTK: "Applicazioni (GTK)",
-        ThemeType.SHELL: "GNOME Shell",
-        ThemeType.ICON: "Icone",
-        ThemeType.CURSOR: "Cursori",
+        ThemeType.GTK: _("Applicazioni (GTK)"),
+        ThemeType.SHELL: _("GNOME Shell"),
+        ThemeType.ICON: _("Icone"),
+        ThemeType.CURSOR: _("Cursori"),
     }
     # Rimuove duplicati preservando l'ordine
     unique_types: list[ThemeType] = []
@@ -78,7 +80,7 @@ class InstallerPage:
     """Controller della vista 'Installatore temi' per la GUI GTK4/Libadwaita."""
 
     PAGE_ID: str = "installer"
-    TITLE: str = "Installatore temi"
+    TITLE: str = _("Installatore temi")
     ICON_NAME: str = "system-software-install-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
@@ -99,6 +101,7 @@ class InstallerPage:
             raise FileNotFoundError(f"File template UI non trovato: {UI_FILE}")
 
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Widget principale GtkStack con i 6 stati della pagina
@@ -121,6 +124,7 @@ class InstallerPage:
         self.detected_components_row: Adw.ActionRow = self.builder.get_object(
             "detected_components_row"
         )
+        self.target_dir_switch: Gtk.Switch = self.builder.get_object("target_dir_switch")
         self.change_source_button: Gtk.Button = self.builder.get_object("change_source_button")
         self.install_button: Gtk.Button = self.builder.get_object("install_button")
         self.install_apply_button: Gtk.Button = self.builder.get_object("install_apply_button")
@@ -158,14 +162,17 @@ class InstallerPage:
 
         # --- Mappatura e configurazione esplicita etichette/icone native dei pulsanti ---
         self._button_configs: dict[str, tuple[str, str]] = {
-            "select_folder_button": ("Seleziona cartella", "folder-open-symbolic"),
-            "select_archive_button": ("Seleziona archivio", "package-x-generic-symbolic"),
-            "change_source_button": ("Cambia sorgente", "edit-undo-symbolic"),
-            "install_button": ("Installa", "system-software-install-symbolic"),
-            "install_apply_button": ("Installa e Applica", "emblem-ok-symbolic"),
-            "success_new_source_button": ("Seleziona un'altra sorgente", "document-open-symbolic"),
-            "error_retry_button": ("Riprova", "view-refresh-symbolic"),
-            "error_new_source_button": ("Seleziona un'altra sorgente", "document-open-symbolic"),
+            "select_folder_button": (_("Seleziona cartella"), "folder-open-symbolic"),
+            "select_archive_button": (_("Seleziona archivio"), "package-x-generic-symbolic"),
+            "change_source_button": (_("Cambia sorgente"), "edit-undo-symbolic"),
+            "install_button": (_("Installa"), "system-software-install-symbolic"),
+            "install_apply_button": (_("Installa e Applica"), "emblem-ok-symbolic"),
+            "success_new_source_button": (
+                _("Seleziona un'altra sorgente"),
+                "document-open-symbolic",
+            ),
+            "error_retry_button": (_("Riprova"), "view-refresh-symbolic"),
+            "error_new_source_button": (_("Seleziona un'altra sorgente"), "document-open-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
             btn = getattr(self, btn_attr, None)
@@ -248,16 +255,16 @@ class InstallerPage:
         # Usa Gtk.FileDialog se disponibile (GTK 4.10+)
         if hasattr(Gtk, "FileDialog"):
             dialog = Gtk.FileDialog.new()
-            dialog.set_title("Seleziona cartella del tema")
+            dialog.set_title(_("Seleziona cartella del tema"))
             dialog.select_folder(root_window, None, self._on_folder_dialog_finish)
         else:
             # Fallback legacy per versioni precedenti di GTK4
             native = Gtk.FileChooserNative.new(
-                "Seleziona cartella del tema",
+                _("Seleziona cartella del tema"),
                 root_window,
                 Gtk.FileChooserAction.SELECT_FOLDER,
-                "Seleziona",
-                "Annulla",
+                _("Seleziona"),
+                _("Annulla"),
             )
             native.connect(
                 "response",
@@ -271,11 +278,11 @@ class InstallerPage:
 
         if hasattr(Gtk, "FileDialog"):
             dialog = Gtk.FileDialog.new()
-            dialog.set_title("Seleziona archivio del tema")
+            dialog.set_title(_("Seleziona archivio del tema"))
 
             # Filtri di estensione per archivi supportati
             filter_archives = Gtk.FileFilter.new()
-            filter_archives.set_name("Archivi di tema (*.zip, *.tar.*)")
+            filter_archives.set_name(_("Archivi di tema (*.zip, *.tar.*)"))
             for pattern in [
                 "*.zip",
                 "*.tar.gz",
@@ -289,7 +296,7 @@ class InstallerPage:
                 filter_archives.add_pattern(pattern)
 
             filter_all = Gtk.FileFilter.new()
-            filter_all.set_name("Tutti i file")
+            filter_all.set_name(_("Tutti i file"))
             filter_all.add_pattern("*")
 
             filters = gi.repository.Gio.ListStore.new(Gtk.FileFilter)
@@ -301,14 +308,14 @@ class InstallerPage:
             dialog.open(root_window, None, self._on_archive_dialog_finish)
         else:
             native = Gtk.FileChooserNative.new(
-                "Seleziona archivio del tema",
+                _("Seleziona archivio del tema"),
                 root_window,
                 Gtk.FileChooserAction.OPEN,
-                "Apri",
-                "Annulla",
+                _("Apri"),
+                _("Annulla"),
             )
             filter_archives = Gtk.FileFilter.new()
-            filter_archives.set_name("Archivi di tema")
+            filter_archives.set_name(_("Archivi di tema"))
             for pattern in [
                 "*.zip",
                 "*.tar.gz",
@@ -418,11 +425,11 @@ class InstallerPage:
                 logger.error("Errore durante l'analisi della sorgente '%s': %s", source_path, error)
                 user_msg = str(error)
                 if isinstance(error, ArchiveExtractionError):
-                    user_msg = f"Archivio non valido o non supportato: {error}"
+                    user_msg = f"{_('Archivio non valido o non supportato:')} {error}"
                 elif isinstance(error, ThemeValidationError):
-                    user_msg = f"Struttura del tema non riconosciuta: {error}"
+                    user_msg = f"{_('Struttura del tema non riconosciuta:')} {error}"
                 elif isinstance(error, FileNotFoundError):
-                    user_msg = f"Sorgente non trovata: {error}"
+                    user_msg = f"{_('Sorgente non trovata:')} {error}"
 
                 self.error_status_page.set_description(user_msg)
                 self._set_state("error")
@@ -431,7 +438,9 @@ class InstallerPage:
 
             if not items:
                 self.error_status_page.set_description(
-                    "Nessun tema supportato (GTK, Shell, Icone, Cursori) rilevato nella sorgente."
+                    _(
+                        "Nessun tema supportato (GTK, Shell, Icone, Cursori) rilevato nella sorgente."
+                    )
                 )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
@@ -452,7 +461,7 @@ class InstallerPage:
 
             self.source_name_row.set_subtitle(short_path)
             self.source_type_row.set_subtitle(
-                "Cartella" if source_path.is_dir() else "Archivio compresso"
+                _("Cartella") if source_path.is_dir() else _("Archivio compresso")
             )
             self.detected_theme_name_row.set_subtitle(theme_name)
             self.detected_components_row.set_subtitle(format_components_label(components))
@@ -516,6 +525,11 @@ class InstallerPage:
         self._set_state("installing")
         self._set_controls_sensitive(False)
 
+        use_legacy = (
+            self.target_dir_switch.get_active() if hasattr(self, "target_dir_switch") else False
+        )
+        target_dir_param = "legacy" if use_legacy else "xdg"
+
         # Worker di installazione
         def worker_install() -> tuple[list[Theme] | None, ApplyResult | None, Exception | None]:
             try:
@@ -525,6 +539,7 @@ class InstallerPage:
                 installed_themes = self.manager.install_theme(
                     source_path=source_path,
                     overwrite=overwrite,
+                    target_dir=target_dir_param,
                 )
 
                 apply_result: ApplyResult | None = None
@@ -572,17 +587,19 @@ class InstallerPage:
             # --- Successo ---
             installed_list = installed or []
             theme_name = self._detected_name or (
-                installed_list[0].name if installed_list else "Tema"
+                installed_list[0].name if installed_list else _("Tema")
             )
 
             if apply_after and apply_res is not None:
                 if apply_res.warnings:
                     warnings_str = "; ".join(apply_res.warnings)
-                    desc = f"Tema '{theme_name}' installato.\nAlcuni componenti non sono stati applicati: {warnings_str}"
-                    self._show_toast(f"Tema '{theme_name}' installato (applicazione parziale).")
+                    desc = f"{_('Tema')} '{theme_name}' {_('installato.')}\n{_('Alcuni componenti non sono stati applicati:')} {warnings_str}"
+                    self._show_toast(
+                        f"{_('Tema')} '{theme_name}' {_('installato (applicazione parziale).')}"
+                    )
                 else:
-                    desc = f"Tema '{theme_name}' installato e applicato con successo al sistema."
-                    self._show_toast(f"Tema '{theme_name}' installato e applicato.")
+                    desc = f"{_('Tema')} '{theme_name}' {_('installato e applicato con successo al sistema.')}"
+                    self._show_toast(f"{_('Tema')} '{theme_name}' {_('installato e applicato.')}")
 
                 if self.on_theme_applied:
                     try:
@@ -590,8 +607,8 @@ class InstallerPage:
                     except Exception as e:
                         logger.warning("Errore callback on_theme_applied: %s", e)
             else:
-                desc = f"Tema '{theme_name}' installato con successo nelle directory utente."
-                self._show_toast(f"Tema '{theme_name}' installato.")
+                desc = f"{_('Tema')} '{theme_name}' {_('installato con successo nelle directory utente.')}"
+                self._show_toast(f"{_('Tema')} '{theme_name}' {_('installato.')}")
 
                 if self.on_theme_installed:
                     try:
@@ -636,16 +653,16 @@ class InstallerPage:
             return
 
         self._confirm_dialog_open = True
-        theme_name = self._detected_name or "questo tema"
+        theme_name = self._detected_name or _("questo tema")
         root_window = self._get_root_window()
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
-                "Tema già presente",
-                f'Un tema con il nome "{theme_name}" esiste già nella cartella utente.\n\nVuoi sovrascriverlo?',
+                _("Tema già presente"),
+                f'{_("Un tema con il nome")} "{theme_name}" {_("esiste già nella cartella utente.")}\n\n{_("Vuoi sovrascriverlo?")}',
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("overwrite", "Sovrascrivi")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")
@@ -670,11 +687,11 @@ class InstallerPage:
         elif hasattr(Adw, "MessageDialog"):
             dialog = Adw.MessageDialog.new(
                 root_window if isinstance(root_window, Gtk.Window) else None,
-                "Tema già presente",
-                f'Un tema con il nome "{theme_name}" esiste già nella cartella utente.\n\nVuoi sovrascriverlo?',
+                _("Tema già presente"),
+                f'{_("Un tema con il nome")} "{theme_name}" {_("esiste già nella cartella utente.")}\n\n{_("Vuoi sovrascriverlo?")}',
             )
-            dialog.add_response("cancel", "Annulla")
-            dialog.add_response("overwrite", "Sovrascrivi")
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
             dialog.set_default_response("cancel")
             dialog.set_close_response("cancel")

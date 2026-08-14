@@ -33,7 +33,7 @@
             </child>
             <child>
               <object class="GtkLabel" id="loading_label">
-                <property name="label">Verifica dello stato sandbox in corso…</property>
+                <property name="label" translatable="yes">Verifica dello stato sandbox in corso…</property>
                 <style>
                   <class name="title-3"/>
                 </style>
@@ -41,7 +41,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">Interrogazione dei runtime Flatpak e Snap</property>
+                <property name="label" translatable="yes">Interrogazione dei runtime Flatpak e Snap</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -79,12 +79,12 @@
                     <!-- GRUPPO FLATPAK -->
                     <child>
                       <object class="AdwPreferencesGroup">
-                        <property name="title">Ambiente Flatpak</property>
-                        <property name="description">Integrazione dei permessi e accesso ai temi per le applicazioni Flatpak.</property>
+                        <property name="title" translatable="yes">Ambiente Flatpak</property>
+                        <property name="description" translatable="yes">Integrazione dei permessi e accesso ai temi per le applicazioni Flatpak.</property>
                         <child>
                           <object class="AdwActionRow" id="flatpak_status_row">
-                            <property name="title">Stato Flatpak</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Stato Flatpak</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="flatpak_status_icon">
                                 <property name="icon-name">package-x-generic-symbolic</property>
@@ -94,8 +94,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="flatpak_override_row">
-                            <property name="title">Override filesystem temi</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Override filesystem temi</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="flatpak_override_icon">
                                 <property name="icon-name">folder-symbolic</property>
@@ -105,8 +105,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="flatpak_notes_row">
-                            <property name="title">Note di compatibilità</property>
-                            <property name="subtitle">L'override utente consente l'accesso in sola lettura a ~/.local/share/themes e icone.</property>
+                            <property name="title" translatable="yes">Note di compatibilità</property>
+                            <property name="subtitle" translatable="yes">L'override utente consente l'accesso in sola lettura a ~/.local/share/themes e icone.</property>
                             <child type="prefix">
                               <object class="GtkImage" id="flatpak_notes_icon">
                                 <property name="icon-name">dialog-information-symbolic</property>
@@ -120,12 +120,12 @@
                     <!-- GRUPPO SNAP -->
                     <child>
                       <object class="AdwPreferencesGroup">
-                        <property name="title">Ambiente Snap</property>
-                        <property name="description">Integrazione con il framework dei temi e snap standard di sistema.</property>
+                        <property name="title" translatable="yes">Ambiente Snap</property>
+                        <property name="description" translatable="yes">Integrazione con il framework dei temi e snap standard di sistema.</property>
                         <child>
                           <object class="AdwActionRow" id="snap_status_row">
-                            <property name="title">Stato Snap</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Stato Snap</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="snap_status_icon">
                                 <property name="icon-name">package-x-generic-symbolic</property>
@@ -135,8 +135,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_gtk_common_row">
-                            <property name="title">Pacchetto gtk-common-themes</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Pacchetto gtk-common-themes</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="snap_gtk_common_icon">
                                 <property name="icon-name">emblem-default-symbolic</property>
@@ -146,8 +146,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_theme_compat_row">
-                            <property name="title">Compatibilità tema attivo</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Compatibilità tema attivo</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="snap_theme_compat_icon">
                                 <property name="icon-name">preferences-desktop-theme-symbolic</property>
@@ -157,8 +157,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_notes_row">
-                            <property name="title">Note di compatibilità</property>
-                            <property name="subtitle">Le app Snap usano i temi inclusi in gtk-common-themes. Temi personalizzati richiedono snap dedicati.</property>
+                            <property name="title" translatable="yes">Note di compatibilità</property>
+                            <property name="subtitle" translatable="yes">Le app Snap usano i temi inclusi in gtk-common-themes. Temi personalizzati richiedono snap dedicati.</property>
                             <child type="prefix">
                               <object class="GtkImage" id="snap_notes_icon">
                                 <property name="icon-name">dialog-information-symbolic</property>
@@ -178,8 +178,8 @@
                         <property name="margin-top">12</property>
                         <child>
                           <object class="GtkButton" id="refresh_button">
-                            <property name="label">Ricarica stato</property>
-                            <property name="tooltip-text">Aggiorna la diagnostica dei runtime sandbox</property>
+                            <property name="label" translatable="yes">Ricarica stato</property>
+                            <property name="tooltip-text" translatable="yes">Aggiorna la diagnostica dei runtime sandbox</property>
                             <style>
                               <class name="pill"/>
                             </style>
@@ -187,8 +187,8 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="propagate_button">
-                            <property name="label">Propaga tema alle applicazioni sandbox</property>
-                            <property name="tooltip-text">Configura gli override Flatpak e verifica la compatibilità per i temi attivi</property>
+                            <property name="label" translatable="yes">Propaga tema alle applicazioni sandbox</property>
+                            <property name="tooltip-text" translatable="yes">Configura gli override Flatpak e verifica la compatibilità per i temi attivi</property>
                             <style>
                               <class name="pill"/>
                               <class name="suggested-action"/>
@@ -216,8 +216,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="error_status_page">
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title">Errore diagnostica</property>
-            <property name="description">Impossibile verificare lo stato dei runtime sandbox.</property>
+            <property name="title" translatable="yes">Errore diagnostica</property>
+            <property name="description" translatable="yes">Impossibile verificare lo stato dei runtime sandbox.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -229,7 +229,7 @@
                     <property name="margin-top">16</property>
                     <child>
                       <object class="GtkButton" id="error_retry_button">
-                        <property name="label">Riprova</property>
+                        <property name="label" translatable="yes">Riprova</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>

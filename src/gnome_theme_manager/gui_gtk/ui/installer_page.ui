@@ -19,8 +19,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="initial_status_page">
             <property name="icon-name">system-software-install-symbolic</property>
-            <property name="title">Installatore temi</property>
-            <property name="description">Seleziona una cartella o un archivio compresso (.zip, .tar.gz, .tar.xz) per installare nuovi temi.</property>
+            <property name="title" translatable="yes">Installatore temi</property>
+            <property name="description" translatable="yes">Seleziona una cartella o un archivio compresso (.zip, .tar.gz, .tar.xz) per installare nuovi temi.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -33,8 +33,8 @@
                     <property name="margin-top">24</property>
                     <child>
                       <object class="GtkButton" id="select_folder_button">
-                        <property name="label">Seleziona cartella</property>
-                        <property name="tooltip-text">Seleziona una cartella di tema già estratta sul filesystem</property>
+                        <property name="label" translatable="yes">Seleziona cartella</property>
+                        <property name="tooltip-text" translatable="yes">Seleziona una cartella di tema già estratta sul filesystem</property>
                         <style>
                           <class name="pill"/>
                         </style>
@@ -42,8 +42,8 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="select_archive_button">
-                        <property name="label">Seleziona archivio</property>
-                        <property name="tooltip-text">Seleziona un file compresso (.zip, .tar.gz, .tar.xz, .tar.bz2)</property>
+                        <property name="label" translatable="yes">Seleziona archivio</property>
+                        <property name="tooltip-text" translatable="yes">Seleziona un file compresso (.zip, .tar.gz, .tar.xz, .tar.bz2)</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>
@@ -82,7 +82,7 @@
             </child>
             <child>
               <object class="GtkLabel" id="analyzing_label">
-                <property name="label">Analisi della sorgente in corso…</property>
+                <property name="label" translatable="yes">Analisi della sorgente in corso…</property>
                 <style>
                   <class name="title-3"/>
                 </style>
@@ -90,7 +90,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">Verifica di sicurezza ed estrazione componenti</property>
+                <property name="label" translatable="yes">Verifica di sicurezza ed estrazione componenti</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -126,34 +126,47 @@
                     <property name="spacing">24</property>
                     <child>
                       <object class="AdwPreferencesGroup">
-                        <property name="title">Dettagli sorgente</property>
-                        <property name="description">Informazioni sul tema rilevato nella sorgente selezionata.</property>
+                        <property name="title" translatable="yes">Dettagli sorgente</property>
+                        <property name="description" translatable="yes">Informazioni sul tema rilevato nella sorgente selezionata.</property>
                         <child>
                           <object class="AdwActionRow" id="source_name_row">
-                            <property name="title">Sorgente selezionata</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Sorgente selezionata</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">folder-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="source_type_row">
-                            <property name="title">Tipo sorgente</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Tipo sorgente</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">dialog-information-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_theme_name_row">
-                            <property name="title">Nome tema rilevato</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Nome tema rilevato</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">preferences-desktop-theme-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_components_row">
-                            <property name="title">Componenti supportati</property>
-                            <property name="subtitle">-</property>
+                            <property name="title" translatable="yes">Componenti supportati</property>
+                            <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">emblem-default-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="target_dir_row">
+                            <property name="title" translatable="yes">Installa nel percorso legacy ~/.themes e ~/.icons</property>
+                            <property name="subtitle" translatable="yes">Se disattivato, usa lo standard XDG (~/.local/share/themes)</property>
+                            <property name="icon-name">folder-remote-symbolic</property>
+                            <child>
+                              <object class="GtkSwitch" id="target_dir_switch">
+                                <property name="valign">center</property>
+                                <property name="active">false</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
@@ -166,7 +179,7 @@
                         <property name="margin-top">8</property>
                         <child>
                           <object class="GtkButton" id="change_source_button">
-                            <property name="label">Cambia sorgente</property>
+                            <property name="label" translatable="yes">Cambia sorgente</property>
                             <style>
                               <class name="pill"/>
                             </style>
@@ -174,7 +187,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="install_button">
-                            <property name="label">Installa</property>
+                            <property name="label" translatable="yes">Installa</property>
                             <style>
                               <class name="pill"/>
                             </style>
@@ -182,7 +195,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="install_apply_button">
-                            <property name="label">Installa e Applica</property>
+                            <property name="label" translatable="yes">Installa e Applica</property>
                             <style>
                               <class name="pill"/>
                               <class name="suggested-action"/>
@@ -223,7 +236,7 @@
             </child>
             <child>
               <object class="GtkLabel" id="installing_status_label">
-                <property name="label">Installazione del tema in corso…</property>
+                <property name="label" translatable="yes">Installazione del tema in corso…</property>
                 <style>
                   <class name="title-3"/>
                 </style>
@@ -231,7 +244,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label">Copia dei file nelle cartelle utente XDG</property>
+                <property name="label" translatable="yes">Copia dei file nelle cartelle utente XDG</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -251,8 +264,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="success_status_page">
             <property name="icon-name">emblem-ok-symbolic</property>
-            <property name="title">Installazione completata</property>
-            <property name="description">Il tema è stato installato con successo nelle directory utente.</property>
+            <property name="title" translatable="yes">Installazione completata</property>
+            <property name="description" translatable="yes">Il tema è stato installato con successo nelle directory utente.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -264,7 +277,7 @@
                     <property name="margin-top">16</property>
                     <child>
                       <object class="GtkButton" id="success_new_source_button">
-                        <property name="label">Seleziona un'altra sorgente</property>
+                        <property name="label" translatable="yes">Seleziona un'altra sorgente</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>
@@ -289,8 +302,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="error_status_page">
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title">Errore durante l'operazione</property>
-            <property name="description">Si è verificato un errore durante l'analisi o l'installazione.</property>
+            <property name="title" translatable="yes">Errore durante l'operazione</property>
+            <property name="description" translatable="yes">Si è verificato un errore durante l'analisi o l'installazione.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -302,7 +315,7 @@
                     <property name="margin-top">16</property>
                     <child>
                       <object class="GtkButton" id="error_retry_button">
-                        <property name="label">Riprova</property>
+                        <property name="label" translatable="yes">Riprova</property>
                         <style>
                           <class name="pill"/>
                         </style>
@@ -310,7 +323,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="error_new_source_button">
-                        <property name="label">Seleziona un'altra sorgente</property>
+                        <property name="label" translatable="yes">Seleziona un'altra sorgente</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>

@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING
 
 import gi
 
+from gnome_theme_manager import _
+
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
@@ -57,7 +59,7 @@ class StatusSnapshot:
 # =============================================================================
 
 
-def format_optional_value(value: str | None, default: str = "Non impostato") -> str:
+def format_optional_value(value: str | None, default: str = _("Non impostato")) -> str:
     """Formatta un valore testuale opzionale.
 
     Args:
@@ -74,9 +76,9 @@ def format_optional_value(value: str | None, default: str = "Non impostato") -> 
 
 def format_boolean(
     value: bool | None,
-    true_label: str = "Sì",
-    false_label: str = "No",
-    default: str = "Non disponibile",
+    true_label: str = _("Sì"),
+    false_label: str = _("No"),
+    default: str = _("Non disponibile"),
 ) -> str:
     """Formatta un valore booleano in una stringa utente descrittiva.
 
@@ -94,7 +96,7 @@ def format_boolean(
     return true_label if value else false_label
 
 
-def format_path(path: Path | str | None, default: str = "Non disponibile") -> str:
+def format_path(path: Path | str | None, default: str = _("Non disponibile")) -> str:
     """Formatta un percorso filesystem per la visualizzazione nella UI.
 
     Args:
@@ -119,11 +121,11 @@ def format_color_scheme(scheme: str | None) -> str:
         Descrizione chiara e comprensibile per l'utente.
     """
     if not scheme or scheme == "default":
-        return "Predefinito (Chiaro)"
+        return _("Predefinito (Chiaro)")
     elif scheme == "prefer-dark":
-        return "Scuro (Preferisci scuro)"
+        return _("Scuro (Preferisci scuro)")
     elif scheme == "prefer-light":
-        return "Chiaro (Preferisci chiaro)"
+        return _("Chiaro (Preferisci chiaro)")
     return str(scheme)
 
 
@@ -138,9 +140,9 @@ def format_shell_theme(shell_theme: str | None, is_supported: bool) -> str:
         Stringa descrittiva dello stato del tema shell.
     """
     if not is_supported:
-        return "Non gestito (estensione 'User Themes' non attiva)"
+        return _("Non gestito (estensione 'User Themes' non attiva)")
     if not shell_theme:
-        return "Default di sistema"
+        return _("Default di sistema")
     return shell_theme
 
 
@@ -162,10 +164,10 @@ def format_sandbox_status(
         Descrizione dello stato sandbox.
     """
     if not available:
-        return "Non disponibile (non installato)"
+        return _("Non disponibile (non installato)")
     if active_or_installed:
-        return f"Disponibile ({active_label})"
-    return f"Disponibile ({inactive_label})"
+        return f"{_('Disponibile')} ({active_label})"
+    return f"{_('Disponibile')} ({inactive_label})"
 
 
 # =============================================================================
@@ -177,7 +179,7 @@ class StatusPage:
     """Controller per la pagina di stato attuale e diagnostica di sistema."""
 
     PAGE_ID: str = "status"
-    TITLE: str = "Stato attuale"
+    TITLE: str = _("Stato attuale")
     ICON_NAME: str = "preferences-desktop-theme-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
@@ -199,6 +201,7 @@ class StatusPage:
 
         # Caricamento interfaccia tramite Gtk.Builder
         self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
         # Recupero widget dello stack degli stati
@@ -280,7 +283,7 @@ class StatusPage:
             try:
                 if self.manager is None:
                     raise GnomeThemeManagerError(
-                        "ThemeManager non disponibile o non inizializzato."
+                        _("ThemeManager non disponibile o non inizializzato.")
                     )
 
                 # 1. Lettura temi correnti e stato di sistema tramite API pubbliche del Facade
@@ -315,15 +318,15 @@ class StatusPage:
                 # 3. Rilevamento di avvertenze o limitazioni note
                 warnings: list[str] = []
                 if not system_status.gsettings_available:
-                    warnings.append("GSettings non disponibile in questo ambiente.")
+                    warnings.append(_("GSettings non disponibile in questo ambiente."))
                 if not system_status.shell_theme_supported:
-                    warnings.append("Estensione GNOME Shell 'User Themes' non attiva.")
+                    warnings.append(_("Estensione GNOME Shell 'User Themes' non attiva."))
                 if system_status.sandbox_status:
                     sb = system_status.sandbox_status
                     if sb.snap_available and not sb.snap_gtk_common_themes_installed:
-                        warnings.append("Snap: 'gtk-common-themes' non installato.")
+                        warnings.append(_("Snap: 'gtk-common-themes' non installato."))
                     if sb.flatpak_available and not sb.flatpak_filesystem_override_active:
-                        warnings.append("Flatpak: override filesystem temi utente non attivo.")
+                        warnings.append(_("Flatpak: override filesystem temi utente non attivo."))
 
                 snapshot = StatusSnapshot(
                     themes=themes,
@@ -419,15 +422,15 @@ class StatusPage:
         self.row_gtk4_override.set_subtitle(
             format_boolean(
                 s.gtk4_override_active,
-                true_label="Attivo (~/.config/gtk-4.0/gtk.css collegato)",
-                false_label="Non attivo",
-                default="Non disponibile",
+                true_label=_("Attivo (~/.config/gtk-4.0/gtk.css collegato)"),
+                false_label=_("Non attivo"),
+                default=_("Non disponibile"),
             )
         )
 
         # 3. Ambiente desktop e percorsi utente
         self.row_gsettings_status.set_subtitle(
-            format_boolean(s.gsettings_available, "Disponibile", "Non disponibile")
+            format_boolean(s.gsettings_available, _("Disponibile"), _("Non disponibile"))
         )
         self.row_user_themes_path.set_subtitle(format_path(s.user_themes_path))
         self.row_user_icons_path.set_subtitle(format_path(s.user_icons_path))
@@ -439,25 +442,25 @@ class StatusPage:
                 format_sandbox_status(
                     available=sb.flatpak_available,
                     active_or_installed=sb.flatpak_filesystem_override_active,
-                    active_label="Override filesystem attivo",
-                    inactive_label="Override non attivo",
+                    active_label=_("Override filesystem attivo"),
+                    inactive_label=_("Override non attivo"),
                 )
             )
             self.row_snap_status.set_subtitle(
                 format_sandbox_status(
                     available=sb.snap_available,
                     active_or_installed=sb.snap_gtk_common_themes_installed,
-                    active_label="gtk-common-themes installato",
-                    inactive_label="gtk-common-themes non installato",
+                    active_label=_("gtk-common-themes installato"),
+                    inactive_label=_("gtk-common-themes non installato"),
                 )
             )
         else:
-            self.row_flatpak_status.set_subtitle("Non disponibile")
-            self.row_snap_status.set_subtitle("Non disponibile")
+            self.row_flatpak_status.set_subtitle(_("Non disponibile"))
+            self.row_snap_status.set_subtitle(_("Non disponibile"))
 
         # 5. Gestione Banner Avvertenze
         if snapshot.warnings:
-            self.banner_warning.set_title("Avvisi: " + " • ".join(snapshot.warnings))
+            self.banner_warning.set_title(_("Avvisi: ") + " • ".join(snapshot.warnings))
             self.banner_warning.set_revealed(True)
         else:
             self.banner_warning.set_revealed(False)
@@ -472,14 +475,14 @@ class StatusPage:
             error: Eccezione verificatasi durante la lettura.
         """
         if isinstance(error, GSettingsUnavailableError):
-            user_msg = (
+            user_msg = _(
                 "GSettings non è disponibile nel sistema. Assicurati di essere in un "
                 "ambiente GNOME e che PyGObject (Gio) sia installato."
             )
         elif isinstance(error, GnomeThemeManagerError):
-            user_msg = f"Errore del gestore temi: {error}"
+            user_msg = f"{_('Errore del gestore temi:')} {error}"
         else:
-            user_msg = f"Si è verificato un errore durante la lettura dello stato: {error}"
+            user_msg = f"{_('Si è verificato un errore durante la lettura dello stato:')} {error}"
 
         self.error_page.set_description(user_msg)
         self.widget.set_visible_child_name("error")

@@ -182,6 +182,7 @@ def test_installer_page_install_success(mock_theme_manager: MagicMock) -> None:
     mock_theme_manager.install_theme.assert_called_once_with(
         source_path=Path("/tmp/mytheme.zip"),
         overwrite=False,
+        target_dir="xdg",
     )
     assert page.widget.get_visible_child_name() == "success"
     assert installed_notified is True
@@ -292,6 +293,7 @@ def test_installer_page_overwrite_confirmed_calls_backend_with_overwrite_true(
     mock_theme_manager.install_theme.assert_called_with(
         source_path=Path("/tmp/existing.zip"),
         overwrite=True,
+        target_dir="xdg",
     )
     assert page.widget.get_visible_child_name() == "success"
     # La sorgente selezionata deve essere azzerata dopo il completamento

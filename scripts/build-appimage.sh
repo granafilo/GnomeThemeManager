@@ -69,6 +69,11 @@ mkdir -p "$APP_DIR/usr/share/icons/hicolor/scalable/apps"
 mkdir -p "$APP_DIR/usr/share/metainfo"
 mkdir -p "$OUTPUT_DIR"
 
+# Copia la directory locale dentro il package Python dell'AppDir in modo
+# che gettext trovi i file .mo a runtime anche all'interno dell'AppImage.
+mkdir -p "$APP_DIR/usr/lib/python3/site-packages/gnome_theme_manager"
+cp -r "$ROOT_DIR/src/gnome_theme_manager/locale" "$APP_DIR/usr/lib/python3/site-packages/gnome_theme_manager/"
+
 # ------------------------------------------------------------------------------
 # 3. Copia file del codice sorgente Python e dipendenze
 # ------------------------------------------------------------------------------
@@ -111,6 +116,7 @@ fi
 
 export PATH="${APPDIR}/usr/bin:${PATH}"
 export PYTHONPATH="${APPDIR}/usr/lib/python3/site-packages:${PYTHONPATH}"
+export TEXTDOMAINDIR="${APPDIR}/usr/lib/python3/site-packages/gnome_theme_manager/locale"
 export XDG_DATA_DIRS="${APPDIR}/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 export XDG_CONFIG_DIRS="${APPDIR}/etc:${XDG_CONFIG_DIRS:-/etc/xdg}"
 
