@@ -252,6 +252,7 @@ class InstallerPage:
         if hasattr(Gtk, "FileDialog"):
             dialog = Gtk.FileDialog.new()
             dialog.set_title(_("Seleziona cartella del tema"))
+            dialog.select_folder(root_window, None, self._on_folder_dialog_finish)
         else:
             # Fallback legacy per versioni precedenti di GTK4
             native = Gtk.FileChooserNative.new(
