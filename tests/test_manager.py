@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from gnome_theme_manager.core.errors import GSettingsUnavailableError, ThemeNotFoundError
+from gnome_theme_manager.core.gtk4_linker import GTK4ThemeLinker
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
     ApplyResult,
@@ -242,6 +243,52 @@ def test_manager_apply_themes_success(
 
     mock_gsettings.apply.assert_called_once()
     mock_gtk4_linker.apply_override.assert_called_once_with(gtk_theme.path)
+
+
+def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> None:
+    """Verifica end-to-end che applicando un tema con GTK4 e poi uno senza GTK4, l'override venga rimosso da ~/.config/gtk-4.0/."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    user_themes = tmp_path / "user_themes"
+
+    # Tema A con GTK4
+    theme_a_dir = user_themes / "ThemeWithGTK4"
+    gtk4_a = theme_a_dir / "gtk-4.0"
+    gtk4_a.mkdir(parents=True)
+    (gtk4_a / "gtk.css").write_text("/* theme A css */")
+
+    # Tema B senza GTK4 o GTK3
+    theme_b_dir = user_themes / "ThemeWithoutGTK4"
+    theme_b_dir.mkdir(parents=True)
+
+    theme_a = Theme("ThemeWithGTK4", ThemeType.GTK, theme_a_dir, True)
+    theme_b = Theme("ThemeWithoutGTK4", ThemeType.GTK, theme_b_dir, True)
+
+    mock_scanner = MagicMock()
+    mock_scanner.find_theme.side_effect = lambda name, t_type: {
+        "ThemeWithGTK4": theme_a,
+        "ThemeWithoutGTK4": theme_b,
+    }.get(name)
+
+    mock_gsettings = MagicMock()
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+
+    mgr = ThemeManager(
+        scanner=mock_scanner,
+        gsettings=mock_gsettings,
+        gtk4_linker=linker,
+    )
+
+    # 1. Applica Tema A -> override attivo
+    res_a = mgr.apply_themes(ThemeSet(gtk_theme="ThemeWithGTK4"))
+    assert res_a.gtk4_override_applied is True
+    assert (config_dir / "gtk.css").exists()
+    assert linker.is_override_active() is True
+
+    # 2. Applica Tema B -> override rimosso
+    res_b = mgr.apply_themes(ThemeSet(gtk_theme="ThemeWithoutGTK4"))
+    assert res_b.gtk4_override_applied is False
+    assert not (config_dir / "gtk.css").exists()
+    assert linker.is_override_active() is False
 
 
 def test_manager_apply_themes_sandbox_propagation_filtering(

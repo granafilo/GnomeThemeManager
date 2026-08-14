@@ -242,6 +242,7 @@ class GTK4ThemeLinker:
             source_dir = gtk3_source
 
         if source_dir is None:
+            self.remove_override()
             return False
 
         # Carichiamo il manifest corrente
