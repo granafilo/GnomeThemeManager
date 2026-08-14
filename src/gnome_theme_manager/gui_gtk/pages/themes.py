@@ -515,7 +515,9 @@ class ThemesPage:
         else:
             self.no_results_page.set_visible(False)
             self.themes_list_box.set_visible(True)
-            self.count_label.set_text(f"{len(filtered)} {_('altri')} {cat_label} {_('disponibili')}")
+            self.count_label.set_text(
+                f"{len(filtered)} {_('altri')} {cat_label} {_('disponibili')}"
+            )
 
             for item in filtered:
                 row = Adw.ActionRow()
@@ -748,7 +750,9 @@ class ThemesPage:
                 if item.theme_type == ThemeType.SHELL and apply_result.shell_theme is None:
                     warning_text = (
                         f"{_('Tema')} «{item.name}» {_('applicato parzialmente.')}\n"
-                        + _("Shell non applicato: estensione 'User Themes' non attiva o non supportata.")
+                        + _(
+                            "Shell non applicato: estensione 'User Themes' non attiva o non supportata."
+                        )
                     )
                     logger.warning(warning_text)
                     self._show_toast(warning_text)
@@ -771,15 +775,12 @@ class ThemesPage:
 
                     # 5. Notifica di successo univoca persistente nella parte alta
                     if item.theme_type == ThemeType.CURSOR:
-                        msg = (
-                            f"{_('Tema cursore')} «{item.name}» {_('applicato.')}\n"
-                            + _("Potrebbe essere necessario cambiare finestra o riaprire alcune applicazioni.")
+                        msg = f"{_('Tema cursore')} «{item.name}» {_('applicato.')}\n" + _(
+                            "Potrebbe essere necessario cambiare finestra o riaprire alcune applicazioni."
                         )
                     elif item.theme_type == ThemeType.GTK:
                         if apply_result.gtk4_override_applied:
-                            msg = (
-                                f"{_('Tema GTK')} «{item.name}» {_('applicato (con override GTK4/Libadwaita).')}"
-                            )
+                            msg = f"{_('Tema GTK')} «{item.name}» {_('applicato (con override GTK4/Libadwaita).')}"
                         else:
                             msg = f"{_('Tema GTK')} «{item.name}» {_('applicato.')}"
                     elif item.theme_type == ThemeType.SHELL:
@@ -864,8 +865,10 @@ class ThemesPage:
         heading = _("Tema cursore applicato")
         body = (
             f"{_('Il tema dei cursori')} «{cursor_name}» {_('è stato configurato nel sistema.')}\n\n"
-            + _("Il nuovo cursore potrebbe non essere visibile immediatamente in tutte le finestre.\n"
-              "Cambia finestra oppure riapri l'applicazione interessata per visualizzare sicuramente il cambiamento.")
+            + _(
+                "Il nuovo cursore potrebbe non essere visibile immediatamente in tutte le finestre.\n"
+                "Cambia finestra oppure riapri l'applicazione interessata per visualizzare sicuramente il cambiamento."
+            )
         )
 
         if hasattr(Adw, "AlertDialog"):

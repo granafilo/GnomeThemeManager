@@ -40,7 +40,9 @@ def test_cli_install_legacy_flag(
     user_themes = tmp_path / "themes"
     legacy_themes = tmp_path / "legacy_themes"
 
-    monkeypatch.setattr("gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes])
+    monkeypatch.setattr(
+        "gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes]
+    )
 
     archive_file = tmp_path / "CLILegacyTheme.zip"
     create_mock_zip(archive_file, {"CLILegacyTheme/gtk-3.0/gtk.css": "/* CLI Legacy */"})

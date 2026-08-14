@@ -403,9 +403,7 @@ class ThemeInstaller:
 
         for name, source_dir, t_type in targets:
             target_base_dir = (
-                base_themes_dir
-                if t_type in (ThemeType.GTK, ThemeType.SHELL)
-                else base_icons_dir
+                base_themes_dir if t_type in (ThemeType.GTK, ThemeType.SHELL) else base_icons_dir
             )
             dest_dir = target_base_dir / name
 

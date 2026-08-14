@@ -549,7 +549,9 @@ class ThemeManager:
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione cartella tema richiesta: %s (target_dir=%s)", directory_path, target_dir)
+        logger.info(
+            "Installazione cartella tema richiesta: %s (target_dir=%s)", directory_path, target_dir
+        )
         return self._installer.install_directory(
             directory_path=Path(directory_path),
             theme_type=theme_type,
@@ -578,7 +580,9 @@ class ThemeManager:
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione archivio richiesta: %s (target_dir=%s)", archive_path, target_dir)
+        logger.info(
+            "Installazione archivio richiesta: %s (target_dir=%s)", archive_path, target_dir
+        )
         return self._installer.install(
             archive_path=Path(archive_path),
             theme_type=theme_type,
@@ -609,7 +613,9 @@ class ThemeManager:
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione tema richiesta da sorgente: %s (target_dir=%s)", source_path, target_dir)
+        logger.info(
+            "Installazione tema richiesta da sorgente: %s (target_dir=%s)", source_path, target_dir
+        )
         return self._installer.install(
             archive_path=Path(source_path),
             theme_type=theme_type,

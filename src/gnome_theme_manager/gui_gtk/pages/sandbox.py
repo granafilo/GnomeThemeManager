@@ -205,7 +205,9 @@ class SandboxPage:
 
             if error is not None:
                 logger.error("Errore durante il recupero diagnostica sandbox: %s", error)
-                self.error_status_page.set_description(f"{_('Errore diagnostica sandbox:')} {error}")
+                self.error_status_page.set_description(
+                    f"{_('Errore diagnostica sandbox:')} {error}"
+                )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE

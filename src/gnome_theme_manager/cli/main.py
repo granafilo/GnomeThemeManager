@@ -94,7 +94,9 @@ def handle_sandbox_status_command(manager: ThemeManager) -> int:
             _("✅ Installato") if sb.snap_gtk_common_themes_installed else _("❌ Non installato")
         )
         flatpak_str = _("✅ Disponibile") if sb.flatpak_available else _("❌ Non disponibile")
-        flatpak_ov_str = _("✅ Attivo") if sb.flatpak_filesystem_override_active else _("❌ Non attivo")
+        flatpak_ov_str = (
+            _("✅ Attivo") if sb.flatpak_filesystem_override_active else _("❌ Non attivo")
+        )
 
         print(f"  Snap:    {snap_str:<16} | gtk-common-themes:   {snap_themes_str}")
         print(f"  Flatpak: {flatpak_str:<16} | Filesystem override: {flatpak_ov_str}")
@@ -116,7 +118,11 @@ def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool)
     themes: list[Theme] = manager.list_themes(theme_type=t_type, user_only=user_only)
 
     if not themes:
-        print(_("\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n").format(theme_type=theme_type, user_only=user_only))
+        print(
+            _(
+                "\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n"
+            ).format(theme_type=theme_type, user_only=user_only)
+        )
         return 0
 
     headers = [_("NOME"), _("TIPO"), _("ORIGINE"), _("PERCORSO")]
@@ -157,10 +163,14 @@ def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> 
     if result.sandbox_propagation:
         sb = result.sandbox_propagation
         if sb.flatpak_success:
-            print(_("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati"))
+            print(
+                _("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati")
+            )
         if sb.snap_success and not sb.warnings:
             print(
-                _("  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes")
+                _(
+                    "  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes"
+                )
             )
 
     for warning in result.warnings:
@@ -194,8 +204,10 @@ def handle_apply_command(
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
-            _("Errore: Specificare almeno un'opzione da applicare "
-            "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme)."),
+            _(
+                "Errore: Specificare almeno un'opzione da applicare "
+                "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme)."
+            ),
             file=sys.stderr,
         )
         return 1
@@ -206,7 +218,9 @@ def handle_apply_command(
 
         if not has_gtk and not has_shell:
             raise ThemeNotFoundError(
-                _("Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema.").format(theme=theme)
+                _(
+                    "Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema."
+                ).format(theme=theme)
             )
 
         if has_gtk:
@@ -264,7 +278,9 @@ def handle_install_command(
     rows = [[t.name, t.theme_type.value, str(t.path)] for t in installed_themes]
 
     print(
-        _("\n✓ Installazione completata con successo ({count} tema/i installato/i):").format(count=len(installed_themes))
+        _("\n✓ Installazione completata con successo ({count} tema/i installato/i):").format(
+            count=len(installed_themes)
+        )
     )
     print(format_table(headers, rows))
     print()
@@ -290,7 +306,9 @@ def handle_uninstall_command(
     if not assume_yes:
         confirm = (
             input(
-                _("Sei sicuro di voler disinstallare il tema '{name}' ({type})? [s/N]: ").format(name=name, type=theme_type.value)
+                _("Sei sicuro di voler disinstallare il tema '{name}' ({type})? [s/N]: ").format(
+                    name=name, type=theme_type.value
+                )
             )
             .strip()
             .lower()
@@ -300,7 +318,11 @@ def handle_uninstall_command(
             return 0
 
     manager.uninstall_theme(name=name, theme_type=theme_type)
-    print(_("\n✓ Tema '{name}' ({type}) disinstallato con successo.\n").format(name=name, type=theme_type.value))
+    print(
+        _("\n✓ Tema '{name}' ({type}) disinstallato con successo.\n").format(
+            name=name, type=theme_type.value
+        )
+    )
     return 0
 
 
@@ -327,7 +349,11 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
 
     elif action == "save":
         saved_path = manager.save_current_as_preset(args.name, overwrite=args.overwrite)
-        print(_("\n✓ Preset '{name}' salvato con successo in:\n  {path}\n").format(name=args.name, path=saved_path))
+        print(
+            _("\n✓ Preset '{name}' salvato con successo in:\n  {path}\n").format(
+                name=args.name, path=saved_path
+            )
+        )
         return 0
 
     elif action == "apply":
@@ -344,7 +370,11 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
     elif action == "delete":
         if not args.yes:
             confirm = (
-                input(_("Sei sicuro di voler eliminare il preset '{name}'? [s/N]: ").format(name=args.name))
+                input(
+                    _("Sei sicuro di voler eliminare il preset '{name}'? [s/N]: ").format(
+                        name=args.name
+                    )
+                )
                 .strip()
                 .lower()
             )
@@ -388,9 +418,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 from ..gui_gtk import launch_gui as launch_gui_gtk
             except (ImportError, ModuleNotFoundError) as err:
                 print(
-                    _("\n[ERRORE GUI GTK4] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\n"
-                    "Installa le dipendenze richieste con:\n"
-                    "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n").format(err=err),
+                    _(
+                        "\n[ERRORE GUI GTK4] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\n"
+                        "Installa le dipendenze richieste con:\n"
+                        "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
+                    ).format(err=err),
                     file=sys.stderr,
                 )
                 return 1

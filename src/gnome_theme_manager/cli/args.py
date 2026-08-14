@@ -81,7 +81,9 @@ def create_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument(
         "--theme",
         metavar="NOME",
-        help=_("Applica un tema unificato (GTK, Shell e override GTK4/Libadwaita) con lo stesso nome"),
+        help=_(
+            "Applica un tema unificato (GTK, Shell e override GTK4/Libadwaita) con lo stesso nome"
+        ),
     )
     apply_parser.add_argument(
         "--icon",
@@ -147,7 +149,9 @@ def create_parser() -> argparse.ArgumentParser:
     install_parser.add_argument(
         "--legacy",
         action="store_true",
-        help=_("Installa nel percorso legacy ~/.themes e ~/.icons invece dello standard XDG (~/.local/share/themes)"),
+        help=_(
+            "Installa nel percorso legacy ~/.themes e ~/.icons invece dello standard XDG (~/.local/share/themes)"
+        ),
     )
 
     # Subcomando: uninstall

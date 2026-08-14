@@ -475,7 +475,9 @@ def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
     with pytest.MonkeyPatch.context() as mp:
         legacy_themes = tmp_path / "legacy_dot_themes"
         legacy_icons = tmp_path / "legacy_dot_icons"
-        mp.setattr("gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes])
+        mp.setattr(
+            "gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes]
+        )
         mp.setattr("gnome_theme_manager.core.installer.USER_ICONS_DIRS", [user_icons, legacy_icons])
 
         installed = installer.install(archive, target_dir="legacy")

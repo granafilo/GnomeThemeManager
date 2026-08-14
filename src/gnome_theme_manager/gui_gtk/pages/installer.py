@@ -167,7 +167,10 @@ class InstallerPage:
             "change_source_button": (_("Cambia sorgente"), "edit-undo-symbolic"),
             "install_button": (_("Installa"), "system-software-install-symbolic"),
             "install_apply_button": (_("Installa e Applica"), "emblem-ok-symbolic"),
-            "success_new_source_button": (_("Seleziona un'altra sorgente"), "document-open-symbolic"),
+            "success_new_source_button": (
+                _("Seleziona un'altra sorgente"),
+                "document-open-symbolic",
+            ),
             "error_retry_button": (_("Riprova"), "view-refresh-symbolic"),
             "error_new_source_button": (_("Seleziona un'altra sorgente"), "document-open-symbolic"),
         }
@@ -435,7 +438,9 @@ class InstallerPage:
 
             if not items:
                 self.error_status_page.set_description(
-                    _("Nessun tema supportato (GTK, Shell, Icone, Cursori) rilevato nella sorgente.")
+                    _(
+                        "Nessun tema supportato (GTK, Shell, Icone, Cursori) rilevato nella sorgente."
+                    )
                 )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
@@ -520,7 +525,9 @@ class InstallerPage:
         self._set_state("installing")
         self._set_controls_sensitive(False)
 
-        use_legacy = self.target_dir_switch.get_active() if hasattr(self, "target_dir_switch") else False
+        use_legacy = (
+            self.target_dir_switch.get_active() if hasattr(self, "target_dir_switch") else False
+        )
         target_dir_param = "legacy" if use_legacy else "xdg"
 
         # Worker di installazione
@@ -587,7 +594,9 @@ class InstallerPage:
                 if apply_res.warnings:
                     warnings_str = "; ".join(apply_res.warnings)
                     desc = f"{_('Tema')} '{theme_name}' {_('installato.')}\n{_('Alcuni componenti non sono stati applicati:')} {warnings_str}"
-                    self._show_toast(f"{_('Tema')} '{theme_name}' {_('installato (applicazione parziale).')}")
+                    self._show_toast(
+                        f"{_('Tema')} '{theme_name}' {_('installato (applicazione parziale).')}"
+                    )
                 else:
                     desc = f"{_('Tema')} '{theme_name}' {_('installato e applicato con successo al sistema.')}"
                     self._show_toast(f"{_('Tema')} '{theme_name}' {_('installato e applicato.')}")

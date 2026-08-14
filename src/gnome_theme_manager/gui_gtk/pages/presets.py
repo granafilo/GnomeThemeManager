@@ -504,7 +504,9 @@ class PresetsPage:
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
                 f'{_("Sovrascrivere il preset")} "{name}"?',
-                _("Un preset con questo nome esiste già. Sovrascrivendolo i dati precedenti andranno persi."),
+                _(
+                    "Un preset con questo nome esiste già. Sovrascrivendolo i dati precedenti andranno persi."
+                ),
             )
             dialog.add_response("cancel", _("Annulla"))
             dialog.add_response("overwrite", _("Sovrascrivi"))
@@ -758,7 +760,9 @@ class PresetsPage:
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
                 f'{_("Eliminare il preset")} "{name}"?',
-                _("L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."),
+                _(
+                    "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."
+                ),
             )
             dialog.add_response("cancel", _("Annulla"))
             dialog.add_response("delete", _("Elimina"))
@@ -782,7 +786,9 @@ class PresetsPage:
             dialog = Adw.MessageDialog.new(
                 parent if isinstance(parent, Gtk.Window) else None,
                 f'{_("Eliminare il preset")} "{name}"?',
-                _("L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."),
+                _(
+                    "L'operazione rimuoverà il file del preset. I temi installati non saranno modificati."
+                ),
             )
             dialog.add_response("cancel", _("Annulla"))
             dialog.add_response("delete", _("Elimina"))

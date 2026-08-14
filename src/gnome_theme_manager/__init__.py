@@ -61,5 +61,3 @@ try:
     locale.bind_textdomain_codeset(DOMAIN, "UTF-8")
 except (locale.Error, AttributeError):
     pass
-
-
