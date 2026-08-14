@@ -5,11 +5,6 @@
 import gettext
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # pragma: no cover
-    import tomli as tomllib
-
 # Trova il percorso locale_dir
 ROOT_DIR = Path(__file__).parent.parent
 LOCALE_DIR = ROOT_DIR / "src" / "gnome_theme_manager" / "locale"

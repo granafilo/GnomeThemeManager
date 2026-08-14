@@ -244,6 +244,38 @@ def test_manager_apply_themes_success(
     mock_gtk4_linker.apply_override.assert_called_once_with(gtk_theme.path)
 
 
+def test_manager_apply_themes_sandbox_propagation_filtering(
+    manager: ThemeManager,
+    mock_scanner: MagicMock,
+    mock_sandbox: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """Verifica che la propagazione sandbox avvenga solo se gtk_theme o icon_theme sono presenti."""
+    cursor_theme = Theme("Adwaita", ThemeType.CURSOR, tmp_path / "Adwaita", False)
+    shell_theme = Theme("Nordic", ThemeType.SHELL, tmp_path / "Nordic", True)
+    gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
+
+    mock_scanner.find_theme.side_effect = lambda name, t_type: {
+        (ThemeType.CURSOR, "Adwaita"): cursor_theme,
+        (ThemeType.SHELL, "Nordic"): shell_theme,
+        (ThemeType.GTK, "Nordic"): gtk_theme,
+    }.get((t_type, name))
+
+    # 1. Solo Cursore -> sandbox non chiamato
+    res_cursor = manager.apply_themes(ThemeSet(cursor_theme="Adwaita"), propagate_sandbox=True)
+    assert res_cursor.sandbox_propagation is None
+    mock_sandbox.propagate_all.assert_not_called()
+
+    # 2. Solo Shell -> sandbox non chiamato
+    res_shell = manager.apply_themes(ThemeSet(shell_theme="Nordic"), propagate_sandbox=True)
+    assert res_shell.sandbox_propagation is None
+    mock_sandbox.propagate_all.assert_not_called()
+
+    # 3. Tema GTK o Icone -> sandbox chiamato
+    manager.apply_themes(ThemeSet(gtk_theme="Nordic"), propagate_sandbox=True)
+    mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="Nordic", icon_theme=None)
+
+
 def test_manager_apply_themes_missing_theme_raises(
     manager: ThemeManager, mock_scanner: MagicMock
 ) -> None:

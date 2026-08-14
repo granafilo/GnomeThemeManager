@@ -262,12 +262,12 @@ class ThemeManager:
 
         Verifica l'esistenza fisica dei temi prima di modificare GSettings, applica
         opzionalmente i symlink per GTK4 / Libadwaita e propaga la configurazione
-        alle applicazioni Snap e Flatpak.
+        alle applicazioni Snap e Flatpak (solo se è specificato un tema GTK o icone).
 
         Args:
             theme_set: Insieme di temi da applicare.
             apply_gtk4_override: Se True, applica i symlink in ~/.config/gtk-4.0 per temi GTK.
-            propagate_sandbox: Se True, propaga i temi alle app Flatpak e Snap.
+            propagate_sandbox: Se True, propaga i temi GTK/icone alle app Flatpak e Snap.
 
         Returns:
             ApplyResult contenente i dettagli dei componenti applicati e gli eventuali warning.
@@ -360,7 +360,9 @@ class ThemeManager:
 
         # 6. Propagazione automatica agli ambienti sandbox (Flatpak e Snap)
         propagation_result: PropagationResult | None = None
-        if propagate_sandbox:
+        if propagate_sandbox and (
+            theme_set.gtk_theme is not None or theme_set.icon_theme is not None
+        ):
             propagation_result = self._sandbox.propagate_all(
                 gtk_theme=theme_set.gtk_theme,
                 icon_theme=theme_set.icon_theme,
