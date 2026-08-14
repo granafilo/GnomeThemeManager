@@ -1,0 +1,33 @@
+# Test fixtures (huge, irrelevant for AI)
+tests/fixtures/
+tests/data/
+
+# Build artifacts
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+build/
+dist/
+*.egg-info/
+
+# Docs that are NOT master plan
+docs/phases/
+docs/appImage/
+docs/PLAYBOOK.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Flatpak build (huge, irrelevant during coding)
+.flatpak-builder/
+*.flatpak
+
+# Poetry/venv
+.venv/
+venv/
