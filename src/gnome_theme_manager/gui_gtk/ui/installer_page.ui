@@ -156,6 +156,19 @@
                             <property name="icon-name">emblem-default-symbolic</property>
                           </object>
                         </child>
+                        <child>
+                          <object class="AdwActionRow" id="target_dir_row">
+                            <property name="title" translatable="yes">Installa nel percorso legacy ~/.themes e ~/.icons</property>
+                            <property name="subtitle" translatable="yes">Se disattivato, usa lo standard XDG (~/.local/share/themes)</property>
+                            <property name="icon-name">folder-remote-symbolic</property>
+                            <child>
+                              <object class="GtkSwitch" id="target_dir_switch">
+                                <property name="valign">center</property>
+                                <property name="active">false</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>

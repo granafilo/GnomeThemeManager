@@ -33,6 +33,27 @@ def test_cli_install_success(
     assert (user_themes / "CLITheme" / "gtk-3.0" / "gtk.css").exists()
 
 
+def test_cli_install_legacy_flag(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Test di esecuzione del comando `install --legacy` da CLI per installare nelle directory legacy."""
+    user_themes = tmp_path / "themes"
+    legacy_themes = tmp_path / "legacy_themes"
+
+    monkeypatch.setattr("gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes])
+
+    archive_file = tmp_path / "CLILegacyTheme.zip"
+    create_mock_zip(archive_file, {"CLILegacyTheme/gtk-3.0/gtk.css": "/* CLI Legacy */"})
+
+    exit_code = main(["install", "-f", str(archive_file), "--legacy"])
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "Installazione completata con successo" in captured.out
+    assert (legacy_themes / "CLILegacyTheme" / "gtk-3.0" / "gtk.css").exists()
+    assert not (user_themes / "CLILegacyTheme").exists()
+
+
 def test_cli_install_bad_archive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Test di gestione errore con archivio corrotto da CLI."""
     bad_archive = tmp_path / "corrupt.zip"

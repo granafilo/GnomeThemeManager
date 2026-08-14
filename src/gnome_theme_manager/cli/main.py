@@ -237,6 +237,7 @@ def handle_install_command(
     theme_type_str: str | None = None,
     custom_name: str | None = None,
     overwrite: bool = False,
+    target_dir: str | Path | None = None,
 ) -> int:
     """Gestisce il comando `install` estraendo e installando temi da un archivio.
 
@@ -246,6 +247,7 @@ def handle_install_command(
         theme_type_str: Tipologia di tema opzionale ('gtk', 'icon', 'cursor', 'shell').
         custom_name: Nome personalizzato della cartella di destinazione.
         overwrite: Se True, sovrascrive eventuale tema esistente.
+        target_dir: Destinazione di installazione ('xdg' per ~/.local/share, 'legacy' per ~/.themes e ~/.icons, o Path).
     """
     archive_path = Path(archive_file)
     theme_type = ThemeType(theme_type_str) if theme_type_str else None
@@ -255,6 +257,7 @@ def handle_install_command(
         theme_type=theme_type,
         custom_name=custom_name,
         overwrite=overwrite,
+        target_dir=target_dir,
     )
 
     headers = [_("NOME TEMA"), _("TIPO"), _("PERCORSO INSTALLATO")]
@@ -420,12 +423,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 no_sandbox=getattr(args, "no_sandbox", False),
             )
         elif args.command == "install":
+            target_dir = "legacy" if getattr(args, "legacy", False) else "xdg"
             return handle_install_command(
                 manager=manager,
                 archive_file=args.file,
                 theme_type_str=args.type,
                 custom_name=args.name,
                 overwrite=args.overwrite,
+                target_dir=target_dir,
             )
         elif args.command == "uninstall":
             return handle_uninstall_command(

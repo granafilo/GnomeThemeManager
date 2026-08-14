@@ -124,6 +124,7 @@ class InstallerPage:
         self.detected_components_row: Adw.ActionRow = self.builder.get_object(
             "detected_components_row"
         )
+        self.target_dir_switch: Gtk.Switch = self.builder.get_object("target_dir_switch")
         self.change_source_button: Gtk.Button = self.builder.get_object("change_source_button")
         self.install_button: Gtk.Button = self.builder.get_object("install_button")
         self.install_apply_button: Gtk.Button = self.builder.get_object("install_apply_button")
@@ -519,6 +520,9 @@ class InstallerPage:
         self._set_state("installing")
         self._set_controls_sensitive(False)
 
+        use_legacy = self.target_dir_switch.get_active() if hasattr(self, "target_dir_switch") else False
+        target_dir_param = "legacy" if use_legacy else "xdg"
+
         # Worker di installazione
         def worker_install() -> tuple[list[Theme] | None, ApplyResult | None, Exception | None]:
             try:
@@ -528,6 +532,7 @@ class InstallerPage:
                 installed_themes = self.manager.install_theme(
                     source_path=source_path,
                     overwrite=overwrite,
+                    target_dir=target_dir_param,
                 )
 
                 apply_result: ApplyResult | None = None

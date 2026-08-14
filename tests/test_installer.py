@@ -454,3 +454,35 @@ def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> No
     assert len(installed) == 2
     assert (user_themes / "ThemeGTK" / "gtk-3.0" / "gtk.css").exists()
     assert (user_icons / "ThemeIcons" / "16x16" / "icon.png").exists()
+
+
+def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
+    """Verifica che specificando target_dir='legacy' i temi vengano installati nelle cartelle legacy (~/.themes e ~/.icons)."""
+    user_themes = tmp_path / "user_themes"
+    user_icons = tmp_path / "user_icons"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    archive = tmp_path / "LegacyTheme.zip"
+    create_mock_zip(
+        archive,
+        {
+            "LegacyGTK/gtk-3.0/gtk.css": "/* GTK */",
+            "LegacyIcons/index.theme": "[Icon Theme]\nName=LegacyIcons\nDirectories=16x16\n",
+            "LegacyIcons/16x16/icon.png": "PNG",
+        },
+    )
+
+    with pytest.MonkeyPatch.context() as mp:
+        legacy_themes = tmp_path / "legacy_dot_themes"
+        legacy_icons = tmp_path / "legacy_dot_icons"
+        mp.setattr("gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes])
+        mp.setattr("gnome_theme_manager.core.installer.USER_ICONS_DIRS", [user_icons, legacy_icons])
+
+        installed = installer.install(archive, target_dir="legacy")
+        assert len(installed) == 2
+
+        # Verifica che siano stati salvati nelle directory legacy e non XDG
+        assert (legacy_themes / "LegacyGTK" / "gtk-3.0" / "gtk.css").exists()
+        assert (legacy_icons / "LegacyIcons" / "16x16" / "icon.png").exists()
+        assert not (user_themes / "LegacyGTK").exists()
+        assert not (user_icons / "LegacyIcons").exists()

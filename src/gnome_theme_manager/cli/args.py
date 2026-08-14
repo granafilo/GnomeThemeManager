@@ -144,6 +144,11 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=_("Sovrascrive il tema se la cartella di destinazione esiste già"),
     )
+    install_parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help=_("Installa nel percorso legacy ~/.themes e ~/.icons invece dello standard XDG (~/.local/share/themes)"),
+    )
 
     # Subcomando: uninstall
     uninstall_parser = subparsers.add_parser(

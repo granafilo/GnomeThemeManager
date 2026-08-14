@@ -533,8 +533,9 @@ class ThemeManager:
         theme_type: ThemeType | None = None,
         custom_name: str | None = None,
         overwrite: bool = False,
+        target_dir: str | Path | None = None,
     ) -> list[Theme]:
-        """Installa temi da una cartella locale nelle directory utente (~/.local/share/...).
+        """Installa temi da una cartella locale nelle directory utente (~/.local/share/... o ~/.themes).
 
         Non modifica, non sposta e non elimina la cartella sorgente originale.
 
@@ -543,16 +544,18 @@ class ThemeManager:
             theme_type: Tipologia opzionale per filtrare l'installazione.
             custom_name: Nome personalizzato per la cartella di destinazione.
             overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+            target_dir: Destinazione opzionale ('xdg' per ~/.local/share, 'legacy' per ~/.themes e ~/.icons, oppure un Path).
 
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione cartella tema richiesta: %s", directory_path)
+        logger.info("Installazione cartella tema richiesta: %s (target_dir=%s)", directory_path, target_dir)
         return self._installer.install_directory(
             directory_path=Path(directory_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
+            target_dir=target_dir,
         )
 
     def install_theme_archive(
@@ -561,6 +564,7 @@ class ThemeManager:
         theme_type: ThemeType | None = None,
         custom_name: str | None = None,
         overwrite: bool = False,
+        target_dir: str | Path | None = None,
     ) -> list[Theme]:
         """Estrae, valida e installa temi da un archivio compresso (.zip, .tar.*).
 
@@ -569,16 +573,18 @@ class ThemeManager:
             theme_type: Tipologia opzionale per filtrare l'installazione.
             custom_name: Nome personalizzato per la cartella di destinazione.
             overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+            target_dir: Destinazione opzionale ('xdg' per ~/.local/share, 'legacy' per ~/.themes e ~/.icons, oppure un Path).
 
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione archivio richiesta: %s", archive_path)
+        logger.info("Installazione archivio richiesta: %s (target_dir=%s)", archive_path, target_dir)
         return self._installer.install(
             archive_path=Path(archive_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
+            target_dir=target_dir,
         )
 
     def install_theme(
@@ -587,6 +593,7 @@ class ThemeManager:
         theme_type: ThemeType | None = None,
         custom_name: str | None = None,
         overwrite: bool = False,
+        target_dir: str | Path | None = None,
     ) -> list[Theme]:
         """Installa uno o più temi da una sorgente locale (cartella o archivio).
 
@@ -597,16 +604,18 @@ class ThemeManager:
             theme_type: Tipologia opzionale per filtrare l'installazione.
             custom_name: Nome personalizzato per la cartella di destinazione.
             overwrite: Se True, sovrascrive eventuali cartelle preesistenti.
+            target_dir: Destinazione opzionale ('xdg' per ~/.local/share, 'legacy' per ~/.themes e ~/.icons, oppure un Path).
 
         Returns:
             Lista delle istanze Theme installate con successo nelle directory utente.
         """
-        logger.info("Installazione tema richiesta da sorgente: %s", source_path)
+        logger.info("Installazione tema richiesta da sorgente: %s (target_dir=%s)", source_path, target_dir)
         return self._installer.install(
             archive_path=Path(source_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
+            target_dir=target_dir,
         )
 
     def uninstall_theme(self, name: str, theme_type: ThemeType) -> bool:

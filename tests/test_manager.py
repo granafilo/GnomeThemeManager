@@ -489,6 +489,7 @@ def test_manager_install_and_uninstall(
         theme_type=ThemeType.GTK,
         custom_name=None,
         overwrite=True,
+        target_dir=None,
     )
 
     uninstalled = manager.uninstall_theme("Installed", ThemeType.GTK)
@@ -525,6 +526,7 @@ def test_manager_install_theme_directory(
         theme_type=None,
         custom_name=None,
         overwrite=True,
+        target_dir=None,
     )
 
 
@@ -543,6 +545,7 @@ def test_manager_install_theme_polymorphic(
         theme_type=None,
         custom_name=None,
         overwrite=False,
+        target_dir=None,
     )
 
 
