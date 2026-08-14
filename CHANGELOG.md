@@ -4,13 +4,24 @@ Tutte le modifiche rilevanti a questo progetto sono documentate in questo file.
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
 
-## [0.9.0-beta3] - 2026-08-13
+## [0.9.0-beta3] - 2026-08-14
+
+### Added
+- Aggiunta la possibilità di installare i temi nei percorsi legacy `~/.themes` e `~/.icons` sia da CLI (con flag `--legacy`) che da GUI (tramite switch dedicato).
+- Integrazione completa delle traduzioni in italiano (`it`) e inglese (`en`) con script di compilazione autonomi.
 
 ### Changed
 - Changed the project license from MIT to GPL-3.0-or-later.
 - Updated source headers and SPDX identifiers.
 - Updated project metadata and documentation.
 - Documented third-party dependency and asset licensing.
+
+### Fixed
+- **Propagazione Sandbox**: limitata l'esecuzione automatica solo quando sono coinvolti temi GTK o icone, evitando chiamate flatpak/snap inutili per cursori o shell.
+- **Gestione Errori Sandbox**: gli errori di esecuzione nel bridge Flatpak/Snap non causano più il fallimento dell'intera operazione ma vengono propagati come warning non fatali.
+- **Installazione Atomica**: implementato un controllo preventivo a due passaggi (*check-then-write*) per evitare installazioni parziali o inconsistenti in caso di conflitti su archivi multi-componente.
+- **Override GTK4/Libadwaita**: corretto lo stato di override "stale" ripulendo i file precedenti in `~/.config/gtk-4.0` quando si passa a un tema che non supporta GTK4/Libadwaita.
+- **GUI Installer**: corretto il malfunzionamento del pulsante "Seleziona cartella" attivando correttamente la finestra di dialogo `select_folder` su `Gtk.FileDialog`.
 
 ## [0.9.0-beta2] - 2026-08-13
 
