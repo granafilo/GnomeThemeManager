@@ -4,6 +4,7 @@
 import os
 import re
 
+
 def main():
     ui_dir = "src/gnome_theme_manager/gui_gtk/ui"
     properties_to_translate = {"label", "title", "subtitle", "description", "tooltip-text", "placeholder-text"}

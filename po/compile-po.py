@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # Script Python per compilare i file .po in .mo in modo portabile e autonomo.
 
-import sys
-import struct
 import re
+import struct
+import sys
+
 
 def compile_po(po_path, mo_path):
     with open(po_path, 'r', encoding='utf-8') as f:
@@ -64,11 +65,9 @@ def compile_po(po_path, mo_path):
             0           # hash table offset
         ))
         
-        for length, offset in orig_table:
-            f.write(struct.pack('<ii', length, offset))
+        f.writelines(struct.pack('<ii', length, offset) for length, offset in orig_table)
             
-        for length, offset in trans_table:
-            f.write(struct.pack('<ii', length, offset))
+        f.writelines(struct.pack('<ii', length, offset) for length, offset in trans_table)
             
         f.write(data)
 

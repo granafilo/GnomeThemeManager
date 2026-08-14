@@ -4,6 +4,7 @@
 import os
 import re
 
+
 def parse_po_pot(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()

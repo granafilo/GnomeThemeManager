@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from gnome_theme_manager.cli.main import main
-from gnome_theme_manager.core.errors import SandboxCommandError
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
     ApplyResult,
@@ -252,7 +251,7 @@ def test_propagate_all_combines_results() -> None:
 
 
 def test_subprocess_timeout_handling() -> None:
-    """Verifica che TimeoutExpired in subprocess.run venga gestito sollevando SandboxCommandError."""
+    """Verifica che TimeoutExpired in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
     bridge = SandboxBridge()
     with (
         patch("shutil.which", return_value="/usr/bin/flatpak"),
@@ -261,12 +260,14 @@ def test_subprocess_timeout_handling() -> None:
             side_effect=subprocess.TimeoutExpired(cmd="flatpak override", timeout=10),
         ),
     ):
-        with pytest.raises(SandboxCommandError):
-            bridge.propagate_to_flatpak(gtk_theme="Nordic")
+        res = bridge.propagate_to_flatpak(gtk_theme="Nordic")
+        assert res.flatpak_success is False
+        assert len(res.warnings) == 1
+        assert "Timeout" in res.warnings[0]
 
 
 def test_subprocess_error_handling() -> None:
-    """Verifica che CalledProcessError in subprocess.run venga gestito sollevando SandboxCommandError."""
+    """Verifica che CalledProcessError in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
     bridge = SandboxBridge()
     err = subprocess.CalledProcessError(
         returncode=1, cmd="flatpak override", stderr="Permission denied"
@@ -274,9 +275,24 @@ def test_subprocess_error_handling() -> None:
     with (
         patch("shutil.which", return_value="/usr/bin/flatpak"),
         patch("subprocess.run", side_effect=err),
-        pytest.raises(SandboxCommandError),
     ):
-        bridge.propagate_to_flatpak(gtk_theme="Nordic")
+        res = bridge.propagate_to_flatpak(gtk_theme="Nordic")
+        assert res.flatpak_success is False
+        assert len(res.warnings) == 1
+        assert "Permission denied" in res.warnings[0]
+
+
+def test_subprocess_file_not_found_handling() -> None:
+    """Verifica che FileNotFoundError in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
+    bridge = SandboxBridge()
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.run", side_effect=FileNotFoundError("No such file")),
+    ):
+        res = bridge.propagate_to_flatpak(gtk_theme="Nordic")
+        assert res.flatpak_success is False
+        assert len(res.warnings) == 1
+        assert "Impossibile eseguire" in res.warnings[0]
 
 
 # =============================================================================

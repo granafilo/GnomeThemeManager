@@ -276,6 +276,30 @@ def test_manager_apply_themes_sandbox_propagation_filtering(
     mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="Nordic", icon_theme=None)
 
 
+def test_manager_apply_themes_sandbox_failure_produces_warnings(
+    manager: ThemeManager,
+    mock_scanner: MagicMock,
+    mock_sandbox: MagicMock,
+    tmp_path: Path,
+) -> None:
+    """Verifica che un errore di propagazione sandbox restituisca ApplyResult con warning senza sollevare eccezioni."""
+    gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
+    mock_scanner.find_theme.return_value = gtk_theme
+
+    mock_sandbox.propagate_all.return_value = PropagationResult(
+        flatpak_success=False,
+        snap_success=False,
+        warnings=["Timeout durante l'esecuzione del comando Flatpak."],
+    )
+
+    result = manager.apply_themes(ThemeSet(gtk_theme="Nordic"), propagate_sandbox=True)
+
+    assert result.gtk_theme == "Nordic"
+    assert result.warnings == ["Timeout durante l'esecuzione del comando Flatpak."]
+    assert result.sandbox_propagation is not None
+    assert result.sandbox_propagation.flatpak_success is False
+
+
 def test_manager_apply_themes_missing_theme_raises(
     manager: ThemeManager, mock_scanner: MagicMock
 ) -> None:

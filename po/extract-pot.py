@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # Script Python per estrarre le stringhe tradotte e generare il file modello .pot.
 
-import sys
 import os
 import re
+import sys
+
 
 def extract_strings():
     if not os.path.exists("po/POTFILES.in"):

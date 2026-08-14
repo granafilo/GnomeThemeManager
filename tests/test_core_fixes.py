@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from gnome_theme_manager.core.errors import (
-    SandboxCommandError,
     ThemeApplyError,
     ThemeValidationError,
 )
@@ -337,14 +336,16 @@ def test_subprocess_execution_handling():
         with patch(
             "subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="flatpak", timeout=10)
         ):
-            with pytest.raises(SandboxCommandError, match="Timeout"):
-                bridge.propagate_to_flatpak("Nordic")
+            res_timeout = bridge.propagate_to_flatpak("Nordic")
+            assert res_timeout.flatpak_success is False
+            assert any("Timeout" in w for w in res_timeout.warnings)
 
         # 2. Exit code non zero
         err = subprocess.CalledProcessError(returncode=1, cmd="flatpak", stderr="Permission denied")
         with patch("subprocess.run", side_effect=err):
-            with pytest.raises(SandboxCommandError, match="Errore"):
-                bridge.propagate_to_flatpak("Nordic")
+            res_err = bridge.propagate_to_flatpak("Nordic")
+            assert res_err.flatpak_success is False
+            assert any("Permission denied" in w for w in res_err.warnings)
 
         # 3. Nessun shell=True e argomenti passati come lista
         with patch("subprocess.run") as mock_run:
