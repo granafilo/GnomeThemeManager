@@ -360,6 +360,30 @@ class ThemeInstaller:
         if custom_name and len({t[1] for t in targets}) == 1:
             targets = [(custom_name, t[1], t[2]) for t in targets]
 
+        # Primo passaggio: validazione preventiva dei conflitti su tutti i componenti
+        if not overwrite:
+            conflicts: list[str] = []
+            checked_dirs: set[tuple[str, Path]] = set()
+            for name, source_dir, t_type in targets:
+                target_base_dir = (
+                    self.user_themes_dir
+                    if t_type in (ThemeType.GTK, ThemeType.SHELL)
+                    else self.user_icons_dir
+                )
+                dest_dir = target_base_dir / name
+                dir_key = (name, source_dir)
+                if dir_key not in checked_dirs:
+                    if dest_dir.exists():
+                        conflicts.append(f"'{name}' in '{dest_dir}'")
+                    checked_dirs.add(dir_key)
+
+            if conflicts:
+                conflicts_str = ", ".join(conflicts)
+                raise FileExistsError(
+                    f"Il tema esiste già. Impossibile installare: i seguenti temi esistono già: {conflicts_str}. Usare overwrite=True per sovrascrivere."
+                )
+
+        # Secondo passaggio: installazione effettiva dei componenti
         installed_themes: list[Theme] = []
         processed_dirs: set[tuple[str, Path]] = set()
 
@@ -374,10 +398,6 @@ class ThemeInstaller:
             dir_key = (name, source_dir)
             if dir_key not in processed_dirs:
                 if dest_dir.exists():
-                    if not overwrite:
-                        raise FileExistsError(
-                            f"Il tema '{name}' esiste già in '{dest_dir}'. Usare overwrite=True per sovrascrivere."
-                        )
                     shutil.rmtree(dest_dir)
 
                 target_base_dir.mkdir(parents=True, exist_ok=True)
@@ -456,6 +476,30 @@ class ThemeInstaller:
             if custom_name and len({t[1] for t in targets}) == 1:
                 targets = [(custom_name, t[1], t[2]) for t in targets]
 
+            # Primo passaggio: validazione preventiva dei conflitti su tutti i componenti
+            if not overwrite:
+                conflicts: list[str] = []
+                checked_dirs: set[tuple[str, Path]] = set()
+                for name, source_dir, t_type in targets:
+                    target_base_dir = (
+                        self.user_themes_dir
+                        if t_type in (ThemeType.GTK, ThemeType.SHELL)
+                        else self.user_icons_dir
+                    )
+                    dest_dir = target_base_dir / name
+                    dir_key = (name, source_dir)
+                    if dir_key not in checked_dirs:
+                        if dest_dir.exists():
+                            conflicts.append(f"'{name}' in '{dest_dir}'")
+                        checked_dirs.add(dir_key)
+
+                if conflicts:
+                    conflicts_str = ", ".join(conflicts)
+                    raise FileExistsError(
+                        f"Il tema esiste già. Impossibile installare: i seguenti temi esistono già: {conflicts_str}. Usare overwrite=True per sovrascrivere."
+                    )
+
+            # Secondo passaggio: installazione effettiva dei componenti
             processed_dirs: set[tuple[str, Path]] = set()
 
             for name, source_dir, t_type in targets:
@@ -469,10 +513,6 @@ class ThemeInstaller:
                 dir_key = (name, source_dir)
                 if dir_key not in processed_dirs:
                     if dest_dir.exists():
-                        if not overwrite:
-                            raise FileExistsError(
-                                f"Il tema '{name}' esiste già in '{dest_dir}'. Usare overwrite=True per sovrascrivere."
-                            )
                         shutil.rmtree(dest_dir)
 
                     target_base_dir.mkdir(parents=True, exist_ok=True)

@@ -419,3 +419,38 @@ def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> N
     installed = installer.install_directory(source_dir, overwrite=True)
     assert len(installed) == 1
     assert (user_themes / "ConflictTheme" / "gtk-3.0" / "gtk.css").read_text() == "/* v2 */"
+
+
+def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> None:
+    """Verifica che se un archivio/cartella multi-componente ha un conflitto tardivo, nessun file venga scritto su disco con overwrite=False."""
+    user_themes = tmp_path / "user_themes"
+    user_icons = tmp_path / "user_icons"
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    # Archivio con due componenti: ThemeGTK (GTK) e ThemeIcons (Icone)
+    archive = tmp_path / "MultiTheme.zip"
+    create_mock_zip(
+        archive,
+        {
+            "ThemeGTK/gtk-3.0/gtk.css": "/* GTK */",
+            "ThemeIcons/index.theme": "[Icon Theme]\nName=ThemeIcons\nDirectories=16x16\n",
+            "ThemeIcons/16x16/icon.png": "PNG",
+        },
+    )
+
+    # Pre-creiamo solo la cartella di destinazione del SECONDO componente (ThemeIcons) per simulare un conflitto tardivo
+    (user_icons / "ThemeIcons").mkdir(parents=True)
+    (user_icons / "ThemeIcons" / "index.theme").write_text("/* Pre-existing Icon Theme */")
+
+    # 1. Con overwrite=False deve sollevare FileExistsError prima di copiare ThemeGTK
+    with pytest.raises(FileExistsError, match="esiste già"):
+        installer.install(archive, overwrite=False)
+
+    # Verifica atomicità: ThemeGTK NON deve essere stato creato/scritto nel primo passaggio
+    assert not (user_themes / "ThemeGTK").exists()
+
+    # 2. Con overwrite=True, entrambi i componenti devono venire installati correttamente
+    installed = installer.install(archive, overwrite=True)
+    assert len(installed) == 2
+    assert (user_themes / "ThemeGTK" / "gtk-3.0" / "gtk.css").exists()
+    assert (user_icons / "ThemeIcons" / "16x16" / "icon.png").exists()
