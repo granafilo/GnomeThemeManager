@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="0.9.0~beta3" date="2026-08-14">
+      <description>
+        <p>Beta release implementing legacy path installation options, translation files integration and sandbox propagation bugfixes.</p>
+      </description>
+    </release>
     <release version="0.9.0~beta2" date="2026-08-13">
       <description>
         <p>Beta release fixing command line argument forwarding in AppImage wrapper and enabling Working --version CLI flag.</p>

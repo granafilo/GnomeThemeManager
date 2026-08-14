@@ -14,13 +14,13 @@ Un pacchetto **AppImage** è un singolo file eseguibile portabile che contiene l
 2. Apri il terminale nella cartella di download e assegna i permessi di esecuzione:
 
 ```bash
-chmod +x GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+chmod +x GNOMEThemeManager-0.9.0-beta3-x86_64.AppImage
 ```
 
 3. Avvia l'applicazione:
 
 ```bash
-./GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+./GNOMEThemeManager-0.9.0-beta3-x86_64.AppImage
 ```
 
 ### AppImage e FUSE

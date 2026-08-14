@@ -10,7 +10,7 @@
 
 ## Stato del progetto
 
-La versione 0.9.0-beta2 è una release destinata ai test pubblici.
+La versione 0.9.0-beta3 è una release destinata ai test pubblici.
 Non viene ancora garantita la compatibilità con tutte le distribuzioni,
 versioni di GNOME o temi non conformi agli standard attesi.
 
@@ -42,7 +42,7 @@ Il progetto include:
 - GUI nativa GNOME con GTK4/Libadwaita.
 - GUI Tkinter legacy come fallback temporaneo.
 
-Versione pacchetto attuale: 0.9.0-beta2 (PEP 440: 0.9.0b2)
+Versione pacchetto attuale: 0.9.0-beta3 (PEP 440: 0.9.0b3)
 
 ## Feature
 

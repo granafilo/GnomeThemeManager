@@ -21,19 +21,35 @@ echo " Running Pytest Unit & Integration Tests"
 echo "========================================"
 
 # Se pytest-cov è installato usa il report di coverage, altrimenti esegui pytest normale
-if python3 -c "import pytest_cov" 2>/dev/null; then
-    pytest -v --cov=gnome_theme_manager
+# Se pytest-cov è installato usa il report di coverage, altrimenti esegui pytest normale
+if [ -f "$PROJECT_ROOT/.venv/bin/pytest" ]; then
+    if "$PROJECT_ROOT/.venv/bin/pytest" --help 2>&1 | grep -q -- "--cov"; then
+        "$PROJECT_ROOT/.venv/bin/pytest" -v --cov=gnome_theme_manager
+    else
+        "$PROJECT_ROOT/.venv/bin/pytest" -v
+    fi
 else
-    pytest -v
+    if pytest --help 2>&1 | grep -q -- "--cov"; then
+        pytest -v --cov=gnome_theme_manager
+    else
+        pytest -v
+    fi
 fi
 
 echo ""
 echo "========================================"
-echo " Running Ruff Linter Checks"
+echo " Running Ruff Linter & Format Checks"
 echo "========================================"
-if command -v ruff &> /dev/null; then
-    ruff check src tests
-    echo "✓ Ruff checks passed cleanly!"
+
+RUFF_BIN="ruff"
+if [ -f "$PROJECT_ROOT/.venv/bin/ruff" ]; then
+    RUFF_BIN="$PROJECT_ROOT/.venv/bin/ruff"
+fi
+
+if command -v "$RUFF_BIN" &> /dev/null || [ -f "$RUFF_BIN" ]; then
+    "$RUFF_BIN" check src tests
+    "$RUFF_BIN" format --check src tests
+    echo "✓ Ruff checks and formatting passed cleanly!"
 else
     echo "Ruff non installato (opzionale: pip install ruff)"
 fi
