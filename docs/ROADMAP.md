@@ -1,8 +1,8 @@
 # 🗺️ Roadmap di Sviluppo — GNOME Theme Manager
 
-**Ultimo aggiornamento**: 13 Agosto 2026  
-**Versione corrente**: v0.1.0 (Pre-Alpha)  
-**Stato**: In sviluppo attivo
+**Ultimo aggiornamento**: 15 Agosto 2026  
+**Versione corrente**: v1.0.0(Fase 0 completata)  
+**Stato**: In sviluppo attivo (Fase 0 stabilizzazione e test eseguiti con successo)
 
 ---
 
@@ -452,6 +452,7 @@ _ = setup_i18n("it")
 
 | Milestone | Versione | Data Target | Feature Principali |
 | :--- | :---: | :---: | :--- |
+| **M0 (Fase 0)** | v1.0.0-beta3 | 15 Agosto 2026 | Stabilizzazione, Preset 2.0, Estensioni, modali unificati (Completato) |
 | **M6** | v1.1.0 | Settembre 2026 | Backup/Ripristino, color-scheme |
 | **M7** | v1.2.0 | Ottobre 2026 | Packaging Flatpak, .deb |
 | **M8** | v1.3.0 | Novembre 2026 | Rilevamento Flatpak GTK3, Diagnostica |
