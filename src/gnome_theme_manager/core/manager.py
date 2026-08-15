@@ -160,7 +160,7 @@ class ThemeManager:
 
         sandbox_stat = self._sandbox.get_sandbox_status()
         gtk4_override_stat = self._gtk4_linker.is_override_active()
-        
+
         # Rileva lo stato di override tramite GSettingsClient se disponibile
         override_status = None
         if self._gsettings:

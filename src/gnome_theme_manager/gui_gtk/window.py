@@ -211,6 +211,43 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         # Avvio del primo caricamento diagnostico della pagina Stato
         self.status_page.refresh()
 
+        # Task 0.3: Configurazione scorciatoie Ctrl+W e Ctrl+Q
+        self._setup_shortcuts(app)
+
+        # Task 0.3: Focus behavior (click su area vuota rimuove il focus)
+        self._setup_focus_behavior()
+
+    def _setup_shortcuts(self, app: Adw.Application) -> None:
+        """Configura le azioni ed acceleratori per la chiusura (Ctrl+W) ed uscita (Ctrl+Q)."""
+        from gi.repository import Gio
+
+        # Azione 'close' per chiudere la finestra (Ctrl+W)
+        action_close = Gio.SimpleAction.new("close", None)
+        action_close.connect("activate", lambda *_: self.close())
+        self.add_action(action_close)
+        app.set_accels_for_action("win.close", ["<Control>w"])
+
+        # Verifica se l'azione 'quit' dell'applicazione esiste già, altrimenti la creiamo
+        if not app.has_action("quit"):
+            action_quit = Gio.SimpleAction.new("quit", None)
+            action_quit.connect("activate", lambda *_: app.quit())
+            app.add_action(action_quit)
+        app.set_accels_for_action("app.quit", ["<Control>q"])
+
+    def _setup_focus_behavior(self) -> None:
+        """Aggiunge un GestureClick alla finestra per rimuovere il focus dagli input e azzerare le selezioni cliccando all'esterno."""
+        gesture = Gtk.GestureClick.new()
+
+        def _on_pressed(gesture: Gtk.GestureClick, n_press: int, x: float, y: float) -> None:
+            # 1. Rimuove il focus tastiera dagli input
+            self.set_focus(None)
+            # 2. Deseleziona i temi selezionati nelle liste attive
+            if hasattr(self, "themes_page") and self.themes_page is not None and self.themes_page.themes_list_box is not None:
+                self.themes_page.themes_list_box.select_row(None)
+
+        gesture.connect("pressed", _on_pressed)
+        self.add_controller(gesture)
+
     def _setup_breakpoint(self) -> None:
         """Configura il breakpoint responsive di Libadwaita per il collasso automatico."""
         try:

@@ -276,13 +276,15 @@ def test_scanner_invalid_index_theme(tmp_path: Path):
     """Verifica che temi con index.theme corrotto/assente siano marcati come invalid ma non crashino lo scanner."""
     user_themes = tmp_path / "themes"
     user_themes.mkdir()
-    
+
     # 1. Tema con index.theme corrotto (non parsabile come INI)
     bad_theme = user_themes / "CorruptedTheme"
     bad_theme.mkdir()
     (bad_theme / "index.theme").write_text("corrupted content without sections or key-value pairs")
 
-    scanner = ThemeScanner(user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[])
+    scanner = ThemeScanner(
+        user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[]
+    )
     themes = scanner.scan_gtk_themes()
     assert len(themes) == 1
     assert themes[0].name == "CorruptedTheme"
@@ -298,11 +300,15 @@ def test_scanner_inheritance_chain(tmp_path: Path):
     for i in range(6):
         theme_dir = user_themes / f"Theme{i}"
         theme_dir.mkdir()
-        inherits = f"Theme{i-1}" if i > 0 else ""
-        (theme_dir / "index.theme").write_text(f"[Desktop Entry]\nName=Theme{i}\nInherits={inherits}\n")
+        inherits = f"Theme{i - 1}" if i > 0 else ""
+        (theme_dir / "index.theme").write_text(
+            f"[Desktop Entry]\nName=Theme{i}\nInherits={inherits}\n"
+        )
 
-    scanner = ThemeScanner(user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[])
-    
+    scanner = ThemeScanner(
+        user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[]
+    )
+
     # Per Theme5 (depth 5), la catena deve fermarsi a Theme1 (Theme5, 4, 3, 2, 1) ed escludere Theme0
     theme5 = scanner.find_theme("Theme5", ThemeType.GTK)
     assert theme5 is not None

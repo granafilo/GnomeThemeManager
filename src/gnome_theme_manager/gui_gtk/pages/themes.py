@@ -161,6 +161,14 @@ class ThemesPage:
         self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
+        # Mappatura dello stato attivo per ogni categoria per la sessione corrente
+        self._toggle_states: dict[ThemeType, bool] = {
+            ThemeType.GTK: False,
+            ThemeType.ICON: False,
+            ThemeType.CURSOR: False,
+            ThemeType.SHELL: False,
+        }
+
         # Widget principali dello Stack e degli stati
         self.widget: Gtk.Stack = self.builder.get_object("page_root")
         self.loading_spinner: Gtk.Spinner = self.builder.get_object("loading_spinner")
@@ -177,6 +185,7 @@ class ThemesPage:
         # Sezione Altri Temi Disponibili e Ricerca
         self.available_section_title: Gtk.Label = self.builder.get_object("available_section_title")
         self.search_entry: Gtk.SearchEntry = self.builder.get_object("search_entry")
+        self.system_themes_toggle: Gtk.CheckButton = self.builder.get_object("system_themes_toggle")
         self.themes_scrolled_window: Gtk.ScrolledWindow = self.builder.get_object(
             "themes_scrolled_window"
         )
@@ -194,9 +203,13 @@ class ThemesPage:
         self.error_page: Adw.StatusPage = self.builder.get_object("error_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
-        # Connessione segnali di ricerca
+        # Carica preferenze UI se presenti
+        self._load_ui_prefs()
+
+        # Connessione segnali di ricerca e filtro (dopo aver caricato le preferenze e valorizzato i widget)
         self.search_entry.connect("search-changed", self._on_filter_criteria_changed)
         self.search_entry.connect("changed", self._on_filter_criteria_changed)
+        self.system_themes_toggle.connect("toggled", self._on_filter_criteria_changed)
 
         # Connessione segnali lista: selezione e attivazione (doppio click nativo con activate-on-single-click=False)
         self.themes_list_box.set_activate_on_single_click(False)
@@ -266,6 +279,14 @@ class ThemesPage:
         self.apply_button.set_sensitive(False)
         self.selection_info_label.set_text(_("Seleziona un tema dall'elenco per applicarlo"))
         self._update_category_header()
+
+        # Imposta lo stato del toggle caricato per questa categoria (con reentrancy guard)
+        active_state = self._toggle_states.get(category, False)
+        self._updating_toggle = True
+        try:
+            self.system_themes_toggle.set_active(active_state)
+        finally:
+            self._updating_toggle = False
 
         if self._snapshot is not None and self.widget.get_visible_child_name() == "ready":
             self._update_filtered_list()
@@ -395,7 +416,10 @@ class ThemesPage:
 
     def _on_filter_criteria_changed(self, *args: Any) -> None:
         """Gestore dei cambiamenti nel testo di ricerca."""
+        if getattr(self, "_updating_toggle", False):
+            return
         self._clear_toast()
+        self._save_ui_prefs()
         if self._snapshot is not None and self.widget.get_visible_child_name() == "ready":
             self._update_filtered_list()
 
@@ -476,6 +500,10 @@ class ThemesPage:
         # 2. Filtro Lista Altri Temi Disponibili (Esclude il tema attivo)
         # ---------------------------------------------------------------------
         query = self.search_entry.get_text().strip().lower()
+        hide_system = self.system_themes_toggle.get_active()
+
+        # Salva le preferenze UI
+        self._save_ui_prefs()
 
         filtered: list[ThemeItemPresentation] = []
         for item in self._snapshot.items:
@@ -483,6 +511,9 @@ class ThemesPage:
                 continue
             # Esclusione logica del tema attualmente attivo dalla lista
             if active_theme_name is not None and item.name == active_theme_name:
+                continue
+            # Nasconde i temi di sistema se l'opzione è attiva
+            if hide_system and not item.is_user_level:
                 continue
             # Filtro per ricerca testuale
             if query and query not in item.name.lower():
@@ -929,6 +960,21 @@ class ThemesPage:
             root.add_toast(message)
         else:
             logger.info("Feedback [ThemesPage]: %s", message)
+
+    def _load_ui_prefs(self) -> None:
+        """Carica le preferenze dell'utente relative alla UI."""
+        # Non carichiamo più dal file ui_prefs.json per mantenere lo stato solo in sessione
+        active_state = self._toggle_states.get(self.active_category, False)
+        self._updating_toggle = True
+        try:
+            self.system_themes_toggle.set_active(active_state)
+        finally:
+            self._updating_toggle = False
+
+    def _save_ui_prefs(self) -> None:
+        """Salva le preferenze dell'utente relative alla UI."""
+        # Salva lo stato in memoria per la sessione corrente
+        self._toggle_states[self.active_category] = self.system_themes_toggle.get_active()
 
     def _handle_error(self, error: Exception) -> None:
         """Gestisce gli errori di scansione impostando la schermata 'error'.

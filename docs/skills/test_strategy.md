@@ -14,9 +14,14 @@ Quando scrivi test per un nuovo modulo in `core/`, applica queste regole.
 def fake_gsettings(monkeypatch):
     """Mock gsettings per test isolati."""
     state = {}
+
     class FakeSettings:
-        def get_string(self, key): return state.get(key, "")
-        def set_string(self, key, val): state[key] = val
+        def get_string(self, key):
+            return state.get(key, "")
+
+        def set_string(self, key, val):
+            state[key] = val
+
     # monkeypatch qui
     yield FakeSettings()
 ```

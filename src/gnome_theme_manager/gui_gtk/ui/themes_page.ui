@@ -135,6 +135,13 @@
                                     <property name="width-request">260</property>
                                   </object>
                                 </child>
+                                <child>
+                                  <object class="GtkCheckButton" id="system_themes_toggle">
+                                    <property name="label" translatable="yes">Nascondi temi di sistema</property>
+                                    <property name="valign">center</property>
+                                    <property name="active">false</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
 

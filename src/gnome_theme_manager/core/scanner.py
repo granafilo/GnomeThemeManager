@@ -208,6 +208,7 @@ class ThemeScanner:
             Lista di oggetti Theme individuati all'interno della directory.
         """
         import configparser
+
         found_themes: list[Theme] = []
 
         if not directory.exists() or not directory.is_dir():
@@ -244,40 +245,49 @@ class ThemeScanner:
             inheritance_chain: list[str] = []
             curr_inherits = inherits_str
             depth = 0
-            
+
             while curr_inherits and depth < 4:
                 # split e strip nel caso di valori multipli separati da virgola
                 parents = [p.strip() for p in curr_inherits.split(",") if p.strip()]
                 if not parents:
                     break
-                
+
                 # Aggiungiamo tutti i genitori trovati in questo livello
                 for p in parents:
                     if p not in inheritance_chain:
                         inheritance_chain.append(p)
-                
+
                 # Cerchiamo il file index.theme del primo genitore per continuare la catena
                 next_parent = parents[0]
                 parent_path = None
-                
+
                 # Cerca nelle directory note per trovare il percorso del tema genitore
-                for d in (self.user_theme_dirs + self.system_theme_dirs + self.user_icon_dirs + self.system_icon_dirs):
+                for d in (
+                    self.user_theme_dirs
+                    + self.system_theme_dirs
+                    + self.user_icon_dirs
+                    + self.system_icon_dirs
+                ):
                     candidate = d / next_parent
                     if candidate.is_dir():
                         parent_path = candidate
                         break
-                
+
                 if parent_path and (parent_path / "index.theme").is_file():
                     parent_config = configparser.ConfigParser(interpolation=None)
                     try:
                         parent_config.read(parent_path / "index.theme", encoding="utf-8")
                         next_inherits = ""
                         if parent_config.has_section("Desktop Entry"):
-                            next_inherits = parent_config.get("Desktop Entry", "Inherits", fallback="")
+                            next_inherits = parent_config.get(
+                                "Desktop Entry", "Inherits", fallback=""
+                            )
                         elif parent_config.has_section("Icon Theme"):
                             next_inherits = parent_config.get("Icon Theme", "Inherits", fallback="")
                         elif parent_config.has_section("X-GNOME-Metatheme"):
-                            next_inherits = parent_config.get("X-GNOME-Metatheme", "Inherits", fallback="")
+                            next_inherits = parent_config.get(
+                                "X-GNOME-Metatheme", "Inherits", fallback=""
+                            )
                         curr_inherits = next_inherits
                     except Exception:
                         break
@@ -295,7 +305,7 @@ class ThemeScanner:
             # consideriamolo GTK o ICON con flag invalid=True per non scartarlo
             if not (is_gtk or is_cursor or is_icon or is_shell) and index_file.is_file():
                 invalid = True
-                is_gtk = True # Fallback di classificazione
+                is_gtk = True  # Fallback di classificazione
 
             # Registrazione temi trovati
             if is_gtk:
