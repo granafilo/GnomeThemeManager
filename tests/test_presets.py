@@ -79,10 +79,13 @@ def test_preset_save_and_load(tmp_path: Path) -> None:
 
     saved_path = manager.save_preset("GruvboxProfile", theme_set)
     assert saved_path.is_file()
-    assert saved_path.name == "GruvboxProfile.json"
+    assert saved_path.name == "presets.json"
 
     loaded_set = manager.load_preset("GruvboxProfile")
-    assert loaded_set == theme_set
+    assert loaded_set.gtk_theme == "Gruvbox"
+    assert loaded_set.icon_theme == "Gruvbox-Plus"
+    assert loaded_set.cursor_theme == "Capitaine"
+    assert loaded_set.shell_theme == "Gruvbox-Shell"
 
 
 def test_preset_save_overwrite_protection(tmp_path: Path) -> None:
@@ -137,11 +140,13 @@ def test_preset_delete_success(tmp_path: Path) -> None:
     manager = PresetManager(presets_dir=tmp_path)
     manager.save_preset("ToDelete", ThemeSet(gtk_theme="Theme"))
 
-    assert (tmp_path / "ToDelete.json").exists()
+    assert (tmp_path / "presets.json").exists()
 
     result = manager.delete_preset("ToDelete")
     assert result is True
-    assert not (tmp_path / "ToDelete.json").exists()
+    # presets.json dovrebbe esistere ma vuoto (lista presets vuota)
+    assert (tmp_path / "presets.json").exists()
+    assert manager.list_presets() == []
 
 
 def test_preset_delete_non_existent(tmp_path: Path) -> None:
@@ -161,11 +166,45 @@ def test_preset_load_non_existent(tmp_path: Path) -> None:
 def test_preset_corrupt_json(tmp_path: Path) -> None:
     """Verifica la gestione di errori in caso di file JSON corrotto."""
     manager = PresetManager(presets_dir=tmp_path)
-    corrupt_file = tmp_path / "Corrupt.json"
+    corrupt_file = tmp_path / "presets.json"
     corrupt_file.write_text("{ questo non e un json valido }", encoding="utf-8")
 
     with pytest.raises(ValueError, match="corrotto o illeggibile"):
         manager.load_preset("Corrupt")
+
+
+def test_manager_load_preset_corrupt_json(tmp_path: Path) -> None:
+    """Verifica che load_preset() sollevi ValueError su JSON corrotto."""
+    manager, pm = _build_manager_with_presets_dir(tmp_path)
+    pm.presets_file.write_text("{not: valid json}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="corrotto o illeggibile"):
+        manager.load_preset("Corrupt")
+
+
+def test_manager_load_preset_incomplete_json(tmp_path: Path) -> None:
+    """Verifica che un JSON incompleto restituisca un ThemeSet con None sui campi assenti."""
+    import json
+
+    manager, pm = _build_manager_with_presets_dir(tmp_path)
+
+    # Scrive presets.json con una voce incompleta
+    data = {
+        "presets": [
+            {
+                "name": "Parziale",
+                "components": {
+                    "gtk3": "Nordic"
+                }
+            }
+        ]
+    }
+    pm.presets_file.write_text(json.dumps(data), encoding="utf-8")
+
+    loaded = manager.load_preset("Parziale")
+    assert loaded.gtk_theme == "Nordic"
+    assert loaded.icon_theme is None
+    assert loaded.cursor_theme is None
 
 
 def test_preset_invalid_name_validation(tmp_path: Path) -> None:
@@ -264,30 +303,6 @@ def test_manager_load_preset_invalid_name(tmp_path: Path) -> None:
         manager.load_preset("sub/preset")
 
 
-def test_manager_load_preset_corrupt_json(tmp_path: Path) -> None:
-    """Verifica che load_preset() sollevi ValueError su JSON corrotto."""
-    manager, _ = _build_manager_with_presets_dir(tmp_path)
-    (tmp_path / "Corrupt.json").write_text("{not: valid json}", encoding="utf-8")
-
-    with pytest.raises(ValueError, match="corrotto o illeggibile"):
-        manager.load_preset("Corrupt")
-
-
-def test_manager_load_preset_incomplete_json(tmp_path: Path) -> None:
-    """Verifica che un JSON incompleto restituisca un ThemeSet con None sui campi assenti."""
-    import json
-
-    manager, _ = _build_manager_with_presets_dir(tmp_path)
-
-    # Solo gtk_theme presente; gli altri devono restare None
-    (tmp_path / "Parziale.json").write_text(json.dumps({"gtk_theme": "Nordic"}), encoding="utf-8")
-
-    loaded = manager.load_preset("Parziale")
-    assert loaded.gtk_theme == "Nordic"
-    assert loaded.icon_theme is None
-    assert loaded.cursor_theme is None
-
-
 # =============================================================================
 # Test validazione nomi — coerenza tra save/load/delete
 # =============================================================================
@@ -350,7 +365,7 @@ def test_preset_name_coherence_save_load_delete(tmp_path: Path) -> None:
 
     # Salvataggio
     path = manager.save_preset(name, ts)
-    assert "Tema Lavoro.json" in path.name
+    assert "presets.json" in path.name
 
     # Caricamento con lo stesso nome
     loaded = manager.load_preset(name)
