@@ -428,6 +428,51 @@ class ThemeManager:
             propagate_sandbox=propagate_sandbox,
         )
 
+    def apply_component(
+        self,
+        component: ThemeType,
+        theme_name: str,
+        apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
+    ) -> ApplyResult:
+        """Applica un singolo componente (GTK, icone, cursori, shell) con il tema indicato.
+
+        Args:
+            component: La categoria di tema (ThemeType.GTK, ICON, CURSOR, SHELL).
+            theme_name: Nome del tema da applicare.
+            apply_gtk4_override: Se True, applica l'override GTK4 per temi GTK.
+            propagate_sandbox: Se True, propaga i temi GTK/icone a Flatpak e Snap.
+
+        Returns:
+            ApplyResult con l'esito dell'applicazione.
+
+        Raises:
+            ThemeNotFoundError: Se il tema specificato non esiste nel sistema.
+            GSettingsUnavailableError: Se GSettings non è disponibile.
+        """
+        found = self._scanner.find_theme(theme_name, component)
+        if not found:
+            raise ThemeNotFoundError(
+                f"Il tema '{theme_name}' per il componente '{component}' non è stato trovato."
+            )
+
+        kwargs = {}
+        if component == ThemeType.GTK:
+            kwargs["gtk_theme"] = theme_name
+        elif component == ThemeType.ICON:
+            kwargs["icon_theme"] = theme_name
+        elif component == ThemeType.CURSOR:
+            kwargs["cursor_theme"] = theme_name
+        elif component == ThemeType.SHELL:
+            kwargs["shell_theme"] = theme_name
+
+        theme_set = ThemeSet(**kwargs)
+        return self.apply_themes(
+            theme_set,
+            apply_gtk4_override=apply_gtk4_override,
+            propagate_sandbox=propagate_sandbox,
+        )
+
     def apply_preset(
         self,
         preset_name: str,

@@ -648,6 +648,36 @@ class ThemesPage:
             lbl_active.set_halign(Gtk.Align.CENTER)
             extra_box.append(lbl_active)
 
+        # Rilevamento disponibilità cross-applicazione (GTK <-> Shell)
+        cross_checkbox = None
+        if self.manager is not None:
+            if item.theme_type == ThemeType.GTK:
+                has_opposite = bool(self.manager.scanner.find_theme(item.name, ThemeType.SHELL))
+                if has_opposite:
+                    cross_checkbox = Gtk.CheckButton.new_with_label(
+                        _("Applica anche come tema GNOME Shell")
+                    )
+            elif item.theme_type == ThemeType.SHELL:
+                has_opposite = bool(self.manager.scanner.find_theme(item.name, ThemeType.GTK))
+                if has_opposite:
+                    cross_checkbox = Gtk.CheckButton.new_with_label(
+                        _("Applica anche come tema GTK")
+                    )
+
+        if cross_checkbox is not None:
+            cross_checkbox.set_margin_top(8)
+            cross_checkbox.set_halign(Gtk.Align.CENTER)
+            extra_box.append(cross_checkbox)
+
+        # Definizione della callback di applicazione
+        def execute_confirmed_apply() -> None:
+            if cross_checkbox is not None and cross_checkbox.get_active():
+                # Esegue l'applicazione di entrambi i componenti
+                opposite_type = ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
+                self.apply_theme(item, on_complete=lambda res, err: self._apply_opposite_after(item.name, opposite_type, on_complete), sync=sync)
+            else:
+                self.apply_theme(item, on_complete=on_complete, sync=sync)
+
         # Dialogo moderno Libadwaita
         if hasattr(Adw, "AlertDialog"):
             self._confirm_dialog_open = True
@@ -671,7 +701,7 @@ class ThemesPage:
                         resp = str(response_param)
 
                     if resp == "apply":
-                        self.apply_theme(item, on_complete=on_complete, sync=sync)
+                        execute_confirmed_apply()
                     elif on_complete:
                         on_complete(None, None)
                 finally:
@@ -698,7 +728,7 @@ class ThemesPage:
             def on_md_response(d: Any, response_id: str) -> None:
                 try:
                     if response_id == "apply":
-                        self.apply_theme(item, on_complete=on_complete, sync=sync)
+                        execute_confirmed_apply()
                     elif on_complete:
                         on_complete(None, None)
                 finally:
@@ -709,7 +739,25 @@ class ThemesPage:
 
         else:
             self._confirm_dialog_open = False
-            self.apply_theme(item, on_complete=on_complete, sync=sync)
+            execute_confirmed_apply()
+
+    def _apply_opposite_after(
+        self,
+        theme_name: str,
+        opposite_type: ThemeType,
+        on_complete: Callable[[ApplyResult | None, Exception | None], None] | None = None,
+    ) -> None:
+        """Applica il secondo componente (cross-apply) sequenzialmente nel worker thread."""
+        opposite_item = ThemeItemPresentation(
+            name=theme_name,
+            theme_type=opposite_type,
+            category_display=CATEGORY_LABELS.get(opposite_type, ""),
+            icon_name=CATEGORY_ICONS.get(opposite_type, ""),
+            path_display="",
+            origin_display="",
+            is_user_level=False,
+        )
+        self.apply_theme(opposite_item, on_complete=on_complete, sync=True)
 
     def apply_theme(
         self,
@@ -743,8 +791,6 @@ class ThemesPage:
         # Disabilita controlli e pulsanti per prevenire azioni concorrenti
         self._set_ui_applying_state(True)
 
-        theme_set = self._build_theme_set_for_item(item)
-
         def worker_apply() -> tuple[ApplyResult | None, Exception | None]:
             """Esegue l'applicazione nel worker di background."""
             try:
@@ -753,8 +799,9 @@ class ThemesPage:
                         _("ThemeManager non disponibile o non inizializzato.")
                     )
 
-                result = self.manager.apply_themes(
-                    theme_set=theme_set,
+                result = self.manager.apply_component(
+                    component=item.theme_type,
+                    theme_name=item.name,
                     apply_gtk4_override=True,
                     propagate_sandbox=True,
                 )

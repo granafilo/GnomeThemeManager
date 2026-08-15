@@ -239,6 +239,23 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         gesture = Gtk.GestureClick.new()
 
         def _on_pressed(gesture: Gtk.GestureClick, n_press: int, x: float, y: float) -> None:
+            # Trova quale widget concreto è stato cliccato alle coordinate (x, y) della finestra
+            clicked_widget = self.pick(x, y, Gtk.PickFlags.DEFAULT)
+            
+            # Se è stato cliccato un widget, verifichiamo se fa parte degli elementi da preservare
+            if clicked_widget is not None:
+                # Se fa parte del ListBox, della card del tema attivo o del pulsante Applica, non deselezioniamo
+                w = clicked_widget
+                while w is not None:
+                    # Controlla per classe/nome del widget o istanza specifica
+                    if isinstance(w, Gtk.Button) or w.get_css_name() == "button":
+                        return
+                    if hasattr(self, "themes_page") and self.themes_page is not None and (
+                        w == self.themes_page.themes_list_box or w == self.themes_page.active_theme_row or w == self.themes_page.apply_button
+                    ):
+                        return
+                    w = w.get_parent()
+
             # 1. Rimuove il focus tastiera dagli input
             self.set_focus(None)
             # 2. Deseleziona i temi selezionati nelle liste attive

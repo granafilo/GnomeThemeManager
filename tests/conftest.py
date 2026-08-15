@@ -97,9 +97,30 @@ def mock_theme_manager() -> MagicMock:
             is_user_level=True,
         ),
     ]
-    mgr.apply_themes.return_value = ApplyResult(
-        gtk_theme="Yaru",
-        gtk4_override_applied=True,
-        warnings=[],
-    )
+    def mock_apply_component(component, theme_name, *args, **kwargs):
+        res_kwargs = {
+            "gtk_theme": theme_name if component == ThemeType.GTK else None,
+            "icon_theme": theme_name if component == ThemeType.ICON else None,
+            "cursor_theme": theme_name if component == ThemeType.CURSOR else None,
+            "shell_theme": theme_name if component == ThemeType.SHELL else None,
+            "gtk4_override_applied": component == ThemeType.GTK,
+            "warnings": [],
+        }
+        # In caso di specifici mock di errori impostati nel test su apply_themes, propagali
+        if isinstance(mgr.apply_themes.side_effect, Exception):
+            raise mgr.apply_themes.side_effect
+        if isinstance(mgr.apply_themes.return_value, ApplyResult):
+            # Se il test ha modificato il valore di ritorno di apply_themes, adeguiamoci
+            val = mgr.apply_themes.return_value
+            if val.shell_theme is None and component == ThemeType.SHELL:
+                res_kwargs["shell_theme"] = None
+                if val.warnings:
+                    res_kwargs["warnings"] = val.warnings
+            if val.warnings and not res_kwargs["warnings"]:
+                res_kwargs["warnings"] = val.warnings
+            if val.gtk4_override_applied is not None:
+                res_kwargs["gtk4_override_applied"] = val.gtk4_override_applied
+        return ApplyResult(**res_kwargs)
+
+    mgr.apply_component.side_effect = mock_apply_component
     return mgr
