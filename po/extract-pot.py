@@ -59,7 +59,7 @@ def extract_strings():
         f.write("#\n")
         f.write('msgid ""\n')
         f.write('msgstr ""\n')
-        f.write('"Project-Id-Version: gnome-theme-manager 0.9.0b2\\n"\n')
+        f.write('"Project-Id-Version: gnome-theme-manager 1.0.0\\n"\n')
         f.write('"MIME-Version: 1.0\\n"\n')
         f.write('"Content-Type: text/plain; charset=UTF-8\\n"\n')
         f.write('"Content-Transfer-Encoding: 8bit\\n"\n\n')
