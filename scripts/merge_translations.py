@@ -8,36 +8,33 @@ import re
 def parse_po_pot(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
-    
+
     pattern = re.compile(
-        r'((?:#[^\n]*\n)*)'
+        r"((?:#[^\n]*\n)*)"
         r'msgid\s+((?:"(?:[^"\\]|\\.)*"\s*)+)\s*'
         r'msgstr\s+((?:"(?:[^"\\]|\\.)*"\s*)+)',
-        re.MULTILINE
+        re.MULTILINE,
     )
-    
+
     entries = []
     for match in pattern.finditer(content):
         comments = match.group(1).strip()
         msgid_raw = match.group(2)
         msgstr_raw = match.group(3)
-        
+
         # Concatena le righe tra virgolette
         msgid = "".join(eval(chunk) for chunk in msgid_raw.splitlines() if chunk.strip())
         msgstr = "".join(eval(chunk) for chunk in msgstr_raw.splitlines() if chunk.strip())
-        
-        entries.append({
-            'comments': comments,
-            'msgid': msgid,
-            'msgstr': msgstr
-        })
+
+        entries.append({"comments": comments, "msgid": msgid, "msgstr": msgstr})
     return entries
+
 
 def write_po(filepath, entries, lang):
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write('# Translation for gnome-theme-manager.\n')
-        f.write('# Copyright (C) 2026 GnomeThemeManager Contributors\n')
-        f.write('#\n')
+        f.write("# Translation for gnome-theme-manager.\n")
+        f.write("# Copyright (C) 2026 GnomeThemeManager Contributors\n")
+        f.write("#\n")
         f.write('msgid ""\n')
         f.write('msgstr ""\n')
         f.write('"Project-Id-Version: gnome-theme-manager 0.9.0b2\\n"\n')
@@ -45,16 +42,21 @@ def write_po(filepath, entries, lang):
         f.write('"Content-Type: text/plain; charset=UTF-8\\n"\n')
         f.write(f'"Language: {lang}\\n"\n')
         f.write('"Content-Transfer-Encoding: 8bit\\n"\n\n')
-        
+
         for entry in entries:
-            if not entry['msgid']:
+            if not entry["msgid"]:
                 continue
-            if entry['comments']:
-                f.write(entry['comments'] + '\n')
-            escaped_msgid = entry['msgid'].replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
-            escaped_msgstr = entry['msgstr'].replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+            if entry["comments"]:
+                f.write(entry["comments"] + "\n")
+            escaped_msgid = (
+                entry["msgid"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+            )
+            escaped_msgstr = (
+                entry["msgstr"].replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+            )
             f.write(f'msgid "{escaped_msgid}"\n')
             f.write(f'msgstr "{escaped_msgstr}"\n\n')
+
 
 def translate_to_english(text):
     translations = {
@@ -120,11 +122,11 @@ def translate_to_english(text):
         "NOME PRESET": "PRESET NAME",
         "Operazione annullata dall'utente.": "Operation cancelled by user.",
     }
-    
+
     clean = text.strip()
     if clean in translations:
         return translations[clean]
-        
+
     translated = clean
     replacements = [
         ("Errore", "Error"),
@@ -139,7 +141,10 @@ def translate_to_english(text):
         ("Modifiche applicate con successo", "Changes applied successfully"),
         ("Tema GTK impostato su", "GTK Theme set to"),
         ("Override GTK4/Libadwaita applicato in", "GTK4/Libadwaita override applied in"),
-        ("Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)", "No GTK4 file found in theme (applied to GTK2/GTK3 only)"),
+        (
+            "Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)",
+            "No GTK4 file found in theme (applied to GTK2/GTK3 only)",
+        ),
         ("Tema Icone impostato su", "Icon Theme set to"),
         ("Tema Cursori impostato su", "Cursor Theme set to"),
         ("Tema GNOME Shell impostato su", "GNOME Shell Theme set to"),
@@ -148,7 +153,10 @@ def translate_to_english(text):
         ("Accesso filesystem e variabili impostati", "Filesystem access and variables set"),
         ("Propagazione Snap", "Snap Propagation"),
         ("Compatibilità verificata con", "Compatibility verified with"),
-        ("Sei sicuro di voler disinstallare il tema", "Are you sure you want to uninstall the theme"),
+        (
+            "Sei sicuro di voler disinstallare il tema",
+            "Are you sure you want to uninstall the theme",
+        ),
         ("disinstallato con successo", "uninstalled successfully"),
         ("salvato con successo in", "saved successfully in"),
         ("applicato con successo", "applied successfully"),
@@ -158,41 +166,40 @@ def translate_to_english(text):
     for it_p, en_p in replacements:
         if it_p in translated:
             translated = translated.replace(it_p, en_p)
-            
+
     return translated
+
 
 def merge(pot_path, po_path, lang):
     pot_entries = parse_po_pot(pot_path)
     po_entries = {}
     if os.path.exists(po_path):
         for entry in parse_po_pot(po_path):
-            po_entries[entry['msgid']] = entry['msgstr']
-            
+            po_entries[entry["msgid"]] = entry["msgstr"]
+
     merged = []
     for entry in pot_entries:
-        if not entry['msgid']:
+        if not entry["msgid"]:
             continue
-        msgid = entry['msgid']
+        msgid = entry["msgid"]
         msgstr = po_entries.get(msgid, "")
-        
+
         if not msgstr:
             if lang == "it":
                 msgstr = msgid
             else:
                 msgstr = translate_to_english(msgid)
-                
-        merged.append({
-            'comments': entry['comments'],
-            'msgid': msgid,
-            'msgstr': msgstr
-        })
-        
+
+        merged.append({"comments": entry["comments"], "msgid": msgid, "msgstr": msgstr})
+
     write_po(po_path, merged, lang)
     print(f"Fusi {len(merged)} elementi in {po_path}")
+
 
 def main():
     merge("po/gnomethememanager.pot", "po/it.po", "it")
     merge("po/gnomethememanager.pot", "po/en.po", "en")
+
 
 if __name__ == "__main__":
     main()

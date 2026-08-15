@@ -270,3 +270,42 @@ def test_dynamic_xdg_paths_resolution(tmp_path: Path, monkeypatch: pytest.Monkey
     assert tmp_path / "custom_sys1" / "icons" in scanner.system_icon_dirs
     assert tmp_path / "custom_sys2" / "icons" in scanner.system_icon_dirs
     assert Path("/usr/share/icons") in scanner.system_icon_dirs
+
+
+def test_scanner_invalid_index_theme(tmp_path: Path):
+    """Verifica che temi con index.theme corrotto/assente siano marcati come invalid ma non crashino lo scanner."""
+    user_themes = tmp_path / "themes"
+    user_themes.mkdir()
+    
+    # 1. Tema con index.theme corrotto (non parsabile come INI)
+    bad_theme = user_themes / "CorruptedTheme"
+    bad_theme.mkdir()
+    (bad_theme / "index.theme").write_text("corrupted content without sections or key-value pairs")
+
+    scanner = ThemeScanner(user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[])
+    themes = scanner.scan_gtk_themes()
+    assert len(themes) == 1
+    assert themes[0].name == "CorruptedTheme"
+    assert themes[0].invalid is True
+
+
+def test_scanner_inheritance_chain(tmp_path: Path):
+    """Verifica la risoluzione ricorsiva dell'inheritance chain da index.theme fino a max depth 5."""
+    user_themes = tmp_path / "themes"
+    user_themes.mkdir()
+
+    # Creiamo 6 temi in catena: Theme5 -> Theme4 -> Theme3 -> Theme2 -> Theme1 -> Theme0
+    for i in range(6):
+        theme_dir = user_themes / f"Theme{i}"
+        theme_dir.mkdir()
+        inherits = f"Theme{i-1}" if i > 0 else ""
+        (theme_dir / "index.theme").write_text(f"[Desktop Entry]\nName=Theme{i}\nInherits={inherits}\n")
+
+    scanner = ThemeScanner(user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[])
+    
+    # Per Theme5 (depth 5), la catena deve fermarsi a Theme1 (Theme5, 4, 3, 2, 1) ed escludere Theme0
+    theme5 = scanner.find_theme("Theme5", ThemeType.GTK)
+    assert theme5 is not None
+    assert "Theme4" in theme5.inheritance_chain
+    assert "Theme1" in theme5.inheritance_chain
+    assert "Theme0" not in theme5.inheritance_chain

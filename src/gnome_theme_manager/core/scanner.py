@@ -207,6 +207,7 @@ class ThemeScanner:
         Returns:
             Lista di oggetti Theme individuati all'interno della directory.
         """
+        import configparser
         found_themes: list[Theme] = []
 
         if not directory.exists() or not directory.is_dir():
@@ -221,13 +222,82 @@ class ThemeScanner:
             if not entry.is_dir():
                 continue
 
-            # Applichiamo le euristiche di rilevamento
+            index_file = entry / "index.theme"
+            invalid = False
+            inherits_str = ""
+
+            # Se c'è un file index.theme, proviamo a parsarlo per caricare metadati ed ereditarietà
+            if index_file.is_file():
+                config = configparser.ConfigParser(interpolation=None)
+                try:
+                    config.read(index_file, encoding="utf-8")
+                    if config.has_section("Desktop Entry"):
+                        inherits_str = config.get("Desktop Entry", "Inherits", fallback="")
+                    elif config.has_section("Icon Theme"):
+                        inherits_str = config.get("Icon Theme", "Inherits", fallback="")
+                    elif config.has_section("X-GNOME-Metatheme"):
+                        inherits_str = config.get("X-GNOME-Metatheme", "Inherits", fallback="")
+                except Exception:
+                    invalid = True
+
+            # Calcolo ricorsivo della catena di ereditarietà (max depth 5)
+            inheritance_chain: list[str] = []
+            curr_inherits = inherits_str
+            depth = 0
+            
+            while curr_inherits and depth < 4:
+                # split e strip nel caso di valori multipli separati da virgola
+                parents = [p.strip() for p in curr_inherits.split(",") if p.strip()]
+                if not parents:
+                    break
+                
+                # Aggiungiamo tutti i genitori trovati in questo livello
+                for p in parents:
+                    if p not in inheritance_chain:
+                        inheritance_chain.append(p)
+                
+                # Cerchiamo il file index.theme del primo genitore per continuare la catena
+                next_parent = parents[0]
+                parent_path = None
+                
+                # Cerca nelle directory note per trovare il percorso del tema genitore
+                for d in (self.user_theme_dirs + self.system_theme_dirs + self.user_icon_dirs + self.system_icon_dirs):
+                    candidate = d / next_parent
+                    if candidate.is_dir():
+                        parent_path = candidate
+                        break
+                
+                if parent_path and (parent_path / "index.theme").is_file():
+                    parent_config = configparser.ConfigParser(interpolation=None)
+                    try:
+                        parent_config.read(parent_path / "index.theme", encoding="utf-8")
+                        next_inherits = ""
+                        if parent_config.has_section("Desktop Entry"):
+                            next_inherits = parent_config.get("Desktop Entry", "Inherits", fallback="")
+                        elif parent_config.has_section("Icon Theme"):
+                            next_inherits = parent_config.get("Icon Theme", "Inherits", fallback="")
+                        elif parent_config.has_section("X-GNOME-Metatheme"):
+                            next_inherits = parent_config.get("X-GNOME-Metatheme", "Inherits", fallback="")
+                        curr_inherits = next_inherits
+                    except Exception:
+                        break
+                else:
+                    break
+                depth += 1
+
+            # Rilevamento delle tipologie supportate
             is_gtk = self._is_gtk_theme(entry)
             is_cursor = self._is_cursor_theme(entry)
             is_icon = self._is_icon_theme(entry)
             is_shell = self._is_shell_theme(entry)
 
-            # Registrazione tema GTK
+            # Se l'index.theme è corrotto o non riconosce tipologie ma il file index.theme esiste comunque,
+            # consideriamolo GTK o ICON con flag invalid=True per non scartarlo
+            if not (is_gtk or is_cursor or is_icon or is_shell) and index_file.is_file():
+                invalid = True
+                is_gtk = True # Fallback di classificazione
+
+            # Registrazione temi trovati
             if is_gtk:
                 found_themes.append(
                     Theme(
@@ -235,10 +305,10 @@ class ThemeScanner:
                         theme_type=ThemeType.GTK,
                         path=entry,
                         is_user_level=is_user_level,
+                        invalid=invalid,
+                        inheritance_chain=inheritance_chain,
                     )
                 )
-
-            # Registrazione tema Icone
             if is_icon:
                 found_themes.append(
                     Theme(
@@ -246,10 +316,10 @@ class ThemeScanner:
                         theme_type=ThemeType.ICON,
                         path=entry,
                         is_user_level=is_user_level,
+                        invalid=invalid,
+                        inheritance_chain=inheritance_chain,
                     )
                 )
-
-            # Registrazione tema Cursori
             if is_cursor:
                 found_themes.append(
                     Theme(
@@ -257,10 +327,10 @@ class ThemeScanner:
                         theme_type=ThemeType.CURSOR,
                         path=entry,
                         is_user_level=is_user_level,
+                        invalid=invalid,
+                        inheritance_chain=inheritance_chain,
                     )
                 )
-
-            # Registrazione tema GNOME Shell
             if is_shell:
                 found_themes.append(
                     Theme(
@@ -268,6 +338,8 @@ class ThemeScanner:
                         theme_type=ThemeType.SHELL,
                         path=entry,
                         is_user_level=is_user_level,
+                        invalid=invalid,
+                        inheritance_chain=inheritance_chain,
                     )
                 )
 
