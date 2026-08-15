@@ -91,14 +91,25 @@ Dopo la conferma, eseguire in ordine:
 
 **Step C — Traduzioni**: estrazione stringhe aggiornata; `po/en.po` e `po/it.po` sincronizzati, nessun fuzzy; `msgfmt` senza warning; nessuna stringa UI hardcodata; encoding UTF-8 verificato.
 
-**Step D — Comando commit finale**: stampare (NON eseguire):
+**Step D — Version bump**
+1. Determinare la nuova versione dal mapping §2.7 (fase → minor; chore → patch).
+2. Aggiornare l'unica fonte: `__version__` in `src/gnome_theme_manager/__init__.py`.
+3. Propagare dove non derivabile: nuova entry CHANGELOG con versione + data;
+   entry release in metainfo/.desktop se presenti.
+4. Verifica consistenza:
+   - `grep -rIn "<vecchia versione>" . --exclude-dir=.git` → zero hit
+   - `python -m gnome_theme_manager --version` → stampa la nuova
+5. Il bump rientra nel commit finale di chiusura.
+
+**Step E — Comando di commit finale**: stampare (NON eseguire):
 
 ```bash
-git add -A && git commit -m "chore: phase {N} completion — docs, tests integrity, i18n verification [skip ci]"
+git add -A && git commit -m "chore: phase {N} completion — v{X.Y.Z} — docs, tests integrity, i18n verification [skip ci]"
 ```
 
 > Nota: i file di codice/test sono già stati committati per-task durante la fase.
-> Questo commit contiene esclusivamente le modifiche prodotte dagli step A–C.
+> Questo commit contiene esclusivamente gli esiti degli step A–D.
+> Il tag `v{X.Y.Z}` viene creato dall'utente dopo il merge.
 
 ### 1.5 Gestione modifiche post-conferma
 Se l'utente richiede modifiche dopo la chiusura, il ciclo riprende dalla feature modificata e gli step A–D vanno rieseguiti integralmente.
@@ -135,6 +146,25 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 - File agent e personali (MASTER_PLAN, ARCHITECTURE, PLAYBOOK, .cursorrules, skills) = italiano
 - Comunicazione in chat con l'utente = italiano
 
+### 2.7 Versioning (single source of truth)
+- Unica fonte scrivibile: `src/gnome_theme_manager/__init__.py` → `__version__`
+- `pyproject.toml` la legge dinamicamente (setuptools `dynamic = ["version"]`): mai duplicare il valore
+- CLI `--version` e GUI About leggono `__version__` a runtime
+- Schema SemVer: fase = minor (1.1.0, 1.2.0…), chore/fix = patch (1.0.1), major solo per release breaking
+- Mapping fase → versione:
+
+| Milestone | Versione |
+| --------- | -------- |
+| Fase 0    | 1.0.0    |
+| Fase 1    | 1.1.0    |
+| Fase 2    | 1.2.0    |
+| Fase 3    | 1.3.0    |
+| Fase 4    | 1.4.0    |
+| Fase 5    | 1.5.0    |
+
+- La versione si aggiorna SOLO durante la chiusura fase (step D), mai durante i task
+- Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
+
 ---
 
 ## 3. Fasi di implementazione
@@ -165,6 +195,20 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 **EXCLUDE (restano IT):** PLAYBOOK.md, MASTER_PLAN.md, ARCHITECTURE.md, .agents/rules/*, docs/skills/*
 
 **Acceptance:** pytest/ruff/mypy verdi · msgfmt ok · `grep -rIn "[àèéìòù]" README.md docs/ src/` zero hit fuori da EXCLUDE e po/it.po · GUI default EN, IT con `LANG=it_IT.UTF-8`
+
+---
+
+### 🔧 CHORE — Version single source (standalone)
+
+**Branch:** `chore/version-single-source`
+**Commit:** singolo commit `chore: version single source of truth`
+
+- [ ] V.1 `__version__` in `__init__.py` unica fonte; `pyproject.toml` dynamic version
+- [ ] V.2 CLI `--version` e GUI About leggono `__version__` a runtime
+- [ ] V.3 Metainfo/.desktop: entry release aggiornabile dallo step D (manuale o script)
+- [ ] V.4 Test: `test_version_consistency` (pyproject risolve == `__version__`; CLI --version coerente)
+
+**Acceptance:** la versione esiste in un solo punto scrivibile; tutto il resto deriva.
 
 ---
 
@@ -297,7 +341,8 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
     □ ruff/pylint puliti · git status pulito · test deterministici
     □ Commit per-task: 1 commit per task, verificato con git log --oneline
 □ C. Traduzioni (en.po/it.po sincronizzati, msgfmt ok, niente hardcode, UTF-8)
-□ D. Comando commit finale stampato (NON eseguito)
+□ D. Version bump: fonte unica aggiornata · grep vecchia versione = zero hit · CLI --version corretta
+□ E. Commit finale stampato con versione nel messaggio · tag creato dall'utente post-merge
 ```
 
 ### 4.2 Riferimenti esterni
