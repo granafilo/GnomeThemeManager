@@ -661,13 +661,13 @@ def test_themes_page_apply_theme_mapping_gtk(mock_theme_manager: MagicMock) -> N
 
     page.apply_theme(item, sync=True)
 
-    # Verifica invocazione con ThemeSet contenente solo gtk_theme
-    mock_theme_manager.apply_themes.assert_called_once()
-    called_theme_set: ThemeSet = mock_theme_manager.apply_themes.call_args[1]["theme_set"]
-    assert called_theme_set.gtk_theme == "Nordic"
-    assert called_theme_set.icon_theme is None
-    assert called_theme_set.cursor_theme is None
-    assert called_theme_set.shell_theme is None
+    # Verifica invocazione con apply_component
+    mock_theme_manager.apply_component.assert_called_once_with(
+        component=ThemeType.GTK,
+        theme_name="Nordic",
+        apply_gtk4_override=True,
+        propagate_sandbox=True,
+    )
 
 
 def test_themes_page_apply_theme_mapping_icon(mock_theme_manager: MagicMock) -> None:
@@ -688,9 +688,12 @@ def test_themes_page_apply_theme_mapping_icon(mock_theme_manager: MagicMock) -> 
 
     page.apply_theme(item, sync=True)
 
-    called_theme_set: ThemeSet = mock_theme_manager.apply_themes.call_args[1]["theme_set"]
-    assert called_theme_set.icon_theme == "Papirus"
-    assert called_theme_set.gtk_theme is None
+    mock_theme_manager.apply_component.assert_called_once_with(
+        component=ThemeType.ICON,
+        theme_name="Papirus",
+        apply_gtk4_override=True,
+        propagate_sandbox=True,
+    )
 
 
 def test_themes_page_apply_theme_mapping_cursor(mock_theme_manager: MagicMock) -> None:
@@ -711,9 +714,12 @@ def test_themes_page_apply_theme_mapping_cursor(mock_theme_manager: MagicMock) -
 
     page.apply_theme(item, sync=True)
 
-    called_theme_set: ThemeSet = mock_theme_manager.apply_themes.call_args[1]["theme_set"]
-    assert called_theme_set.cursor_theme == "Bibata"
-    assert called_theme_set.gtk_theme is None
+    mock_theme_manager.apply_component.assert_called_once_with(
+        component=ThemeType.CURSOR,
+        theme_name="Bibata",
+        apply_gtk4_override=True,
+        propagate_sandbox=True,
+    )
 
 
 def test_themes_page_apply_theme_mapping_shell(mock_theme_manager: MagicMock) -> None:
@@ -734,9 +740,12 @@ def test_themes_page_apply_theme_mapping_shell(mock_theme_manager: MagicMock) ->
 
     page.apply_theme(item, sync=True)
 
-    called_theme_set: ThemeSet = mock_theme_manager.apply_themes.call_args[1]["theme_set"]
-    assert called_theme_set.shell_theme == "Nordic-Shell"
-    assert called_theme_set.gtk_theme is None
+    mock_theme_manager.apply_component.assert_called_once_with(
+        component=ThemeType.SHELL,
+        theme_name="Nordic-Shell",
+        apply_gtk4_override=True,
+        propagate_sandbox=True,
+    )
 
 
 def test_themes_page_apply_theme_success_notifies_listener(mock_theme_manager: MagicMock) -> None:

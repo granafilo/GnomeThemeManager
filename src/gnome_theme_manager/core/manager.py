@@ -16,6 +16,7 @@ from pathlib import Path
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .errors import GSettingsUnavailableError, ThemeNotFoundError
+from .extensions import ExtensionsManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import ThemeInstaller
@@ -39,8 +40,8 @@ class ThemeManager:
     """Classe Facade di coordinamento per tutte le operazioni sui temi di GNOME.
 
     Astrae e disaccoppia la complessità dei singoli sottosistemi (GSettings, Filesystem,
-    Linker, Installer, Presets, SandboxBridge) fornendo un'API pulita, priva di dipendenze UI,
-    altamente testabile con iniezione opzionale delle dipendenze.
+    Linker, Installer, Presets, SandboxBridge, ExtensionsManager) fornendo un'API pulita,
+    priva di dipendenze UI, altamente testabile con iniezione opzionale delle dipendenze.
     """
 
     def __init__(
@@ -51,6 +52,7 @@ class ThemeManager:
         installer: ThemeInstaller | None = None,
         presets: PresetManager | None = None,
         sandbox_bridge: SandboxBridge | None = None,
+        extensions: ExtensionsManager | None = None,
     ) -> None:
         """Inizializza il coordinatore Facade con iniezione opzionale dei componenti.
 
@@ -61,12 +63,14 @@ class ThemeManager:
             installer: Istanza custom di ThemeInstaller (opzionale).
             presets: Istanza custom di PresetManager (opzionale).
             sandbox_bridge: Istanza custom di SandboxBridge (opzionale).
+            extensions: Istanza custom di ExtensionsManager (opzionale).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
         self._installer = installer or ThemeInstaller()
         self._presets = presets or PresetManager()
         self._sandbox = sandbox_bridge or SandboxBridge()
+        self._extensions = extensions or ExtensionsManager()
 
         # Inizializzazione protetta di GSettingsClient
         if gsettings is not None:
@@ -107,6 +111,11 @@ class ThemeManager:
     def sandbox(self) -> SandboxBridge:
         """Restituisce il bridge sandbox associato."""
         return self._sandbox
+
+    @property
+    def extensions(self) -> ExtensionsManager:
+        """Restituisce il gestore delle estensioni GNOME Shell."""
+        return self._extensions
 
     def _ensure_gsettings(self) -> GSettingsClient:
         """Verifica la disponibilità di GSettingsClient e lo restituisce.
@@ -161,6 +170,11 @@ class ThemeManager:
         sandbox_stat = self._sandbox.get_sandbox_status()
         gtk4_override_stat = self._gtk4_linker.is_override_active()
 
+        # Rileva lo stato di override tramite GSettingsClient se disponibile
+        override_status = None
+        if self._gsettings:
+            override_status = self._gsettings.detect_gtk4_override()
+
         return SystemStatus(
             gsettings_available=gsettings_avail,
             shell_theme_supported=shell_supported,
@@ -169,6 +183,7 @@ class ThemeManager:
             user_icons_path=self._installer.user_icons_dir,
             sandbox_status=sandbox_stat,
             gtk4_override_active=gtk4_override_stat,
+            gtk4_override_status=override_status,
         )
 
     def get_sandbox_status(self) -> SandboxStatus:
@@ -416,6 +431,51 @@ class ThemeManager:
             color_scheme=color_scheme,
         )
 
+        return self.apply_themes(
+            theme_set,
+            apply_gtk4_override=apply_gtk4_override,
+            propagate_sandbox=propagate_sandbox,
+        )
+
+    def apply_component(
+        self,
+        component: ThemeType,
+        theme_name: str,
+        apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
+    ) -> ApplyResult:
+        """Applica un singolo componente (GTK, icone, cursori, shell) con il tema indicato.
+
+        Args:
+            component: La categoria di tema (ThemeType.GTK, ICON, CURSOR, SHELL).
+            theme_name: Nome del tema da applicare.
+            apply_gtk4_override: Se True, applica l'override GTK4 per temi GTK.
+            propagate_sandbox: Se True, propaga i temi GTK/icone a Flatpak e Snap.
+
+        Returns:
+            ApplyResult con l'esito dell'applicazione.
+
+        Raises:
+            ThemeNotFoundError: Se il tema specificato non esiste nel sistema.
+            GSettingsUnavailableError: Se GSettings non è disponibile.
+        """
+        found = self._scanner.find_theme(theme_name, component)
+        if not found:
+            raise ThemeNotFoundError(
+                f"Il tema '{theme_name}' per il componente '{component}' non è stato trovato."
+            )
+
+        kwargs = {}
+        if component == ThemeType.GTK:
+            kwargs["gtk_theme"] = theme_name
+        elif component == ThemeType.ICON:
+            kwargs["icon_theme"] = theme_name
+        elif component == ThemeType.CURSOR:
+            kwargs["cursor_theme"] = theme_name
+        elif component == ThemeType.SHELL:
+            kwargs["shell_theme"] = theme_name
+
+        theme_set = ThemeSet(**kwargs)
         return self.apply_themes(
             theme_set,
             apply_gtk4_override=apply_gtk4_override,

@@ -9,6 +9,7 @@ import pytest
 from gnome_theme_manager.core.errors import (
     GSettingsUnavailableError,
 )
+from gnome_theme_manager.core.gsettings import Gtk4OverrideStatus
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
     SandboxStatus,
@@ -216,6 +217,7 @@ def test_status_page_gtk4_override_inactive(mock_theme_manager: MagicMock) -> No
 
     status = mock_theme_manager.get_system_status.return_value
     status.gtk4_override_active = False
+    status.gtk4_override_status = Gtk4OverrideStatus.INACTIVE
 
     page = StatusPage(manager=mock_theme_manager)
     page.refresh(sync=True)

@@ -645,6 +645,9 @@ class InstallerPage:
     def _open_overwrite_confirm_dialog(self, apply_after: bool, sync: bool = False) -> None:
         """Apre il dialogo modale per confermare la sovrascrittura di un tema esistente.
 
+        Se viene richiesto di applicare il tema installato (apply_after=True) ed esso è di tipo
+        GTK o Shell e supporta la cross-applicazione (ha la controparte), aggiunge la checkbox nel dialogo.
+
         Args:
             apply_after: Se True, applica il tema dopo l'installazione sovrascritta.
             sync: Se True, esegue l'eventuale installazione sovrascritta in modo sincrono.
@@ -656,11 +659,55 @@ class InstallerPage:
         theme_name = self._detected_name or _("questo tema")
         root_window = self._get_root_window()
 
+        # Box per ospitare l'eventuale checkbox della cross-applicazione
+        extra_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        cross_checkbox = None
+
+        if apply_after and self.manager is not None and self._detected_components:
+            types = set(self._detected_components)
+            # Se ha GTK ed è disponibile o in fase di installazione per Shell
+            if ThemeType.GTK in types:
+                has_opposite = bool(self.manager.scanner.find_theme(theme_name, ThemeType.SHELL))
+                if has_opposite:
+                    cross_checkbox = Gtk.CheckButton.new_with_label(
+                        _("Applica anche come tema GNOME Shell")
+                    )
+            elif ThemeType.SHELL in types:
+                has_opposite = bool(self.manager.scanner.find_theme(theme_name, ThemeType.GTK))
+                if has_opposite:
+                    cross_checkbox = Gtk.CheckButton.new_with_label(
+                        _("Applica anche come tema GTK")
+                    )
+
+        if cross_checkbox is not None:
+            cross_checkbox.set_margin_top(8)
+            cross_checkbox.set_halign(Gtk.Align.CENTER)
+            extra_box.append(cross_checkbox)
+
+        def handle_overwrite_confirmed() -> None:
+            # Se la checkbox era attiva, applichiamo l'opposto dopo l'installazione
+            do_cross = cross_checkbox is not None and cross_checkbox.get_active()
+            # Eseguiamo l'installazione reale
+            self._run_install(apply_after=apply_after, overwrite=True, sync=sync)
+            if do_cross and self.manager is not None:
+                # Applica il componente opposto
+                opposite_type = (
+                    ThemeType.SHELL if ThemeType.GTK in self._detected_components else ThemeType.GTK
+                )
+                self.manager.apply_component(
+                    component=opposite_type,
+                    theme_name=theme_name,
+                    apply_gtk4_override=True,
+                    propagate_sandbox=True,
+                )
+
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(
                 _("Tema già presente"),
                 f'{_("Un tema con il nome")} "{theme_name}" {_("esiste già nella cartella utente.")}\n\n{_("Vuoi sovrascriverlo?")}',
             )
+            if cross_checkbox is not None:
+                dialog.set_extra_child(extra_box)
             dialog.add_response("cancel", _("Annulla"))
             dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
@@ -678,7 +725,7 @@ class InstallerPage:
                         resp = str(response_param)
 
                     if resp == "overwrite":
-                        self._run_install(apply_after=apply_after, overwrite=True, sync=sync)
+                        handle_overwrite_confirmed()
                 finally:
                     self._confirm_dialog_open = False
 
@@ -690,6 +737,8 @@ class InstallerPage:
                 _("Tema già presente"),
                 f'{_("Un tema con il nome")} "{theme_name}" {_("esiste già nella cartella utente.")}\n\n{_("Vuoi sovrascriverlo?")}',
             )
+            if cross_checkbox is not None:
+                dialog.set_extra_child(extra_box)
             dialog.add_response("cancel", _("Annulla"))
             dialog.add_response("overwrite", _("Sovrascrivi"))
             dialog.set_response_appearance("overwrite", Adw.ResponseAppearance.DESTRUCTIVE)
@@ -699,7 +748,7 @@ class InstallerPage:
             def on_msg_response(_dlg: Any, response: str) -> None:
                 try:
                     if response == "overwrite":
-                        self._run_install(apply_after=apply_after, overwrite=True, sync=sync)
+                        handle_overwrite_confirmed()
                 finally:
                     self._confirm_dialog_open = False
 
@@ -707,6 +756,7 @@ class InstallerPage:
             dialog.present()
         else:
             self._confirm_dialog_open = False
+            handle_overwrite_confirmed()
 
     # -------------------------------------------------------------------------
     # Utility

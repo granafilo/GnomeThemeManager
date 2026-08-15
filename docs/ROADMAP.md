@@ -1,8 +1,8 @@
 # 🗺️ Roadmap di Sviluppo — GNOME Theme Manager
 
-**Ultimo aggiornamento**: 13 Agosto 2026  
-**Versione corrente**: v0.1.0 (Pre-Alpha)  
-**Stato**: In sviluppo attivo
+**Ultimo aggiornamento**: 15 Agosto 2026  
+**Versione corrente**: v1.0.0(Fase 0 completata)  
+**Stato**: In sviluppo attivo (Fase 0 stabilizzazione e test eseguiti con successo)
 
 ---
 
@@ -383,19 +383,22 @@ from pathlib import Path
 LOG_DIR = Path.home() / ".local/state/gnome-theme-manager"
 LOG_FILE = LOG_DIR / "app.log"
 
+
 def setup_logger():
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     logger = logging.getLogger("gnome_theme_manager")
     logger.setLevel(logging.DEBUG)
-    
+
     # File handler (JSON)
     file_handler = logging.FileHandler(LOG_FILE)
     file_handler.setLevel(logging.DEBUG)
-    file_handler.setFormatter(logging.Formatter(
-        '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}'
-    ))
-    
+    file_handler.setFormatter(
+        logging.Formatter(
+            '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s"}'
+        )
+    )
+
     logger.addHandler(file_handler)
     return logger
 ```
@@ -433,10 +436,12 @@ from pathlib import Path
 
 LOCALE_DIR = Path(__file__).parent.parent / "locales"
 
+
 def setup_i18n(lang_code: str = "it"):
     translation = gettext.translation("gnome_theme_manager", LOCALE_DIR, languages=[lang_code])
     translation.install()
     return translation.gettext
+
 
 _ = setup_i18n("it")
 ```
@@ -447,6 +452,7 @@ _ = setup_i18n("it")
 
 | Milestone | Versione | Data Target | Feature Principali |
 | :--- | :---: | :---: | :--- |
+| **M0 (Fase 0)** | v1.0.0-beta3 | 15 Agosto 2026 | Stabilizzazione, Preset 2.0, Estensioni, modali unificati (Completato) |
 | **M6** | v1.1.0 | Settembre 2026 | Backup/Ripristino, color-scheme |
 | **M7** | v1.2.0 | Ottobre 2026 | Packaging Flatpak, .deb |
 | **M8** | v1.3.0 | Novembre 2026 | Rilevamento Flatpak GTK3, Diagnostica |

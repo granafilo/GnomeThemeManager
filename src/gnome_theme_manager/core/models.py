@@ -5,7 +5,10 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from .gsettings import Gtk4OverrideStatus
 
 
 class ThemeType(str, Enum):
@@ -28,6 +31,8 @@ class Theme:
     theme_type: ThemeType
     path: Path
     is_user_level: bool
+    invalid: bool = False
+    inheritance_chain: list[str] = field(default_factory=list)
 
     @property
     def exists(self) -> bool:
@@ -165,3 +170,4 @@ class SystemStatus:
     user_icons_path: Path
     sandbox_status: SandboxStatus | None = None
     gtk4_override_active: bool = False
+    gtk4_override_status: "Gtk4OverrideStatus | None" = None

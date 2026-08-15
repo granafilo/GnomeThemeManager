@@ -9,6 +9,7 @@ all'interno della cartella di configurazione utente (~/.config/gnome-theme-manag
 
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .constants import PRESETS_DIR
@@ -24,12 +25,12 @@ class PresetManager:
         """Inizializza il gestore dei preset.
 
         Args:
-            presets_dir: Directory di memorizzazione dei file JSON dei preset
-                         (default: ~/.config/gnome-theme-manager/presets).
+            presets_dir: Directory di memorizzazione (default: ~/.local/state/gnome-theme-manager).
         """
         self.presets_dir = (
             Path(presets_dir).expanduser() if presets_dir is not None else PRESETS_DIR.expanduser()
         )
+        self.presets_file = self.presets_dir / "presets.json"
 
     def _sanitize_name(self, name: str) -> str:
         """Valida e ripulisce il nome del preset prevenendo Path Traversal e nomi non validi.
@@ -75,8 +76,8 @@ class PresetManager:
                 f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso."
             )
 
-        # Nomi riservati come '.' singolo
-        if cleaned == ".":
+        # Nomi riservati come '.' singolo o '..'
+        if cleaned == "." or cleaned == "..":
             raise ValueError(
                 f"Nome preset non valido: '{name}'. Non sono ammessi caratteri di percorso."
             )
@@ -89,112 +90,106 @@ class PresetManager:
 
         return cleaned
 
+    def _read_presets_file(self) -> dict:
+        """Legge il file presets.json e restituisce il dizionario."""
+        if not self.presets_file.is_file():
+            return {"presets": []}
+        try:
+            content = self.presets_file.read_text(encoding="utf-8")
+            return json.loads(content)
+        except json.JSONDecodeError as err:
+            logger.error("File presets.json corrotto o illeggibile: %s", err)
+            raise ValueError(f"File presets.json corrotto o illeggibile: {err}") from err
+        except Exception as err:
+            logger.error("Errore durante la lettura di presets.json: %s", err)
+            return {"presets": []}
+
+    def _write_presets_file(self, data: dict) -> None:
+        """Scrive il dizionario nel file presets.json."""
+        self.presets_dir.mkdir(parents=True, exist_ok=True)
+        self.presets_file.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
+
     def save_preset(self, name: str, theme_set: ThemeSet, overwrite: bool = False) -> Path:
-        """Salva una configurazione ThemeSet come preset JSON.
-
-        Args:
-            name: Nome identificativo del preset (es. 'NordicDark', 'MinimalWork').
-            theme_set: Istanza di ThemeSet contenente le preferenze da salvare.
-            overwrite: Se True, sovrascrive un eventuale preset esistente con lo stesso nome.
-
-        Returns:
-            Il percorso Path del file JSON salvato.
-
-        Raises:
-            ValueError: Se il nome del preset non è valido o se theme_set è vuoto.
-            FileExistsError: Se il preset esiste già e overwrite=False.
-        """
+        """Salva una configurazione ThemeSet come preset nel file presets.json."""
         preset_name = self._sanitize_name(name)
-
         if theme_set.is_empty():
             raise ValueError("Impossibile salvare un preset privo di qualsiasi configurazione.")
 
-        self.presets_dir.mkdir(parents=True, exist_ok=True)
-        preset_path = self.presets_dir / f"{preset_name}.json"
+        data = self._read_presets_file()
+        presets = data.get("presets", [])
 
-        if preset_path.exists() and not overwrite:
-            raise FileExistsError(
-                f"Il preset '{preset_name}' esiste già in '{preset_path}'. "
-                "Specificare overwrite=True per sovrascriverlo."
-            )
+        # Cerca duplicati
+        existing_index = -1
+        for i, p in enumerate(presets):
+            if p.get("name") == preset_name:
+                existing_index = i
+                break
 
-        data = theme_set.to_dict()
-        preset_path.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
-        logger.info("Preset salvato con successo: '%s' in %s", preset_name, preset_path)
-        return preset_path
+        if existing_index != -1 and not overwrite:
+            raise FileExistsError(f"Il preset '{preset_name}' esiste già.")
+
+        # Crea la nuova voce esplicita secondo lo schema
+        new_preset = {
+            "name": preset_name,
+            "components": {
+                "gtk3": theme_set.gtk_theme,
+                "gtk4": theme_set.gtk_theme,  # Fintanto che usiamo lo stesso tema per gtk3/gtk4
+                "shell": theme_set.shell_theme,
+                "icons": theme_set.icon_theme,
+                "cursors": theme_set.cursor_theme,
+            },
+            "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+
+        if existing_index != -1:
+            presets[existing_index] = new_preset
+        else:
+            presets.append(new_preset)
+
+        data["presets"] = presets
+        self._write_presets_file(data)
+        logger.info("Preset salvato con successo: '%s'", preset_name)
+        return self.presets_file
 
     def load_preset(self, name: str) -> ThemeSet:
-        """Carica un preset dal file JSON corrispondente.
-
-        Args:
-            name: Nome del preset da caricare.
-
-        Returns:
-            L'istanza ThemeSet deserializzata dal file.
-
-        Raises:
-            ValueError: Se il nome del preset non è valido.
-            FileNotFoundError: Se il file del preset non esiste.
-        """
+        """Carica un preset dal file presets.json."""
         preset_name = self._sanitize_name(name)
-        preset_path = self.presets_dir / f"{preset_name}.json"
+        data = self._read_presets_file()
+        presets = data.get("presets", [])
 
-        if not preset_path.is_file():
-            raise FileNotFoundError(
-                f"Il preset '{preset_name}' non è stato trovato in '{self.presets_dir}'."
-            )
+        for p in presets:
+            if p.get("name") == preset_name:
+                comp = p.get("components", {})
+                return ThemeSet(
+                    gtk_theme=comp.get("gtk3") or comp.get("gtk4"),
+                    shell_theme=comp.get("shell"),
+                    icon_theme=comp.get("icons"),
+                    cursor_theme=comp.get("cursors"),
+                )
 
-        try:
-            content = preset_path.read_text(encoding="utf-8")
-            data = json.loads(content)
-        except (json.JSONDecodeError, OSError) as err:
-            logger.error("Errore durante la lettura del preset '%s': %s", preset_name, err)
-            raise ValueError(
-                f"File preset '{preset_name}.json' corrotto o illeggibile: {err}"
-            ) from err
-
-        theme_set = ThemeSet.from_dict(data)
-        logger.info("Preset caricato con successo: '%s'", preset_name)
-        return theme_set
+        raise FileNotFoundError(f"Il preset '{preset_name}' non è stato trovato.")
 
     def list_presets(self) -> list[str]:
-        """Elenca i nomi di tutti i preset disponibili nella directory.
-
-        Returns:
-            Lista ordinata alfabeticamente dei nomi dei preset (senza estensione .json).
-        """
-        if not self.presets_dir.is_dir():
-            return []
-
-        presets = [
-            f.stem
-            for f in self.presets_dir.glob("*.json")
-            if f.is_file() and not f.name.startswith(".")
-        ]
-        presets.sort(key=str.lower)
-        return presets
+        """Elenca i nomi di tutti i preset disponibili."""
+        data = self._read_presets_file()
+        presets = data.get("presets", [])
+        names = [p.get("name") for p in presets if p.get("name")]
+        names.sort(key=str.lower)
+        return names
 
     def delete_preset(self, name: str) -> bool:
-        """Elimina il file JSON di un preset.
-
-        Args:
-            name: Nome del preset da eliminare.
-
-        Returns:
-            True se il file è stato eliminato con successo.
-
-        Raises:
-            ValueError: Se il nome del preset non è valido.
-            FileNotFoundError: Se il preset da eliminare non esiste.
-        """
+        """Elimina un preset dal file presets.json."""
         preset_name = self._sanitize_name(name)
-        preset_path = self.presets_dir / f"{preset_name}.json"
+        data = self._read_presets_file()
+        presets = data.get("presets", [])
 
-        if not preset_path.is_file():
-            raise FileNotFoundError(
-                f"Impossibile eliminare: il preset '{preset_name}' non esiste in '{self.presets_dir}'."
-            )
+        initial_len = len(presets)
+        presets = [p for p in presets if p.get("name") != preset_name]
 
-        preset_path.unlink()
+        if len(presets) == initial_len:
+            raise FileNotFoundError(f"Il preset '{preset_name}' non esiste.")
+
+        data["presets"] = presets
+        self._write_presets_file(data)
         logger.info("Preset eliminato con successo: '%s'", preset_name)
         return True
