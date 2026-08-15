@@ -691,7 +691,9 @@ class InstallerPage:
             self._run_install(apply_after=apply_after, overwrite=True, sync=sync)
             if do_cross and self.manager is not None:
                 # Applica il componente opposto
-                opposite_type = ThemeType.SHELL if ThemeType.GTK in self._detected_components else ThemeType.GTK
+                opposite_type = (
+                    ThemeType.SHELL if ThemeType.GTK in self._detected_components else ThemeType.GTK
+                )
                 self.manager.apply_component(
                     component=opposite_type,
                     theme_name=theme_name,

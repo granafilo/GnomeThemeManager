@@ -13,6 +13,7 @@ from gnome_theme_manager.gui_gtk.pages.themes import ThemeItemPresentation, Them
 
 if is_gtk_available():
     import gi
+
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
     from gi.repository import Adw, Gtk
@@ -37,8 +38,8 @@ def test_themes_page_confirm_gtk_asks_to_apply_as_shell(mock_theme_manager) -> N
     )
 
     # Mock per far trovare Nordic anche come Shell
-    mock_theme_manager.scanner.find_theme.side_effect = lambda name, theme_type: (
-        Theme("Nordic", theme_type, Path("/usr/share/themes/Nordic"), False)
+    mock_theme_manager.scanner.find_theme.side_effect = lambda name, theme_type: Theme(
+        "Nordic", theme_type, Path("/usr/share/themes/Nordic"), False
     )
 
     dialog_instances = []

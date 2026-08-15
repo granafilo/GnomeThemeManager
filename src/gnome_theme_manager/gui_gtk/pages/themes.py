@@ -611,7 +611,7 @@ class ThemesPage:
         win = parent_window or self.widget.get_root()
 
         # Verifica se l'applicazione riguarda (o include) la GNOME Shell e l'estensione è disabilitata
-        needs_extension_check = (item.theme_type == ThemeType.SHELL)
+        needs_extension_check = item.theme_type == ThemeType.SHELL
         # Se ha la controparte, verificheremo se l'utente la seleziona dopo, ma controlliamo preventivamente se l'estensione è disattivata
         if self.manager is not None and needs_extension_check:
             is_enabled = self.manager.extensions.is_user_theme_enabled()
@@ -685,8 +685,16 @@ class ThemesPage:
         def execute_confirmed_apply() -> None:
             if cross_checkbox is not None and cross_checkbox.get_active():
                 # Esegue l'applicazione di entrambi i componenti
-                opposite_type = ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
-                self.apply_theme(item, on_complete=lambda res, err: self._apply_opposite_after(item.name, opposite_type, on_complete), sync=sync)
+                opposite_type = (
+                    ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
+                )
+                self.apply_theme(
+                    item,
+                    on_complete=lambda res, err: self._apply_opposite_after(
+                        item.name, opposite_type, on_complete
+                    ),
+                    sync=sync,
+                )
             else:
                 self.apply_theme(item, on_complete=on_complete, sync=sync)
 
@@ -781,7 +789,9 @@ class ThemesPage:
         """Apre un dialogo modale proponendo di abilitare l'estensione GNOME Shell 'user-theme'."""
         win = parent_window or self.widget.get_root()
         title = _("Estensione User Themes disabilitata")
-        body = _("L'estensione 'User Themes' è richiesta per poter applicare temi personalizzati alla GNOME Shell. Vuoi abilitarla adesso?")
+        body = _(
+            "L'estensione 'User Themes' è richiesta per poter applicare temi personalizzati alla GNOME Shell. Vuoi abilitarla adesso?"
+        )
 
         def handle_enable_and_continue() -> None:
             if self.manager is not None:
@@ -798,11 +808,16 @@ class ThemesPage:
                             )
                         except Exception:
                             pass
-                    self.confirm_and_apply_theme(item, parent_window=parent_window, on_complete=on_complete, sync=sync)
+                    self.confirm_and_apply_theme(
+                        item, parent_window=parent_window, on_complete=on_complete, sync=sync
+                    )
                 else:
                     self._show_toast(_("Impossibile abilitare l'estensione 'User Themes'."))
                     if on_complete:
-                        on_complete(None, GnomeThemeManagerError(_("Estensione User Themes non disponibile.")))
+                        on_complete(
+                            None,
+                            GnomeThemeManagerError(_("Estensione User Themes non disponibile.")),
+                        )
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(heading=title, body=body)

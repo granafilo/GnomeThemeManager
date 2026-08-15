@@ -97,6 +97,7 @@ def mock_theme_manager() -> MagicMock:
             is_user_level=True,
         ),
     ]
+
     def mock_apply_component(component, theme_name, *args, **kwargs):
         res_kwargs = {
             "gtk_theme": theme_name if component == ThemeType.GTK else None,

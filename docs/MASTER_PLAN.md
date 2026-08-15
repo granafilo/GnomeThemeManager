@@ -162,7 +162,7 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 - [ ] C.3 i18n: setup gettext se mancante (source EN); `po/en.po` allineato; `po/it.po` completo e non fuzzy
 - [ ] C.4 .desktop / metainfo / AppStream → EN
 
-**EXCLUDE (restano IT):** PLAYBOOK.md, MASTER_PLAN.md, ARCHITECTURE.md, .cursorrules, docs/skills/*
+**EXCLUDE (restano IT):** PLAYBOOK.md, MASTER_PLAN.md, ARCHITECTURE.md, .agents/rules/*, docs/skills/*
 
 **Acceptance:** pytest/ruff/mypy verdi · msgfmt ok · `grep -rIn "[àèéìòù]" README.md docs/ src/` zero hit fuori da EXCLUDE e po/it.po · GUI default EN, IT con `LANG=it_IT.UTF-8`
 

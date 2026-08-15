@@ -189,16 +189,7 @@ def test_manager_load_preset_incomplete_json(tmp_path: Path) -> None:
     manager, pm = _build_manager_with_presets_dir(tmp_path)
 
     # Scrive presets.json con una voce incompleta
-    data = {
-        "presets": [
-            {
-                "name": "Parziale",
-                "components": {
-                    "gtk3": "Nordic"
-                }
-            }
-        ]
-    }
+    data = {"presets": [{"name": "Parziale", "components": {"gtk3": "Nordic"}}]}
     pm.presets_file.write_text(json.dumps(data), encoding="utf-8")
 
     loaded = manager.load_preset("Parziale")

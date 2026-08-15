@@ -12,6 +12,7 @@ from gnome_theme_manager.gui_gtk.pages.themes import ThemeItemPresentation, Them
 
 if is_gtk_available():
     import gi
+
     gi.require_version("Gtk", "4.0")
     gi.require_version("Adw", "1")
     from gi.repository import Adw
@@ -60,7 +61,11 @@ def test_themes_page_prompts_to_enable_extension_if_disabled(mock_theme_manager)
         page.confirm_and_apply_theme(item, sync=True)
 
         assert len(dialog_instances) == 1
-        heading = dialog_instances[0].get_heading() if hasattr(dialog_instances[0], "get_heading") else dialog_instances[0].get_title()
+        heading = (
+            dialog_instances[0].get_heading()
+            if hasattr(dialog_instances[0], "get_heading")
+            else dialog_instances[0].get_title()
+        )
         assert "disabilitata" in heading or "User Themes" in heading
 
         # Abilitiamo e continuiamo
