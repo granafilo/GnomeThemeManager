@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="1.0.0" date="2026-08-15">
+      <description>
+        <p>Release 1.0.0: GTK4/Libadwaita GUI, Preset 2.0, Shell themes and user-theme extension management, unified modals, AppImage packaging and translations.</p>
+      </description>
+    </release>
     <release version="0.9.0~beta3" date="2026-08-14">
       <description>
         <p>Beta release implementing legacy path installation options, translation files integration and sandbox propagation bugfixes.</p>

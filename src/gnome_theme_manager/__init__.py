@@ -9,7 +9,7 @@ import gettext
 import locale
 import os
 
-__version__ = "0.9.0b3"
+__version__ = "1.0.0"
 
 # Percorso delle traduzioni compiled (.mo)
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")

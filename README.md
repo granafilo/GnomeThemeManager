@@ -10,7 +10,7 @@
 
 ## Stato del progetto
 
-La versione 0.9.0-beta3 è una release destinata ai test pubblici.
+La versione 1.0.0 è una release destinata ai test pubblici.
 Non viene ancora garantita la compatibilità con tutte le distribuzioni,
 versioni di GNOME o temi non conformi agli standard attesi.
 
@@ -42,7 +42,7 @@ Il progetto include:
 - GUI nativa GNOME con GTK4/Libadwaita.
 - GUI Tkinter legacy come fallback temporaneo.
 
-Versione pacchetto attuale: 0.9.0-beta3 (PEP 440: 0.9.0b3)
+Versione pacchetto attuale: 1.0.0 (PEP 440: 1.0.0)
 
 ## Feature
 
@@ -89,8 +89,8 @@ Pacchetti GUI GTK4/Libadwaita (Ubuntu/Debian):
 Scarica il file eseguibile `.AppImage` dalle [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) e avvialo:
 
 ```bash
-chmod +x GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
-./GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
+./GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
 
 Per le istruzioni dettagliate sui prerequisiti e compilazione locale, consulta **[INSTALL.md](INSTALL.md)**.
@@ -236,11 +236,11 @@ L'AppImage include i file `.mo` nell'installazione Python del package, sotto `gn
 
 ```bash
 ./scripts/build-appimage.sh
-./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage --appimage-extract
+./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage --appimage-extract
 find squashfs-root -name "*.mo"
 
-LANG=it_IT.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
-LANG=en_US.UTF-8 ./dist/GNOMEThemeManager-0.9.0-beta2-x86_64.AppImage
+LANG=it_IT.UTF-8 ./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage
+LANG=en_US.UTF-8 ./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
 
 ### Come aggiungere o aggiornare le traduzioni
