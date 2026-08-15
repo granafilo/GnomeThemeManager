@@ -56,6 +56,18 @@ Versione pacchetto attuale: 0.9.0-beta3 (PEP 440: 0.9.0b3)
 - Propagazione tema verso runtime sandbox (opzionale)
 - Override GTK4 in ~/.config/gtk-4.0 quando applicabile
 
+## Prerequisiti
+
+Per garantire il corretto funzionamento dell'applicazione e del launcher:
+
+1. **Permessi di Esecuzione**: Il launcher `gnome-theme-manager` deve avere i permessi di esecuzione configurati correttamente. È possibile abilitarli tramite CLI:
+   ```bash
+   chmod +x /path/to/gnome-theme-manager
+   ```
+2. **Integrazione Flatpak & Snap**:
+   - Per Flatpak, i temi utente installati in `~/.themes` o `~/.icons` non sono visibili alle sandbox per impostazione predefinita. L'applicazione utilizza `flatpak override` per concedere l'accesso del filesystem all'host alle sandbox Flatpak.
+   - Per Snap, per consentire al sistema di dialogare e propagare i temi, assicurarsi che le estensioni e i temi di sistema comuni (ad esempio `gtk-common-themes`) siano correttamente installati e connessi all'host GNOME.
+
 ## Requisiti
 
 - Python >= 3.10
