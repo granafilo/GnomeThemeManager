@@ -610,6 +610,18 @@ class ThemesPage:
 
         win = parent_window or self.widget.get_root()
 
+        # Verifica se l'applicazione riguarda (o include) la GNOME Shell e l'estensione è disabilitata
+        needs_extension_check = (item.theme_type == ThemeType.SHELL)
+        # Se ha la controparte, verificheremo se l'utente la seleziona dopo, ma controlliamo preventivamente se l'estensione è disattivata
+        if self.manager is not None and needs_extension_check:
+            is_enabled = self.manager.extensions.is_user_theme_enabled()
+            if not is_enabled:
+                # Presentiamo il dialogo per abilitare l'estensione prima di continuare
+                self._open_enable_extension_dialog(item, win, on_complete, sync)
+                return
+
+        win = parent_window or self.widget.get_root()
+
         cat_name = DIALOG_CATEGORY_NAMES.get(item.theme_type, item.category_display)
         heading = f"{_('Applicare')} “{item.name}” {_('a')} {cat_name}?"
 
@@ -758,6 +770,79 @@ class ThemesPage:
             is_user_level=False,
         )
         self.apply_theme(opposite_item, on_complete=on_complete, sync=True)
+
+    def _open_enable_extension_dialog(
+        self,
+        item: ThemeItemPresentation,
+        parent_window: Gtk.Window | None = None,
+        on_complete: Callable[[ApplyResult | None, Exception | None], None] | None = None,
+        sync: bool = False,
+    ) -> None:
+        """Apre un dialogo modale proponendo di abilitare l'estensione GNOME Shell 'user-theme'."""
+        win = parent_window or self.widget.get_root()
+        title = _("Estensione User Themes disabilitata")
+        body = _("L'estensione 'User Themes' è richiesta per poter applicare temi personalizzati alla GNOME Shell. Vuoi abilitarla adesso?")
+
+        def handle_enable_and_continue() -> None:
+            if self.manager is not None:
+                success = self.manager.extensions.enable_user_theme()
+                if success:
+                    # Ricarichiamo le impostazioni GSettings di shell se possibile
+                    if self.manager.gsettings is not None:
+                        # Re-inizializza per caricare lo schema appena abilitato
+                        try:
+                            self.manager.gsettings.__init__(
+                                schema_name=self.manager.gsettings.schema_name,
+                                shell_schema_name=self.manager.gsettings.shell_schema_name,
+                                custom_schema_dirs=self.manager.gsettings.custom_schema_dirs,
+                            )
+                        except Exception:
+                            pass
+                    self.confirm_and_apply_theme(item, parent_window=parent_window, on_complete=on_complete, sync=sync)
+                else:
+                    self._show_toast(_("Impossibile abilitare l'estensione 'User Themes'."))
+                    if on_complete:
+                        on_complete(None, GnomeThemeManagerError(_("Estensione User Themes non disponibile.")))
+
+        if hasattr(Adw, "AlertDialog"):
+            dialog = Adw.AlertDialog.new(heading=title, body=body)
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("enable", _("Abilita e continua"))
+            dialog.set_response_appearance("enable", Adw.ResponseAppearance.SUGGESTED)
+            dialog.set_default_response("enable")
+            dialog.set_close_response("cancel")
+
+            def on_dialog_response(d: Any, response_param: Any) -> None:
+                resp = str(response_param)
+                if resp == "enable":
+                    handle_enable_and_continue()
+                elif on_complete:
+                    on_complete(None, None)
+
+            dialog.connect("response", on_dialog_response)
+            dialog.present(win if isinstance(win, Gtk.Widget) else None)
+        elif hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(
+                win if isinstance(win, Gtk.Window) else None,
+                title,
+                body,
+            )
+            dialog.add_response("cancel", _("Annulla"))
+            dialog.add_response("enable", _("Abilita e continua"))
+            dialog.set_response_appearance("enable", Adw.ResponseAppearance.SUGGESTED)
+            dialog.set_default_response("enable")
+            dialog.set_close_response("cancel")
+
+            def on_msg_response(_d: Any, response_id: str) -> None:
+                if response_id == "enable":
+                    handle_enable_and_continue()
+                elif on_complete:
+                    on_complete(None, None)
+
+            dialog.connect("response", on_msg_response)
+            dialog.present()
+        else:
+            handle_enable_and_continue()
 
     def apply_theme(
         self,

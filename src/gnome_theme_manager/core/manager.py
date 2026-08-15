@@ -16,6 +16,7 @@ from pathlib import Path
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .errors import GSettingsUnavailableError, ThemeNotFoundError
+from .extensions import ExtensionsManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import ThemeInstaller
@@ -39,8 +40,8 @@ class ThemeManager:
     """Classe Facade di coordinamento per tutte le operazioni sui temi di GNOME.
 
     Astrae e disaccoppia la complessità dei singoli sottosistemi (GSettings, Filesystem,
-    Linker, Installer, Presets, SandboxBridge) fornendo un'API pulita, priva di dipendenze UI,
-    altamente testabile con iniezione opzionale delle dipendenze.
+    Linker, Installer, Presets, SandboxBridge, ExtensionsManager) fornendo un'API pulita,
+    priva di dipendenze UI, altamente testabile con iniezione opzionale delle dipendenze.
     """
 
     def __init__(
@@ -51,6 +52,7 @@ class ThemeManager:
         installer: ThemeInstaller | None = None,
         presets: PresetManager | None = None,
         sandbox_bridge: SandboxBridge | None = None,
+        extensions: ExtensionsManager | None = None,
     ) -> None:
         """Inizializza il coordinatore Facade con iniezione opzionale dei componenti.
 
@@ -61,12 +63,14 @@ class ThemeManager:
             installer: Istanza custom di ThemeInstaller (opzionale).
             presets: Istanza custom di PresetManager (opzionale).
             sandbox_bridge: Istanza custom di SandboxBridge (opzionale).
+            extensions: Istanza custom di ExtensionsManager (opzionale).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
         self._installer = installer or ThemeInstaller()
         self._presets = presets or PresetManager()
         self._sandbox = sandbox_bridge or SandboxBridge()
+        self._extensions = extensions or ExtensionsManager()
 
         # Inizializzazione protetta di GSettingsClient
         if gsettings is not None:
@@ -107,6 +111,11 @@ class ThemeManager:
     def sandbox(self) -> SandboxBridge:
         """Restituisce il bridge sandbox associato."""
         return self._sandbox
+
+    @property
+    def extensions(self) -> ExtensionsManager:
+        """Restituisce il gestore delle estensioni GNOME Shell."""
+        return self._extensions
 
     def _ensure_gsettings(self) -> GSettingsClient:
         """Verifica la disponibilità di GSettingsClient e lo restituisce.
