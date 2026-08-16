@@ -114,7 +114,6 @@ def test_preset_save_empty_raises_value_error(tmp_path: Path) -> None:
         manager.save_preset("EmptyPreset", empty_set)
 
 
-
 def test_preset_list_presets(tmp_path: Path) -> None:
     """Verifica l'elenco ordinato alfabeticamente dei preset disponibili."""
     manager = PresetManager(presets_dir=tmp_path)
@@ -212,8 +211,6 @@ def test_preset_invalid_name_validation(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="Path characters are not allowed"):
         manager.save_preset("sub/dir/preset", theme_set)
-
-
 
 
 def test_apply_result_and_system_status_dataclasses() -> None:
@@ -349,7 +346,6 @@ def test_preset_name_empty_or_whitespace(tmp_path: Path) -> None:
     for bad_name in ["", "   ", "\t\n"]:
         with pytest.raises(ValueError, match="cannot be empty"):
             manager.save_preset(bad_name, ts)
-
 
 
 def test_preset_name_coherence_save_load_delete(tmp_path: Path) -> None:

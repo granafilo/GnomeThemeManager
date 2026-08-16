@@ -75,14 +75,9 @@ def test_status_page_ui_structure_and_scrolling() -> None:
     assert "row_flatpak_status" in object_ids
     assert "row_snap_status" in object_ids
 
-    ready_obj = next(
-        elem
-        for elem in root.iter("object")
-        if elem.attrib.get("id") == "ready_page"
-    )
+    ready_obj = next(elem for elem in root.iter("object") if elem.attrib.get("id") == "ready_page")
     props = {p.attrib.get("name"): p.text for p in ready_obj.findall("property")}
     assert props.get("vexpand") == "true"
-
 
     group_sandbox_obj = next(
         elem for elem in root.iter("object") if elem.attrib.get("id") == "group_sandbox"

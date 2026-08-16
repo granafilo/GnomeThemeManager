@@ -130,7 +130,6 @@ class StatusPage:
         self.icon_name: str = self.ICON_NAME
         self.manager = manager
 
-
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template not found: {UI_FILE}")
 
@@ -196,9 +195,7 @@ class StatusPage:
         def worker_fetch() -> tuple[StatusSnapshot | None, Exception | None]:
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError(
-                        _("ThemeManager unavailable or not initialized.")
-                    )
+                    raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
                 themes = self.manager.get_current_themes()
                 system_status = self.manager.get_system_status()
@@ -281,6 +278,7 @@ class StatusPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)

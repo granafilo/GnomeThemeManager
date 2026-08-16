@@ -119,4 +119,3 @@ def test_cli_uninstall_non_existent(
     assert exit_code == 1
     captured = capsys.readouterr()
     assert "[THEME ERROR]" in captured.err
-

@@ -405,11 +405,22 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
 
         if self.feedback_icon is not None:
             msg_lower = message.lower()
-            if "error" in msg_lower or "failed" in msg_lower or "unable" in msg_lower or "errore" in msg_lower or "fallit" in msg_lower:
+            if (
+                "error" in msg_lower
+                or "failed" in msg_lower
+                or "unable" in msg_lower
+                or "errore" in msg_lower
+                or "fallit" in msg_lower
+            ):
                 self.feedback_icon.set_from_icon_name("dialog-error-symbolic")
             elif "warning" in msg_lower or "partial" in msg_lower or "avvis" in msg_lower:
                 self.feedback_icon.set_from_icon_name("dialog-warning-symbolic")
-            elif "deleted" in msg_lower or "removed" in msg_lower or "rimoss" in msg_lower or "eliminat" in msg_lower:
+            elif (
+                "deleted" in msg_lower
+                or "removed" in msg_lower
+                or "rimoss" in msg_lower
+                or "eliminat" in msg_lower
+            ):
                 self.feedback_icon.set_from_icon_name("user-trash-symbolic")
             else:
                 self.feedback_icon.set_from_icon_name("emblem-ok-symbolic")

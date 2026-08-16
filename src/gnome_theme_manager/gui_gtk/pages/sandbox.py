@@ -46,7 +46,6 @@ class SandboxPage:
         self.icon_name: str = self.ICON_NAME
         self.manager: ThemeManager | None = manager
 
-
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
 
@@ -162,9 +161,7 @@ class SandboxPage:
 
             if error is not None:
                 logger.error("Error retrieving sandbox diagnostics: %s", error)
-                self.error_status_page.set_description(
-                    f"{_('Sandbox diagnostics error:')} {error}"
-                )
+                self.error_status_page.set_description(f"{_('Sandbox diagnostics error:')} {error}")
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE
@@ -181,6 +178,7 @@ class SandboxPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)
@@ -366,6 +364,7 @@ class SandboxPage:
             res = worker_propagate()
             on_propagation_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_propagate()
                 GLib.idle_add(on_propagation_completed, res)

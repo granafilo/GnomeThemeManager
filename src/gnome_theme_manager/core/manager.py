@@ -367,9 +367,7 @@ class ThemeManager:
             if gtk4_applied:
                 logger.info("GTK4/Libadwaita override applied for '%s'", found_gtk.name)
             else:
-                logger.debug(
-                    "No GTK4/3 compatible CSS folder found in '%s'", found_gtk.name
-                )
+                logger.debug("No GTK4/3 compatible CSS folder found in '%s'", found_gtk.name)
 
         # 6. Automatic propagation to sandboxes (Flatpak and Snap)
         propagation_result: PropagationResult | None = None

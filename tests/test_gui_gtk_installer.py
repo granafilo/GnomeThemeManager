@@ -72,7 +72,6 @@ def test_installer_page_select_source_archive_success(mock_theme_manager: MagicM
     assert page.install_apply_button.get_sensitive() is True
 
 
-
 def test_installer_page_select_source_directory_success(mock_theme_manager: MagicMock) -> None:
     """Verifica l'analisi e il passaggio a stato 'ready' per una cartella valida."""
     if not is_gtk_available():
@@ -89,7 +88,6 @@ def test_installer_page_select_source_directory_success(mock_theme_manager: Magi
     assert page.widget.get_visible_child_name() == "ready"
     assert page.detected_theme_name_row.get_subtitle() == "Papirus-Icons"
     assert "Icons" in page.detected_components_row.get_subtitle()
-
 
 
 def test_installer_page_select_source_not_found(mock_theme_manager: MagicMock) -> None:
@@ -329,7 +327,6 @@ def test_installer_page_button_labels_and_icons(mock_theme_manager: MagicMock) -
         assert btn.get_icon_name() == expected_icon, (
             f"Icona errata per il pulsante: {expected_icon}"
         )
-
 
 
 def test_installer_page_install_error_state(mock_theme_manager: MagicMock) -> None:

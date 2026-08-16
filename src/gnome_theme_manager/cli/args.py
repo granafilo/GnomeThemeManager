@@ -81,9 +81,7 @@ def create_parser() -> argparse.ArgumentParser:
     apply_parser.add_argument(
         "--theme",
         metavar="NAME",
-        help=_(
-            "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
-        ),
+        help=_("Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"),
     )
     apply_parser.add_argument(
         "--icon",

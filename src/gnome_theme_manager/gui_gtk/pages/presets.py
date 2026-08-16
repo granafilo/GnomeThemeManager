@@ -109,7 +109,6 @@ class PresetsPage:
         self.icon_name: str = self.ICON_NAME
         self.manager = manager
 
-
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
 
@@ -231,6 +230,7 @@ class PresetsPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)

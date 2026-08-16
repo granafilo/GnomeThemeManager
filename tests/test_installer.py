@@ -141,7 +141,6 @@ def test_safe_extract_non_existent_file(tmp_path: Path) -> None:
         safe_extract(missing, tmp_path / "out")
 
 
-
 # =============================================================================
 # 2. Test Rilevamento Tipi e Struttura (detect_theme_types & inspect_extracted_tree)
 # =============================================================================
@@ -300,8 +299,6 @@ def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
         installer.uninstall("NonExistentTheme", ThemeType.GTK)
 
 
-
-
 def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
     """Test di installazione di un tema moderno unificato (GTK3, GTK4, Libadwaita e GNOME Shell in unico archivio)."""
     user_themes = tmp_path / "user_themes"
@@ -448,7 +445,6 @@ def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> No
     # 1. Con overwrite=False deve sollevare FileExistsError prima di copiare ThemeGTK
     with pytest.raises(FileExistsError, match="already exists"):
         installer.install(archive, overwrite=False)
-
 
     # Verifica atomicità: ThemeGTK NON deve essere stato creato/scritto nel primo passaggio
     assert not (user_themes / "ThemeGTK").exists()

@@ -363,7 +363,6 @@ def test_manager_apply_themes_invalid_color_scheme(manager: ThemeManager) -> Non
         manager.apply_themes(ThemeSet(color_scheme="neon-dark"))
 
 
-
 def test_manager_apply_themes_shell_unsupported_adds_warning(
     manager: ThemeManager,
     mock_scanner: MagicMock,
@@ -426,7 +425,6 @@ def test_manager_apply_unified_theme_not_found(
 
     with pytest.raises(ThemeNotFoundError, match="was not found as GTK or GNOME Shell"):
         manager.apply_unified_theme("InexistentTheme")
-
 
 
 # -----------------------------------------------------------------------------

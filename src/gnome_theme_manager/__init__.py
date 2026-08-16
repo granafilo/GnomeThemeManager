@@ -57,7 +57,6 @@ def _(message: str) -> str:
     return get_translation().gettext(message)
 
 
-
 # Initialize C locale and system gettext (required to translate strings in .ui templates loaded via Gtk.Builder)
 try:
     locale.setlocale(locale.LC_ALL, "")
@@ -65,4 +64,3 @@ try:
     locale.bind_textdomain_codeset(DOMAIN, "UTF-8")
 except (locale.Error, AttributeError):
     pass
-

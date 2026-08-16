@@ -35,9 +35,7 @@ class ExtensionsManager:
                 enabled_list = res.stdout.splitlines()
                 return USER_THEME_EXTENSION_ID in enabled_list
         except Exception as err:
-            logger.warning(
-                "Unable to determine extension status via gnome-extensions: %s", err
-            )
+            logger.warning("Unable to determine extension status via gnome-extensions: %s", err)
         return False
 
     def enable_user_theme(self) -> bool:

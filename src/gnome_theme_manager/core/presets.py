@@ -65,27 +65,19 @@ class PresetManager:
 
         # Path separators (prevent Path Traversal)
         if "/" in cleaned or "\\" in cleaned:
-            raise ValueError(
-                f"Invalid preset name: '{name}'. Path characters are not allowed."
-            )
+            raise ValueError(f"Invalid preset name: '{name}'. Path characters are not allowed.")
 
         # Directory traversal sequence
         if ".." in cleaned:
-            raise ValueError(
-                f"Invalid preset name: '{name}'. Path characters are not allowed."
-            )
+            raise ValueError(f"Invalid preset name: '{name}'. Path characters are not allowed.")
 
         # Reserved names
         if cleaned in (".", ".."):
-            raise ValueError(
-                f"Invalid preset name: '{name}'. Path characters are not allowed."
-            )
+            raise ValueError(f"Invalid preset name: '{name}'. Path characters are not allowed.")
 
         # ASCII control characters (0-31 and 127)
         if any(ord(c) < 32 or ord(c) == 127 for c in cleaned):
-            raise ValueError(
-                f"Preset name '{name}' contains disallowed control characters."
-            )
+            raise ValueError(f"Preset name '{name}' contains disallowed control characters.")
 
         return cleaned
 

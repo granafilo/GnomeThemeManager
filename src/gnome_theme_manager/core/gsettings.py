@@ -224,9 +224,7 @@ class GSettingsClient:
         """Set color scheme preference (light/dark, GNOME 42+)."""
         valid_schemes = ["default", "prefer-dark", "prefer-light"]
         if scheme not in valid_schemes:
-            raise ValueError(
-                f"Invalid color scheme '{scheme}'. Allowed choices: {valid_schemes}"
-            )
+            raise ValueError(f"Invalid color scheme '{scheme}'. Allowed choices: {valid_schemes}")
 
         if self._has_key(self._settings, GSETTINGS_KEY_COLOR_SCHEME):
             self._settings.set_string(GSETTINGS_KEY_COLOR_SCHEME, scheme)

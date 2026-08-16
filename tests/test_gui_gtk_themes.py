@@ -157,7 +157,6 @@ def test_themes_page_search_filtering_in_available_list(mock_theme_manager: Magi
     assert page.themes_list_box.get_visible() is True
 
 
-
 def test_themes_page_apply_theme_updates_card_and_available_list(
     mock_theme_manager: MagicMock,
 ) -> None:
@@ -204,7 +203,6 @@ def test_themes_page_apply_theme_updates_card_and_available_list(
     first_row = page.themes_list_box.get_first_child()
     assert first_row is not None
     assert first_row.get_title() == "Yaru"
-
 
 
 def test_themes_page_single_click_selects_only(mock_theme_manager: MagicMock) -> None:
@@ -356,7 +354,6 @@ def test_themes_page_cursor_application_shows_informative_toast(
         assert "switch windows" in msg.lower() or "restart" in msg.lower()
         # Controlli riabilitati
         assert page.is_applying is False
-
 
 
 def test_themes_page_cursor_application_error_shows_error_toast(
@@ -556,7 +553,6 @@ def test_themes_page_active_theme_backend_unavailable(mock_theme_manager: MagicM
 
     assert page.active_theme_row.get_title() == "Not available"
     assert page.active_theme_badge.get_visible() is False
-
 
 
 def test_themes_page_cursor_propagate_fallback_error(mock_theme_manager: MagicMock) -> None:
@@ -827,7 +823,6 @@ def test_themes_page_apply_concurrency_guard(mock_theme_manager: MagicMock) -> N
 
     on_complete_mock.assert_called_once()
     assert "already in progress" in str(on_complete_mock.call_args[0][1])
-
 
 
 def test_themes_page_apply_shell_theme_missing_user_themes(mock_theme_manager: MagicMock) -> None:
@@ -1177,4 +1172,3 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     assert len(toasts) == 5
     assert "partially" in toasts[-1].lower()
     assert "User Themes" in toasts[-1]
-

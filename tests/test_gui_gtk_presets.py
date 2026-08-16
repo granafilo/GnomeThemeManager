@@ -25,7 +25,6 @@ def test_presets_page_instantiation_requires_ui_file(mock_theme_manager: MagicMo
     assert page.title == "Profiles and Presets"
 
 
-
 def test_presets_page_initial_state_loading(mock_theme_manager: MagicMock) -> None:
     """Verifica che refresh() passi allo stato 'loading' prima di leggere i preset."""
     if not is_gtk_available():
@@ -378,7 +377,6 @@ def test_presets_page_delete_not_found_shows_error(mock_theme_manager: MagicMock
 
     assert len(toasts) == 1
     assert "error" in toasts[0].lower() or "Fantasma" in toasts[0]
-
 
 
 def test_presets_page_no_global_refresh_button(mock_theme_manager: MagicMock) -> None:

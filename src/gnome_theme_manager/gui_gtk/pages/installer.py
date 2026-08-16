@@ -67,7 +67,6 @@ class InstallerPage:
         self.icon_name: str = self.ICON_NAME
         self.manager = manager
 
-
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
 
@@ -359,9 +358,7 @@ class InstallerPage:
 
             if not items:
                 self.error_status_page.set_description(
-                    _(
-                        "No supported themes (GTK, Shell, Icons, Cursors) detected in source."
-                    )
+                    _("No supported themes (GTK, Shell, Icons, Cursors) detected in source.")
                 )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
@@ -393,6 +390,7 @@ class InstallerPage:
             res = worker_inspect()
             on_inspect_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_inspect()
                 GLib.idle_add(on_inspect_completed, res)
@@ -532,6 +530,7 @@ class InstallerPage:
             res = worker_install()
             on_install_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_install()
                 GLib.idle_add(on_install_completed, res)
@@ -561,9 +560,7 @@ class InstallerPage:
             elif ThemeType.SHELL in types:
                 has_opposite = bool(self.manager.scanner.find_theme(theme_name, ThemeType.GTK))
                 if has_opposite:
-                    cross_checkbox = Gtk.CheckButton.new_with_label(
-                        _("Also apply as GTK theme")
-                    )
+                    cross_checkbox = Gtk.CheckButton.new_with_label(_("Also apply as GTK theme"))
 
         if cross_checkbox is not None:
             cross_checkbox.set_margin_top(8)

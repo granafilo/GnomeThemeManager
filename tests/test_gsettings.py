@@ -198,4 +198,3 @@ def test_gsettings_unavailable_when_gio_missing():
         pytest.raises(GSettingsUnavailableError, match="PyGObject .* is not available"),
     ):
         GSettingsClient()
-

@@ -44,9 +44,7 @@ def test_translation_loading_en():
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["en"], fallback=False
     )
 
-    assert (
-        trans.gettext("\nCurrently active GNOME themes:") == "\nCurrently active GNOME themes:"
-    )
+    assert trans.gettext("\nCurrently active GNOME themes:") == "\nCurrently active GNOME themes:"
     assert trans.gettext("Not set") == "Not set"
     assert trans.gettext("System Default") == "System Default"
     assert (

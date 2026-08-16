@@ -187,7 +187,6 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
         assert "snap install nordic-darker-themes" in result.warnings[0]
 
 
-
 def test_propagate_to_snap_not_installed() -> None:
     """Verifica che propagate_to_snap ritorni False se snap non è disponibile."""
     bridge = SandboxBridge()
@@ -294,7 +293,6 @@ def test_subprocess_file_not_found_handling() -> None:
         assert res.flatpak_success is False
         assert len(res.warnings) == 1
         assert "Unable to execute" in res.warnings[0]
-
 
 
 # =============================================================================
@@ -416,7 +414,6 @@ def test_cli_sandbox_status_command(capsys: pytest.CaptureFixture[str]) -> None:
         assert "Sandbox Integration Status" in captured.out
         assert "Snap:" in captured.out
         assert "Flatpak:" in captured.out
-
 
 
 def test_cli_apply_no_sandbox_flag() -> None:

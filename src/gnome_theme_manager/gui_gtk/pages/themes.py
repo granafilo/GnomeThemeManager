@@ -41,6 +41,7 @@ CATEGORY_ICONS: dict[ThemeType, str] = {
     ThemeType.SHELL: "preferences-system-windows-symbolic",
 }
 
+
 def get_category_label(theme_type: ThemeType) -> str:
     """Return localized label for theme category."""
     labels = {
@@ -72,7 +73,6 @@ def get_category_title(theme_type: ThemeType) -> str:
         ThemeType.SHELL: _("GNOME Shell Themes"),
     }
     return titles.get(theme_type, str(theme_type.value))
-
 
 
 @dataclass(frozen=True)
@@ -113,7 +113,6 @@ def build_theme_presentation(theme: Theme) -> ThemeItemPresentation:
         origin_display=origin_display,
         is_user_level=theme.is_user_level,
     )
-
 
 
 class ThemesPage:
@@ -253,7 +252,6 @@ class ThemesPage:
         title_text = get_category_title(self.active_category)
         self.category_title_label.set_text(title_text)
 
-
     def refresh(self, sync: bool = False) -> None:
         """Scan and refresh installed themes from backend."""
         if (self._is_loading or self._is_applying) and not sync:
@@ -273,9 +271,7 @@ class ThemesPage:
         def worker_fetch() -> tuple[ThemesSnapshot | None, Exception | None]:
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError(
-                        _("ThemeManager unavailable or not initialized.")
-                    )
+                    raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
                 presentation_items = [build_theme_presentation(t) for t in themes_list]
@@ -314,9 +310,7 @@ class ThemesPage:
             except (GnomeThemeManagerError, OSError, PermissionError, TimeoutError) as err:
                 return None, err
             except Exception as err:
-                return None, GnomeThemeManagerError(
-                    f"{_('Unexpected error during scan:')} {err}"
-                )
+                return None, GnomeThemeManagerError(f"{_('Unexpected error during scan:')} {err}")
 
         def on_fetch_completed(result: tuple[ThemesSnapshot | None, Exception | None]) -> bool:
             if current_generation != self._generation_id:
@@ -355,6 +349,7 @@ class ThemesPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)
@@ -432,9 +427,7 @@ class ThemesPage:
             self.active_theme_badge.set_visible(True)
         else:
             self.active_theme_row.set_title(_("Not available"))
-            self.active_theme_row.set_subtitle(
-                _("No settings detected or backend unavailable")
-            )
+            self.active_theme_row.set_subtitle(_("No settings detected or backend unavailable"))
             self.active_theme_badge.set_visible(False)
 
         query = self.search_entry.get_text().strip().lower()
@@ -474,10 +467,7 @@ class ThemesPage:
         else:
             self.no_results_page.set_visible(False)
             self.themes_list_box.set_visible(True)
-            self.count_label.set_text(
-                f"{len(filtered)} {_('other')} {cat_label} {_('available')}"
-            )
-
+            self.count_label.set_text(f"{len(filtered)} {_('other')} {cat_label} {_('available')}")
 
             for item in filtered:
                 row = Adw.ActionRow()
@@ -538,7 +528,6 @@ class ThemesPage:
         cat_name = get_dialog_category_name(item.theme_type)
         heading = f"{_('Apply')} “{item.name}” {_('to')} {cat_name}?"
 
-
         active_theme_raw = (
             self._snapshot.active_themes.get(item.theme_type) if self._snapshot else None
         )
@@ -583,9 +572,7 @@ class ThemesPage:
             elif item.theme_type == ThemeType.SHELL:
                 has_opposite = bool(self.manager.scanner.find_theme(item.name, ThemeType.GTK))
                 if has_opposite:
-                    cross_checkbox = Gtk.CheckButton.new_with_label(
-                        _("Also apply as GTK theme")
-                    )
+                    cross_checkbox = Gtk.CheckButton.new_with_label(_("Also apply as GTK theme"))
 
         if cross_checkbox is not None:
             cross_checkbox.set_margin_top(8)
@@ -788,9 +775,7 @@ class ThemesPage:
         def worker_apply() -> tuple[ApplyResult | None, Exception | None]:
             try:
                 if self.manager is None:
-                    raise GnomeThemeManagerError(
-                        _("ThemeManager unavailable or not initialized.")
-                    )
+                    raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
                 result = self.manager.apply_component(
                     component=item.theme_type,
@@ -817,11 +802,8 @@ class ThemesPage:
                 self._show_toast(f"{_('Unable to apply theme')} «{item.name}»: {error}")
             elif apply_result is not None:
                 if item.theme_type == ThemeType.SHELL and apply_result.shell_theme is None:
-                    warning_text = (
-                        f"{_('Theme')} «{item.name}» {_('partially applied.')}\n"
-                        + _(
-                            "Shell not applied: 'User Themes' extension inactive or unsupported."
-                        )
+                    warning_text = f"{_('Theme')} «{item.name}» {_('partially applied.')}\n" + _(
+                        "Shell not applied: 'User Themes' extension inactive or unsupported."
                     )
                     logger.warning(warning_text)
                     self._show_toast(warning_text)
@@ -856,7 +838,6 @@ class ThemesPage:
                         cat_name = get_category_label(item.theme_type)
                         msg = f"{_('Theme')} {cat_name} «{item.name}» {_('applied.')}"
 
-
                     if apply_result.warnings:
                         msg += f"\n{_('Warnings:')} {'; '.join(apply_result.warnings)}"
 
@@ -875,6 +856,7 @@ class ThemesPage:
             res = worker_apply()
             on_apply_completed(res)
         else:
+
             def thread_target() -> None:
                 res = worker_apply()
                 GLib.idle_add(on_apply_completed, res)

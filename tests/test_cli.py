@@ -64,7 +64,6 @@ def test_cli_current_success(capsys) -> None:
         assert "Color Scheme:            prefer-dark" in captured.out
 
 
-
 def test_cli_list_with_shell_type(capsys, tmp_path: Path) -> None:
     """Verifica il filtro --type shell nel comando 'list'."""
     mock_themes = [
@@ -261,4 +260,3 @@ def test_cli_preset_delete_interactive_refusal(capsys, monkeypatch) -> None:
         assert exit_code == 0
         assert "Operation cancelled" in captured.out
         mock_mgr.delete_preset.assert_not_called()
-

@@ -118,9 +118,9 @@ def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool)
 
     if not themes:
         print(
-            _(
-                "\nNo theme found for type '{theme_type}' (user_only={user_only}).\n"
-            ).format(theme_type=theme_type, user_only=user_only)
+            _("\nNo theme found for type '{theme_type}' (user_only={user_only}).\n").format(
+                theme_type=theme_type, user_only=user_only
+            )
         )
         return 0
 
@@ -162,9 +162,7 @@ def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> 
     if result.sandbox_propagation:
         sb = result.sandbox_propagation
         if sb.flatpak_success:
-            print(
-                _("  - Flatpak Propagation:          ✓ Filesystem access and variables set")
-            )
+            print(_("  - Flatpak Propagation:          ✓ Filesystem access and variables set"))
         if sb.snap_success and not sb.warnings:
             print(
                 _(
@@ -217,9 +215,9 @@ def handle_apply_command(
 
         if not has_gtk and not has_shell:
             raise ThemeNotFoundError(
-                _(
-                    "Theme '{theme}' was not found as GTK or GNOME Shell on the system."
-                ).format(theme=theme)
+                _("Theme '{theme}' was not found as GTK or GNOME Shell on the system.").format(
+                    theme=theme
+                )
             )
 
         if has_gtk:

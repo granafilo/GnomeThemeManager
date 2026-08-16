@@ -308,9 +308,7 @@ class SandboxBridge:
                 )
                 logger.info(warn_msg)
                 warnings.append(warn_msg)
-                messages.append(
-                    f"Custom theme '{gtk_theme}' (not included in gtk-common-themes)."
-                )
+                messages.append(f"Custom theme '{gtk_theme}' (not included in gtk-common-themes).")
         else:
             messages.append("Snap gtk-common-themes verification completed successfully.")
 
@@ -327,7 +325,9 @@ class SandboxBridge:
     ) -> PropagationResult:
         """Propagate themes to both Flatpak and Snap environments."""
         logger.info(
-            "Starting theme propagation to Snap and Flatpak (gtk=%s, icon=%s)", gtk_theme, icon_theme
+            "Starting theme propagation to Snap and Flatpak (gtk=%s, icon=%s)",
+            gtk_theme,
+            icon_theme,
         )
 
         flatpak_res = self.propagate_to_flatpak(gtk_theme=gtk_theme, icon_theme=icon_theme)

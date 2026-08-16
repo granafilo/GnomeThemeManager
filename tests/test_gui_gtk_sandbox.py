@@ -168,7 +168,6 @@ def test_sandbox_page_propagation_confirmed_success(mock_theme_manager: MagicMoc
     assert called_back is True
 
 
-
 def test_sandbox_page_propagation_partial_warnings(mock_theme_manager: MagicMock) -> None:
     """Verifica che esiti parziali con avvisi producano un feedback chiaro."""
     if not is_gtk_available():

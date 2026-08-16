@@ -15,6 +15,7 @@ def default_test_locale_en(monkeypatch: pytest.MonkeyPatch) -> None:
     # Bind gettext to English identity/fallback
     gnome_theme_manager._ = lambda s: s
 
+
 from gnome_theme_manager.core.gsettings import Gtk4OverrideStatus
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
