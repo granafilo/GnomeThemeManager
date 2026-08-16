@@ -1564,3 +1564,108 @@ msgstr "❌ Not available"
 msgid "❌ Not installed"
 msgstr "❌ Not installed"
 
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:101
+msgid "Bundled Theme"
+msgstr "Bundled Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:96
+msgid "User Created"
+msgstr "User Created"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:105
+msgid "by"
+msgstr "by"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:118
+msgid "Delete this Global Theme"
+msgstr "Delete this Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:124
+msgid "Apply"
+msgstr "Apply"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:169
+msgid "Global Themes"
+msgstr "Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:316
+msgid "Global Theme applied successfully"
+msgstr "Global Theme applied successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:326
+msgid "Failed to apply global theme"
+msgstr "Failed to apply global theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:343
+msgid "Save Current Configuration"
+msgstr "Save Current Configuration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:343
+msgid "Enter a name for your new Global Theme:"
+msgstr "Enter a name for your new Global Theme:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:372
+msgid "Global Theme saved successfully"
+msgstr "Global Theme saved successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:378
+msgid "Failed to save global theme"
+msgstr "Failed to save global theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:392
+msgid "Delete Global Theme"
+msgstr "Delete Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:392
+msgid "Are you sure you want to delete"
+msgstr "Are you sure you want to delete"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:421
+msgid "Global Theme deleted successfully"
+msgstr "Global Theme deleted successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:427
+msgid "Failed to delete global theme"
+msgstr "Failed to delete global theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:22
+msgid "Loading Global Themes..."
+msgstr "Loading Global Themes..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:23
+msgid "Discovering bundled and user themes."
+msgstr "Discovering bundled and user themes."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:78
+msgid "1-click full desktop themes combining GTK, icons, cursors, GNOME Shell, and color preferences."
+msgstr "1-click full desktop themes combining GTK, icons, cursors, GNOME Shell, and color preferences."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:92
+msgid "Save current configuration"
+msgstr "Save current configuration"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:106
+msgid "Reload themes list from disk"
+msgstr "Reload themes list from disk"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:120
+msgid "Search global themes..."
+msgstr "Search global themes..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:156
+msgid "No Global Themes Found"
+msgstr "No Global Themes Found"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:157
+msgid "No global themes match your search query."
+msgstr "No global themes match your search query."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:172
+msgid "Failed to load Global Themes"
+msgstr "Failed to load Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:173
+msgid "An error occurred while reading theme definitions."
+msgstr "An error occurred while reading theme definitions."
+
+

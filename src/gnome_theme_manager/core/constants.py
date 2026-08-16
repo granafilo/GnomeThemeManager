@@ -23,8 +23,14 @@ GSETTINGS_COLOR_SCHEMES = ("default", "prefer-dark", "prefer-light")
 # GTK4 / Libadwaita user configuration directory
 GTK4_CONFIG_DIR = Path.home() / ".config" / "gtk-4.0"
 
+# Application state directory (~/.local/state/gnome-theme-manager/)
+STATE_DIR = Path.home() / ".local" / "state" / "gnome-theme-manager"
+
 # Directory for user-saved presets and profiles
 PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
+
+# Global themes state file
+GLOBAL_THEMES_FILE = STATE_DIR / "global_themes.json"
 
 
 # -----------------------------------------------------------------------------

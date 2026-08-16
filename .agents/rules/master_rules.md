@@ -16,6 +16,16 @@ trigger: always_on
 6. NEVER store app state in `~/.config/` — use `~/.local/state/gnome-theme-manager/`.
 7. Target: Ubuntu 24.04 + GNOME 46. Test commands must work on this stack.
 
+## i18n Rule (hard rule)
+- New user-visible strings => gettext `_()` + po/en.po + po/it.po updated
+  in the SAME commit as the feature. Never defer translations to phase close.
+
+## STOP Conditions (hard rule)
+- Any failure in $TEST_SUITE, $LINT_CMD, $TYPE_CHECK_CMD, or a crash in
+  $GUI_LAUNCH_CMD = HARD STOP. No new branches, no new commits, no next tasks.
+- A task is committable ONLY when all four canonical commands are green.
+- "Fix without confirmation" = fix the failure autonomously, never skip it.
+
 ## Testing Requirements
 
 - pytest coverage ≥ 80% on `core/`

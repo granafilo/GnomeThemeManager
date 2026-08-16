@@ -17,6 +17,7 @@ from pathlib import Path
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .errors import GSettingsUnavailableError, ThemeNotFoundError
 from .extensions import ExtensionsManager
+from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import ThemeInstaller
@@ -40,7 +41,7 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, SandboxBridge, ExtensionsManager), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -53,6 +54,7 @@ class ThemeManager:
         presets: PresetManager | None = None,
         sandbox_bridge: SandboxBridge | None = None,
         extensions: ExtensionsManager | None = None,
+        global_themes: GlobalThemeManager | None = None,
     ) -> None:
         """Initialize Facade coordinator with optional dependency injection.
 
@@ -64,6 +66,7 @@ class ThemeManager:
             presets: Custom PresetManager instance (optional).
             sandbox_bridge: Custom SandboxBridge instance (optional).
             extensions: Custom ExtensionsManager instance (optional).
+            global_themes: Custom GlobalThemeManager instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -81,6 +84,18 @@ class ThemeManager:
             except GSettingsUnavailableError as err:
                 logger.warning("GSettingsClient could not be initialized: %s", err)
                 self._gsettings = None
+
+        self._global_themes = global_themes or GlobalThemeManager(
+            scanner=self._scanner,
+            current_themes_provider=self._get_current_themes_safe,
+        )
+
+    def _get_current_themes_safe(self) -> ThemeSet:
+        """Helper to get current themes safely without raising exceptions."""
+        try:
+            return self.get_current_themes()
+        except Exception:
+            return ThemeSet()
 
     @property
     def scanner(self) -> ThemeScanner:
@@ -116,6 +131,11 @@ class ThemeManager:
     def extensions(self) -> ExtensionsManager:
         """Return associated GNOME Shell extensions manager."""
         return self._extensions
+
+    @property
+    def global_themes(self) -> GlobalThemeManager:
+        """Return associated global theme manager."""
+        return self._global_themes
 
     def _ensure_gsettings(self) -> GSettingsClient:
         """Ensure GSettingsClient is available and return it.
@@ -558,6 +578,88 @@ class ThemeManager:
             FileNotFoundError: If preset does not exist.
         """
         return self._presets.delete_preset(name)
+
+    # -------------------------------------------------------------------------
+    # Global Themes Management (Phase 1)
+    # -------------------------------------------------------------------------
+
+    def list_global_themes(self) -> list[GlobalTheme]:
+        """List all available global themes (bundled and user-created).
+
+        Returns:
+            Alphabetically ordered list of GlobalTheme instances.
+        """
+        return self._global_themes.list_global_themes()
+
+    def get_global_theme(self, theme_id: str) -> GlobalTheme | None:
+        """Find a global theme by ID or name.
+
+        Args:
+            theme_id: Identifier or name of the global theme.
+
+        Returns:
+            GlobalTheme if found, None otherwise.
+        """
+        return self._global_themes.get_global_theme(theme_id)
+
+    def apply_global_theme(
+        self,
+        theme_id: str,
+        propagate_sandbox: bool = True,
+    ) -> ApplyResult:
+        """Apply all components of a global theme to the desktop.
+
+        Args:
+            theme_id: Identifier or name of the global theme to apply.
+            propagate_sandbox: If True, propagate theme changes to sandbox runtimes.
+
+        Returns:
+            ApplyResult summarizing results and any warnings.
+
+        Raises:
+            ThemeNotFoundError: If the global theme ID is not found.
+        """
+        theme = self.get_global_theme(theme_id)
+        if theme is None:
+            raise ThemeNotFoundError(f"Global theme '{theme_id}' not found.")
+
+        logger.info("Applying global theme: '%s' (%s)", theme.name, theme.id)
+        return self.apply_themes(theme.components, propagate_sandbox=propagate_sandbox)
+
+    def save_current_as_global_theme(
+        self,
+        name: str,
+        description: str = "",
+        overwrite: bool = False,
+    ) -> GlobalTheme:
+        """Save active desktop configuration as a user-created Global Theme.
+
+        Args:
+            name: User-facing name for the theme.
+            description: Optional summary description.
+            overwrite: If True, replace existing user theme with same name.
+
+        Returns:
+            Saved GlobalTheme instance.
+        """
+        current_themes = self.get_current_themes()
+        return self._global_themes.save_global_theme(
+            name=name,
+            theme_set=current_themes,
+            description=description,
+            overwrite=overwrite,
+        )
+
+    def delete_global_theme(self, theme_id_or_name: str) -> bool:
+        """Delete a user-created Global Theme.
+
+        Args:
+            theme_id_or_name: ID or name of the user global theme.
+
+        Returns:
+            True if deleted.
+        """
+        return self._global_themes.delete_global_theme(theme_id_or_name)
 
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation

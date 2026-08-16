@@ -3,6 +3,7 @@
 """Modulo core di GnomeThemeManager."""
 
 from .constants import (
+    GLOBAL_THEMES_FILE,
     GSETTINGS_COLOR_SCHEMES,
     GSETTINGS_KEY_COLOR_SCHEME,
     GSETTINGS_KEY_CURSOR_THEME,
@@ -13,6 +14,7 @@ from .constants import (
     GSETTINGS_SCHEMA_USER_THEME,
     GTK4_CONFIG_DIR,
     PRESETS_DIR,
+    STATE_DIR,
     SYSTEM_ICONS_DIRS,
     SYSTEM_THEMES_DIRS,
     USER_ICONS_DIRS,
@@ -25,6 +27,7 @@ from .errors import (
     ThemeNotFoundError,
     ThemeValidationError,
 )
+from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
 from .installer import (
@@ -48,6 +51,7 @@ from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
 
 __all__ = [
+    "GLOBAL_THEMES_FILE",
     "GSETTINGS_COLOR_SCHEMES",
     "GSETTINGS_KEY_COLOR_SCHEME",
     "GSETTINGS_KEY_CURSOR_THEME",
@@ -58,6 +62,7 @@ __all__ = [
     "GSETTINGS_SCHEMA_USER_THEME",
     "GTK4_CONFIG_DIR",
     "PRESETS_DIR",
+    "STATE_DIR",
     "SYSTEM_ICONS_DIRS",
     "SYSTEM_THEMES_DIRS",
     "USER_ICONS_DIRS",
@@ -67,6 +72,8 @@ __all__ = [
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
+    "GlobalTheme",
+    "GlobalThemeManager",
     "GnomeThemeManagerError",
     "PresetManager",
     "PropagationResult",

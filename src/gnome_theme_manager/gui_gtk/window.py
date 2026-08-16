@@ -27,8 +27,8 @@ from gi.repository import Adw, GLib, Gtk
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
+    GlobalThemesPage,
     InstallerPage,
-    PresetsPage,
     SandboxPage,
     StatusPage,
     ThemesPage,
@@ -43,7 +43,7 @@ UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 COLLAPSE_BREAKPOINT_WIDTH: int = 700
 
 
-class GnomeThemeWindow(Adw.ApplicationWindow):
+class MainWindow(Adw.ApplicationWindow):
     """Main application window for GTK4 / Libadwaita."""
 
     def __init__(self, app: Adw.Application, manager: ThemeManager | None = None) -> None:
@@ -98,7 +98,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.row_themes_gtk: Gtk.ListBoxRow = self.builder.get_object("row_themes_gtk")
         self.row_themes_icon: Gtk.ListBoxRow = self.builder.get_object("row_themes_icon")
         self.row_themes_cursor: Gtk.ListBoxRow = self.builder.get_object("row_themes_cursor")
-        self.row_presets: Gtk.ListBoxRow = self.builder.get_object("row_presets")
+        self.row_global_themes: Gtk.ListBoxRow = self.builder.get_object("row_global_themes")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -109,7 +109,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         # Page controllers
         self.status_page = StatusPage(manager=self.manager)
         self.themes_page = ThemesPage(manager=self.manager)
-        self.presets_page = PresetsPage(manager=self.manager)
+        self.global_themes_page = GlobalThemesPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -120,14 +120,14 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             "themes_gtk": self.themes_page,
             "themes_icon": self.themes_page,
             "themes_cursor": self.themes_page,
-            "presets": self.presets_page,
+            "global_themes": self.global_themes_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
 
         self.content_stack.add_named(self.status_page.get_widget(), "status")
         self.content_stack.add_named(self.themes_page.get_widget(), "themes")
-        self.content_stack.add_named(self.presets_page.get_widget(), "presets")
+        self.content_stack.add_named(self.global_themes_page.get_widget(), "global_themes")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -137,7 +137,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             self.row_themes_gtk: "themes_gtk",
             self.row_themes_icon: "themes_icon",
             self.row_themes_cursor: "themes_cursor",
-            self.row_presets: "presets",
+            self.row_global_themes: "global_themes",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -158,18 +158,22 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         self.themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "themes", is_l
         )
+        self.global_themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "global_themes", is_l
+        )
+        self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(msg)
+
+        def _on_global_theme_applied_callback(theme_id: str, result: Any) -> None:
+            self.status_page.refresh()
+            if self.themes_page.current_snapshot is not None or not self.themes_page.is_loading:
+                self.themes_page.refresh()
+
+        self.global_themes_page.on_theme_applied = _on_global_theme_applied_callback
 
         def _on_theme_applied_callback(item: Any, result: Any) -> None:
             self.status_page.refresh()
 
         self.themes_page.on_theme_applied = _on_theme_applied_callback
-
-        def _on_preset_applied_callback() -> None:
-            self.status_page.refresh()
-            if self.themes_page.current_snapshot is not None or not self.themes_page.is_loading:
-                self.themes_page.refresh()
-
-        self.presets_page.on_preset_applied = _on_preset_applied_callback
 
         def _on_theme_installed_callback() -> None:
             self.themes_page.refresh()
@@ -353,6 +357,12 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
         ):
             self.status_page.refresh()
         elif (
+            page_id == "global_themes"
+            and not self.global_themes_page._all_themes
+            and not self.global_themes_page.is_loading
+        ):
+            self.global_themes_page.refresh()
+        elif (
             page_id == "presets"
             and not self.presets_page.has_loaded
             and not self.presets_page.is_loading
@@ -443,3 +453,7 @@ class GnomeThemeWindow(Adw.ApplicationWindow):
             if timeout > 0:
                 toast.set_timeout(timeout)
             self.toast_overlay.add_toast(toast)
+
+
+# Backward compatibility alias for tests
+GnomeThemeWindow = MainWindow

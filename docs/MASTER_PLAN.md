@@ -68,24 +68,52 @@ Protocollo per-task (dopo test verdi e review utente del diff):
 2. L'utente esegue il commit.
 3. Si passa al task successivo.
 
-### 1.3 Protocollo di testing OBBLIGATORIO a fine fase
+### 1.3 Protocollo di testing (fine fase + durante task)
+
+**Comandi canonici di progetto** (definiti nel PLAYBOOK sez. 8, popolati dopo P20):
+
+| Variabile        | Significato                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `TEST_SUITE`     | pytest con coverage ( pytest -v )                            |
+| `LINT_CMD`       | ruff (ruff check src tests)                                  |
+| `TYPE_CHECK_CMD` | mypy (mypy --strict src)                                     |
+| `GUI_LAUNCH_CMD` | comando di avvio GUI (PYTHONPATH=src python3 -m gnome_theme_manager gui) |
+
+**Durante ogni task** (al cambio verde):
 
 ```bash
-pytest tests/ -v --cov=src/gnome_theme_manager --cov-fail-under=80
-python -m gnome_theme_manager --help
-python -m gnome_theme_manager list --all
-python -m gnome_theme_manager current
-python -m gnome_theme_manager.gui_gtk &   # nessun traceback entro 10s
+$TEST_SUITE
+$LINT_CMD
+$TYPE_CHECK_CMD
 ```
 
-Coverage minima `core/`: 80%.
+**A fine fase** (prima del protocollo §1.4):
+
+- Eseguire i 3 comandi canonici
+- Lanciare la GUI con `$GUI_LAUNCH_CMD` e verificare assenza di traceback entro 10s
+- Coverage minima `core/`: 80%
+
+**Regola anti-overhead**: l'agent NON esegue comandi esplorativi prima di quelli canonici.
+Se un comando canonico fallisce, l'agent chiede:
+
+1. Output completo dell'errore
+2. (Opzionale) comandi più specifici suggeriti dal framework (es. `pytest tests/test_x.py::test_y`)
+
+Non indaga mai in autonomia su test/lint prima di chiedere.
 
 ### 1.4 Protocollo di chiusura fase (POST-CONFERMA — OBBLIGATORIO)
 
 L'agent NON procede alla fase successiva senza conferma esplicita dell'utente.
 Dopo la conferma, eseguire in ordine:
 
-**Step A — Documentazione**: aggiornare `docs/ROADMAP.md` (feature → ✅ con data), `README.md` (sezione Feature), docs tecniche API nuove, changelog.
+**Step A — Documentazione**: 
+
+- aggiornare `docs/ROADMAP.md` (feature → ✅ con data)
+-  `README.md` (sezione Feature)
+-  docs tecniche API nuove
+-  changelog.
+
+- Aggiornare `docs/FEATURE_GUIDE.md`: una riga per ogni nuovo task shipped (✅ quando mergiato)
 
 **Step B — Integrità test + pulizia**: pytest completo senza skip ingiustificati; pylint/ruff zero warning unused; `git status --short` pulito (artefatti rimossi o in .gitignore); nessun test dipendente da stato locale.
 
@@ -120,6 +148,25 @@ In caso di ambiguità non risolvibile dal documento: fermarsi e chiedere. Mai de
 
 ### 1.7 Skills on-demand
 In `docs/skills/` esistono playbook specialistici invocati dall'utente: `review.md`, `debug_gtk.md`, `test_strategy.md`, `refactor.md`, `security_review.md`, `error_triage.md`. Quando l'utente li invoca, seguirli alla lettera.
+
+### 1.8 Condizioni di STOP (non negoziabili)
+
+Il coding agent DEVE fermarsi immediatamente se:
+- `$TEST_SUITE` fallisce (anche un solo test rosso)
+- `$LINT_CMD` fallisce
+- `$TYPE_CHECK_CMD` fallisce
+- `$GUI_LAUNCH_CMD` crasha o produce traceback
+
+In caso di STOP:
+
+1. NON aprire branch, NON creare commit, NON toccare task successivi
+2. Diagnosticare il fallimento (skill `error_triage` se utile)
+3. Proporre fix minimo e applicarlo
+4. Riportare $TEST_SUITE e $LINT_CMD al verde PRIMA di riprendere
+5. Un task è completato (e committibile) SOLO con test verdi
+
+"Fixa senza attendere conferma" significa: fixa in autonomia il fallimento,
+NON: salta il fallimento e procedi.
 
 ---
 
@@ -165,6 +212,17 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 - La versione si aggiorna SOLO durante la chiusura fase (step D), mai durante i task
 - Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
 
+### 2.8 i18n follows the feature
+Ogni task che introduce stringhe user-visible (GUI, CLI, dialoghi) DEVE,
+nello STESSO commit del task:
+1. Wrappare le stringhe in gettext (`_()`)
+2. Aggiungere i msgid a `po/en.po` (lingua sorgente)
+3. Aggiungere le traduzioni IT a `po/it.po` (nessun untranslated/fuzzy)
+
+Lo step C della chiusura fase è SOLO verifica finale di consistenza,
+non il momento in cui si traduce.
+I test che asseriscono su stringhe usano i msgid, mai le traduzioni.
+
 ---
 
 ## 3. Fasi di implementazione
@@ -187,10 +245,10 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 **Branch:** `chore/english-first`
 **Commit:** singolo commit chore (policy §1.2)
 
-- [ ] C.1 Tradurre README.md, docs/ROADMAP.md, docs pubbliche, CHANGELOG
-- [ ] C.2 Codice: commenti, docstring, log, output CLI, stringhe errore → EN; stringhe hardcoded → gettext con msgid EN
-- [ ] C.3 i18n: setup gettext se mancante (source EN); `po/en.po` allineato; `po/it.po` completo e non fuzzy
-- [ ] C.4 .desktop / metainfo / AppStream → EN
+- [x] C.1 Tradurre README.md, docs/ROADMAP.md, docs pubbliche, CHANGELOG
+- [x] C.2 Codice: commenti, docstring, log, output CLI, stringhe errore → EN; stringhe hardcoded → gettext con msgid EN
+- [x] C.3 i18n: setup gettext se mancante (source EN); `po/en.po` allineato; `po/it.po` completo e non fuzzy
+- [x] C.4 .desktop / metainfo / AppStream → EN
 
 **EXCLUDE (restano IT):** PLAYBOOK.md, MASTER_PLAN.md, ARCHITECTURE.md, .agents/rules/*, docs/skills/*
 
@@ -203,10 +261,10 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 **Branch:** `chore/version-single-source`
 **Commit:** singolo commit `chore: version single source of truth`
 
-- [ ] V.1 `__version__` in `__init__.py` unica fonte; `pyproject.toml` dynamic version
-- [ ] V.2 CLI `--version` e GUI About leggono `__version__` a runtime
-- [ ] V.3 Metainfo/.desktop: entry release aggiornabile dallo step D (manuale o script)
-- [ ] V.4 Test: `test_version_consistency` (pyproject risolve == `__version__`; CLI --version coerente)
+- [x] V.1 `__version__` in `__init__.py` unica fonte; `pyproject.toml` dynamic version
+- [x] V.2 CLI `--version` e GUI About leggono `__version__` a runtime
+- [x] V.3 Metainfo/.desktop: entry release aggiornabile dallo step D (manuale o script)
+- [x] V.4 Test: `test_version_consistency` (pyproject risolve == `__version__`; CLI --version coerente)
 
 **Acceptance:** la versione esiste in un solo punto scrivibile; tutto il resto deriva.
 
@@ -216,10 +274,22 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 **Branch:** `feature/phase-1-global-themes`
 
-#### Task 1.1 — Global Themes (composizione preset + UI)
-- Moduli: `core/global_themes.py` (nuovo), `gui_gtk/views/global_themes_view.py`
-- Global Theme = preset bundled/utente come card con thumbnail + "Apply"
-- Bundling iniziale: 3–5 global theme in `data/global_themes/`
+#### Task 1.1 — Global Themes: view unica unificata (sostituisce i preset)
+- **Modello dati unico**: Global Theme == preset in `presets.json`, con campo
+  `origin: "bundled" | "user"` e `created_at`
+- **Una sola pagina GUI** "Global Themes": la pagina separata dei preset e la
+  sidebar preset della Fase 0 vengono RIMOSSE e sostituite da questa view
+- **Ordinamento lista (regola fissa)**:
+  1. Global Themes `origin: user` in cima (più recenti prima)
+  2. I 3 bundled iniziali in fondo, ordine fisso
+- **Seed primo avvio**: se assenti, crea i 3 bundled in `presets.json`
+  (es. "Adwaita Classic", "Yaru Mix", "Nord Bundle") con `origin: bundled`
+- "Salva configurazione attuale" (ex preset save) e l'editor della Fase 2
+  creano Global Themes con `origin: user` → appaiono in cima
+- CLI: i sottocomandi `preset` restano come backend funzionante; documenti,
+  messaggi e UI usano solo il termine "Global Theme"
+- Moduli: `core/global_themes.py` (evolve `core/presets.py`, non duplica),
+  `gui_gtk/views/global_themes_view.py` (unica view)
 
 #### Task 1.2 — ThemeValidator
 - Modulo: `core/theme_validator.py` (nuovo)
@@ -251,6 +321,9 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 #### Task 2.1 — Theme Mixer
 - `core/theme_editor.py`: `ThemeComposition(gtk3, gtk4, shell, icon, cursor, custom_name)` → Global Theme utente con `user_composed: true`
+
+Il Theme Mixer salva le composizioni come Global Theme con `origin: "user"`:
+appaiono in cima alla lista della view unica (regola Task 1.1).
 
 #### Task 2.2 — CSS Color Extractor
 - `core/css_extractor.py`: parse `gtk-4.0/gtk.css` / `gtk-3.0/gtk-main.css`; estrae `@define-color` (theme_fg_color, theme_bg_color, theme_selected_bg_color, theme_selected_fg_color, wm_* opzionali)

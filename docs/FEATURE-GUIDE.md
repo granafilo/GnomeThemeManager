@@ -1,0 +1,139 @@
+# Feature Guide — What Each Phase and Task Introduces
+
+A plain-language guide to what GnomeThemeManager gains, phase by phase,
+task by task. No code, no jargon on purpose.
+
+**How to read this:** a *phase* is a milestone (a release). A *task* is one
+small step inside it. ✅ = already shipped.
+
+---
+
+## Phase 0 — Stabilization & UX (v1.0) ✅
+
+The app becomes reliable and pleasant to use.
+
+- **0.1** The app now shows correctly, at startup, whether the GTK4 theme
+  override is active.
+  
+- **0.2** The theme scanner finds *all* installed themes (user and system
+  folders, inherited themes). Broken themes are flagged, never crash the app.
+  
+- **0.3** Small quality-of-life: Ctrl+W closes the window, clicking outside
+  removes focus, a filter hides system themes.
+  
+- **0.4** Selective apply: choose exactly what to change (GTK3, GTK4, Shell,
+  icons, cursors) instead of everything at once.
+  
+-  **0.5** Presets 2.0 **(diventati "Global Themes" nella Fase 1: vedi 1.1)**:
+
+    save named theme combinations explicitly.
+
+- **0.6** Shell themes: the app detects the required "User Themes" extension
+  and offers to enable it, instead of failing silently.
+  
+- **0.7** Docs: how to make the launcher executable and run the app.
+
+---
+
+## Chore — English-first ✅/in progress
+
+Everything public (docs, UI, CLI messages) speaks English by default;
+Italian becomes a translation you get automatically with an Italian system.
+
+## Chore — Version single source
+
+The version number lives in exactly one place; everything else reads it.
+No more mismatched versions between files, CLI and releases.
+
+---
+
+## Phase 1 — Global Themes & Validation (v1.1)
+
+One-click complete looks, and the app protects you from broken themes.
+
+- **1.1** Global Themes: ONE page for everything — your saved looks on top (newest first), 3 starter looks at the bottom; apply with one click.
+
+- **1.2** Theme validator: the app checks that a theme package is complete
+  and standard-compliant before trusting it.
+- **1.3** Corruption detection: if a theme is incomplete, you get a clear
+  warning *before* applying it, and you can cancel.
+- **1.4** Icon pack preview: see real app icons rendered with each icon pack
+  before applying it — no more guessing.
+- **1.5** Safe in-app preview: try a GTK4 theme on the app's own window
+  without touching your system; instant revert.
+- **1.6** The app creates `~/.themes` and `~/.icons` for you if missing.
+- **1.7** Assisted install: install a theme from a folder or an archive
+  (.tar.gz / .zip), validated before installation.
+
+---
+
+## Phase 2 — Theme Editor (v1.2)
+
+Build your own look: mix themes and edit colors, safely.
+
+- **2.1** Theme mixer: combine pieces from different themes (e.g. GTK3 from
+  one, icons from another) into your own named Global Theme.
+- **2.2** Color extractor: the app reads a theme's colors (foreground,
+  background, accent) so you can see and edit them.
+- **2.3** Editor UI: pick components, change colors with color pickers,
+  preview in-app, save as your own Global Theme.
+- **2.4** Color forks: your color edits are saved as a *copy* of the theme;
+  the original stays untouched; fully reversible.
+- **2.5** Drafts: your work-in-progress is saved automatically and can be
+  resumed next time you open the app.
+- **2.6** *(stretch)* Adaptive color: suggest a palette extracted from your
+  current wallpaper.
+
+---
+
+## Phase 3 — Online Store (v1.3)
+
+Discover and install themes without leaving the app.
+
+- **3.1** Store client: search and download GTK/icon/cursor/Shell themes
+  from public online catalogs.
+- **3.2** Store UI: browse results as cards, see details and screenshots,
+  install with one click.
+- **3.3** Extensions browser: list your installed GNOME extensions and
+  enable/disable them; link to the online store.
+- **3.4** Local cache: search results are cached for 24h, so browsing is fast.
+
+---
+
+## Phase 4 — Profiles & Automation (v1.4)
+
+The app adapts to you, automatically.
+
+- **4.1** Profiles: bundle a light preset and a dark preset under one name.
+- **4.2** Auto-switch: when the system switches light/dark mode, your profile
+  follows automatically.
+- **4.3** Profiles UI: create, edit and activate profiles from a simple view.
+- **4.4** Autostart: your active profile is applied at login, via a small
+  background service you control.
+- **4.5** Export/import: move a profile (with its presets) to another machine
+  as a single file.
+
+---
+
+## Phase 5 — Sync & Distribution (v1.5+)
+
+Take your setup everywhere; install the app everywhere.
+
+- **5.1** Sync base: richer export bundles, ready for syncing.
+- **5.2** LAN sync: send/receive profiles between your PCs on the same
+  network — the free alternative to paid "wireless sync".
+- **5.3** Flatpak package: install from Flathub-style bundles.
+- **5.4** .deb package: native install on Ubuntu/Debian.
+- **5.5** More languages: the translation workflow opens to new locales.
+- **5.6** Structured logs: daily rotating logs for easier debugging.
+- **5.7** *(stretch)* First-run tour: a short guided introduction for new users.
+
+---
+
+## Glossary (30 seconds)
+
+- **Global Theme** — a complete look: GTK3 + GTK4 + Shell + icons + cursors.
+- **Preset** — a saved named combination of themes.
+- **Profile** — a light preset + a dark preset, with optional automation.
+- **Fork** — your personal edited copy of a theme; original untouched.
+- **In-app preview** — trying a theme on the app window only, not the system.
