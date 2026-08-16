@@ -201,24 +201,51 @@ def test_global_theme_manager_auto_generates_from_installed_themes(tmp_path: Pat
 
     scanner.list_themes.side_effect = lambda t: {
         ThemeType.GTK: [
-            Theme(name="Yaru", theme_type=ThemeType.GTK, path=Path("/usr/share/themes/Yaru"), is_user_level=False),
-            Theme(name="Yaru-dark", theme_type=ThemeType.GTK, path=Path("/usr/share/themes/Yaru-dark"), is_user_level=False),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.GTK,
+                path=Path("/usr/share/themes/Yaru"),
+                is_user_level=False,
+            ),
+            Theme(
+                name="Yaru-dark",
+                theme_type=ThemeType.GTK,
+                path=Path("/usr/share/themes/Yaru-dark"),
+                is_user_level=False,
+            ),
         ],
         ThemeType.ICON: [
-            Theme(name="Yaru", theme_type=ThemeType.ICON, path=Path("/usr/share/icons/Yaru"), is_user_level=False),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.ICON,
+                path=Path("/usr/share/icons/Yaru"),
+                is_user_level=False,
+            ),
         ],
         ThemeType.CURSOR: [
-            Theme(name="Yaru", theme_type=ThemeType.CURSOR, path=Path("/usr/share/icons/Yaru"), is_user_level=False),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.CURSOR,
+                path=Path("/usr/share/icons/Yaru"),
+                is_user_level=False,
+            ),
         ],
         ThemeType.SHELL: [
-            Theme(name="Yaru", theme_type=ThemeType.SHELL, path=Path("/usr/share/themes/Yaru"), is_user_level=False),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.SHELL,
+                path=Path("/usr/share/themes/Yaru"),
+                is_user_level=False,
+            ),
         ],
     }.get(t, [])
 
     mgr = GlobalThemeManager(
         state_file=state_file,
         scanner=scanner,
-        current_themes_provider=lambda: ThemeSet(gtk_theme="Yaru", icon_theme="Yaru", cursor_theme="Yaru", shell_theme="Yaru"),
+        current_themes_provider=lambda: ThemeSet(
+            gtk_theme="Yaru", icon_theme="Yaru", cursor_theme="Yaru", shell_theme="Yaru"
+        ),
     )
 
     themes = mgr.list_global_themes()
@@ -282,5 +309,3 @@ def test_global_theme_manager_save_delete_and_ordering(tmp_path: Path) -> None:
     # Bundled themes cannot be deleted
     with pytest.raises(ValueError):
         mgr.delete_global_theme("theme-bundled")
-
-

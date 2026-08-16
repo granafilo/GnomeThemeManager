@@ -138,9 +138,10 @@ def test_global_themes_page_save_and_delete(mock_theme_manager: MagicMock) -> No
 
     # Test save
     page._do_save_theme("My New Setup")
-    mock_theme_manager.save_current_as_global_theme.assert_called_with("My New Setup", overwrite=True)
+    mock_theme_manager.save_current_as_global_theme.assert_called_with(
+        "My New Setup", overwrite=True
+    )
 
     # Test delete
     page._do_delete_theme("user-custom", "Custom Preset")
     mock_theme_manager.delete_global_theme.assert_called_with("user-custom")
-

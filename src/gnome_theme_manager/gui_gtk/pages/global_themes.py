@@ -82,7 +82,7 @@ class _GlobalThemeCard(Gtk.Box):
         header_box.set_margin_top(16)
 
         # Icon/Thumbnail
-        is_user = (theme.origin == "user")
+        is_user = theme.origin == "user"
         icon = Gtk.Image.new_from_icon_name(
             "document-save-as-symbolic" if is_user else "starred-symbolic"
         )
@@ -365,7 +365,9 @@ class GlobalThemesPage:
         extra_box.append(entry)
 
         if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new(_("Save Current Configuration"), _("Enter a name for your new Global Theme:"))
+            dialog = Adw.AlertDialog.new(
+                _("Save Current Configuration"), _("Enter a name for your new Global Theme:")
+            )
             dialog.set_extra_child(extra_box)
             dialog.add_response("cancel", _("Cancel"))
             dialog.add_response("save", _("Save"))
@@ -424,7 +426,9 @@ class GlobalThemesPage:
             return
 
         if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new(_("Delete Global Theme"), f"{_('Are you sure you want to delete')} '{theme.name}'?")
+            dialog = Adw.AlertDialog.new(
+                _("Delete Global Theme"), f"{_('Are you sure you want to delete')} '{theme.name}'?"
+            )
             dialog.add_response("cancel", _("Cancel"))
             dialog.add_response("delete", _("Delete"))
             dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
@@ -469,4 +473,3 @@ class GlobalThemesPage:
             msg = f"{_('Failed to delete global theme')}: {err}"
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
-

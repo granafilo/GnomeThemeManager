@@ -15,7 +15,7 @@ import logging
 from pathlib import Path
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
-from .errors import GSettingsUnavailableError, ThemeNotFoundError
+from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
@@ -33,6 +33,7 @@ from .models import (
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
+from .theme_validator import ThemeValidationResult, ThemeValidator
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
@@ -41,7 +42,7 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -55,18 +56,20 @@ class ThemeManager:
         sandbox_bridge: SandboxBridge | None = None,
         extensions: ExtensionsManager | None = None,
         global_themes: GlobalThemeManager | None = None,
+        validator: ThemeValidator | None = None,
     ) -> None:
-        """Initialize Facade coordinator with optional dependency injection.
+        """Initialize ThemeManager with optional subsystem dependency injection.
 
         Args:
             scanner: Custom ThemeScanner instance (optional).
-            gsettings: Custom or mock GSettingsClient instance (optional).
+            gsettings: Custom GSettingsClient instance (optional).
             gtk4_linker: Custom GTK4ThemeLinker instance (optional).
             installer: Custom ThemeInstaller instance (optional).
             presets: Custom PresetManager instance (optional).
             sandbox_bridge: Custom SandboxBridge instance (optional).
             extensions: Custom ExtensionsManager instance (optional).
             global_themes: Custom GlobalThemeManager instance (optional).
+            validator: Custom ThemeValidator instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -74,6 +77,7 @@ class ThemeManager:
         self._presets = presets or PresetManager()
         self._sandbox = sandbox_bridge or SandboxBridge()
         self._extensions = extensions or ExtensionsManager()
+        self._validator = validator or ThemeValidator()
 
         # Protected initialization of GSettingsClient
         if gsettings is not None:
@@ -136,6 +140,23 @@ class ThemeManager:
     def global_themes(self) -> GlobalThemeManager:
         """Return associated global theme manager."""
         return self._global_themes
+
+    @property
+    def validator(self) -> ThemeValidator:
+        """Return associated theme validator."""
+        return self._validator
+
+    def validate_theme(self, theme_path: Path, theme_type: ThemeType) -> ThemeValidationResult:
+        """Validate structural integrity and compliance of a theme.
+
+        Args:
+            theme_path: Directory path of the theme to inspect.
+            theme_type: Theme category (GTK, ICON, CURSOR, SHELL).
+
+        Returns:
+            ThemeValidationResult containing validity flag and warnings.
+        """
+        return self._validator.validate(theme_path, theme_type)
 
     def _ensure_gsettings(self) -> GSettingsClient:
         """Ensure GSettingsClient is available and return it.
@@ -319,13 +340,21 @@ class ThemeManager:
         client = self._ensure_gsettings()
         warnings: list[str] = []
 
-        # 1. Pre-validation of theme existence on filesystem
+        # 1. Pre-validation of theme existence and structural validity on filesystem
         found_gtk: Theme | None = None
         if theme_set.gtk_theme is not None:
             found_gtk = self._scanner.find_theme(theme_set.gtk_theme, ThemeType.GTK)
             if not found_gtk:
                 raise ThemeNotFoundError(
                     f"GTK theme '{theme_set.gtk_theme}' was not found on the system."
+                )
+            gtk_val = self._validator.validate(found_gtk.path, ThemeType.GTK)
+            if not gtk_val.valid:
+                warn_msg = (
+                    "; ".join(gtk_val.warnings) or "Theme structure is incomplete or invalid."
+                )
+                raise ThemeValidationError(
+                    f"GTK theme '{theme_set.gtk_theme}' is invalid: {warn_msg}"
                 )
 
         if theme_set.icon_theme is not None:
@@ -334,12 +363,26 @@ class ThemeManager:
                 raise ThemeNotFoundError(
                     f"Icon theme '{theme_set.icon_theme}' was not found on the system."
                 )
+            icon_val = self._validator.validate(found_icon.path, ThemeType.ICON)
+            if not icon_val.valid:
+                warn_msg = "; ".join(icon_val.warnings) or "Icon pack is incomplete or invalid."
+                raise ThemeValidationError(
+                    f"Icon theme '{theme_set.icon_theme}' is invalid: {warn_msg}"
+                )
 
         if theme_set.cursor_theme is not None:
             found_cursor = self._scanner.find_theme(theme_set.cursor_theme, ThemeType.CURSOR)
             if not found_cursor:
                 raise ThemeNotFoundError(
                     f"Cursor theme '{theme_set.cursor_theme}' was not found on the system."
+                )
+            cursor_val = self._validator.validate(found_cursor.path, ThemeType.CURSOR)
+            if not cursor_val.valid:
+                warn_msg = (
+                    "; ".join(cursor_val.warnings) or "Cursor theme is incomplete or invalid."
+                )
+                raise ThemeValidationError(
+                    f"Cursor theme '{theme_set.cursor_theme}' is invalid: {warn_msg}"
                 )
 
         found_shell: Theme | None = None
@@ -348,6 +391,12 @@ class ThemeManager:
             if not found_shell:
                 raise ThemeNotFoundError(
                     f"GNOME Shell theme '{theme_set.shell_theme}' was not found on the system."
+                )
+            shell_val = self._validator.validate(found_shell.path, ThemeType.SHELL)
+            if not shell_val.valid:
+                warn_msg = "; ".join(shell_val.warnings) or "Shell theme is incomplete or invalid."
+                raise ThemeValidationError(
+                    f"GNOME Shell theme '{theme_set.shell_theme}' is invalid: {warn_msg}"
                 )
 
         # 2. Color scheme validation

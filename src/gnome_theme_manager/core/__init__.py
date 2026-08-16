@@ -49,6 +49,7 @@ from .models import (
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
+from .theme_validator import ThemeValidationResult, ThemeValidator
 
 __all__ = [
     "GLOBAL_THEMES_FILE",
@@ -88,6 +89,8 @@ __all__ = [
     "ThemeSet",
     "ThemeType",
     "ThemeValidationError",
+    "ThemeValidationResult",
+    "ThemeValidator",
     "detect_theme_types",
     "inspect_extracted_tree",
     "safe_extract",

@@ -311,7 +311,12 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 #### Task 1.7 — Installazione assistita da cartella
 - `Gtk.FileDialog`; accetta directory o archivi `.tar.gz/.tar.xz/.zip`; validazione pre-install
 
-**Acceptance Fase 1:** global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma
+**Acceptance Fase 1:** global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma. 
+
+- [ ] Esiste UNA sola pagina Global Themes; nessuna pagina/sidebar preset residua
+
+- [ ] Ordinamento corretto: user in cima (recenti prima), 3 bundled in fondo
+- [ ] Ogni stringa nuova della view è in po/en.po e po/it.po nello stesso commit
 
 ---
 

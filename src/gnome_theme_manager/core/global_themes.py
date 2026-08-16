@@ -132,9 +132,7 @@ class GlobalThemeManager:
             current_themes_provider: Optional callable returning current ThemeSet.
         """
         self._bundled_dir = (
-            Path(bundled_dir).expanduser()
-            if bundled_dir is not None
-            else BUNDLED_GLOBAL_THEMES_DIR
+            Path(bundled_dir).expanduser() if bundled_dir is not None else BUNDLED_GLOBAL_THEMES_DIR
         )
         self._user_presets_dir = (
             Path(user_presets_dir).expanduser()
@@ -193,7 +191,9 @@ class GlobalThemeManager:
         theme_id = f"user-{clean_name.lower().replace(' ', '-')}"
         existing_themes = self.list_global_themes()
 
-        existing = next((t for t in existing_themes if t.name == clean_name or t.id == theme_id), None)
+        existing = next(
+            (t for t in existing_themes if t.name == clean_name or t.id == theme_id), None
+        )
         if existing and existing.origin == "bundled":
             raise ValueError(f"Cannot overwrite bundled system theme '{clean_name}'.")
         if existing and not overwrite:
@@ -215,7 +215,9 @@ class GlobalThemeManager:
             all_state = self._auto_generate_from_system()
 
         # Update or append in state list
-        updated: list[GlobalTheme] = [t for t in all_state if t.id != user_theme.id and t.name != user_theme.name]
+        updated: list[GlobalTheme] = [
+            t for t in all_state if t.id != user_theme.id and t.name != user_theme.name
+        ]
         # Insert user theme at top
         updated.insert(0, user_theme)
 
@@ -237,7 +239,9 @@ class GlobalThemeManager:
             FileNotFoundError: If theme not found.
         """
         all_themes = self.list_global_themes()
-        target = next((t for t in all_themes if t.id == theme_id_or_name or t.name == theme_id_or_name), None)
+        target = next(
+            (t for t in all_themes if t.id == theme_id_or_name or t.name == theme_id_or_name), None
+        )
 
         if target is None:
             raise FileNotFoundError(f"Global Theme '{theme_id_or_name}' not found.")
@@ -283,7 +287,9 @@ class GlobalThemeManager:
         else:
             gtk_themes, icon_themes, cursor_themes, shell_themes = [], [], [], []
 
-        def pick_match(pool: list[str], keywords: list[str], fallback: str | None = None) -> str | None:
+        def pick_match(
+            pool: list[str], keywords: list[str], fallback: str | None = None
+        ) -> str | None:
             for kw in keywords:
                 for item in pool:
                     if kw.lower() in item.lower():
@@ -293,10 +299,24 @@ class GlobalThemeManager:
             return fallback
 
         # 2. Dark theme suite
-        dark_gtk = pick_match(gtk_themes, ["dark", "night", "black"], fallback=current.gtk_theme if current else None)
-        dark_icon = pick_match(icon_themes, ["dark", "papirus-dark", "yaru-dark", "black"], fallback=current.icon_theme if current else None)
-        dark_cursor = pick_match(cursor_themes, ["dark", "bibata", "yaru", "adwaita"], fallback=current.cursor_theme if current else None)
-        dark_shell = pick_match(shell_themes, ["dark", "yaru", "default"], fallback=current.shell_theme if current else None)
+        dark_gtk = pick_match(
+            gtk_themes, ["dark", "night", "black"], fallback=current.gtk_theme if current else None
+        )
+        dark_icon = pick_match(
+            icon_themes,
+            ["dark", "papirus-dark", "yaru-dark", "black"],
+            fallback=current.icon_theme if current else None,
+        )
+        dark_cursor = pick_match(
+            cursor_themes,
+            ["dark", "bibata", "yaru", "adwaita"],
+            fallback=current.cursor_theme if current else None,
+        )
+        dark_shell = pick_match(
+            shell_themes,
+            ["dark", "yaru", "default"],
+            fallback=current.shell_theme if current else None,
+        )
 
         if dark_gtk or dark_icon:
             dark_theme = GlobalTheme(
@@ -317,10 +337,24 @@ class GlobalThemeManager:
             generated.append(dark_theme)
 
         # 3. Light / Modern theme suite
-        light_gtk = pick_match(gtk_themes, ["light", "yaru", "adwaita"], fallback=gtk_themes[0] if gtk_themes else None)
-        light_icon = pick_match(icon_themes, ["light", "papirus", "yaru", "adwaita"], fallback=icon_themes[0] if icon_themes else None)
-        light_cursor = pick_match(cursor_themes, ["light", "adwaita", "yaru"], fallback=cursor_themes[0] if cursor_themes else None)
-        light_shell = pick_match(shell_themes, ["light", "yaru", "default"], fallback=shell_themes[0] if shell_themes else None)
+        light_gtk = pick_match(
+            gtk_themes, ["light", "yaru", "adwaita"], fallback=gtk_themes[0] if gtk_themes else None
+        )
+        light_icon = pick_match(
+            icon_themes,
+            ["light", "papirus", "yaru", "adwaita"],
+            fallback=icon_themes[0] if icon_themes else None,
+        )
+        light_cursor = pick_match(
+            cursor_themes,
+            ["light", "adwaita", "yaru"],
+            fallback=cursor_themes[0] if cursor_themes else None,
+        )
+        light_shell = pick_match(
+            shell_themes,
+            ["light", "yaru", "default"],
+            fallback=shell_themes[0] if shell_themes else None,
+        )
 
         if light_gtk or light_icon:
             light_theme = GlobalTheme(
@@ -368,7 +402,9 @@ class GlobalThemeManager:
             themes: list[GlobalTheme] = []
             for it in items:
                 if isinstance(it, dict):
-                    themes.append(GlobalTheme.from_dict(it, is_bundled=bool(it.get("is_bundled", False))))
+                    themes.append(
+                        GlobalTheme.from_dict(it, is_bundled=bool(it.get("is_bundled", False)))
+                    )
             return themes
         except Exception as err:
             logger.warning("Error reading state file %s: %s", self._state_file, err)

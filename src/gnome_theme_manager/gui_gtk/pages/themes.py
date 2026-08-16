@@ -86,6 +86,8 @@ class ThemeItemPresentation:
     path_display: str
     origin_display: str
     is_user_level: bool
+    is_invalid: bool = False
+    warning_message: str | None = None
 
 
 @dataclass(frozen=True)
@@ -96,7 +98,11 @@ class ThemesSnapshot:
     active_themes: dict[ThemeType, str | None]
 
 
-def build_theme_presentation(theme: Theme) -> ThemeItemPresentation:
+def build_theme_presentation(
+    theme: Theme,
+    is_invalid: bool = False,
+    warning_message: str | None = None,
+) -> ThemeItemPresentation:
     """Build a presentation model from domain Theme object."""
     category_display = get_category_label(theme.theme_type)
     icon_name = CATEGORY_ICONS.get(theme.theme_type, "applications-graphics-symbolic")
@@ -112,6 +118,8 @@ def build_theme_presentation(theme: Theme) -> ThemeItemPresentation:
         path_display=str(theme.path),
         origin_display=origin_display,
         is_user_level=theme.is_user_level,
+        is_invalid=is_invalid or theme.invalid,
+        warning_message=warning_message,
     )
 
 
@@ -274,7 +282,17 @@ class ThemesPage:
                     raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
-                presentation_items = [build_theme_presentation(t) for t in themes_list]
+                presentation_items: list[ThemeItemPresentation] = []
+                for t in themes_list:
+                    val_res = self.manager.validator.validate(t.path, t.theme_type)
+                    warn_str = "; ".join(_(w) for w in val_res.warnings) if val_res.warnings else None
+                    presentation_items.append(
+                        build_theme_presentation(
+                            t,
+                            is_invalid=not val_res.valid,
+                            warning_message=warn_str,
+                        )
+                    )
 
                 active_map: dict[ThemeType, str | None] = {}
                 try:
@@ -447,7 +465,15 @@ class ThemesPage:
                 continue
             filtered.append(item)
 
-        filtered.sort(key=lambda it: (not it.is_user_level, it.name.casefold(), it.path_display))
+        # Sorting: valid themes first (user before system, then alphabetical), incomplete/invalid themes at bottom
+        filtered.sort(
+            key=lambda it: (
+                it.is_invalid,
+                not it.is_user_level,
+                it.name.casefold(),
+                it.path_display,
+            )
+        )
 
         while child := self.themes_list_box.get_first_child():
             self.themes_list_box.remove(child)
@@ -472,14 +498,39 @@ class ThemesPage:
             for item in filtered:
                 row = Adw.ActionRow()
                 row.set_title(item.name)
-                row.set_subtitle(item.path_display)
-                row.set_subtitle_lines(1)
-                row.set_activatable(True)
+
+                if item.is_invalid:
+                    subtitle_text = item.path_display
+                    if item.warning_message:
+                        subtitle_text += f"\n⚠️ {item.warning_message}"
+                    else:
+                        subtitle_text += (
+                            f"\n⚠️ {_('Missing required stylesheet or files in folder.')}"
+                        )
+                    row.set_subtitle(subtitle_text)
+                    row.set_subtitle_lines(2)
+                    row.set_activatable(False)
+                    row.set_sensitive(False)
+                else:
+                    row.set_subtitle(item.path_display)
+                    row.set_subtitle_lines(1)
+                    row.set_activatable(True)
+                    row.set_sensitive(True)
+
                 row._theme_item = item
 
                 img = Gtk.Image.new_from_icon_name(item.icon_name)
                 img.set_pixel_size(24)
+                if item.is_invalid:
+                    img.add_css_class("dim-label")
                 row.add_prefix(img)
+
+                if item.is_invalid:
+                    warn_badge = Gtk.Label(label=_("Incomplete"))
+                    warn_badge.add_css_class("caption")
+                    warn_badge.add_css_class("warning")
+                    warn_badge.set_valign(Gtk.Align.CENTER)
+                    row.add_suffix(warn_badge)
 
                 badge = Gtk.Label(label=_("User") if item.is_user_level else _("System"))
                 badge.add_css_class("caption")
@@ -516,14 +567,26 @@ class ThemesPage:
 
         win = parent_window or self.widget.get_root()
 
+        # Structural integrity validation (Task 1.2 / 1.3)
+        if self.manager is not None:
+            found_theme = self.manager.scanner.find_theme(item.name, item.theme_type)
+            if found_theme:
+                val_res = self.manager.validator.validate(found_theme.path, item.theme_type)
+                if not val_res.valid:
+                    err_title = _("Cannot Apply Incomplete Theme")
+                    err_body = (
+                        f"{_('The theme')} «{item.name}» {_('cannot be applied because its structure is incomplete or invalid.')}\n\n"
+                        + "\n".join(f"• {w}" for w in val_res.warnings)
+                    )
+                    self._show_invalid_theme_dialog(err_title, err_body, win, on_complete)
+                    return
+
         needs_extension_check = item.theme_type == ThemeType.SHELL
         if self.manager is not None and needs_extension_check:
             is_enabled = self.manager.extensions.is_user_theme_enabled()
             if not is_enabled:
                 self._open_enable_extension_dialog(item, win, on_complete, sync)
                 return
-
-        win = parent_window or self.widget.get_root()
 
         cat_name = get_dialog_category_name(item.theme_type)
         heading = f"{_('Apply')} “{item.name}” {_('to')} {cat_name}?"
@@ -564,15 +627,21 @@ class ThemesPage:
         cross_checkbox = None
         if self.manager is not None:
             if item.theme_type == ThemeType.GTK:
-                has_opposite = bool(self.manager.scanner.find_theme(item.name, ThemeType.SHELL))
-                if has_opposite:
-                    cross_checkbox = Gtk.CheckButton.new_with_label(
-                        _("Also apply as GNOME Shell theme")
-                    )
+                opposite_theme = self.manager.scanner.find_theme(item.name, ThemeType.SHELL)
+                if opposite_theme:
+                    val_res = self.manager.validator.validate(opposite_theme.path, ThemeType.SHELL)
+                    if val_res.valid:
+                        cross_checkbox = Gtk.CheckButton.new_with_label(
+                            _("Also apply as GNOME Shell theme")
+                        )
             elif item.theme_type == ThemeType.SHELL:
-                has_opposite = bool(self.manager.scanner.find_theme(item.name, ThemeType.GTK))
-                if has_opposite:
-                    cross_checkbox = Gtk.CheckButton.new_with_label(_("Also apply as GTK theme"))
+                opposite_theme = self.manager.scanner.find_theme(item.name, ThemeType.GTK)
+                if opposite_theme:
+                    val_res = self.manager.validator.validate(opposite_theme.path, ThemeType.GTK)
+                    if val_res.valid:
+                        cross_checkbox = Gtk.CheckButton.new_with_label(
+                            _("Also apply as GTK theme")
+                        )
 
         if cross_checkbox is not None:
             cross_checkbox.set_margin_top(8)
@@ -752,6 +821,47 @@ class ThemesPage:
             dialog.present()
         else:
             handle_enable_and_continue()
+
+    def _show_invalid_theme_dialog(
+        self,
+        title: str,
+        body: str,
+        win: Any,
+        on_complete: Callable[[ApplyResult | None, Exception | None], None] | None = None,
+    ) -> None:
+        """Display an alert dialog informing the user that the theme cannot be applied due to missing components."""
+        if hasattr(Adw, "AlertDialog"):
+            dialog = Adw.AlertDialog.new(heading=title, body=body)
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+
+            def on_dialog_response(_d: Any, _resp: Any) -> None:
+                if on_complete:
+                    on_complete(None, GnomeThemeManagerError(body))
+
+            dialog.connect("response", on_dialog_response)
+            dialog.present(win if isinstance(win, Gtk.Widget) else None)
+        elif hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(
+                win if isinstance(win, Gtk.Window) else None,
+                title,
+                body,
+            )
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+
+            def on_msg_response(_d: Any, _resp: str) -> None:
+                if on_complete:
+                    on_complete(None, GnomeThemeManagerError(body))
+
+            dialog.connect("response", on_msg_response)
+            dialog.present()
+        else:
+            self._show_toast(f"{title}: {body}")
+            if on_complete:
+                on_complete(None, GnomeThemeManagerError(body))
 
     def apply_theme(
         self,

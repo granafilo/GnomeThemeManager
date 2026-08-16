@@ -1586,7 +1586,7 @@ msgstr "Applica"
 
 #: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:169
 msgid "Global Themes"
-msgstr "Global Themes"
+msgstr "Temi Globali"
 
 #: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:316
 msgid "Global Theme applied successfully"
@@ -1668,4 +1668,103 @@ msgstr "Impossibile caricare i Global Themes"
 msgid "An error occurred while reading theme definitions."
 msgstr "Si è verificato un errore durante la lettura delle definizioni dei temi."
 
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:525
+msgid "Cannot Apply Incomplete Theme"
+msgstr "Impossibile applicare il tema incompleto"
 
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:527
+msgid "The theme"
+msgstr "Il tema"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:527
+msgid "cannot be applied because its structure is incomplete or invalid."
+msgstr "non può essere applicato poiché la sua struttura è incompleta o non valida."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:778
+msgid "OK"
+msgstr "OK"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:498
+msgid "Missing required stylesheet or files in folder."
+msgstr "Fogli di stile o file necessari mancanti nella cartella."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:512
+msgid "Incomplete"
+msgstr "Incompleto"
+
+
+
+msgid "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
+msgstr "Applica tema unificato (GTK, Shell e override GTK4/Libadwaita) con nome corrispondente"
+
+msgid "Install into legacy paths ~/.themes and ~/.icons instead of XDG standard (~/.local/share/themes)"
+msgstr "Installa nei percorsi legacy ~/.themes e ~/.icons invece dello standard XDG (~/.local/share/themes)"
+
+msgid "\nNo theme found for type '{theme_type}' (user_only={user_only}).\n"
+msgstr "\nNessun tema trovato per il tipo '{theme_type}' (user_only={user_only}).\n"
+
+msgid "  - Snap Propagation:             ✓ Compatibility verified with gtk-common-themes"
+msgstr "  - Propagazione Snap:            ✓ Compatibilità verificata con gtk-common-themes"
+
+msgid "Error: Specify at least one option to apply (--gtk, --theme, --icon, --cursor, --shell or --color-scheme)."
+msgstr "Errore: specifica almeno un'opzione da applicare (--gtk, --theme, --icon, --cursor, --shell o --color-scheme)."
+
+msgid "Theme '{theme}' was not found as GTK or GNOME Shell on the system."
+msgstr "Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema."
+
+msgid "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\nInstall required dependencies with:\n    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
+msgstr "\n[ERRORE GTK4 GUI] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\nInstalla le dipendenze necessarie con:\n    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
+
+msgid "Shell"
+msgstr "Shell"
+
+msgid "Mode"
+msgstr "Modalità"
+
+msgid "e.g. My Custom Desktop"
+msgstr "es. Il mio desktop personalizzato"
+
+msgid "GSettings is not available on this system. Ensure you are running in a GNOME environment and PyGObject (Gio) is installed."
+msgstr "GSettings non è disponibile su questo sistema. Assicurati di essere in un ambiente GNOME e che PyGObject (Gio) sia installato."
+
+msgid "The 'User Themes' extension is required to apply custom themes to GNOME Shell. Do you want to enable it now?"
+msgstr "L'estensione 'User Themes' è richiesta per applicare temi personalizzati a GNOME Shell. Vuoi abilitarla adesso?"
+
+msgid "Shell not applied: 'User Themes' extension inactive or unsupported."
+msgstr "Shell non applicata: estensione 'User Themes' inattiva o non supportata."
+
+msgid "You may need to switch windows or restart some applications."
+msgstr "Potrebbe essere necessario cambiare finestra o riavviare alcune applicazioni."
+
+msgid "The new cursor might not appear immediately across all windows.\nSwitch windows or restart applications to see the change."
+msgstr "Il nuovo cursore potrebbe non apparire immediatamente in tutte le finestre.\nCambia finestra o riavvia le applicazioni per vedere la modifica."
+
+msgid "This operation configures filesystem overrides for Flatpak and verifies compatibility of active themes with Snap.\n\nNot all sandboxed applications or themes can be updated automatically."
+msgstr "Questa operazione configura gli override del filesystem per Flatpak e verifica la compatibilità dei temi attivi con Snap.\n\nNon tutte le applicazioni sandbox o i temi possono essere aggiornati automaticamente."
+
+msgid "No supported themes (GTK, Shell, Icons, Cursors) detected in source."
+msgstr "Nessun tema supportato (GTK, Shell, Icone, Cursori) rilevato nella sorgente."
+
+msgid "Legacy GTK 2 theme only (gtk-2.0). Missing modern GTK 3.0 or GTK 4.0 stylesheets."
+msgstr "Solo tema legacy GTK 2 (gtk-2.0). Mancano i fogli di stile moderni GTK 3.0 o GTK 4.0."
+
+msgid "Missing index.theme metadata file."
+msgstr "File di metadati index.theme mancante."
+
+msgid "No modern GTK stylesheet (gtk-3.0 or gtk-4.0) detected."
+msgstr "Nessun foglio di stile GTK moderno (gtk-3.0 o gtk-4.0) rilevato."
+
+msgid "Missing index.theme configuration file."
+msgstr "File di configurazione index.theme mancante."
+
+msgid "Missing 'cursors' directory."
+msgstr "Cartella 'cursors' mancante."
+
+msgid "Cursor directory contains no cursor files."
+msgstr "La cartella dei cursori non contiene file di cursori."
+
+msgid "Missing index.theme file for icon pack."
+msgstr "File index.theme mancante per il pacchetto di icone."
+
+msgid "Missing gnome-shell/gnome-shell.css stylesheet."
+msgstr "Foglio di stile gnome-shell/gnome-shell.css mancante."
