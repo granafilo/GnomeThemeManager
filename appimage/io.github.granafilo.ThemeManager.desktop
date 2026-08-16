@@ -3,7 +3,7 @@
 [Desktop Entry]
 Type=Application
 Name=GNOME Theme Manager
-Comment=Gestisci temi GTK, Shell, Icone e Cursori su GNOME
+Comment=Manage GTK, Shell, Icon, and Cursor themes on GNOME
 Exec=gnome-theme-manager --gui
 Icon=io.github.granafilo.ThemeManager
 Terminal=false

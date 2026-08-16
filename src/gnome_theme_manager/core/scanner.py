@@ -1,18 +1,18 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo per la scansione del filesystem e il rilevamento dei temi installati.
+"""Filesystem scanner module for detecting installed themes.
 
-Questo modulo implementa la classe `ThemeScanner`, responsabile di esplorare
-le directory standard di GNOME (sia a livello utente che di sistema) per individuare:
-- Temi per i controlli grafici delle finestre (GTK 2/3/4)
-- Set di icone
-- Temi per i cursori del mouse
-- Temi per la GNOME Shell (pannello superiore, dock e menu di sistema)
+This module implements `ThemeScanner`, responsible for discovering
+themes in standard GNOME directories (both user and system levels):
+- Window widget controls (GTK 2/3/4)
+- Icon packs
+- Mouse cursor themes
+- GNOME Shell themes (top bar, dock, and system menus)
 
-Regole di business applicate:
-1. Precedenza: i temi utente (~/.local/share/...) hanno priorità su quelli di sistema (/usr/share/...).
-2. Cartelle ibride: directory in 'icons/' contenenti sia icone che cursori vengono registrate per entrambi i tipi.
-3. Temi Shell: cartelle in 'themes/' contenenti 'gnome-shell/' vengono registrate per ThemeType.SHELL.
+Business rules applied:
+1. Precedence: user themes (~/.local/share/...) take priority over system ones (/usr/share/...).
+2. Hybrid folders: directories in 'icons/' containing both icons and cursors are registered for both types.
+3. Shell themes: directories in 'themes/' containing 'gnome-shell/' are registered for ThemeType.SHELL.
 """
 
 from pathlib import Path
@@ -27,11 +27,10 @@ from .models import Theme, ThemeType
 
 
 class ThemeScanner:
-    """Scanner per il rilevamento di temi GTK, icone, cursori e Shell nel filesystem.
+    """Scanner for detecting GTK themes, icon packs, cursor themes, and Shell themes on the filesystem.
 
-    Esplora le directory utente e di sistema fornite (o quelle predefinite di GNOME)
-    e identifica i temi validi mediante euristiche basate sulla presenza di file
-    e sottocartelle caratteristiche (come 'gtk-3.0', 'cursors', 'gnome-shell', 'index.theme').
+    Scans provided or default GNOME directories and identifies valid themes
+    using heuristics based on subdirectories and files ('gtk-3.0', 'cursors', 'gnome-shell', 'index.theme').
     """
 
     def __init__(
@@ -41,16 +40,15 @@ class ThemeScanner:
         system_theme_dirs: list[Path] | None = None,
         system_icon_dirs: list[Path] | None = None,
     ) -> None:
-        """Inizializza lo scanner con i percorsi da analizzare.
+        """Initialize scanner with target paths.
 
-        Se non vengono specificati percorsi personalizzati, vengono risolti
-        dinamicamente i percorsi standard XDG e legacy.
+        If custom paths are not provided, default XDG and legacy paths are dynamically resolved.
 
         Args:
-            user_theme_dirs: Lista di percorsi delle directory temi utente.
-            user_icon_dirs: Lista di percorsi delle directory icone/cursori utente.
-            system_theme_dirs: Lista di percorsi delle directory temi di sistema.
-            system_icon_dirs: Lista di percorsi delle directory icone/cursori di sistema.
+            user_theme_dirs: List of user theme directories.
+            user_icon_dirs: List of user icon/cursor directories.
+            system_theme_dirs: List of system theme directories.
+            system_icon_dirs: List of system icon/cursor directories.
         """
         self.user_theme_dirs = (
             user_theme_dirs if user_theme_dirs is not None else get_user_themes_dirs()
@@ -66,61 +64,61 @@ class ThemeScanner:
         )
 
     # -------------------------------------------------------------------------
-    # Metodi di Scansione Pubblici
+    # Public Scan Methods
     # -------------------------------------------------------------------------
 
     def scan_gtk_themes(self, user_only: bool = False) -> list[Theme]:
-        """Scansiona e restituisce tutti i temi GTK disponibili.
+        """Scan and return all available GTK themes.
 
         Args:
-            user_only: Se True, limita la ricerca alle directory utente (~/.local/share/themes, ecc.).
+            user_only: If True, limit scan to user directories.
 
         Returns:
-            Lista di oggetti Theme di tipo GTK, senza duplicati (precedenza Utente > Sistema).
+            List of GTK Theme objects without duplicates (User > System precedence).
         """
         return self._scan_themes_by_type(ThemeType.GTK, user_only=user_only)
 
     def scan_icon_themes(self, user_only: bool = False) -> list[Theme]:
-        """Scansiona e restituisce tutti i set di icone disponibili.
+        """Scan and return all available icon packs.
 
         Args:
-            user_only: Se True, limita la ricerca alle directory utente.
+            user_only: If True, limit scan to user directories.
 
         Returns:
-            Lista di oggetti Theme di tipo ICON, senza duplicati.
+            List of ICON Theme objects without duplicates.
         """
         return self._scan_themes_by_type(ThemeType.ICON, user_only=user_only)
 
     def scan_cursor_themes(self, user_only: bool = False) -> list[Theme]:
-        """Scansiona e restituisce tutti i temi per cursori disponibili.
+        """Scan and return all available cursor themes.
 
         Args:
-            user_only: Se True, limita la ricerca alle directory utente.
+            user_only: If True, limit scan to user directories.
 
         Returns:
-            Lista di oggetti Theme di tipo CURSOR, senza duplicati.
+            List of CURSOR Theme objects without duplicates.
         """
         return self._scan_themes_by_type(ThemeType.CURSOR, user_only=user_only)
 
     def scan_shell_themes(self, user_only: bool = False) -> list[Theme]:
-        """Scansiona e restituisce tutti i temi GNOME Shell disponibili.
+        """Scan and return all available GNOME Shell themes.
 
         Args:
-            user_only: Se True, limita la ricerca alle directory utente.
+            user_only: If True, limit scan to user directories.
 
         Returns:
-            Lista di oggetti Theme di tipo SHELL, senza duplicati.
+            List of SHELL Theme objects without duplicates.
         """
         return self._scan_themes_by_type(ThemeType.SHELL, user_only=user_only)
 
     def scan_all(self, user_only: bool = False) -> list[Theme]:
-        """Scansiona e restituisce tutti i temi rilevati (GTK, icone, cursori e Shell).
+        """Scan and return all detected themes (GTK, icons, cursors, and Shell).
 
         Args:
-            user_only: Se True, limita la ricerca alle directory utente.
+            user_only: If True, limit scan to user directories.
 
         Returns:
-            Lista completa di oggetti Theme rilevati.
+            Full list of detected Theme objects.
         """
         all_themes: list[Theme] = []
         all_themes.extend(self.scan_gtk_themes(user_only=user_only))
@@ -130,17 +128,16 @@ class ThemeScanner:
         return all_themes
 
     def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
-        """Cerca un tema specifico per nome e tipologia.
+        """Find a specific theme by name and type.
 
-        La ricerca rispetta la regola di precedenza (se il tema esiste sia a livello
-        utente che di sistema, viene restituito quello utente).
+        Searches with precedence (user theme shadows system theme with the same name).
 
         Args:
-            name: Il nome esatto della cartella del tema (es. 'Adwaita', 'Nordic').
-            theme_type: La tipologia di tema cercata (ThemeType.GTK, ICON, CURSOR o SHELL).
+            name: Exact directory name of the theme (e.g. 'Adwaita', 'Nordic').
+            theme_type: Requested theme type (ThemeType.GTK, ICON, CURSOR, or SHELL).
 
         Returns:
-            L'oggetto Theme trovato oppure None se il tema non esiste.
+            Matching Theme object, or None if not found.
         """
         available_themes = self._scan_themes_by_type(theme_type, user_only=False)
 
@@ -148,7 +145,7 @@ class ThemeScanner:
             if theme.name == name:
                 return theme
 
-        # Fallback case-insensitive
+        # Case-insensitive fallback
         for theme in available_themes:
             if theme.name.lower() == name.lower():
                 return theme
@@ -156,23 +153,23 @@ class ThemeScanner:
         return None
 
     # -------------------------------------------------------------------------
-    # Metodi Interni di Scansione ed Euristica
+    # Internal Scan and Heuristic Methods
     # -------------------------------------------------------------------------
 
     def _scan_themes_by_type(self, target_type: ThemeType, user_only: bool = False) -> list[Theme]:
-        """Esegue la scansione per una specifica tipologia di tema applicando le precedenze.
+        """Scan for a specific theme type applying precedence rules.
 
         Args:
-            target_type: Tipologia di tema da cercare (GTK, ICON, CURSOR, SHELL).
-            user_only: Se True, salta l'analisi delle cartelle di sistema.
+            target_type: Theme type to look for (GTK, ICON, CURSOR, SHELL).
+            user_only: If True, skip system directories.
 
         Returns:
-            Lista di oggetti Theme univoci per la tipologia specificata.
+            List of unique Theme objects for the specified type.
         """
         themes: list[Theme] = []
         seen_names: set[str] = set()
 
-        # Determiniamo quali cartelle sorgente analizzare
+        # Determine target directories
         if target_type in (ThemeType.GTK, ThemeType.SHELL):
             user_dirs = self.user_theme_dirs
             system_dirs = self.system_theme_dirs
@@ -180,14 +177,14 @@ class ThemeScanner:
             user_dirs = self.user_icon_dirs
             system_dirs = self.system_icon_dirs
 
-        # 1. Scansione directory utente (priorità alta)
+        # 1. Scan user directories (high priority)
         for base_dir in user_dirs:
             for theme in self._scan_directory(base_dir, is_user_level=True):
                 if theme.theme_type == target_type and theme.name not in seen_names:
                     seen_names.add(theme.name)
                     themes.append(theme)
 
-        # 2. Scansione directory di sistema (priorità secondaria, solo se non user_only)
+        # 2. Scan system directories (secondary priority, if not user_only)
         if not user_only:
             for base_dir in system_dirs:
                 for theme in self._scan_directory(base_dir, is_user_level=False):
@@ -198,14 +195,14 @@ class ThemeScanner:
         return themes
 
     def _scan_directory(self, directory: Path, is_user_level: bool) -> list[Theme]:
-        """Esplora una singola cartella alla ricerca di temi validi.
+        """Scan a single directory for valid themes.
 
         Args:
-            directory: Percorso della directory genitore (es. /usr/share/themes).
-            is_user_level: Flag che indica se si tratta di un percorso utente.
+            directory: Directory path to scan (e.g. /usr/share/themes).
+            is_user_level: Flag indicating if this is a user directory.
 
         Returns:
-            Lista di oggetti Theme individuati all'interno della directory.
+            List of Theme objects detected in the directory.
         """
         import configparser
 
@@ -227,7 +224,7 @@ class ThemeScanner:
             invalid = False
             inherits_str = ""
 
-            # Se c'è un file index.theme, proviamo a parsarlo per caricare metadati ed ereditarietà
+            # If index.theme exists, parse metadata and inheritance
             if index_file.is_file():
                 config = configparser.ConfigParser(interpolation=None)
                 try:
@@ -241,27 +238,27 @@ class ThemeScanner:
                 except Exception:
                     invalid = True
 
-            # Calcolo ricorsivo della catena di ereditarietà (max depth 5)
+            # Recursive inheritance chain calculation (max depth 5)
             inheritance_chain: list[str] = []
             curr_inherits = inherits_str
             depth = 0
 
             while curr_inherits and depth < 4:
-                # split e strip nel caso di valori multipli separati da virgola
+                # Split and strip comma-separated parent names
                 parents = [p.strip() for p in curr_inherits.split(",") if p.strip()]
                 if not parents:
                     break
 
-                # Aggiungiamo tutti i genitori trovati in questo livello
+                # Add parents found at this level
                 for p in parents:
                     if p not in inheritance_chain:
                         inheritance_chain.append(p)
 
-                # Cerchiamo il file index.theme del primo genitore per continuare la catena
+                # Search index.theme of first parent to continue chain
                 next_parent = parents[0]
                 parent_path = None
 
-                # Cerca nelle directory note per trovare il percorso del tema genitore
+                # Search known directories for parent path
                 for d in (
                     self.user_theme_dirs
                     + self.system_theme_dirs
@@ -295,19 +292,18 @@ class ThemeScanner:
                     break
                 depth += 1
 
-            # Rilevamento delle tipologie supportate
+            # Detect supported types
             is_gtk = self._is_gtk_theme(entry)
             is_cursor = self._is_cursor_theme(entry)
             is_icon = self._is_icon_theme(entry)
             is_shell = self._is_shell_theme(entry)
 
-            # Se l'index.theme è corrotto o non riconosce tipologie ma il file index.theme esiste comunque,
-            # consideriamolo GTK o ICON con flag invalid=True per non scartarlo
+            # If index.theme is present but type heuristics fail, treat as GTK with invalid=True
             if not (is_gtk or is_cursor or is_icon or is_shell) and index_file.is_file():
                 invalid = True
-                is_gtk = True  # Fallback di classificazione
+                is_gtk = True  # Fallback classification
 
-            # Registrazione temi trovati
+            # Register found themes
             if is_gtk:
                 found_themes.append(
                     Theme(
@@ -356,12 +352,12 @@ class ThemeScanner:
         return found_themes
 
     # -------------------------------------------------------------------------
-    # Euristiche di Riconoscimento Temi
+    # Theme Recognition Heuristics
     # -------------------------------------------------------------------------
 
     @staticmethod
     def _is_gtk_theme(path: Path) -> bool:
-        """Verifica se una directory contiene un tema GTK valido."""
+        """Check if directory contains a valid GTK theme."""
         gtk_subdirs = ["gtk-4.0", "gtk-3.0", "gtk-3.20", "gtk-2.0"]
         for subdir in gtk_subdirs:
             if (path / subdir).is_dir():
@@ -384,10 +380,10 @@ class ThemeScanner:
 
     @staticmethod
     def _is_shell_theme(path: Path) -> bool:
-        """Verifica se una directory contiene un tema per GNOME Shell.
+        """Check if directory contains a GNOME Shell theme.
 
-        La presenza della cartella 'gnome-shell' (tipicamente contenente 'gnome-shell.css')
-        identifica un tema per la Shell di GNOME.
+        Presence of 'gnome-shell' directory (typically containing 'gnome-shell.css')
+        identifies a GNOME Shell theme.
         """
         shell_dir = path / "gnome-shell"
         if shell_dir.is_dir():
@@ -406,13 +402,13 @@ class ThemeScanner:
 
     @staticmethod
     def _is_cursor_theme(path: Path) -> bool:
-        """Verifica se una directory contiene un tema per cursori valido."""
+        """Check if directory contains a valid cursor theme."""
         cursors_dir = path / "cursors"
         return cursors_dir.is_dir()
 
     @staticmethod
     def _is_icon_theme(path: Path) -> bool:
-        """Verifica se una directory contiene un set di icone valido."""
+        """Check if directory contains a valid icon pack."""
         index_file = path / "index.theme"
         if index_file.is_file():
             try:

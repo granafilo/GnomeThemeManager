@@ -1,64 +1,64 @@
-# Fase 3: Architettura Core Library e Disaccoppiamento
+# Phase 3: Core Library Architecture and Decoupling
 
-## Obiettivi della Fase
+## Phase Goals
 
-Rifinire e consolidare il layer `gnome_theme_manager.core` affinché operi come una libreria pura e riutilizzabile da qualsiasi interfaccia (CLI, Tkinter, GTK4, script esterni):
-1. **Separazione totale I/O e UI**: Nessuna chiamata a `print()`, `input()` o dipendenza da terminale all'interno del `core`.
-2. **Sistema di Eventi / Callback / Logging**: Utilizzo del modulo standard `logging` per tracciare le operazioni.
-3. **Type Hinting Completo e Validazione Dati**: Dataclass con type hint completi (`typing`, `dataclasses`).
-4. **Testabilità Totale**: Supporto per test headless con mock completi del filesystem e di GSettings.
+Refine and consolidate the `gnome_theme_manager.core` layer so that it operates as a pure library consumable by any interface (CLI, GTK4, external scripts):
+1. **Complete separation of I/O and UI**: No calls to `print()`, `input()`, or terminal dependencies inside `core`.
+2. **Event / Callback / Logging System**: Standard `logging` module usage across all domain operations.
+3. **Strict Type Annotations and Data Validation**: Complete dataclasses with full type hinting (`typing`, `dataclasses`).
+4. **Complete Testability**: Headless test execution with complete mocks for filesystem and GSettings.
 
 ---
 
-## Architettura e API Pubblica del Core
+## Architecture and Public Core API
 
 ```text
 gnome_theme_manager.core
-├── ThemeManager        # Classe facade principale per l'accesso coordinato
+├── ThemeManager        # Main facade class for coordinated access
 ├── models              # Theme, ThemeSet, ThemeType
 ├── scanner             # scan_themes(), get_theme_by_name()
 ├── gsettings           # GSettingsClient (read, write, schema check)
 ├── installer           # install_from_archive(), remove_theme()
-└── errors              # GnomeThemeManagerError e derivate
+└── errors              # GnomeThemeManagerError and subclasses
 ```
 
-### Esempio di Utilizzo Programmatico (Facade Pattern)
+### Programmatic Usage Example (Facade Pattern)
 
 ```python
 from gnome_theme_manager.core import ThemeManager, ThemeType
 
-# Inizializzazione facade
+# Facade initialization
 manager = ThemeManager()
 
-# Recupero stato attuale
+# Retrieve current state
 current_set = manager.get_current_themes()
-print(f"Tema GTK attivo: {current_set.gtk_theme}")
+print(f"Active GTK theme: {current_set.gtk_theme}")
 
-# Elenco temi disponibili
+# List available themes
 gtk_themes = manager.list_themes(theme_type=ThemeType.GTK)
 for theme in gtk_themes:
     print(f"- {theme.name} ({'User' if theme.is_user_level else 'System'})")
 
-# Applicazione nuovo tema
+# Apply new theme
 manager.apply_theme(ThemeType.GTK, "Nordic")
 ```
 
 ---
 
-## Checklist di Implementazione
+## Implementation Checklist
 
-- [ ] **Facade `ThemeManager`**:
-  - Unificazione dei metodi di scansione, applicazione, installazione e rimozione in un'unica interfaccia pulita.
-- [ ] **Refactoring Modelli**:
-  - `ThemeSet`: Metodi di utilità (es. `as_dict()`, `is_complete()`).
-  - Metodi `to_dict()`, `from_dict()` per serializzazione/backup (preparazione per preset).
-- [ ] **Gestione Errori**:
-  - Gerarchia formale:
+- [x] **`ThemeManager` Facade**:
+  - Unification of scanning, applying, installing, and removing themes behind a single clean interface.
+- [x] **Model Refactoring**:
+  - `ThemeSet`: Utility methods (e.g. `as_dict()`, `is_complete()`).
+  - `to_dict()`, `from_dict()` methods for JSON serialization and presets.
+- [x] **Error Handling**:
+  - Formal hierarchy:
     - `GnomeThemeManagerError`
       - `GSettingsUnavailableError`
       - `ThemeNotFoundError`
-      - `ThemeInstallationError`
-      - `InvalidThemeArchiveError`
-- [ ] **Suite di Test**:
-  - Test di regressione per tutte le classi e funzioni core.
-  - Copertura test minima garantita (>80%).
+      - `ThemeValidationError`
+      - `ArchiveExtractionError`
+- [x] **Test Suite**:
+  - Regression tests for all core classes and functions.
+  - Ensured code coverage (>80%).

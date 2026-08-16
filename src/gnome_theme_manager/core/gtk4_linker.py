@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo per la gestione dei collegamenti simbolici (symlink) per temi GTK4 / Libadwaita.
+"""Symbolic link management module for GTK4 / Libadwaita themes.
 
-Nelle versioni recenti di GNOME (42+ su Ubuntu 22.04 e 24.04), le applicazioni
-moderne basate su GTK4 e Libadwaita non seguono più la chiave GSettings 'gtk-theme'.
-Per applicare un tema personalizzato a queste applicazioni, occorre creare dei
-collegamenti simbolici (symlink) nella directory di configurazione utente `~/.config/gtk-4.0/`.
+In modern GNOME releases (42+ on Ubuntu 22.04 and 24.04), GTK4 and Libadwaita
+applications no longer track the GSettings 'gtk-theme' key.
+To apply custom themes to these applications, symbolic links must be created
+in the user configuration directory `~/.config/gtk-4.0/`.
 """
 
 import hashlib
@@ -24,18 +24,18 @@ logger = logging.getLogger("gnome_theme_manager.core")
 
 
 class GTK4ThemeLinker:
-    """Gestisce la creazione, rimozione e il backup sicuro dei symlink per temi GTK4 / Libadwaita."""
+    """Manages creation, removal, safe backup, and rollback of GTK4 / Libadwaita theme symlinks."""
 
     def __init__(self, config_dir: Path | None = None) -> None:
-        """Inizializza il linker GTK4.
+        """Initialize the GTK4 linker.
 
         Args:
-            config_dir: Directory di destinazione per la configurazione GTK4
+            config_dir: Destination directory for GTK4 configuration
                         (default: ~/.config/gtk-4.0).
         """
         self.config_dir = config_dir if config_dir is not None else GTK4_CONFIG_DIR
 
-        # Definizione percorsi XDG conformemente alle specifiche
+        # Define XDG paths
         xdg_config = os.environ.get("XDG_CONFIG_HOME")
         if xdg_config and xdg_config.strip():
             self.config_root = Path(xdg_config).expanduser() / "gnome-theme-manager"
@@ -52,35 +52,34 @@ class GTK4ThemeLinker:
             self.backup_root = Path.home() / ".local" / "share" / "gnome-theme-manager" / "backups"
 
     def _load_manifest(self) -> dict[str, Any]:
-        """Carica il manifest esistente. Ritorna un dizionario vuoto/nuovo se assente o corrotto."""
+        """Load existing manifest. Returns a new empty dict if missing or corrupted."""
         if not self.manifest_path.is_file():
             return {"version": 1, "active_theme": None, "entries": {}}
         try:
             content = self.manifest_path.read_text(encoding="utf-8")
             data = json.loads(content)
             if not isinstance(data, dict) or data.get("version") != 1:
-                # Versione non supportata o manifest corrotto
                 return {"version": 1, "active_theme": None, "entries": {}}
             return data
         except Exception:
             return {"version": 1, "active_theme": None, "entries": {}}
 
     def _save_manifest(self, manifest: dict[str, Any]) -> None:
-        """Salva il manifest in modo atomico."""
+        """Save manifest atomically."""
         self._write_manifest_atomically(manifest)
 
     def _write_manifest_atomically(self, manifest: dict[str, Any]) -> None:
-        """Scrive il file del manifest in modo atomico usando un file temporaneo."""
+        """Write manifest file atomically using a temporary file."""
         try:
             self.config_root.mkdir(parents=True, exist_ok=True)
             temp_file = self.manifest_path.with_suffix(".tmp")
             temp_file.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
             temp_file.replace(self.manifest_path)
         except Exception as e:
-            raise ThemeApplyError(f"Impossibile salvare il manifest in modo atomico: {e}") from e
+            raise ThemeApplyError(f"Failed to save manifest atomically: {e}") from e
 
     def _fingerprint_entry(self, path: Path) -> str:
-        """Calcola l'impronta hash (SHA256) per un file, directory o symlink."""
+        """Compute hash fingerprint (SHA256) for a file, directory, or symlink."""
         if not path.exists() and not path.is_symlink():
             return "missing"
 
@@ -122,7 +121,7 @@ class GTK4ThemeLinker:
         return "unknown"
 
     def _capture_entry(self, path: Path) -> dict[str, Any]:
-        """Rileva lo stato di un elemento del filesystem per il manifest."""
+        """Capture the filesystem entry state for the manifest."""
         if not path.exists() and not path.is_symlink():
             return {
                 "kind": "missing",
@@ -153,14 +152,14 @@ class GTK4ThemeLinker:
         }
 
     def _is_manager_owned(self, path: Path, entry: dict[str, Any]) -> bool:
-        """Verifica se l'elemento a `path` è rimasto invariato e gestito da noi."""
+        """Check if entry at `path` is unchanged and managed by us."""
         if not path.exists() and not path.is_symlink():
             return entry.get("kind") == "missing"
 
         current_fingerprint = self._fingerprint_entry(path)
         expected_fingerprint = entry.get("managed_fingerprint")
 
-        # Se è un symlink, verifichiamo anche il target del link
+        # For symlinks, also verify the link target
         if path.is_symlink() and entry.get("managed_kind") == "symlink":
             try:
                 current_target = os.readlink(path)
@@ -171,17 +170,16 @@ class GTK4ThemeLinker:
         return current_fingerprint == expected_fingerprint
 
     def _backup_entry(self, path: Path, name: str) -> Path:
-        """Crea una copia di backup dell'elemento in backup_root con un nome univoco."""
+        """Create a backup copy of entry in backup_root with unique name."""
         try:
             self.backup_root.mkdir(parents=True, exist_ok=True)
             timestamp = int(time.time() * 1000)
             backup_path = self.backup_root / f"{name}_{timestamp}"
 
-            # Garantiamo permessi corretti per la cartella dei backup (0700)
+            # Set safe directory permissions (0700)
             self.backup_root.chmod(0o700)
 
             if path.is_symlink():
-                # Salviamo il link simbolico come tale nel percorso di backup
                 target = os.readlink(path)
                 backup_path.symlink_to(target)
             elif path.is_file():
@@ -191,12 +189,11 @@ class GTK4ThemeLinker:
 
             return backup_path
         except Exception as e:
-            raise ThemeBackupError(f"Impossibile creare il backup di {path}: {e}") from e
+            raise ThemeBackupError(f"Failed to create backup of {path}: {e}") from e
 
     def _restore_entry(self, entry: dict[str, Any], path: Path) -> None:
-        """Ripristina lo stato originale di un elemento."""
+        """Restore original state of an entry."""
         try:
-            # Rimuoviamo l'elemento corrente se presente
             self._safe_remove(path)
 
             kind = entry.get("kind", "missing")
@@ -211,7 +208,6 @@ class GTK4ThemeLinker:
                         orig_target = os.readlink(bp)
                         path.symlink_to(orig_target)
                     else:
-                        # Fallback se il backup non è un symlink
                         target = entry.get("target")
                         if target:
                             path.symlink_to(target)
@@ -228,10 +224,10 @@ class GTK4ThemeLinker:
                 if bp.is_dir():
                     shutil.copytree(bp, path, symlinks=True)
         except Exception as e:
-            raise ThemeRollbackError(f"Errore durante il ripristino di {path}: {e}") from e
+            raise ThemeRollbackError(f"Error restoring {path}: {e}") from e
 
     def apply_override(self, theme_path: Path) -> bool:
-        """Applica l'override GTK4 salvando in modo sicuro lo stato precedente ed eseguendo il rollback in caso di errore."""
+        """Apply GTK4 override, safely backing up prior state and rolling back on failure."""
         gtk4_source = theme_path / "gtk-4.0"
         gtk3_source = theme_path / "gtk-3.0"
 
@@ -245,17 +241,14 @@ class GTK4ThemeLinker:
             self.remove_override()
             return False
 
-        # Carichiamo il manifest corrente
         manifest = self._load_manifest()
         entries = manifest.setdefault("entries", {})
 
-        # Prepariamo la directory destinazione
         try:
             self.config_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            raise ThemeApplyError(f"Impossibile creare la directory {self.config_dir}: {e}") from e
+            raise ThemeApplyError(f"Cannot create directory {self.config_dir}: {e}") from e
 
-        # Elementi da gestire
         targets_to_process = {
             "gtk.css": source_dir / "gtk.css",
             "gtk-dark.css": source_dir / "gtk-dark.css"
@@ -264,7 +257,6 @@ class GTK4ThemeLinker:
             "assets": source_dir / "assets" if (source_dir / "assets").exists() else None,
         }
 
-        # Teniamo traccia dello stato pre-applicazione per un eventuale rollback in-memory
         rollback_info: list[tuple[Path, dict[str, Any]]] = []
         new_entries = {}
 
@@ -273,32 +265,25 @@ class GTK4ThemeLinker:
                 dest_path = self.config_dir / name
                 existing_entry = entries.get(name)
 
-                # Rileviamo lo stato corrente
                 current_state = self._capture_entry(dest_path)
 
-                # Determiniamo se dobbiamo eseguire il backup
                 needs_backup = False
                 backup_path = None
 
                 if current_state["kind"] != "missing":
                     if existing_entry:
-                        # Se l'elemento era registrato, verifichiamo se l'utente l'ha modificato esternamente
                         if not self._is_manager_owned(dest_path, existing_entry):
                             needs_backup = True
                         else:
-                            # Era gestito ed è invariato, conserviamo l'eventuale backup precedente
                             backup_path = existing_entry.get("backup")
                             if backup_path:
                                 backup_path = Path(backup_path)
                     else:
-                        # Non registrato nel manifest, ma presente: è un file utente originale
                         needs_backup = True
 
-                # Eseguiamo il backup se richiesto
                 if needs_backup:
                     backup_path = self._backup_entry(dest_path, name)
 
-                # Registriamo l'entry nel manifest temporaneo
                 new_entry = {
                     "kind": current_state["kind"]
                     if needs_backup or not existing_entry
@@ -312,7 +297,6 @@ class GTK4ThemeLinker:
                     "managed_fingerprint": None,
                 }
 
-                # Salviamo le info per il rollback immediato in memoria
                 rollback_info.append(
                     (
                         dest_path,
@@ -328,31 +312,25 @@ class GTK4ThemeLinker:
                     )
                 )
 
-                # Se non c'è una sorgente per questo elemento (es. gtk-dark.css non presente nel tema)
                 if not source_file:
                     self._safe_remove(dest_path)
                     new_entry["managed_fingerprint"] = "missing"
                     new_entries[name] = new_entry
                     continue
 
-                # Applichiamo il collegamento simbolico in modo sicuro
                 self._safe_remove(dest_path)
                 try:
                     dest_path.symlink_to(source_file.resolve())
                 except OSError:
-                    # Fallback in caso di mancato supporto symlink: copia
                     if source_file.is_dir():
                         shutil.copytree(source_file, dest_path)
                     else:
                         shutil.copy2(source_file, dest_path)
 
-                # Calcoliamo il fingerprint gestito
                 new_entry["managed_fingerprint"] = self._fingerprint_entry(dest_path)
                 new_entries[name] = new_entry
 
-            # Se siamo arrivati qui, l'operazione ha avuto successo. Aggiorniamo il manifest
             manifest["active_theme"] = theme_path.name
-            # Manteniamo le entry esistenti che non abbiamo sovrascritto
             for k, v in entries.items():
                 if k not in new_entries:
                     new_entries[k] = v
@@ -361,59 +339,51 @@ class GTK4ThemeLinker:
             return True
 
         except Exception as e:
-            # Rollback in-memory immediato se un'operazione fallisce
-            logger.error("Errore durante apply_override, esecuzione rollback: %s", e)
+            logger.error("Error during apply_override, performing rollback: %s", e)
             for dest_path, old_entry in rollback_info:
                 try:
                     self._restore_entry(old_entry, dest_path)
                 except Exception as re:
-                    # Chain dell'eccezione se il rollback fallisce
                     raise ThemeRollbackError(
-                        f"Il rollback parziale è fallito per {dest_path}: {re}"
+                        f"Partial rollback failed for {dest_path}: {re}"
                     ) from e
-            raise ThemeApplyError(f"Impossibile applicare l'override del tema: {e}") from e
+            raise ThemeApplyError(f"Failed to apply theme override: {e}") from e
 
     def remove_override(self) -> None:
-        """Rimuove l'override GTK4 ripristinando in modo pulito i file originari dell'utente."""
+        """Remove GTK4 override, cleanly restoring original user files."""
         manifest = self._load_manifest()
         entries = manifest.get("entries", {})
         new_entries = {}
-        conflitti = []
+        conflicts = []
 
         for name, entry in list(entries.items()):
             dest_path = self.config_dir / name
 
             if not dest_path.exists() and not dest_path.is_symlink():
-                # L'elemento è assente sul filesystem reale
                 if entry.get("kind") != "missing":
-                    # Ripristiniamo l'elemento dal backup originale se presente
                     try:
                         self._restore_entry(entry, dest_path)
                     except Exception as e:
-                        logger.error("Errore durante il ripristino di %s: %s", name, e)
+                        logger.error("Error restoring %s: %s", name, e)
                 continue
 
-            # Verifichiamo se l'elemento è ancora gestito da noi o se è stato modificato esternamente
             if self._is_manager_owned(dest_path, entry):
                 try:
                     self._restore_entry(entry, dest_path)
                 except Exception as e:
-                    logger.error("Errore durante il ripristino di %s: %s", name, e)
+                    logger.error("Error restoring %s: %s", name, e)
                     new_entries[name] = entry
             else:
-                # Conflitto: l'utente ha modificato il file esternamente. Conserviamo e non tocchiamo
-                conflitti.append(name)
-                # Conserviamo la registrazione nel manifest per evitare perdite future
+                conflicts.append(name)
                 new_entries[name] = entry
 
-        # Pulizia manifest o aggiornamento a seconda dei conflitti residui
-        if conflitti:
+        if conflicts:
             manifest["entries"] = new_entries
             self._save_manifest(manifest)
-            conflitti_str = ", ".join(conflitti)
+            conflicts_str = ", ".join(conflicts)
             logger.warning(
-                "Rilevati conflitti di modifica manuale. Gli elementi seguenti sono stati conservati: %s",
-                conflitti_str,
+                "Manual external modifications detected. The following items were preserved: %s",
+                conflicts_str,
             )
         else:
             manifest["active_theme"] = None
@@ -421,7 +391,7 @@ class GTK4ThemeLinker:
             self._save_manifest(manifest)
 
     def is_override_active(self) -> bool:
-        """Verifica se l'override GTK4 è attualmente attivo e valido in ~/.config/gtk-4.0/."""
+        """Check if GTK4 override is currently active and valid in ~/.config/gtk-4.0/."""
         target_css = self.config_dir / "gtk.css"
         if not target_css.exists() or not target_css.is_file():
             return False
@@ -434,7 +404,7 @@ class GTK4ThemeLinker:
         return self._is_manager_owned(target_css, entries["gtk.css"])
 
     def _safe_symlink(self, source: Path, target: Path) -> None:
-        """Crea un symlink in modo sicuro, rimuovendo un file o link precedente se presente (retrocompatibilità)."""
+        """Safely create a symlink, removing any prior file or link."""
         self._safe_remove(target)
         try:
             target.symlink_to(source.resolve())
@@ -446,7 +416,7 @@ class GTK4ThemeLinker:
 
     @staticmethod
     def _safe_remove(path: Path) -> None:
-        """Rimuove un file, symlink o directory in modo sicuro."""
+        """Safely remove a file, symlink, or directory."""
         if path.is_symlink() or path.is_file():
             path.unlink(missing_ok=True)
         elif path.is_dir():

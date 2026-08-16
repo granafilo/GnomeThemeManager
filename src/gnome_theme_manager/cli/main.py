@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Entry point logico per l'interfaccia a riga di comando (CLI).
+"""Logical entry point for the Command Line Interface (CLI).
 
-Questo modulo gestisce il routing dei comandi dell'utente (`current`, `list`, `apply`,
-`install`, `uninstall`, `preset`), delegando interamente la logica di business alla
-classe Facade `ThemeManager` e occupandosi esclusivamente dell'I/O con l'utente
-(formattazione tabellare ASCII, messaggi di stato, gestione delle eccezioni).
+Handles command routing (`current`, `list`, `apply`, `install`, `uninstall`, `preset`),
+delegating domain business logic to `ThemeManager` while managing user I/O
+(ASCII formatting, status messaging, exception handling).
 """
 
 import argparse
@@ -28,17 +27,17 @@ from .args import create_parser
 
 
 def format_table(headers: list[str], rows: list[list[str]]) -> str:
-    """Formatta una lista di righe in una tabella ASCII pulita e allineata.
+    """Format rows into an aligned ASCII table.
 
     Args:
-        headers: Lista delle intestazioni delle colonne.
-        rows: Lista di righe (ciascuna è una lista di stringhe corrispondenti alle colonne).
+        headers: Column header strings.
+        rows: Rows list of strings.
 
     Returns:
-        Stringa formattata con bordi ASCII e spaziatura calcolata dinamicamente.
+        Formatted ASCII table string.
     """
     if not rows:
-        return _("Nessun elemento da mostrare.")
+        return _("No items to display.")
 
     col_widths = [len(h) for h in headers]
     for row in rows:
@@ -56,76 +55,76 @@ def format_table(headers: list[str], rows: list[list[str]]) -> str:
 
 
 # -----------------------------------------------------------------------------
-# Handlers per i singoli comandi CLI (consumano ThemeManager)
+# Handlers for CLI commands
 # -----------------------------------------------------------------------------
 
 
 def handle_current_command(manager: ThemeManager) -> int:
-    """Gestisce il comando `current` mostrando i temi attivi sul desktop."""
+    """Handle `current` command showing active desktop themes."""
     current = manager.get_current_themes()
     status = manager.get_system_status()
 
-    print(_("\nTemi attualmente attivi su GNOME:"))
-    print(f"  {_('Tema GTK (Applicazioni)')}:  {current.gtk_theme or _('Non impostato')}")
-    print(f"  {_('Tema Icone')}:               {current.icon_theme or _('Non impostato')}")
-    print(f"  {_('Tema Cursori')}:             {current.cursor_theme or _('Non impostato')}")
+    print(_("\nCurrently active GNOME themes:"))
+    print(f"  {_('GTK Theme (Applications)')}:  {current.gtk_theme or _('Not set')}")
+    print(f"  {_('Icon Theme')}:               {current.icon_theme or _('Not set')}")
+    print(f"  {_('Cursor Theme')}:             {current.cursor_theme or _('Not set')}")
 
     if status.shell_theme_supported:
-        shell_val = current.shell_theme if current.shell_theme else _("Default di sistema")
-        print(f"  {_('Tema GNOME Shell')}:         {shell_val}")
+        shell_val = current.shell_theme if current.shell_theme else _("System Default")
+        print(f"  {_('GNOME Shell Theme')}:         {shell_val}")
     else:
-        print(_("  Tema GNOME Shell:         Non gestito (richiede estensione 'User Themes')"))
+        print(_("  GNOME Shell Theme:         Not managed (requires 'User Themes' extension)"))
 
     if current.color_scheme:
-        print(f"  {_('Schema Colori')}:            {current.color_scheme}")
+        print(f"  {_('Color Scheme')}:            {current.color_scheme}")
     print()
     return 0
 
 
 def handle_sandbox_status_command(manager: ThemeManager) -> int:
-    """Gestisce il comando `sandbox-status` mostrando lo stato di Snap e Flatpak."""
+    """Handle `sandbox-status` command showing Snap and Flatpak integration status."""
     status = manager.get_system_status()
     sb = status.sandbox_status
 
-    print(_("\n=== Stato Integrazione Sandbox (Snap & Flatpak) ==="))
+    print(_("\n=== Sandbox Integration Status (Snap & Flatpak) ==="))
     if sb is not None:
-        snap_str = _("✅ Disponibile") if sb.snap_available else _("❌ Non disponibile")
+        snap_str = _("✅ Available") if sb.snap_available else _("❌ Not available")
         snap_themes_str = (
-            _("✅ Installato") if sb.snap_gtk_common_themes_installed else _("❌ Non installato")
+            _("✅ Installed") if sb.snap_gtk_common_themes_installed else _("❌ Not installed")
         )
-        flatpak_str = _("✅ Disponibile") if sb.flatpak_available else _("❌ Non disponibile")
+        flatpak_str = _("✅ Available") if sb.flatpak_available else _("❌ Not available")
         flatpak_ov_str = (
-            _("✅ Attivo") if sb.flatpak_filesystem_override_active else _("❌ Non attivo")
+            _("✅ Active") if sb.flatpak_filesystem_override_active else _("❌ Not active")
         )
 
         print(f"  Snap:    {snap_str:<16} | gtk-common-themes:   {snap_themes_str}")
         print(f"  Flatpak: {flatpak_str:<16} | Filesystem override: {flatpak_ov_str}")
     else:
-        print(_("  Stato sandbox non disponibile."))
+        print(_("  Sandbox status unavailable."))
     print()
     return 0
 
 
 def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool) -> int:
-    """Gestisce il comando `list` scansionando e mostrando i temi disponibili.
+    """Handle `list` command scanning and listing available themes.
 
     Args:
-        manager: Istanza coordinatrice ThemeManager.
-        theme_type: Tipologia di tema da elencare ('all', 'gtk', 'icon', 'cursor', 'shell').
-        user_only: Se True, mostra esclusivamente i temi a livello utente.
+        manager: ThemeManager instance.
+        theme_type: Theme type filter ('all', 'gtk', 'icon', 'cursor', 'shell').
+        user_only: If True, show only user-installed themes.
     """
     t_type = ThemeType(theme_type) if theme_type != "all" else None
     themes: list[Theme] = manager.list_themes(theme_type=t_type, user_only=user_only)
 
     if not themes:
         print(
-            _(
-                "\nNessun tema trovato per la tipologia '{theme_type}' (user_only={user_only}).\n"
-            ).format(theme_type=theme_type, user_only=user_only)
+            _("\nNo theme found for type '{theme_type}' (user_only={user_only}).\n").format(
+                theme_type=theme_type, user_only=user_only
+            )
         )
         return 0
 
-    headers = [_("NOME"), _("TIPO"), _("ORIGINE"), _("PERCORSO")]
+    headers = [_("NAME"), _("TYPE"), _("ORIGIN"), _("PATH")]
     rows = [
         [
             t.name,
@@ -138,43 +137,41 @@ def handle_list_command(manager: ThemeManager, theme_type: str, user_only: bool)
 
     print()
     print(format_table(headers, rows))
-    print(_("\nTotale temi trovati: {count}\n").format(count=len(themes)))
+    print(_("\nTotal themes found: {count}\n").format(count=len(themes)))
     return 0
 
 
 def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> None:
-    """Stampa un riepilogo leggibile dell'esito di applicazione temi all'utente."""
-    print(_("\n✓ Modifiche applicate con successo:"))
+    """Print readable summary of applied themes."""
+    print(_("\n✓ Changes applied successfully:"))
     if result.gtk_theme:
-        print(_("  - Tema GTK impostato su:         {theme}").format(theme=result.gtk_theme))
+        print(_("  - GTK Theme set to:         {theme}").format(theme=result.gtk_theme))
         if result.gtk4_override_applied:
-            print(_("    └─ Override GTK4/Libadwaita applicato in ~/.config/gtk-4.0"))
+            print(_("    └─ GTK4/Libadwaita override applied in ~/.config/gtk-4.0"))
         elif not no_gtk4_override:
-            print(_("    └─ Nessun file GTK4 trovato nel tema (applicato solo a GTK2/GTK3)"))
+            print(_("    └─ No GTK4 file found in theme (applied to GTK2/GTK3 only)"))
     if result.icon_theme:
-        print(_("  - Tema Icone impostato su:       {theme}").format(theme=result.icon_theme))
+        print(_("  - Icon Theme set to:       {theme}").format(theme=result.icon_theme))
     if result.cursor_theme:
-        print(_("  - Tema Cursori impostato su:     {theme}").format(theme=result.cursor_theme))
+        print(_("  - Cursor Theme set to:     {theme}").format(theme=result.cursor_theme))
     if result.shell_theme:
-        print(_("  - Tema GNOME Shell impostato su: {theme}").format(theme=result.shell_theme))
+        print(_("  - GNOME Shell Theme set to: {theme}").format(theme=result.shell_theme))
     if result.color_scheme:
-        print(_("  - Schema Colori impostato su:    {scheme}").format(scheme=result.color_scheme))
+        print(_("  - Color Scheme set to:    {scheme}").format(scheme=result.color_scheme))
 
     if result.sandbox_propagation:
         sb = result.sandbox_propagation
         if sb.flatpak_success:
-            print(
-                _("  - Propagazione Flatpak:          ✓ Accesso filesystem e variabili impostati")
-            )
+            print(_("  - Flatpak Propagation:          ✓ Filesystem access and variables set"))
         if sb.snap_success and not sb.warnings:
             print(
                 _(
-                    "  - Propagazione Snap:             ✓ Compatibilità verificata con gtk-common-themes"
+                    "  - Snap Propagation:             ✓ Compatibility verified with gtk-common-themes"
                 )
             )
 
     for warning in result.warnings:
-        print(f"\n{_('[AVVISO]')} {warning}")
+        print(f"\n{_('[WARNING]')} {warning}")
     print()
 
 
@@ -189,24 +186,24 @@ def handle_apply_command(
     theme: str | None = None,
     no_sandbox: bool = False,
 ) -> int:
-    """Gestisce il comando `apply` validando l'esistenza dei temi e applicandoli.
+    """Handle `apply` command validating theme presence and applying them.
 
     Args:
-        manager: Istanza coordinatrice ThemeManager.
-        gtk: Nome del tema GTK da applicare (opzionale).
-        icon: Nome del tema di icone da applicare (opzionale).
-        cursor: Nome del tema dei cursori da applicare (opzionale).
-        shell: Nome del tema GNOME Shell da applicare (opzionale).
-        color_scheme: Valore dello schema colori ('default' o 'prefer-dark', opzionale).
-        no_gtk4_override: Se True, non applica l'override dei symlink in ~/.config/gtk-4.0.
-        theme: Nome del tema unificato da applicare a GTK e Shell (opzionale).
-        no_sandbox: Se True, non propaga i temi alle applicazioni Snap e Flatpak.
+        manager: ThemeManager instance.
+        gtk: GTK theme name (optional).
+        icon: Icon theme name (optional).
+        cursor: Cursor theme name (optional).
+        shell: GNOME Shell theme name (optional).
+        color_scheme: Color scheme value (optional).
+        no_gtk4_override: If True, do not apply symlink override in ~/.config/gtk-4.0.
+        theme: Unified theme name for GTK and Shell (optional).
+        no_sandbox: If True, do not propagate to Flatpak/Snap.
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
             _(
-                "Errore: Specificare almeno un'opzione da applicare "
-                "(--gtk, --theme, --icon, --cursor, --shell o --color-scheme)."
+                "Error: Specify at least one option to apply "
+                "(--gtk, --theme, --icon, --cursor, --shell or --color-scheme)."
             ),
             file=sys.stderr,
         )
@@ -218,9 +215,9 @@ def handle_apply_command(
 
         if not has_gtk and not has_shell:
             raise ThemeNotFoundError(
-                _(
-                    "Il tema '{theme}' non è stato trovato come GTK o GNOME Shell nel sistema."
-                ).format(theme=theme)
+                _("Theme '{theme}' was not found as GTK or GNOME Shell on the system.").format(
+                    theme=theme
+                )
             )
 
         if has_gtk:
@@ -253,15 +250,15 @@ def handle_install_command(
     overwrite: bool = False,
     target_dir: str | Path | None = None,
 ) -> int:
-    """Gestisce il comando `install` estraendo e installando temi da un archivio.
+    """Handle `install` command extracting and installing themes from an archive.
 
     Args:
-        manager: Istanza coordinatrice ThemeManager.
-        archive_file: Percorso del file archivio da installare.
-        theme_type_str: Tipologia di tema opzionale ('gtk', 'icon', 'cursor', 'shell').
-        custom_name: Nome personalizzato della cartella di destinazione.
-        overwrite: Se True, sovrascrive eventuale tema esistente.
-        target_dir: Destinazione di installazione ('xdg' per ~/.local/share, 'legacy' per ~/.themes e ~/.icons, o Path).
+        manager: ThemeManager instance.
+        archive_file: Path of the archive file to install.
+        theme_type_str: Optional theme type ('gtk', 'icon', 'cursor', 'shell').
+        custom_name: Custom destination folder name.
+        overwrite: If True, overwrite existing themes.
+        target_dir: Installation destination ('xdg', 'legacy', or Path).
     """
     archive_path = Path(archive_file)
     theme_type = ThemeType(theme_type_str) if theme_type_str else None
@@ -274,11 +271,11 @@ def handle_install_command(
         target_dir=target_dir,
     )
 
-    headers = [_("NOME TEMA"), _("TIPO"), _("PERCORSO INSTALLATO")]
+    headers = [_("THEME NAME"), _("TYPE"), _("INSTALLED PATH")]
     rows = [[t.name, t.theme_type.value, str(t.path)] for t in installed_themes]
 
     print(
-        _("\n✓ Installazione completata con successo ({count} tema/i installato/i):").format(
+        _("\n✓ Installation completed successfully ({count} theme(s) installed):").format(
             count=len(installed_themes)
         )
     )
@@ -293,33 +290,33 @@ def handle_uninstall_command(
     theme_type_str: str,
     assume_yes: bool = False,
 ) -> int:
-    """Gestisce il comando `uninstall` per rimuovere temi utente.
+    """Handle `uninstall` command removing user themes.
 
     Args:
-        manager: Istanza coordinatrice ThemeManager.
-        name: Nome del tema da disinstallare.
-        theme_type_str: Tipologia del tema ('gtk', 'icon', 'cursor', 'shell').
-        assume_yes: Se True, disinstalla senza richiedere conferma interattiva.
+        manager: ThemeManager instance.
+        name: Name of the theme to uninstall.
+        theme_type_str: Theme type ('gtk', 'icon', 'cursor', 'shell').
+        assume_yes: If True, uninstall without interactive confirmation prompt.
     """
     theme_type = ThemeType(theme_type_str)
 
     if not assume_yes:
         confirm = (
             input(
-                _("Sei sicuro di voler disinstallare il tema '{name}' ({type})? [s/N]: ").format(
+                _("Are you sure you want to uninstall theme '{name}' ({type})? [y/N]: ").format(
                     name=name, type=theme_type.value
                 )
             )
             .strip()
             .lower()
         )
-        if confirm not in ("s", "si", "y", "yes"):
-            print(_("\nOperazione annullata dall'utente.\n"))
+        if confirm not in ("y", "yes", "s", "si"):
+            print(_("\nOperation cancelled by user.\n"))
             return 0
 
     manager.uninstall_theme(name=name, theme_type=theme_type)
     print(
-        _("\n✓ Tema '{name}' ({type}) disinstallato con successo.\n").format(
+        _("\n✓ Theme '{name}' ({type}) uninstalled successfully.\n").format(
             name=name, type=theme_type.value
         )
     )
@@ -327,30 +324,30 @@ def handle_uninstall_command(
 
 
 def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> int:
-    """Gestisce le azioni del comando `preset` (list, save, apply, delete).
+    """Handle `preset` actions (list, save, apply, delete).
 
     Args:
-        manager: Istanza coordinatrice ThemeManager.
-        args: Argomenti parsati della CLI.
+        manager: ThemeManager instance.
+        args: Parsed CLI arguments.
     """
     action = getattr(args, "preset_action", None)
 
     if action == "list":
         presets = manager.list_presets()
         if not presets:
-            print(_("\nNessun preset salvato.\n"))
+            print(_("\nNo presets saved.\n"))
             return 0
 
         rows = [[p] for p in presets]
-        print(_("\nPreset salvati disponibili:"))
-        print(format_table([_("NOME PRESET")], rows))
-        print(_("\nTotale preset: {count}\n").format(count=len(presets)))
+        print(_("\nAvailable saved presets:"))
+        print(format_table([_("PRESET NAME")], rows))
+        print(_("\nTotal presets: {count}\n").format(count=len(presets)))
         return 0
 
     elif action == "save":
         saved_path = manager.save_current_as_preset(args.name, overwrite=args.overwrite)
         print(
-            _("\n✓ Preset '{name}' salvato con successo in:\n  {path}\n").format(
+            _("\n✓ Preset '{name}' saved successfully in:\n  {path}\n").format(
                 name=args.name, path=saved_path
             )
         )
@@ -363,7 +360,7 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
             apply_gtk4_override=not args.no_gtk4_override,
             propagate_sandbox=not no_sb,
         )
-        print(_("\n✓ Preset '{name}' applicato con successo:").format(name=args.name))
+        print(_("\n✓ Preset '{name}' applied successfully:").format(name=args.name))
         _print_apply_result(result, no_gtk4_override=args.no_gtk4_override)
         return 0
 
@@ -371,24 +368,24 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
         if not args.yes:
             confirm = (
                 input(
-                    _("Sei sicuro di voler eliminare il preset '{name}'? [s/N]: ").format(
+                    _("Are you sure you want to delete preset '{name}'? [y/N]: ").format(
                         name=args.name
                     )
                 )
                 .strip()
                 .lower()
             )
-            if confirm not in ("s", "si", "y", "yes"):
-                print(_("\nOperazione annullata dall'utente.\n"))
+            if confirm not in ("y", "yes", "s", "si"):
+                print(_("\nOperation cancelled by user.\n"))
                 return 0
 
         manager.delete_preset(args.name)
-        print(_("\n✓ Preset '{name}' eliminato con successo.\n").format(name=args.name))
+        print(_("\n✓ Preset '{name}' deleted successfully.\n").format(name=args.name))
         return 0
 
     else:
         print(
-            _("Errore: Azione preset non specificata (usa 'list', 'save', 'apply' o 'delete')."),
+            _("Error: Preset action not specified (use 'list', 'save', 'apply' or 'delete')."),
             file=sys.stderr,
         )
         return 1
@@ -400,27 +397,26 @@ def handle_preset_command(manager: ThemeManager, args: argparse.Namespace) -> in
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Esegue l'interfaccia a riga di comando.
+    """Run CLI application.
 
     Args:
-        argv: Argomenti da linea di comando opzionali (usa sys.argv se None).
+        argv: Optional command line arguments.
 
     Returns:
-        Codice di uscita: 0 per successo, 1 per errori applicativi/GSettings.
+        Exit code: 0 for success, 1 for application errors.
     """
     parser = create_parser()
     args = parser.parse_args(argv)
 
     try:
-        # Se è stato specificato il flag --gui o il subcomando 'gui', avvia la nuova GUI nativa GTK4/Libadwaita
         if getattr(args, "gui", False) or args.command == "gui":
             try:
                 from ..gui_gtk import launch_gui as launch_gui_gtk
             except (ImportError, ModuleNotFoundError) as err:
                 print(
                     _(
-                        "\n[ERRORE GUI GTK4] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\n"
-                        "Installa le dipendenze richieste con:\n"
+                        "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\n"
+                        "Install required dependencies with:\n"
                         "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
                     ).format(err=err),
                     file=sys.stderr,
@@ -478,34 +474,33 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
     except KeyboardInterrupt:
-        # Interruzione pulita dell'utente tramite Ctrl+C / SIGINT (exit code standard POSIX 130)
         return 130
     except GSettingsUnavailableError as err:
-        print(f"\n{_('[ERRORE GSETTINGS]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[GSETTINGS ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except ThemeNotFoundError as err:
-        print(f"\n{_('[ERRORE TEMA]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[THEME ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except ArchiveExtractionError as err:
-        print(f"\n{_('[ERRORE ESTRAZIONE ARCHIVIO]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[ARCHIVE EXTRACTION ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except ThemeValidationError as err:
-        print(f"\n{_('[ERRORE VALIDAZIONE TEMA]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[THEME VALIDATION ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except FileExistsError as err:
-        print(f"\n{_('[ERRORE FILE GIA ESISTENTE]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[FILE ALREADY EXISTS ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except FileNotFoundError as err:
-        print(f"\n{_('[ERRORE FILE NON TROVATO]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[FILE NOT FOUND ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except ValueError as err:
-        print(f"\n{_('[ERRORE VALORE NON VALIDO]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[INVALID VALUE ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except GnomeThemeManagerError as err:
-        print(f"\n{_('[ERRORE GNOME THEME MANAGER]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[GNOME THEME MANAGER ERROR]')} {err}\n", file=sys.stderr)
         return 1
     except Exception as err:
-        print(f"\n{_('[ERRORE IMPREVISTO]')} {err}\n", file=sys.stderr)
+        print(f"\n{_('[UNEXPECTED ERROR]')} {err}\n", file=sys.stderr)
         return 1
 
 

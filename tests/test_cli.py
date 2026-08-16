@@ -58,10 +58,10 @@ def test_cli_current_success(capsys) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Temi attualmente attivi su GNOME:" in captured.out
-        assert "Tema GTK (Applicazioni):  Nordic" in captured.out
-        assert "Tema GNOME Shell:         Nordic" in captured.out
-        assert "Schema Colori:            prefer-dark" in captured.out
+        assert "Currently active GNOME themes:" in captured.out
+        assert "GTK Theme (Applications):  Nordic" in captured.out
+        assert "GNOME Shell Theme:         Nordic" in captured.out
+        assert "Color Scheme:            prefer-dark" in captured.out
 
 
 def test_cli_list_with_shell_type(capsys, tmp_path: Path) -> None:
@@ -101,9 +101,9 @@ def test_cli_apply_with_gtk_and_shell(capsys) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Tema GTK impostato su:         Nordic" in captured.out
-        assert "Tema GNOME Shell impostato su: Nordic" in captured.out
-        assert "Override GTK4/Libadwaita applicato" in captured.out
+        assert "GTK Theme set to:         Nordic" in captured.out
+        assert "GNOME Shell Theme set to: Nordic" in captured.out
+        assert "GTK4/Libadwaita override applied" in captured.out
 
         mock_mgr.apply_themes.assert_called_once()
         target_set: ThemeSet = mock_mgr.apply_themes.call_args[0][0]
@@ -153,8 +153,8 @@ def test_cli_apply_unified_theme(capsys, tmp_path: Path) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Tema GTK impostato su:         Nordic" in captured.out
-        assert "Tema GNOME Shell impostato su: Nordic" in captured.out
+        assert "GTK Theme set to:         Nordic" in captured.out
+        assert "GNOME Shell Theme set to: Nordic" in captured.out
 
 
 # -----------------------------------------------------------------------------
@@ -173,7 +173,7 @@ def test_cli_preset_list_empty(capsys) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Nessun preset salvato." in captured.out
+        assert "No presets saved." in captured.out
 
 
 def test_cli_preset_list_with_items(capsys) -> None:
@@ -189,7 +189,7 @@ def test_cli_preset_list_with_items(capsys) -> None:
         assert exit_code == 0
         assert "DarkSetup" in captured.out
         assert "LightSetup" in captured.out
-        assert "Totale preset: 2" in captured.out
+        assert "Total presets: 2" in captured.out
 
 
 def test_cli_preset_save_success(capsys, tmp_path: Path) -> None:
@@ -204,7 +204,7 @@ def test_cli_preset_save_success(capsys, tmp_path: Path) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Preset 'MyPreset' salvato con successo" in captured.out
+        assert "Preset 'MyPreset' saved successfully" in captured.out
         mock_mgr.save_current_as_preset.assert_called_once_with("MyPreset", overwrite=True)
 
 
@@ -223,8 +223,8 @@ def test_cli_preset_apply_success(capsys) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Preset 'NordicPreset' applicato con successo" in captured.out
-        assert "Tema GTK impostato su:         Nordic" in captured.out
+        assert "Preset 'NordicPreset' applied successfully" in captured.out
+        assert "GTK Theme set to:         Nordic" in captured.out
         mock_mgr.apply_preset.assert_called_once_with(
             "NordicPreset",
             apply_gtk4_override=True,
@@ -243,7 +243,7 @@ def test_cli_preset_delete_with_yes(capsys) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Preset 'OldPreset' eliminato con successo." in captured.out
+        assert "Preset 'OldPreset' deleted successfully." in captured.out
         mock_mgr.delete_preset.assert_called_once_with("OldPreset")
 
 
@@ -258,5 +258,5 @@ def test_cli_preset_delete_interactive_refusal(capsys, monkeypatch) -> None:
         captured = capsys.readouterr()
 
         assert exit_code == 0
-        assert "Operazione annullata" in captured.out
+        assert "Operation cancelled" in captured.out
         mock_mgr.delete_preset.assert_not_called()

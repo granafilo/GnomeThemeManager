@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modelli di dati del dominio per temi e configurazioni."""
+"""Domain data models for themes and configurations."""
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class ThemeType(str, Enum):
-    """Tipologia di tema gestito."""
+    """Managed theme type."""
 
     GTK = "gtk"
     ICON = "icon"
@@ -25,7 +25,7 @@ class ThemeType(str, Enum):
 
 @dataclass(frozen=True)
 class Theme:
-    """Rappresentazione di un singolo tema installato sul filesystem."""
+    """Representation of an individual theme installed on the filesystem."""
 
     name: str
     theme_type: ThemeType
@@ -36,13 +36,13 @@ class Theme:
 
     @property
     def exists(self) -> bool:
-        """Verifica se il percorso del tema esiste realmente."""
+        """Check if the theme path exists on the filesystem."""
         return self.path.exists() and self.path.is_dir()
 
 
 @dataclass
 class ThemeSet:
-    """Insieme di temi configurati/attivi sul desktop GNOME."""
+    """Configured or active theme set on the GNOME desktop."""
 
     gtk_theme: str | None = None
     icon_theme: str | None = None
@@ -51,10 +51,10 @@ class ThemeSet:
     shell_theme: str | None = None
 
     def to_dict(self) -> dict[str, str | None]:
-        """Converte il set di temi in un dizionario serializzabile in JSON.
+        """Convert theme set into a JSON-serializable dictionary.
 
         Returns:
-            Dizionario con le chiavi dei componenti del tema e i relativi valori.
+            Dictionary with theme component keys and values.
         """
         return {
             "gtk_theme": self.gtk_theme,
@@ -65,18 +65,18 @@ class ThemeSet:
         }
 
     def as_dict(self) -> dict[str, str | None]:
-        """Alias retrocompatibile per to_dict()."""
+        """Backward-compatible alias for to_dict()."""
         return self.to_dict()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ThemeSet":
-        """Ricostruisce un'istanza di ThemeSet a partire da un dizionario.
+        """Construct a ThemeSet instance from a dictionary.
 
         Args:
-            data: Dizionario contenente le configurazioni dei temi.
+            data: Dictionary containing theme configurations.
 
         Returns:
-            Nuova istanza di ThemeSet popolata con i valori del dizionario.
+            Populated ThemeSet instance.
         """
         return cls(
             gtk_theme=data.get("gtk_theme"),
@@ -87,10 +87,10 @@ class ThemeSet:
         )
 
     def is_empty(self) -> bool:
-        """Verifica se nessuna proprietà del tema è valorizzata.
+        """Check if no theme properties are defined.
 
         Returns:
-            True se tutte le proprietà sono None o stringhe vuote, False altrimenti.
+            True if all properties are None or empty strings, False otherwise.
         """
         return not any(
             [
@@ -103,13 +103,13 @@ class ThemeSet:
         )
 
     def merge(self, other: "ThemeSet") -> "ThemeSet":
-        """Fonde l'istanza corrente con un'altra, dando precedenza ai valori non nulli di other.
+        """Merge current instance with another, preferring non-null values from other.
 
         Args:
-            other: L'altro ThemeSet da cui prendere i valori aggiornati.
+            other: Another ThemeSet to take updated values from.
 
         Returns:
-            Nuova istanza di ThemeSet con i valori uniti.
+            New merged ThemeSet instance.
         """
         return ThemeSet(
             gtk_theme=other.gtk_theme if other.gtk_theme is not None else self.gtk_theme,
@@ -126,7 +126,7 @@ class ThemeSet:
 
 @dataclass
 class SandboxStatus:
-    """Stato dei runtime sandbox (Snap/Flatpak) rilevati sul sistema."""
+    """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""
 
     snap_available: bool = False
     flatpak_available: bool = False
@@ -136,7 +136,7 @@ class SandboxStatus:
 
 @dataclass
 class PropagationResult:
-    """Risultato della propagazione tema ai sistemi sandbox."""
+    """Result of theme propagation to sandbox environments."""
 
     flatpak_success: bool = False
     snap_success: bool = False
@@ -147,7 +147,7 @@ class PropagationResult:
 
 @dataclass
 class ApplyResult:
-    """Risultato dettagliato dell'applicazione di un set o preset di temi."""
+    """Detailed result of applying a theme set or preset."""
 
     gtk_theme: str | None = None
     gtk4_override_applied: bool = False
@@ -161,7 +161,7 @@ class ApplyResult:
 
 @dataclass
 class SystemStatus:
-    """Stato di diagnostica, compatibilità e percorsi attivi del sistema GNOME."""
+    """Diagnostic status, compatibility, and active paths for the GNOME system."""
 
     gsettings_available: bool
     shell_theme_supported: bool

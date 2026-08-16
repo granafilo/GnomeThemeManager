@@ -1,64 +1,68 @@
-# Fase 5: GUI Nativa GNOME con GTK4 e Libadwaita
+# Phase 5: Native GNOME GUI with GTK4 and Libadwaita
 
-## Obiettivi della Fase
+## Phase Goals
 
-Costruire l'interfaccia grafica definitiva e nativa per l'ecosistema GNOME:
-1. Utilizzare **GTK4** e **Libadwaita** tramite `PyGObject` (`gi.repository.Gtk`, `gi.repository.Adw`).
-2. Rispettare le GNOME Human Interface Guidelines (HIG): HeaderBar moderna, `Adw.PreferencesPage`, `Adw.ActionRow`, supporto nativo a Dark Mode e accent colors.
-3. Separare la definizione grafica dal codice tramite blueprint / file `.ui` XML generati con Cambalache o scritti a mano.
+Build the definitive native graphical interface for the GNOME desktop:
+1. Utilize **GTK4** and **Libadwaita** via `PyGObject` (`gi.repository.Gtk`, `gi.repository.Adw`).
+2. Adhere to GNOME Human Interface Guidelines (HIG): modern HeaderBar, `Adw.PreferencesPage`, `Adw.ActionRow`, native Dark Mode, and accent color support.
+3. Separate UI definitions from code using declarative XML `.ui` blueprint files.
 
 ---
 
-## Struttura della GUI Libadwaita
+## Libadwaita GUI Layout
 
 ```text
 +-------------------------------------------------------------+
-| (O) Gnome Theme Manager                                 _ O X |
+| (O) Gnome Theme Manager                               _ O X |
 +-------------------------------------------------------------+
-| [ Cerca temi...                                         🔍 ] |
+| [ Search themes...                                      🔍 ] |
 |                                                             |
-| ⚙️ Aspetto Globale                                           |
-|   Modalità Scura:             [ Predefinito | Scuro ]        |
+| ⚙️ Global Appearance                                        |
+|   Dark Style Preference:      [ Default | Dark ]            |
 |                                                             |
-| 🎨 Temi GTK                                                |
-|   Tema Attuale:               Nordic-dark            [ ▾ ]  |
-|   Posizione:                  ~/.local/share/themes         |
+| 🎨 GTK Themes                                               |
+|   Current Theme:              Nordic-dark            [ ▾ ]  |
+|   Location:                   ~/.local/share/themes         |
 |                                                             |
-| 🖼️ Icone & Cursori                                          |
-|   Set Icone:                  Papirus-Dark           [ ▾ ]  |
-|   Cursori:                    Bibata-Modern-Classic  [ ▾ ]  |
+| 🖼️ Icons & Cursors                                          |
+|   Icon Pack:                  Papirus-Dark           [ ▾ ]  |
+|   Cursor Theme:               Bibata-Modern-Classic  [ ▾ ]  |
 |                                                             |
-| 📦 Gestione                                                 |
-|   [ + Installa Archivio Tema ]     [ 💾 Salva Preset ]      |
+| 📦 Management                                               |
+|   [ + Install Theme Archive ]      [ 💾 Save Preset ]       |
 +-------------------------------------------------------------+
 ```
 
 ---
 
-## Architettura e Moduli Coinvolti
+## Architecture and Involved Modules
 
 ```text
 src/gnome_theme_manager/
 └── gui_gtk/
     ├── __init__.py
-    ├── application.py      # Adw.Application / Gtk.Application
+    ├── app.py              # Adw.Application / Gtk.Application
     ├── window.py           # Adw.ApplicationWindow
-    ├── views/
-    │   ├── preferences_view.py
-    │   ├── theme_browser_view.py
-    │   └── installer_dialog.py
-    └── resources/          # Risorse GResource (file .ui, icone svg)
-        ├── gresource.xml
-        └── ui/
-            ├── window.ui
-            └── theme_row.ui
+    ├── pages/
+    │   ├── status.py
+    │   ├── themes.py
+    │   ├── presets.py
+    │   ├── installer.py
+    │   └── sandbox.py
+    └── ui/                 # Declarative GTK Builder UI XML files
+        ├── window.ui
+        ├── status_page.ui
+        ├── themes_page.ui
+        ├── presets_page.ui
+        ├── installer_page.ui
+        └── sandbox_page.ui
 ```
 
 ---
 
-## Checklist di Implementazione
+## Implementation Checklist
 
-- [ ] Inizializzazione applicazione `Adw.Application(application_id="org.gnome.ThemeManager")`.
-- [ ] Definizione finestre e viste con widget moderni Libadwaita (`Adw.ToolbarView`, `Adw.PreferencesGroup`, `Adw.ComboRow`).
-- [ ] Integrazione con `GLib.idle_add` e `Gio.Task` per il disaccoppiamento I/O asincrono.
-- [ ] Integrazione GResource per embedding dei file UI nell'eseguibile.
+- [x] Application initialization with `Adw.Application(application_id="org.gnome.ThemeManager")`.
+- [x] Window and page declarations using modern Libadwaita widgets (`Adw.ToolbarView`, `Adw.PreferencesGroup`, `Adw.ActionRow`).
+- [x] Integration with `GLib.idle_add` for non-blocking UI updates.
+- [x] Internationalization integration via `gettext` across UI files and Python code.

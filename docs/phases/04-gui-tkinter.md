@@ -1,40 +1,40 @@
-# Fase 4: Prototipo GUI Semplice con Tkinter
+# Phase 4: Simple GUI Prototype with Tkinter
 
-## Obiettivi della Fase
+## Phase Goals
 
-Sviluppare un prototipo grafico completo e leggero utilizzando `tkinter` e `tkinter.ttk` (libreria standard Python):
-1. Verificare l'ergonomia dell'interfaccia utente e il flusso operativo (selezione tema -> info -> applica / installa / gestisci preset).
-2. Collaudare l'integrazione del layer `core` (`ThemeManager` Facade) con un ciclo degli eventi (Event Loop GUI).
-3. Fornire un'esperienza desktop ricca e intuitiva strutturata a schede (`ttk.Notebook`).
+Develop an initial lightweight graphical prototype using `tkinter` and `tkinter.ttk` (Python standard library):
+1. Validate UI ergonomics and user workflows (theme selection -> info -> apply / install / manage presets).
+2. Test integration of the `core` layer (`ThemeManager` Facade) with a GUI event loop.
+3. Provide an intuitive tabbed desktop experience (`ttk.Notebook`).
 
 ---
 
-## Layout e Struttura della Finestra
+## Window Layout and Structure
 
 ```text
 +--------------------------------------------------------------------------+
-| 🎨 Gnome Theme Manager v0.1.0                          [🔄 Aggiorna Tutto]|
-| Gestione avanzata e modulare dei temi per Ubuntu / GNOME                 |
+| 🎨 Gnome Theme Manager v0.1.0                              [🔄 Refresh All]|
+| Modular theme management for Ubuntu / GNOME                              |
 +--------------------------------------------------------------------------+
-| [ 📊 Stato Attuale | 📂 Temi Disponibili | ⭐ Gestione Preset | 📦 Installa ] |
+| [ 📊 Current Status | 📂 Available Themes | ⭐ Preset Manager | 📦 Install ] |
 |                                                                          |
-| (Contenuto della scheda selezionata)                                      |
+| (Selected tab content)                                                   |
 |                                                                          |
 +--------------------------------------------------------------------------+
-| Pronto.                                                                  |
+| Ready.                                                                   |
 +--------------------------------------------------------------------------+
 ```
 
 ---
 
-## Architettura e Moduli Implementati
+## Architecture and Implemented Modules
 
 ```text
 src/gnome_theme_manager/
 └── gui_tk/
-    ├── __init__.py         # Esportazione di ThemeManagerWindow e launch_gui
-    ├── app.py              # Finestra principale, configurazione TTK e coordinamento
-    └── views.py            # Viste dedicate:
+    ├── __init__.py         # Exports ThemeManagerWindow and launch_gui
+    ├── app.py              # Main window, TTK configuration, and coordinator
+    └── views.py            # Dedicated views:
                             #  - CurrentStatusView
                             #  - AvailableThemesView
                             #  - PresetManagerView
@@ -43,12 +43,15 @@ src/gnome_theme_manager/
 
 ---
 
-## Checklist di Implementazione
+## Implementation Checklist
 
-- [x] Creazione classe principale `ThemeManagerWindow` con `ttk.Notebook` e styling `clam`.
-- [x] Scheda "Stato Attuale" con visualizzazione diagnostica e impostazioni attive.
-- [x] Scheda "Temi Disponibili" con `ttk.Treeview`, filtri per tipologia/ricerca e applicazione/disinstallazione.
-- [x] Scheda "Gestione Preset" con salvataggio, anteprima, applicazione ed eliminazione profili.
-- [x] Scheda "Installer" con file dialog, opzioni di sovrascrittura e feedback visivo.
-- [x] Integrazione CLI (`--gui` / `-g` e subcomando `gui`).
-- [x] Suite di test automatizzati (`tests/test_gui_tk.py`).
+- [x] Main `ThemeManagerWindow` class with `ttk.Notebook` and `clam` theme styling.
+- [x] "Current Status" tab with active configuration and diagnostics.
+- [x] "Available Themes" tab with `ttk.Treeview`, filters by type/search, apply/uninstall actions.
+- [x] "Preset Manager" tab for saving, previewing, applying, and deleting profiles.
+- [x] "Installer" tab with file dialogs, overwrite options, and visual feedback.
+- [x] CLI integration (`--gui` / `-g` and `gui` subcommand).
+- [x] Automated test suite (`tests/test_gui_tk.py`).
+
+> [!NOTE]
+> The legacy Tkinter GUI has been replaced by the native GTK4/Libadwaita interface in Phase 5.

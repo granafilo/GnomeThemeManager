@@ -130,14 +130,14 @@ def test_safe_extract_unsupported_extension(tmp_path: Path) -> None:
     txt_file.write_text("dummy")
 
     target_dir = tmp_path / "extracted"
-    with pytest.raises(ArchiveExtractionError, match="non supportato"):
+    with pytest.raises(ArchiveExtractionError, match="Unsupported archive format"):
         safe_extract(txt_file, target_dir)
 
 
 def test_safe_extract_non_existent_file(tmp_path: Path) -> None:
     """Verifica la gestione di file archivio inesistente."""
     missing = tmp_path / "missing.zip"
-    with pytest.raises(ArchiveExtractionError, match="non esiste"):
+    with pytest.raises(ArchiveExtractionError, match="does not exist"):
         safe_extract(missing, tmp_path / "out")
 
 
@@ -267,7 +267,7 @@ def test_installer_install_overwrite_conflict(tmp_path: Path) -> None:
     archive = tmp_path / "Nordic.zip"
     create_mock_zip(archive, {"Nordic/gtk-3.0/gtk.css": "/* CSS */"})
 
-    with pytest.raises(FileExistsError, match="esiste già"):
+    with pytest.raises(FileExistsError, match="already exists"):
         installer.install(archive, overwrite=False)
 
     # Con overwrite=True deve sovrascrivere con successo
@@ -295,7 +295,7 @@ def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
     user_themes.mkdir(parents=True)
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
 
-    with pytest.raises(ThemeNotFoundError, match="Impossibile disinstallare"):
+    with pytest.raises(ThemeNotFoundError, match="Cannot uninstall theme"):
         installer.uninstall("NonExistentTheme", ThemeType.GTK)
 
 
@@ -411,7 +411,7 @@ def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> N
     installer.install_directory(source_dir)
 
     # Nuovo tentativo con overwrite=False
-    with pytest.raises(FileExistsError, match="esiste già"):
+    with pytest.raises(FileExistsError, match="already exists"):
         installer.install_directory(source_dir, overwrite=False)
 
     # Sovrascrittura con overwrite=True
@@ -443,7 +443,7 @@ def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> No
     (user_icons / "ThemeIcons" / "index.theme").write_text("/* Pre-existing Icon Theme */")
 
     # 1. Con overwrite=False deve sollevare FileExistsError prima di copiare ThemeGTK
-    with pytest.raises(FileExistsError, match="esiste già"):
+    with pytest.raises(FileExistsError, match="already exists"):
         installer.install(archive, overwrite=False)
 
     # Verifica atomicità: ThemeGTK NON deve essere stato creato/scritto nel primo passaggio

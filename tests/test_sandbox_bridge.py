@@ -167,7 +167,7 @@ def test_propagate_to_snap_with_gtk_common_themes() -> None:
         result = bridge.propagate_to_snap(gtk_theme="Yaru", icon_theme="Yaru")
         assert result.snap_success is True
         assert len(result.warnings) == 0
-        assert any("supportato nativamente" in m for m in result.snap_messages)
+        assert any("natively supported" in m for m in result.snap_messages)
 
 
 def test_propagate_to_snap_custom_theme_warning() -> None:
@@ -183,7 +183,7 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
         result = bridge.propagate_to_snap(gtk_theme="Nordic-Darker", icon_theme="Papirus")
         assert result.snap_success is True
         assert len(result.warnings) == 1
-        assert "non è incluso nel pacchetto standard" in result.warnings[0]
+        assert "not included in the standard" in result.warnings[0]
         assert "snap install nordic-darker-themes" in result.warnings[0]
 
 
@@ -292,7 +292,7 @@ def test_subprocess_file_not_found_handling() -> None:
         res = bridge.propagate_to_flatpak(gtk_theme="Nordic")
         assert res.flatpak_success is False
         assert len(res.warnings) == 1
-        assert "Impossibile eseguire" in res.warnings[0]
+        assert "Unable to execute" in res.warnings[0]
 
 
 # =============================================================================
@@ -411,7 +411,7 @@ def test_cli_sandbox_status_command(capsys: pytest.CaptureFixture[str]) -> None:
         assert exit_code == 0
 
         captured = capsys.readouterr()
-        assert "Stato Integrazione Sandbox" in captured.out
+        assert "Sandbox Integration Status" in captured.out
         assert "Snap:" in captured.out
         assert "Flatpak:" in captured.out
 

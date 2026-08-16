@@ -1,45 +1,45 @@
-# 🗺️ Roadmap di Sviluppo — GNOME Theme Manager
+# 🗺️ Development Roadmap — GNOME Theme Manager
 
-**Ultimo aggiornamento**: 15 Agosto 2026  
-**Versione corrente**: v1.0.0(Fase 0 completata)  
-**Stato**: In sviluppo attivo (Fase 0 stabilizzazione e test eseguiti con successo)
+**Last updated**: August 15, 2026  
+**Current version**: v1.0.0 (Phase 0 completed)  
+**Status**: Active development (Phase 0 stabilization and tests successfully completed)
 
 ---
 
-## 📊 Panoramica delle Priorità²²
+## 📊 Priority Overview
 
-| Priorità²² | Feature | Complessità²² | Impatto Utente | Stato |
+| Priority | Feature | Complexity | User Impact | Status |
 | :--- | :--- | :---: | :---: | :---: |
-| **P0** | Backup e Ripristino con 1 Click | Media | 🔴 Critico | 📋 Pianificato |
-| **P1** | Integrazione `color-scheme` (GNOME 42+) | Bassa | 🟠 Alto | 📋 Pianificato |
-| **P1** | Packaging Flatpak | Media | 🟠 Alto | 📋 Pianificato |
-| **P2** | Rilevamento Runtime Flatpak GTK3 | Media | 🟡 Medio | 📋 Pianificato |
-| **P2** | Packaging .deb (Ubuntu/Debian) | Media | 🟡 Medio | 📋 Pianificato |
-| **P3** | Diagnostica Ambiente Avanzata | Bassa | 🟡 Medio | 💡 Idea |
-| **P3** | Logging Strutturato | Bassa | 🟢 Basso | 💡 Idea |
-| **P3** | Internazionalizzazione (i18n) | Media | 🟢 Basso | 💡 Idea |
+| **P0** | 1-Click Backup and Restore | Medium | 🔴 Critical | 📋 Planned |
+| **P1** | `color-scheme` integration (GNOME 42+) | Low | 🟠 High | 📋 Planned |
+| **P1** | Flatpak Packaging | Medium | 🟠 High | 📋 Planned |
+| **P2** | Flatpak GTK3 Runtime Detection | Medium | 🟡 Medium | 📋 Planned |
+| **P2** | .deb Packaging (Ubuntu/Debian) | Medium | 🟡 Medium | 📋 Planned |
+| **P3** | Advanced Environment Diagnostics | Low | 🟡 Medium | 💡 Idea |
+| **P3** | Structured Logging | Low | 🟢 Low | 💡 Idea |
+| **P3** | Internationalization (i18n) | Medium | 🟢 Low | 💡 Idea |
 
 ---
 
-## 🎯 Fase 6 — Sicurezza e Resilienza (v1.1.0)
+## 🎯 Phase 6 — Security and Resilience (v1.1.0)
 
-### 6.1 Backup e Ripristino con 1 Click
-**Priorità²²**: P0 (Critico)  
-**Stima**: 3-4 giorni  
-**Stato**: 📋 Da sviluppare
+### 6.1 1-Click Backup and Restore
+**Priority**: P0 (Critical)  
+**Estimate**: 3-4 days  
+**Status**: 📋 To develop
 
-#### Obiettivi
-- [ ] Creare preset automatico "system-default" al primo avvio
-- [ ] Implementare pulsante di emergenza "Ripristina Temi Predefiniti"
-- [ ] Validare ripristino su ambiente di test
+#### Goals
+- [ ] Create automatic "system-default" preset on first launch
+- [ ] Implement emergency button "Restore Default Themes"
+- [ ] Validate restore behavior in test environments
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**6.1.1 Struttura Dati Preset di Sistema**
+**6.1.1 System Preset Data Structure**
 ```json
 // ~/.config/gnome-theme-manager/presets/system-default.json
 {
-  "name": "Default di Sistema",
+  "name": "System Default",
   "created_at": "2026-08-12T22:00:00Z",
   "is_system_preset": true,
   "settings": {
@@ -54,101 +54,101 @@
     "gtk-4.0": null,
     "gtk-3.0": null
   },
-  "notes": "Creato automaticamente al primo avvio"
+  "notes": "Automatically created on first launch"
 }
 ```
 
-**6.1.2 Modifiche al Core**
-- [ ] `core/manager.py`: Aggiungere metodo `create_system_backup_preset()`
-- [ ] `core/manager.py`: Aggiungere metodo `restore_system_defaults()`
-- [ ] `core/presets.py`: Estendere `PresetManager` per gestire flag `is_system_preset`
-- [ ] `core/presets.py`: Impedire eliminazione preset di sistema via UI
+**6.1.2 Core Changes**
+- [ ] `core/manager.py`: Add `create_system_backup_preset()` method
+- [ ] `core/manager.py`: Add `restore_system_defaults()` method
+- [ ] `core/presets.py`: Extend `PresetManager` to handle `is_system_preset` flag
+- [ ] `core/presets.py`: Prevent deletion of system preset via UI
 
-**6.1.3 Modifiche alla GUI**
-- [ ] `pages/status_page.py`: Aggiungere sezione "Zona Pericolosa" con bottone rosso
-- [ ] `pages/status_page.py`: Dialogo di conferma con warning esplicito
-- [ ] `pages/status_page.py`: Banner di successo/errore post-ripristino
+**6.1.3 GUI Changes**
+- [ ] `pages/status_page.py`: Add "Danger Zone" section with red button
+- [ ] `pages/status_page.py`: Confirmation dialog with explicit warning
+- [ ] `pages/status_page.py`: Success/error banner post-restore
 
-**6.1.4 Test**
-- [ ] Test unitario: creazione preset al primo avvio
-- [ ] Test unitario: ripristino settings GSettings
-- [ ] Test unitario: rimozione symlink GTK4
-- [ ] Test manuale: applicare tema corrotto → ripristinare → verificare UI
+**6.1.4 Tests**
+- [ ] Unit test: first launch preset creation
+- [ ] Unit test: GSettings settings restore
+- [ ] Unit test: GTK4 symlinks removal
+- [ ] Manual test: apply corrupted theme -> restore -> verify UI
 
-**6.1.5 Criteri di Accettazione**
-- ✅ Al primo avvio, preset "Default di Sistema" esiste in `~/.config/gnome-theme-manager/presets/`
-- ✅ Il pulsante "Ripristina Temi Predefiniti" è visibile solo se ci sono override attivi
-- ✅ Il dialogo di conferma mostra esattamente cosa verrà ripristinato
-- ✅ Dopo il ripristino, `gtk-theme`, `icon-theme`, `cursor-theme` tornano ai valori Ubuntu default
-- ✅ I symlink in `~/.config/gtk-4.0/` vengono rimossi se presenti
+**6.1.5 Acceptance Criteria**
+- ✅ On first launch, preset "System Default" exists in `~/.config/gnome-theme-manager/presets/`
+- ✅ The "Restore Default Themes" button is visible only if overrides are active
+- ✅ Confirmation dialog clearly states what will be restored
+- ✅ After restore, `gtk-theme`, `icon-theme`, `cursor-theme` revert to Ubuntu defaults
+- ✅ Symlinks in `~/.config/gtk-4.0/` are cleanly removed if present
 
 ---
 
-### 6.2 Integrazione `color-scheme` (GNOME 42+)
-**Priorità²²**: P1 (Alto)  
-**Stima**: 2-3 giorni  
-**Stato**: 📋 Da sviluppare
+### 6.2 `color-scheme` Integration (GNOME 42+)
+**Priority**: P1 (High)  
+**Estimate**: 2-3 days  
+**Status**: 📋 To develop
 
-#### Obiettivi
-- [ ] Leggere/scrivere `org.gnome.desktop.interface.color-scheme`
-- [ ] UI per selezionare preferenza chiara/scura
-- [ ] Supporto colori di accento (se disponibile)
+#### Goals
+- [ ] Read/write `org.gnome.desktop.interface.color-scheme`
+- [ ] UI selector for light/dark preference
+- [ ] Accent color support (when available)
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**6.2.1 Chiavi GSettings**
+**6.2.1 GSettings Keys**
 ```bash
 # Schema: org.gnome.desktop.interface
 gsettings get org.gnome.desktop.interface.color-scheme
-# Valori: 'default', 'prefer-dark', 'prefer-light'
+# Values: 'default', 'prefer-dark', 'prefer-light'
 
-# (Opzionale, dipende dalla distro)
+# (Optional, distro dependent)
 gsettings get org.gnome.desktop.interface.accent-color
-# Valori: 'blue', 'green', 'orange', 'red', 'purple', 'brown', 'slate'
+# Values: 'blue', 'green', 'orange', 'red', 'purple', 'brown', 'slate'
 ```
 
-**6.2.2 Modifiche al Core**
-- [ ] `core/manager.py`: Estendere `GSettingsClient` per gestire `color-scheme`
-- [ ] `core/manager.py`: Metodo `get_color_scheme()` → restituisce `Literal['default', 'prefer-dark', 'prefer-light']`
-- [ ] `core/manager.py`: Metodo `set_color_scheme(scheme: str)`
-- [ ] `core/manager.py`: Metodo `get_accent_color()` (opzionale, con fallback)
-- [ ] `core/manager.py`: Metodo `set_accent_color(color: str)` (opzionale)
+**6.2.2 Core Changes**
+- [ ] `core/manager.py`: Extend `GSettingsClient` to manage `color-scheme`
+- [ ] `core/manager.py`: Method `get_color_scheme()` -> returns `Literal['default', 'prefer-dark', 'prefer-light']`
+- [ ] `core/manager.py`: Method `set_color_scheme(scheme: str)`
+- [ ] `core/manager.py`: Method `get_accent_color()` (optional, with fallback)
+- [ ] `core/manager.py`: Method `set_accent_color(color: str)` (optional)
 
-**6.2.3 Modifiche alla GUI**
-- [ ] `pages/themes_page.py`: Aggiungere `AdwComboRow` per "Preferenza Colore"
-- [ ] `pages/themes_page.py`: Popolare con ['Predefinito', 'Scuro', 'Chiaro']
-- [ ] `pages/themes_page.py`: (Opzionale) `AdwComboRow` per "Colore di Accento"
-- [ ] `controllers/themes_controller.py`: Collegare selezione a `ThemeManager.set_color_scheme()`
+**6.2.3 GUI Changes**
+- [ ] `pages/themes_page.py`: Add `AdwComboRow` for "Color Preference"
+- [ ] `pages/themes_page.py`: Populate with ['Default', 'Dark', 'Light']
+- [ ] `pages/themes_page.py`: (Optional) `AdwComboRow` for "Accent Color"
+- [ ] `controllers/themes_controller.py`: Connect selection to `ThemeManager.set_color_scheme()`
 
-**6.2.4 Test**
-- [ ] Test unitario: lettura/scrittura `color-scheme`
-- [ ] Test manuale: cambiare preferenza → verificare con `gsettings get`
-- [ ] Test manuale: applicare tema scuro + preferenza chiara → verificare comportamento
+**6.2.4 Tests**
+- [ ] Unit test: `color-scheme` read/write
+- [ ] Manual test: switch preference -> verify with `gsettings get`
+- [ ] Manual test: apply dark theme + light preference -> verify behavior
 
-**6.2.5 Criteri di Accettazione**
-- ✅ L'utente può selezionare preferenza chiara/scura dalla UI
-- ✅ La selezione persiste dopo il riavvio dell'app
-- ✅ Il cambio di preferenza si riflette immediatamente nelle app GTK4
-- ✅ (Opzionale) La selezione del colore di accento funziona su GNOME 45+
+**6.2.5 Acceptance Criteria**
+- ✅ User can select light/dark preference from the UI
+- ✅ Selection persists after application restart
+- ✅ Preference switch is reflected immediately in GTK4 apps
+- ✅ (Optional) Accent color selection works on GNOME 45+
 
 ---
 
-## 📦 Fase 7 — Packaging e Distribuzione (v1.2.0)
+## 📦 Phase 7 — Packaging and Distribution (v1.2.0)
 
-### 7.1 Packaging Flatpak
-**Priorità²²**: P1 (Alto)  
-**Stima**: 4-5 giorni  
-**Stato**: 📋 Da sviluppare
+### 7.1 Flatpak Packaging
+**Priority**: P1 (High)  
+**Estimate**: 4-5 days  
+**Status**: 📋 To develop
 
-#### Obiettivi
-- [ ] Creare manifest `io.github.<username>.ThemeManager.yml`
-- [ ] Configurare build con `flatpak-builder`
-- [ ] Testare su Ubuntu 22.04+, Fedora 38+
-- [ ] Pubblicare su Flathub (opzionale)
+#### Goals
+- [ ] Create manifest `io.github.<username>.ThemeManager.yml`
+- [ ] Configure build with `flatpak-builder`
+- [ ] Test on Ubuntu 22.04+, Fedora 38+
+- [ ] Publish on Flathub (optional)
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**7.1.1 Manifest Flatpak**
+**7.1.1 Flatpak Manifest**
 ```yaml
 # io.github.<username>.ThemeManager.yml
 app-id: io.github.<username>.ThemeManager
@@ -162,7 +162,7 @@ build-options:
     - PYTHONPATH=/app/lib/python3.11/site-packages
 
 finish-args:
-  # Accesso a GSettings/dconf
+  # GSettings/dconf access
   - --talk-name=org.gnome.Settings
   - --filesystem=~/.local/share/themes:ro
   - --filesystem=~/.local/share/icons:ro
@@ -195,7 +195,7 @@ modules:
           - pip3 install --prefix=/app PyGObject
 ```
 
-**7.1.2 Build e Test**
+**7.1.2 Build and Test**
 ```bash
 # Build
 flatpak-builder build --force-clean --install io.github.<username>.ThemeManager.yml
@@ -203,38 +203,38 @@ flatpak-builder build --force-clean --install io.github.<username>.ThemeManager.
 # Test
 flatpak run io.github.<username>.ThemeManager
 
-# Verifica permessi
+# Inspect permissions
 flatpak info --show-permissions io.github.<username>.ThemeManager
 ```
 
-**7.1.3 Pubblicazione Flathub**
-- [ ] Creare repo `flathub/io.github.<username>.ThemeManager`
-- [ ] Submit PR a https://github.com/flathub/flathub
-- [ ] Superare review (licenza, metadata, sicurezza)
+**7.1.3 Flathub Publishing**
+- [ ] Create repository `flathub/io.github.<username>.ThemeManager`
+- [ ] Submit PR to https://github.com/flathub/flathub
+- [ ] Pass review (license, metadata, security)
 
-**7.1.4 Criteri di Accettazione**
-- ✅ L'app si avvia con `flatpak run io.github.<username>.ThemeManager`
-- ✅ I temi in `~/.local/share/themes` sono visibili
-- ✅ I preset vengono salvati in `~/.config/gnome-theme-manager`
-- ✅ I permessi sono minimi e documentati
+**7.1.4 Acceptance Criteria**
+- ✅ Application launches with `flatpak run io.github.<username>.ThemeManager`
+- ✅ Themes in `~/.local/share/themes` are visible
+- ✅ Presets are saved in `~/.config/gnome-theme-manager`
+- ✅ Permissions are minimal and documented
 
 ---
 
-### 7.2 Packaging .deb (Ubuntu/Debian)
-**Priorità²²**: P2 (Medio)  
-**Stima**: 3-4 giorni  
-**Stato**: 📋 Da sviluppare
+### 7.2 .deb Packaging (Ubuntu/Debian)
+**Priority**: P2 (Medium)  
+**Estimate**: 3-4 days  
+**Status**: 📋 To develop
 
-#### Obiettivi
-- [ ] Creare struttura `debian/`
-- [ ] Configurare `debian/control` con dipendenze
-- [ ] Build pacchetto `.deb`
-- [ ] Testare installazione su Ubuntu 22.04+, 24.04+
+#### Goals
+- [ ] Create `debian/` structure
+- [ ] Configure `debian/control` with dependencies
+- [ ] Build `.deb` package
+- [ ] Test installation on Ubuntu 22.04+, 24.04+
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**7.2.1 Struttura debian/**
-```
+**7.2.1 debian/ Structure**
+```text
 debian/
 ├── changelog
 ├── compat
@@ -247,7 +247,7 @@ debian/
     └── format
 ```
 
-**7.2.2 File `debian/control`**
+**7.2.2 `debian/control` File**
 ```control
 Source: gnome-theme-manager
 Section: utils
@@ -258,126 +258,125 @@ Build-Depends: debhelper (>= 13), python3-all, python3-gi, gir1.2-gtk-4.0, gir1.
 Package: gnome-theme-manager
 Architecture: all
 Depends: python3, python3-gi, gir1.2-gtk-4.0, gir1.2-adw-1, dconf-gsettings-backend
-Description: Gestore temi nativo per GNOME 42+
- GNOME Theme Manager è un'applicazione desktop Python 3 nativa per Ubuntu/GNOME
- progettata con un'architettura modulare, pulita e resiliente.
+Description: Native theme manager for GNOME 42+
+ GNOME Theme Manager is a modular, clean, and resilient desktop application for Ubuntu/GNOME.
 Homepage: https://github.com/<username>/gnome-theme-manager
 ```
 
 **7.2.3 Build**
 ```bash
-# Installa dipendenze
+# Install dependencies
 sudo apt install debhelper python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
 
 # Build
 debuild -us -uc
 
-# Installa
+# Install
 sudo apt install ../gnome-theme-manager_1.2.0_all.deb
 ```
 
-**7.2.4 Criteri di Accettazione**
-- ✅ Il pacchetto si installa con `apt install ./gnome-theme-manager_*.deb`
-- ✅ Il comando `gnome-theme-manager` è disponibile nel PATH
-- ✅ Le dipendenze sono risolte automaticamente da apt
+**7.2.4 Acceptance Criteria**
+- ✅ Package installs cleanly with `apt install ./gnome-theme-manager_*.deb`
+- ✅ The command `gnome-theme-manager` is available in PATH
+- ✅ Dependencies are resolved automatically by apt
 
 ---
 
-## 🔍 Fase 8 — Diagnostica e Compatibilità²² (v1.3.0)
+## 🔍 Phase 8 — Diagnostics and Compatibility (v1.3.0)
 
-### 8.1 Rilevamento Runtime Flatpak GTK3
-**Priorità²²**: P2 (Medio)  
-**Stima**: 2-3 giorni  
-**Stato**: 📋 Da sviluppare
+### 8.1 Flatpak GTK3 Runtime Detection
+**Priority**: P2 (Medium)  
+**Estimate**: 2-3 days  
+**Status**: 📋 To develop
 
-#### Obiettivi
-- [ ] Verificare se il tema attivo è installato come runtime Flatpak
-- [ ] Mostrare feedback informativo all'utente
-- [ ] Suggerire installazione se mancante
+#### Goals
+- [ ] Check if active theme is installed as a Flatpak runtime
+- [ ] Display informative feedback to the user
+- [ ] Suggest runtime installation when missing
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**8.1.1 Modifiche al Core**
-- [ ] `core/sandbox.py`: Aggiungere metodo `check_gtk3_flatpak_runtime(theme_name: str) -> bool`
-- [ ] `core/sandbox.py`: Implementare parsing output `flatpak list --runtime`
-- [ ] `core/sandbox.py`: Metodo `get_flatpak_gtk3_themes() -> List[str]`
+**8.1.1 Core Changes**
+- [ ] `core/sandbox.py`: Add `check_gtk3_flatpak_runtime(theme_name: str) -> bool` method
+- [ ] `core/sandbox.py`: Implement `flatpak list --runtime` output parser
+- [ ] `core/sandbox.py`: Add `get_flatpak_gtk3_themes() -> list[str]` method
 
-**8.1.2 Comandi Flatpak**
+**8.1.2 Flatpak Commands**
 ```bash
-# Lista runtime installati
+# List installed runtimes
 flatpak list --runtime | grep org.gtk.Gtk3theme
 
-# Verifica tema specifico
+# Check specific theme
 flatpak list --runtime | grep "org.gtk.Gtk3theme.Nordic"
 
-# Installa runtime (se necessario)
+# Install runtime (if needed)
 flatpak install flathub org.gtk.Gtk3theme.Nordic
 ```
 
-**8.1.3 Modifiche alla GUI**
-- [ ] `pages/sandbox_page.py`: Aggiungere sezione "Temi GTK3 per Flatpak"
-- [ ] `pages/sandbox_page.py`: Mostrare badge ✅/❌ per ogni tema rilevato
-- [ ] `pages/sandbox_page.py`: (Opzionale) Bottone "Installa runtime mancante"
+**8.1.3 GUI Changes**
+- [ ] `pages/sandbox_page.py`: Add "GTK3 Themes for Flatpak" section
+- [ ] `pages/sandbox_page.py`: Display ✅/❌ badges for each detected theme
+- [ ] `pages/sandbox_page.py`: (Optional) "Install missing runtime" button
 
-**8.1.4 Criteri di Accettazione**
-- ✅ La sandbox page mostra se il tema GTK3 è disponibile come runtime Flatpak
-- ✅ Il messaggio è chiaro: "Il tema X è già installato per le app Flatpak"
-- ✅ (Opzionale) L'utente può installare il runtime con un click
+**8.1.4 Acceptance Criteria**
+- ✅ The sandbox page indicates whether the GTK3 theme is available as a Flatpak runtime
+- ✅ Clear messaging: "Theme X is installed for Flatpak applications"
+- ✅ (Optional) User can trigger runtime installation with one click
 
 ---
 
-### 8.2 Diagnostica Ambiente Avanzata
-**Priorità²²**: P3 (Medio)  
-**Stima**: 1-2 giorni  
-**Stato**: 💡 Idea
+### 8.2 Advanced Environment Diagnostics
+**Priority**: P3 (Medium)  
+**Estimate**: 1-2 days  
+**Status**: 💡 Idea
 
-#### Obiettivi
-- [ ] Mostrare versione GNOME
-- [ ] Rilevare session type (X11/Wayland)
-- [ ] Verificare estensioni critiche (es. "User Themes")
+#### Goals
+- [ ] Display GNOME version
+- [ ] Detect session type (X11/Wayland)
+- [ ] Check critical extensions (e.g. "User Themes")
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**8.2.1 Informazioni da Raccogliere**
+**8.2.1 Information to Collect**
 ```bash
-# Versione GNOME
+# GNOME version
 gnome-shell --version
 
 # Session type
 echo $XDG_SESSION_TYPE
 
-# Estensioni abilitate
+# Enabled extensions
 gsettings get org.gnome.shell enabled-extensions
 
-# Estensione User Themes
+# User Themes extension
 gsettings get org.gnome.shell enabled-extensions | grep user-theme
 ```
 
-**8.2.2 Modifiche alla GUI**
-- [ ] `pages/status_page.py`: Aggiungere sezione "Informazioni Sistema"
-- [ ] `pages/status_page.py`: Mostrare GNOME version, session type, estensioni critiche
+**8.2.2 GUI Changes**
+- [ ] `pages/status_page.py`: Add "System Information" section
+- [ ] `pages/status_page.py`: Display GNOME version, session type, and critical extension statuses
 
 ---
 
-## 🛠️ Fase 9 — Manutenzione e Qualità²² (v1.4.0)
+## 🛠️ Phase 9 — Maintenance and Quality (v1.4.0)
 
-### 9.1 Logging Strutturato
-**Priorità²²**: P3 (Basso)  
-**Stima**: 1-2 giorni  
-**Stato**: 💡 Idea
+### 9.1 Structured Logging
+**Priority**: P3 (Low)  
+**Estimate**: 1-2 days  
+**Status**: 💡 Idea
 
-#### Obiettivi
-- [ ] Implementare logger JSON in `~/.local/state/gnome-theme-manager/`
-- [ ] Loggare operazioni critiche (applicazioni temi, errori)
-- [ ] Aggiungere comando CLI `--verbose` per debug
+#### Goals
+- [ ] Implement JSON file logger in `~/.local/state/gnome-theme-manager/`
+- [ ] Log critical operations (theme applications, errors)
+- [ ] Add CLI `--verbose` flag for debugging
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**9.1.1 Configurazione Logger**
+**9.1.1 Logger Configuration**
 ```python
 # core/logger.py
-import logging
 import json
+import logging
 from pathlib import Path
 
 LOG_DIR = Path.home() / ".local/state/gnome-theme-manager"
@@ -405,20 +404,20 @@ def setup_logger():
 
 ---
 
-### 9.2 Internazionalizzazione (i18n)
-**Priorità²²**: P3 (Basso)  
-**Stima**: 2-3 giorni  
-**Stato**: 💡 Idea
+### 9.2 Internationalization (i18n)
+**Priority**: P3 (Low)  
+**Estimate**: 2-3 days  
+**Status**: 💡 Idea
 
-#### Obiettivi
-- [ ] Integrare `gettext` per traduzioni IT/EN
-- [ ] Creare file `.po` per italiano e inglese
-- [ ] Tradurre tutte le stringhe UI
+#### Goals
+- [ ] Integrate `gettext` for IT/EN translations
+- [ ] Create `.po` files for Italian and English
+- [ ] Translate all UI strings
 
-#### Dettaglio Implementazione
+#### Implementation Details
 
-**9.2.1 Struttura**
-```
+**9.2.1 Structure**
+```text
 locales/
 ├── it/
 │   └── LC_MESSAGES/
@@ -428,7 +427,7 @@ locales/
         └── gnome_theme_manager.po
 ```
 
-**9.2.2 Setup gettext**
+**9.2.2 gettext Setup**
 ```python
 # core/i18n.py
 import gettext
@@ -448,69 +447,65 @@ _ = setup_i18n("it")
 
 ---
 
-## 📅 Timeline Stimata
+## 📅 Estimated Timeline
 
-| Milestone | Versione | Data Target | Feature Principali |
+| Milestone | Version | Target Date | Main Features |
 | :--- | :---: | :---: | :--- |
-| **M0 (Fase 0)** | v1.0.0 | 15 Agosto 2026 | Stabilizzazione, Preset 2.0, Estensioni, modali unificati (Completato) |
-| **M6** | v1.1.0 | Settembre 2026 | Backup/Ripristino, color-scheme |
-| **M7** | v1.2.0 | Ottobre 2026 | Packaging Flatpak, .deb |
-| **M8** | v1.3.0 | Novembre 2026 | Rilevamento Flatpak GTK3, Diagnostica |
-| **M9** | v1.4.0 | Dicembre 2026 | Logging, i18n, manutenzione |
+| **M0 (Phase 0)** | v1.0.0 | August 15, 2026 | Stabilization, Presets 2.0, Extensions, Unified Modals (Completed) |
+| **M6** | v1.1.0 | September 2026 | Backup/Restore, color-scheme |
+| **M7** | v1.2.0 | October 2026 | Flatpak & .deb Packaging |
+| **M8** | v1.3.0 | November 2026 | Flatpak GTK3 Detection, Diagnostics |
+| **M9** | v1.4.0 | December 2026 | Logging, i18n, Maintenance |
 
 ---
 
-## 🎯 Criteri di Priorità²²
+## 🎯 Priority Criteria
 
-### P0 — Critico
-- Feature essenziali per sicurezza e usabilità²²
-- Bloccano adozione in produzione
-- **Esempio**: Backup e Ripristino
+### P0 — Critical
+- Essential features for safety and usability
+- Blocker for production adoption
+- **Example**: Backup and Restore
 
-### P1 — Alto
-- Feature fortemente richieste dagli utenti target
-- Migliorano significativamente l'esperienza
-- **Esempio**: color-scheme, Packaging Flatpak
+### P1 — High
+- Highly requested features
+- Significantly improves user experience
+- **Example**: `color-scheme`, Flatpak Packaging
 
-### P2 — Medio
-- Feature utili ma non bloccanti
-- Possono aspettare release successive
-- **Esempio**: Rilevamento Flatpak GTK3, Packaging .deb
+### P2 — Medium
+- Useful but non-blocking features
+- Can be delivered in subsequent updates
+- **Example**: Flatpak GTK3 Runtime Detection, .deb Packaging
 
-### P3 — Basso
-- Feature "nice to have"
-- Utili per manutenzione a lungo termine
-- **Esempio**: Logging, i18n, Diagnostica avanzata
-
----
-
-## 📝 Note per lo Sviluppatore
-
-1. **Prima di iniziare ogni fase**:
-   - Creare branch Git dedicato (es. `feature/backup-restore`)
-   - Aggiornare `CHANGELOG.md` con le feature pianificate
-   - Eseguire `pytest tests/ -v` per verificare baseline
-
-2. **Dopo ogni feature completata**:
-   - Aggiornare test suite
-   - Eseguire `ruff check src tests`
-   - Commit con messaggio descrittivo (Conventional Commits)
-
-3. **Prima del release**:
-   - Taggare versione con `git tag -a v1.1.0 -m "Release v1.1.0"`
-   - Aggiornare `README.md` con changelog
-   - Push tag su GitHub
+### P3 — Low
+- Nice-to-have features
+- Long-term maintenance value
+- **Example**: Structured logging, Advanced diagnostics
 
 ---
 
-## 🔗 Risorse Utili
+## 📝 Developer Notes
+
+1. **Before starting each phase**:
+   - Create dedicated Git branch (e.g. `feature/backup-restore`)
+   - Update `CHANGELOG.md` with planned features
+   - Run `pytest tests/ -v` to ensure baseline passes
+
+2. **After each completed feature**:
+   - Update test suite
+   - Run `ruff check src tests`
+   - Commit with conventional commit message format
+
+3. **Before release**:
+   - Tag version: `git tag -a v1.1.0 -m "Release v1.1.0"`
+   - Update `README.md` and release notes
+   - Push tag to GitHub
+
+---
+
+## 🔗 Useful Resources
 
 - [GNOME Human Interface Guidelines](https://developer.gnome.org/hig/)
 - [Libadwaita Documentation](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/)
 - [Flatpak Documentation](https://docs.flatpak.org/)
 - [Debian New Maintainers' Guide](https://www.debian.org/doc/manuals/maint-guide/)
 - [Python gettext](https://docs.python.org/3/library/gettext.html)
-
----
-
-**Buono sviluppo! 🚀**

@@ -195,6 +195,6 @@ def test_gsettings_unavailable_when_gio_missing():
     """Verifica che venga sollevata GSettingsUnavailableError se PyGObject non è installato."""
     with (
         patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", False),
-        pytest.raises(GSettingsUnavailableError, match="PyGObject .* non è disponibile"),
+        pytest.raises(GSettingsUnavailableError, match="PyGObject .* is not available"),
     ):
         GSettingsClient()

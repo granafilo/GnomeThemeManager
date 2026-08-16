@@ -70,9 +70,7 @@ def check_version():
         )
         return 1
     if xml_ver != "1.0.0":
-        print(
-            f"Errore: versione metainfo.xml non è 1.0.0 (trovato: {xml_ver})", file=sys.stderr
-        )
+        print(f"Errore: versione metainfo.xml non è 1.0.0 (trovato: {xml_ver})", file=sys.stderr)
         return 1
 
     print("✓ Tutte le versioni sono coerenti!")

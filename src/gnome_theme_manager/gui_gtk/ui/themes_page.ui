@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Template dichiarativo per la pagina 'Esplora temi' con Card Tema Attivo e Lista Altri Temi (Fase 5.4.x) -->
+<!-- Declarative template for 'Browse Themes' page with Active Theme Card and Other Themes List -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
@@ -9,7 +9,7 @@
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
 
-    <!-- 1. Stato LOADING -->
+    <!-- 1. LOADING State -->
     <child>
       <object class="GtkStackPage">
         <property name="name">loading</property>
@@ -18,8 +18,8 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">applications-graphics-symbolic</property>
-            <property name="title" translatable="yes">Caricamento temi in corso...</property>
-            <property name="description" translatable="yes">Scansione dei temi installati nelle cartelle di sistema e utente.</property>
+            <property name="title" translatable="yes">Loading themes...</property>
+            <property name="description" translatable="yes">Scanning installed themes across system and user directories.</property>
             <property name="child">
               <object class="GtkSpinner" id="loading_spinner">
                 <property name="spinning">true</property>
@@ -35,7 +35,7 @@
       </object>
     </child>
 
-    <!-- 2. Stato READY -->
+    <!-- 2. READY State -->
     <child>
       <object class="GtkStackPage">
         <property name="name">ready</property>
@@ -45,7 +45,7 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
 
-            <!-- Area scrollabile principale contenente Card Attiva e Lista Disponibili -->
+            <!-- Main scrollable area containing Active Card and Available List -->
             <child>
               <object class="GtkScrolledWindow" id="themes_scrolled_window">
                 <property name="vexpand">true</property>
@@ -65,10 +65,10 @@
                         <property name="orientation">vertical</property>
                         <property name="spacing">16</property>
 
-                        <!-- Titolo Categoria -->
+                        <!-- Category Title -->
                         <child>
                           <object class="GtkLabel" id="category_title_label">
-                            <property name="label" translatable="yes">Temi</property>
+                            <property name="label" translatable="yes">Themes</property>
                             <property name="xalign">0</property>
                             <style>
                               <class name="title-2"/>
@@ -76,14 +76,14 @@
                           </object>
                         </child>
 
-                        <!-- Sezione 1: Card Tema Attualmente Applicato -->
+                        <!-- Section 1: Currently Active Theme Card -->
                         <child>
                           <object class="AdwPreferencesGroup" id="active_theme_group">
-                            <property name="title" translatable="yes">Tema attivo</property>
-                            <property name="description" translatable="yes">Il tema attualmente in uso nell'ambiente desktop.</property>
+                            <property name="title" translatable="yes">Active Theme</property>
+                            <property name="description" translatable="yes">The theme currently in use on the desktop environment.</property>
                             <child>
                               <object class="AdwActionRow" id="active_theme_row">
-                                <property name="title" translatable="yes">Caricamento...</property>
+                                <property name="title" translatable="yes">Loading...</property>
                                 <property name="subtitle" translatable="yes">-</property>
                                 <property name="subtitle-lines">2</property>
                                 <child type="prefix">
@@ -94,7 +94,7 @@
                                 </child>
                                 <child type="suffix">
                                   <object class="GtkLabel" id="active_theme_badge">
-                                    <property name="label" translatable="yes">In uso</property>
+                                    <property name="label" translatable="yes">In use</property>
                                     <property name="valign">center</property>
                                     <style>
                                       <class name="accent"/>
@@ -108,20 +108,20 @@
                           </object>
                         </child>
 
-                        <!-- Sezione 2: Lista Altri Temi Disponibili con Barra di Ricerca -->
+                        <!-- Section 2: Other Available Themes List with Search Bar -->
                         <child>
                           <object class="GtkBox">
                             <property name="orientation">vertical</property>
                             <property name="spacing">12</property>
 
-                            <!-- Intestazione sezione altri temi con ricerca -->
+                            <!-- Section header with search -->
                             <child>
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
                                 <child>
                                   <object class="GtkLabel" id="available_section_title">
-                                    <property name="label" translatable="yes">Altri temi disponibili</property>
+                                    <property name="label" translatable="yes">Other available themes</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                     <style>
@@ -131,13 +131,13 @@
                                 </child>
                                 <child>
                                   <object class="GtkSearchEntry" id="search_entry">
-                                    <property name="placeholder-text" translatable="yes">Cerca tra i temi disponibili...</property>
+                                    <property name="placeholder-text" translatable="yes">Search available themes...</property>
                                     <property name="width-request">260</property>
                                   </object>
                                 </child>
                                 <child>
                                   <object class="GtkCheckButton" id="system_themes_toggle">
-                                    <property name="label" translatable="yes">Nascondi temi di sistema</property>
+                                    <property name="label" translatable="yes">Hide system themes</property>
                                     <property name="valign">center</property>
                                     <property name="active">false</property>
                                   </object>
@@ -145,7 +145,7 @@
                               </object>
                             </child>
 
-                            <!-- Conteggio risultati -->
+                            <!-- Count label -->
                             <child>
                               <object class="GtkLabel" id="count_label">
                                 <property name="xalign">0</property>
@@ -155,7 +155,7 @@
                               </object>
                             </child>
 
-                            <!-- Lista temi disponibili a selezione singola (esclude il tema attivo) -->
+                            <!-- Available themes list box -->
                             <child>
                               <object class="GtkListBox" id="themes_list_box">
                                 <property name="selection-mode">single</property>
@@ -166,13 +166,13 @@
                               </object>
                             </child>
 
-                            <!-- Stato 'Nessun risultato' per la ricerca o nessun altro tema -->
+                            <!-- No results status page -->
                             <child>
                               <object class="AdwStatusPage" id="no_results_page">
                                 <property name="visible">false</property>
                                 <property name="icon-name">system-search-symbolic</property>
-                                <property name="title" translatable="yes">Nessun altro tema disponibile</property>
-                                <property name="description" translatable="yes">Non sono stati trovati altri temi compatibili per questa categoria.</property>
+                                <property name="title" translatable="yes">No other themes available</property>
+                                <property name="description" translatable="yes">No other compatible themes found for this category.</property>
                               </object>
                             </child>
                           </object>
@@ -185,7 +185,7 @@
               </object>
             </child>
 
-            <!-- Barra d'azione inferiore per l'applicazione -->
+            <!-- Bottom action bar -->
             <child>
               <object class="AdwClamp">
                 <property name="maximum-size">860</property>
@@ -200,7 +200,7 @@
                     <property name="spacing">12</property>
                     <child>
                       <object class="GtkLabel" id="selection_info_label">
-                        <property name="label" translatable="yes">Seleziona un tema dall'elenco per applicarlo</property>
+                        <property name="label" translatable="yes">Select a theme from the list to apply it</property>
                         <property name="xalign">0</property>
                         <property name="hexpand">true</property>
                         <style>
@@ -211,7 +211,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="apply_button">
-                        <property name="label" translatable="yes">Applica</property>
+                        <property name="label" translatable="yes">Apply</property>
                         <property name="sensitive">false</property>
                         <property name="halign">end</property>
                         <property name="valign">center</property>
@@ -230,7 +230,7 @@
       </object>
     </child>
 
-    <!-- 3. Stato EMPTY -->
+    <!-- 3. EMPTY State -->
     <child>
       <object class="GtkStackPage">
         <property name="name">empty</property>
@@ -239,11 +239,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">applications-graphics-symbolic</property>
-            <property name="title" translatable="yes">Nessun tema installato</property>
-            <property name="description" translatable="yes">Non è stato trovato alcun tema in questa categoria.</property>
+            <property name="title" translatable="yes">No themes installed</property>
+            <property name="description" translatable="yes">No themes found in this category.</property>
             <property name="child">
               <object class="GtkButton" id="empty_refresh_button">
-                <property name="label" translatable="yes">Ricarica</property>
+                <property name="label" translatable="yes">Reload</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
                 <style>
@@ -257,7 +257,7 @@
       </object>
     </child>
 
-    <!-- 4. Stato ERROR -->
+    <!-- 4. ERROR State -->
     <child>
       <object class="GtkStackPage">
         <property name="name">error</property>
@@ -266,11 +266,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title" translatable="yes">Errore durante la scansione</property>
-            <property name="description" translatable="yes">Si è verificato un errore durante il recupero dei temi dal filesystem.</property>
+            <property name="title" translatable="yes">Scan error</property>
+            <property name="description" translatable="yes">An error occurred while retrieving themes from the filesystem.</property>
             <property name="child">
               <object class="GtkButton" id="error_retry_button">
-                <property name="label" translatable="yes">Riprova</property>
+                <property name="label" translatable="yes">Retry</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
                 <style>

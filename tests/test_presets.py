@@ -96,7 +96,7 @@ def test_preset_save_overwrite_protection(tmp_path: Path) -> None:
 
     manager.save_preset("MyPreset", theme_set_1)
 
-    with pytest.raises(FileExistsError, match="esiste già"):
+    with pytest.raises(FileExistsError, match="already exists"):
         manager.save_preset("MyPreset", theme_set_2, overwrite=False)
 
     # Con overwrite=True deve sovrascrivere
@@ -110,7 +110,7 @@ def test_preset_save_empty_raises_value_error(tmp_path: Path) -> None:
     manager = PresetManager(presets_dir=tmp_path)
     empty_set = ThemeSet()
 
-    with pytest.raises(ValueError, match="privo di qualsiasi configurazione"):
+    with pytest.raises(ValueError, match="Cannot save an empty preset"):
         manager.save_preset("EmptyPreset", empty_set)
 
 
@@ -152,14 +152,14 @@ def test_preset_delete_success(tmp_path: Path) -> None:
 def test_preset_delete_non_existent(tmp_path: Path) -> None:
     """Verifica che l'eliminazione di un preset inesistente sollevi FileNotFoundError."""
     manager = PresetManager(presets_dir=tmp_path)
-    with pytest.raises(FileNotFoundError, match="non esiste"):
+    with pytest.raises(FileNotFoundError, match="does not exist"):
         manager.delete_preset("GhostPreset")
 
 
 def test_preset_load_non_existent(tmp_path: Path) -> None:
     """Verifica che il caricamento di un preset inesistente sollevi FileNotFoundError."""
     manager = PresetManager(presets_dir=tmp_path)
-    with pytest.raises(FileNotFoundError, match="non è stato trovato"):
+    with pytest.raises(FileNotFoundError, match="not found"):
         manager.load_preset("NonExistent")
 
 
@@ -169,7 +169,7 @@ def test_preset_corrupt_json(tmp_path: Path) -> None:
     corrupt_file = tmp_path / "presets.json"
     corrupt_file.write_text("{ questo non e un json valido }", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="corrotto o illeggibile"):
+    with pytest.raises(ValueError, match="[Cc]orrupted or unreadable"):
         manager.load_preset("Corrupt")
 
 
@@ -178,7 +178,7 @@ def test_manager_load_preset_corrupt_json(tmp_path: Path) -> None:
     manager, pm = _build_manager_with_presets_dir(tmp_path)
     pm.presets_file.write_text("{not: valid json}", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="corrotto o illeggibile"):
+    with pytest.raises(ValueError, match="[Cc]orrupted or unreadable"):
         manager.load_preset("Corrupt")
 
 
@@ -203,13 +203,13 @@ def test_preset_invalid_name_validation(tmp_path: Path) -> None:
     manager = PresetManager(presets_dir=tmp_path)
     theme_set = ThemeSet(gtk_theme="Test")
 
-    with pytest.raises(ValueError, match="non può essere vuoto"):
+    with pytest.raises(ValueError, match="cannot be empty"):
         manager.save_preset("   ", theme_set)
 
-    with pytest.raises(ValueError, match="caratteri di percorso"):
+    with pytest.raises(ValueError, match="Path characters are not allowed"):
         manager.save_preset("../evil_preset", theme_set)
 
-    with pytest.raises(ValueError, match="caratteri di percorso"):
+    with pytest.raises(ValueError, match="Path characters are not allowed"):
         manager.save_preset("sub/dir/preset", theme_set)
 
 
@@ -344,7 +344,7 @@ def test_preset_name_empty_or_whitespace(tmp_path: Path) -> None:
     ts = ThemeSet(gtk_theme="Nordic")
 
     for bad_name in ["", "   ", "\t\n"]:
-        with pytest.raises(ValueError, match="non può essere vuoto"):
+        with pytest.raises(ValueError, match="cannot be empty"):
             manager.save_preset(bad_name, ts)
 
 

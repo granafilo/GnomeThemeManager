@@ -92,10 +92,10 @@ def test_themes_page_ready_state_and_active_card(mock_theme_manager: MagicMock) 
     assert page.widget.get_visible_child_name() == "ready"
     # Il tema attivo per GTK nel mock è 'Yaru'
     assert page.active_theme_row.get_title() == "Yaru"
-    assert "In uso" in page.active_theme_badge.get_text()
+    assert "In use" in page.active_theme_badge.get_text()
 
     # La lista delle alternative contiene solo 'Nordic' ('Yaru' è escluso)
-    assert "1 altri applicazioni (gtk) disponibili" in page.count_label.get_text()
+    assert "1 other applications (gtk) available" in page.count_label.get_text()
     assert page.themes_list_box.get_visible() is True
     assert page.apply_button.get_sensitive() is False
 
@@ -111,25 +111,25 @@ def test_themes_page_categories_navigation(mock_theme_manager: MagicMock) -> Non
     # 1. Categoria GNOME Shell (attivo: Yaru [non in lista locale], 1 alternativa: Nordic-Shell)
     page.set_category(ThemeType.SHELL)
     assert page.active_theme_row.get_title() == "Yaru"
-    assert "non trovato" in page.active_theme_row.get_subtitle().lower()
-    assert "1 altri gnome shell disponibili" in page.count_label.get_text()
+    assert "not found" in page.active_theme_row.get_subtitle().lower()
+    assert "1 other gnome shell available" in page.count_label.get_text()
 
     # 2. Categoria Cursori (attivo: Yaru [non in lista locale], 1 alternativa: Bibata-Modern-Classic)
     page.set_category(ThemeType.CURSOR)
     assert page.active_theme_row.get_title() == "Yaru"
-    assert "non trovato" in page.active_theme_row.get_subtitle().lower()
-    assert "1 altri cursori disponibili" in page.count_label.get_text()
+    assert "not found" in page.active_theme_row.get_subtitle().lower()
+    assert "1 other cursors available" in page.count_label.get_text()
 
     # 3. Categoria Icone (attivo: Yaru [non in lista locale], 1 alternativa: Papirus)
     page.set_category(ThemeType.ICON)
     assert page.active_theme_row.get_title() == "Yaru"
-    assert "non trovato" in page.active_theme_row.get_subtitle().lower()
-    assert "1 altri icone disponibili" in page.count_label.get_text()
+    assert "not found" in page.active_theme_row.get_subtitle().lower()
+    assert "1 other icons available" in page.count_label.get_text()
 
     # 4. Categoria GTK (attivo: Yaru, 1 alternativa: Nordic)
     page.set_category(ThemeType.GTK)
     assert page.active_theme_row.get_title() == "Yaru"
-    assert "1 altri applicazioni (gtk) disponibili" in page.count_label.get_text()
+    assert "1 other applications (gtk) available" in page.count_label.get_text()
 
 
 def test_themes_page_search_filtering_in_available_list(mock_theme_manager: MagicMock) -> None:
@@ -143,7 +143,7 @@ def test_themes_page_search_filtering_in_available_list(mock_theme_manager: Magi
 
     # Ricerca per 'nordic' (disponibile)
     page.search_entry.set_text("nordic")
-    assert "1 altri applicazioni (gtk) disponibili" in page.count_label.get_text()
+    assert "1 other applications (gtk) available" in page.count_label.get_text()
 
     # Ricerca per 'yaru' (che è già attivo ed escluso dalla lista disponibili)
     page.search_entry.set_text("yaru")
@@ -152,7 +152,7 @@ def test_themes_page_search_filtering_in_available_list(mock_theme_manager: Magi
 
     # Azzeramento ricerca
     page.search_entry.set_text("")
-    assert "1 altri applicazioni (gtk) disponibili" in page.count_label.get_text()
+    assert "1 other applications (gtk) available" in page.count_label.get_text()
     assert page.no_results_page.get_visible() is False
     assert page.themes_list_box.get_visible() is True
 
@@ -199,7 +199,7 @@ def test_themes_page_apply_theme_updates_card_and_available_list(
     assert page.active_theme_row.get_title() == "Nordic"
 
     # Lista aggiornata: ora contiene 'Yaru' ('Nordic' è stato rimosso)
-    assert "1 altri applicazioni (gtk) disponibili" in page.count_label.get_text()
+    assert "1 other applications (gtk) available" in page.count_label.get_text()
     first_row = page.themes_list_box.get_first_child()
     assert first_row is not None
     assert first_row.get_title() == "Yaru"
@@ -351,7 +351,7 @@ def test_themes_page_cursor_application_shows_informative_toast(
         mock_toast.assert_called_once()
         msg = mock_toast.call_args[0][0]
         assert "Bibata-Modern-Classic" in msg
-        assert "cambiare finestra" in msg.lower() or "riaprire" in msg.lower()
+        assert "switch windows" in msg.lower() or "restart" in msg.lower()
         # Controlli riabilitati
         assert page.is_applying is False
 
@@ -540,18 +540,18 @@ def test_themes_page_confirm_dialog_sync_mode_resets_flag_and_applies(
 
 
 def test_themes_page_active_theme_backend_unavailable(mock_theme_manager: MagicMock) -> None:
-    """Verifica che se il backend non riesce a recuperare il tema attivo, la card mostri 'Non disponibile'."""
+    """Verifica che se il backend non riesce a recuperare il tema attivo, la card mostri 'Not available'."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
     mock_theme_manager.get_current_themes.side_effect = GnomeThemeManagerError(
-        "GSettings non disponibile."
+        "GSettings unavailable."
     )
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
 
-    assert page.active_theme_row.get_title() == "Non disponibile"
+    assert page.active_theme_row.get_title() == "Not available"
     assert page.active_theme_badge.get_visible() is False
 
 
@@ -822,7 +822,7 @@ def test_themes_page_apply_concurrency_guard(mock_theme_manager: MagicMock) -> N
     page.apply_theme(item, on_complete=on_complete_mock, sync=True)
 
     on_complete_mock.assert_called_once()
-    assert "già in corso" in str(on_complete_mock.call_args[0][1])
+    assert "already in progress" in str(on_complete_mock.call_args[0][1])
 
 
 def test_themes_page_apply_shell_theme_missing_user_themes(mock_theme_manager: MagicMock) -> None:
@@ -930,7 +930,7 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
         dlg = dialog_instances[0]
 
         # Verifica titolo pulito
-        assert dlg.get_heading() == "Applicare “Colloid” a GNOME Shell?"
+        assert dlg.get_heading() == "Apply “Colloid” to GNOME Shell?"
 
         # Verifica contenuto extra_child
         extra_child = dlg.get_extra_child()
@@ -951,7 +951,7 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
 
         assert len(labels) >= 1
         cat_text = labels[0].get_text()
-        assert cat_text == "Categoria: GNOME Shell"
+        assert cat_text == "Category: GNOME Shell"
         assert labels[0].get_wrap() is False
         assert labels[0].get_ellipsize() == Pango.EllipsizeMode.END
 
@@ -960,8 +960,8 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
             text = lbl.get_text()
             assert "/usr/share" not in text
             assert "~/.local" not in text
-            assert "Sistema" not in text
-            assert "Utente" not in text
+            assert "System" not in text
+            assert "User" not in text
 
 
 def test_themes_page_confirm_dialog_long_name_and_active_theme(
@@ -979,10 +979,10 @@ def test_themes_page_confirm_dialog_long_name_and_active_theme(
     item = ThemeItemPresentation(
         name=long_name,
         theme_type=ThemeType.GTK,
-        category_display="Applicazioni (GTK)",
+        category_display="Applications (GTK)",
         icon_name="preferences-desktop-theme-symbolic",
         path_display=f"/usr/share/themes/{long_name}",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
 
@@ -1002,7 +1002,7 @@ def test_themes_page_confirm_dialog_long_name_and_active_theme(
         assert len(dialog_instances) == 1
         dlg = dialog_instances[0]
 
-        assert dlg.get_heading() == f"Applicare “{long_name}” a GTK?"
+        assert dlg.get_heading() == f"Apply “{long_name}” to GTK?"
 
         extra_child = dlg.get_extra_child()
         assert extra_child is not None
@@ -1014,9 +1014,10 @@ def test_themes_page_confirm_dialog_long_name_and_active_theme(
             child = child.get_next_sibling()
 
         assert len(labels) == 2
-        assert labels[0].get_text() == "Categoria: GTK"
-        assert labels[1].get_text() == "Tema attualmente attivo: Yaru"
+        assert labels[0].get_text() == "Category: GTK"
+        assert labels[1].get_text() == "Currently active theme: Yaru"
         assert labels[1].get_wrap() is False
+
         assert labels[1].get_ellipsize() == Pango.EllipsizeMode.END
 
 
@@ -1108,16 +1109,16 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     item_gtk = ThemeItemPresentation(
         name="Nordic",
         theme_type=ThemeType.GTK,
-        category_display="Applicazioni (GTK)",
+        category_display="Applications (GTK)",
         icon_name="preferences-desktop-theme-symbolic",
         path_display="/usr/share/themes/Nordic",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
     page.apply_theme(item_gtk, sync=True)
     assert len(toasts) == 1
-    assert "Tema GTK «Nordic» applicato" in toasts[-1]
-    assert "override GTK4" in toasts[-1]
+    assert "GTK theme «Nordic» applied" in toasts[-1]
+    assert "GTK4" in toasts[-1]
 
     # 2. GNOME Shell
     mock_theme_manager.apply_themes.return_value = ApplyResult(shell_theme="Colloid")
@@ -1127,47 +1128,47 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
         category_display="GNOME Shell",
         icon_name="preferences-system-windows-symbolic",
         path_display="/usr/share/themes/Colloid",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
     page.apply_theme(item_shell, sync=True)
     assert len(toasts) == 2
-    assert "Tema GNOME Shell «Colloid» applicato" in toasts[-1]
+    assert "GNOME Shell theme «Colloid» applied" in toasts[-1]
 
     # 3. Icone
     mock_theme_manager.apply_themes.return_value = ApplyResult()
     item_icon = ThemeItemPresentation(
         name="Papirus",
         theme_type=ThemeType.ICON,
-        category_display="Icone",
+        category_display="Icons",
         icon_name="applications-graphics-symbolic",
         path_display="/usr/share/icons/Papirus",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
     page.apply_theme(item_icon, sync=True)
     assert len(toasts) == 3
-    assert "Tema icone «Papirus» applicato" in toasts[-1]
+    assert "Icon theme «Papirus» applied" in toasts[-1]
 
     # 4. Cursore
     mock_theme_manager.apply_themes.return_value = ApplyResult()
     item_cursor = ThemeItemPresentation(
         name="Bibata",
         theme_type=ThemeType.CURSOR,
-        category_display="Cursori",
+        category_display="Cursors",
         icon_name="input-mouse-symbolic",
         path_display="/usr/share/icons/Bibata",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
     page.apply_theme(item_cursor, sync=True)
     assert len(toasts) == 4
-    assert "Tema cursore «Bibata» applicato" in toasts[-1]
-    assert "cambiare finestra" in toasts[-1] or "riaprire" in toasts[-1]
+    assert "Cursor theme «Bibata» applied" in toasts[-1]
+    assert "switch windows" in toasts[-1] or "restart" in toasts[-1]
 
     # 5. GNOME Shell parziale (no user themes)
     mock_theme_manager.apply_themes.return_value = ApplyResult(shell_theme=None)
     page.apply_theme(item_shell, sync=True)
     assert len(toasts) == 5
-    assert "parzialmente" in toasts[-1].lower()
+    assert "partially" in toasts[-1].lower()
     assert "User Themes" in toasts[-1]

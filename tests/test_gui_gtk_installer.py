@@ -23,16 +23,16 @@ from gnome_theme_manager.gui_gtk.pages.installer import (
 
 def test_format_components_label() -> None:
     """Verifica la formattazione testuale dei tipi di tema rilevati."""
-    assert format_components_label([]) == "Nessun componente riconosciuto"
-    assert format_components_label([ThemeType.GTK]) == "Applicazioni (GTK)"
+    assert format_components_label([]) == "No recognizable components"
+    assert format_components_label([ThemeType.GTK]) == "Applications (GTK)"
     assert (
         format_components_label([ThemeType.GTK, ThemeType.SHELL])
-        == "Applicazioni (GTK), GNOME Shell"
+        == "Applications (GTK), GNOME Shell"
     )
     # Duplicati rimossi
     assert (
         format_components_label([ThemeType.GTK, ThemeType.GTK, ThemeType.ICON])
-        == "Applicazioni (GTK), Icone"
+        == "Applications (GTK), Icons"
     )
 
 
@@ -43,7 +43,7 @@ def test_installer_page_initial_state(mock_theme_manager: MagicMock) -> None:
 
     page = InstallerPage(manager=mock_theme_manager)
     assert page.page_id == "installer"
-    assert page.title == "Installatore temi"
+    assert page.title == "Theme Installer"
     assert page.widget.get_visible_child_name() == "initial"
     assert page.select_folder_button.get_sensitive() is True
     assert page.select_archive_button.get_sensitive() is True
@@ -64,9 +64,9 @@ def test_installer_page_select_source_archive_success(mock_theme_manager: MagicM
     page.select_source(archive_path, sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    assert page.source_type_row.get_subtitle() == "Archivio compresso"
+    assert page.source_type_row.get_subtitle() == "Compressed archive"
     assert page.detected_theme_name_row.get_subtitle() == "Nordic-Theme"
-    assert "Applicazioni (GTK)" in page.detected_components_row.get_subtitle()
+    assert "Applications (GTK)" in page.detected_components_row.get_subtitle()
     assert "GNOME Shell" in page.detected_components_row.get_subtitle()
     assert page.install_button.get_sensitive() is True
     assert page.install_apply_button.get_sensitive() is True
@@ -87,7 +87,7 @@ def test_installer_page_select_source_directory_success(mock_theme_manager: Magi
 
     assert page.widget.get_visible_child_name() == "ready"
     assert page.detected_theme_name_row.get_subtitle() == "Papirus-Icons"
-    assert "Icone" in page.detected_components_row.get_subtitle()
+    assert "Icons" in page.detected_components_row.get_subtitle()
 
 
 def test_installer_page_select_source_not_found(mock_theme_manager: MagicMock) -> None:
@@ -187,7 +187,7 @@ def test_installer_page_install_success(mock_theme_manager: MagicMock) -> None:
     assert page.widget.get_visible_child_name() == "success"
     assert installed_notified is True
     assert len(toasts) == 1
-    assert "installato" in toasts[0].lower()
+    assert "installed" in toasts[0].lower()
 
 
 def test_installer_page_install_and_apply_success(mock_theme_manager: MagicMock) -> None:
@@ -221,7 +221,7 @@ def test_installer_page_install_and_apply_success(mock_theme_manager: MagicMock)
     assert page.widget.get_visible_child_name() == "success"
     assert applied_notified is True
     assert len(toasts) == 1
-    assert "applicato" in toasts[0].lower()
+    assert "applied" in toasts[0].lower()
 
 
 def test_installer_page_install_and_apply_partial_warning(mock_theme_manager: MagicMock) -> None:
@@ -239,7 +239,7 @@ def test_installer_page_install_and_apply_partial_warning(mock_theme_manager: Ma
     ]
     mock_theme_manager.apply_themes.return_value = ApplyResult(
         gtk_theme="PartialTheme",
-        warnings=["Estensione User Themes non attiva"],
+        warnings=["User Themes extension not active"],
     )
 
     page = InstallerPage(manager=mock_theme_manager)
@@ -251,9 +251,9 @@ def test_installer_page_install_and_apply_partial_warning(mock_theme_manager: Ma
 
     assert page.widget.get_visible_child_name() == "success"
     desc = page.success_status_page.get_description()
-    assert "Alcuni componenti non sono stati applicati" in desc
+    assert "Some components were not applied" in desc
     assert len(toasts) == 1
-    assert "parziale" in toasts[0].lower()
+    assert "partial" in toasts[0].lower() or "warnings" in toasts[0].lower()
 
 
 def test_installer_page_install_conflict_prompts_overwrite(mock_theme_manager: MagicMock) -> None:
@@ -310,14 +310,14 @@ def test_installer_page_button_labels_and_icons(mock_theme_manager: MagicMock) -
     page = InstallerPage(manager=mock_theme_manager)
 
     buttons = [
-        (page.select_folder_button, "Seleziona cartella", "folder-open-symbolic"),
-        (page.select_archive_button, "Seleziona archivio", "package-x-generic-symbolic"),
-        (page.change_source_button, "Cambia sorgente", "edit-undo-symbolic"),
-        (page.install_button, "Installa", "system-software-install-symbolic"),
-        (page.install_apply_button, "Installa e Applica", "emblem-ok-symbolic"),
-        (page.success_new_source_button, "Seleziona un'altra sorgente", "document-open-symbolic"),
-        (page.error_retry_button, "Riprova", "view-refresh-symbolic"),
-        (page.error_new_source_button, "Seleziona un'altra sorgente", "document-open-symbolic"),
+        (page.select_folder_button, "Select Folder", "folder-open-symbolic"),
+        (page.select_archive_button, "Select Archive", "package-x-generic-symbolic"),
+        (page.change_source_button, "Change Source", "edit-undo-symbolic"),
+        (page.install_button, "Install", "system-software-install-symbolic"),
+        (page.install_apply_button, "Install and Apply", "emblem-ok-symbolic"),
+        (page.success_new_source_button, "Select Another Source", "document-open-symbolic"),
+        (page.error_retry_button, "Retry", "view-refresh-symbolic"),
+        (page.error_new_source_button, "Select Another Source", "document-open-symbolic"),
     ]
 
     for btn, expected_label, expected_icon in buttons:

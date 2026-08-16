@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Definizioni di costanti, percorsi XDG e schemi GSettings."""
+"""Constant definitions, XDG paths, and GSettings schemas."""
 
 import os
 from pathlib import Path
 
-# Schemi e chiavi GSettings GNOME (Interfaccia Desktop)
+# GNOME GSettings schemas and keys (Desktop Interface)
 GSETTINGS_SCHEMA_INTERFACE = "org.gnome.desktop.interface"
 
 GSETTINGS_KEY_GTK_THEME = "gtk-theme"
@@ -13,27 +13,27 @@ GSETTINGS_KEY_ICON_THEME = "icon-theme"
 GSETTINGS_KEY_CURSOR_THEME = "cursor-theme"
 GSETTINGS_KEY_COLOR_SCHEME = "color-scheme"
 
-# Schema e chiave per il tema della GNOME Shell (estensione User Themes)
+# Schema and key for GNOME Shell theme (User Themes extension)
 GSETTINGS_SCHEMA_USER_THEME = "org.gnome.shell.extensions.user-theme"
 GSETTINGS_KEY_SHELL_THEME = "name"
 
-# Opzioni consentite per lo schema colori di GNOME (modalità chiara/scura, GNOME 42+)
+# Supported GNOME color schemes (light/dark preference, GNOME 42+)
 GSETTINGS_COLOR_SCHEMES = ("default", "prefer-dark", "prefer-light")
 
-# Percorso configurazione utente GTK4 / Libadwaita
+# GTK4 / Libadwaita user configuration directory
 GTK4_CONFIG_DIR = Path.home() / ".config" / "gtk-4.0"
 
-# Percorso per i preset/profili salvati dall'utente
+# Directory for user-saved presets and profiles
 PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
 
 
 # -----------------------------------------------------------------------------
-# Risoluzione Dinamica dei Percorsi Temi e Icone (XDG Standard + Legacy Fallback)
+# Dynamic Theme and Icon Path Resolution (XDG Standard + Legacy Fallback)
 # -----------------------------------------------------------------------------
 
 
 def get_user_themes_dirs() -> list[Path]:
-    """Restituisce le directory dei temi utente ($XDG_DATA_HOME/themes e ~/.themes)."""
+    """Return user theme directories ($XDG_DATA_HOME/themes and ~/.themes)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
     base = (
         Path(xdg_data).expanduser()
@@ -45,7 +45,7 @@ def get_user_themes_dirs() -> list[Path]:
 
 
 def get_user_icons_dirs() -> list[Path]:
-    """Restituisce le directory delle icone/cursori utente ($XDG_DATA_HOME/icons e ~/.icons)."""
+    """Return user icon and cursor directories ($XDG_DATA_HOME/icons and ~/.icons)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
     base = (
         Path(xdg_data).expanduser()
@@ -57,14 +57,14 @@ def get_user_icons_dirs() -> list[Path]:
 
 
 def get_system_themes_dirs() -> list[Path]:
-    """Restituisce le directory dei temi di sistema ($XDG_DATA_DIRS/themes e percorsi standard)."""
+    """Return system theme directories ($XDG_DATA_DIRS/themes and standard paths)."""
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
         dirs = [Path(p).expanduser() / "themes" for p in xdg_dirs.split(":") if p.strip()]
     else:
         dirs = [Path("/usr/share/themes"), Path("/usr/local/share/themes")]
 
-    # Assicura sempre la presenza dei percorsi standard di fallback
+    # Ensure fallback standard paths are always present
     for default_path in [Path("/usr/local/share/themes"), Path("/usr/share/themes")]:
         if default_path not in dirs:
             dirs.append(default_path)
@@ -73,14 +73,14 @@ def get_system_themes_dirs() -> list[Path]:
 
 
 def get_system_icons_dirs() -> list[Path]:
-    """Restituisce le directory di icone/cursori di sistema ($XDG_DATA_DIRS/icons e percorsi standard)."""
+    """Return system icon and cursor directories ($XDG_DATA_DIRS/icons and standard paths)."""
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
         dirs = [Path(p).expanduser() / "icons" for p in xdg_dirs.split(":") if p.strip()]
     else:
         dirs = [Path("/usr/share/icons"), Path("/usr/local/share/icons")]
 
-    # Assicura sempre la presenza dei percorsi standard di fallback
+    # Ensure fallback standard paths are always present
     for default_path in [Path("/usr/local/share/icons"), Path("/usr/share/icons")]:
         if default_path not in dirs:
             dirs.append(default_path)
@@ -88,7 +88,7 @@ def get_system_icons_dirs() -> list[Path]:
     return list(dict.fromkeys(dirs))
 
 
-# Liste istantanee esportate per compatibilità
+# Exported lists for backward compatibility
 USER_THEMES_DIRS = get_user_themes_dirs()
 USER_ICONS_DIRS = get_user_icons_dirs()
 SYSTEM_THEMES_DIRS = get_system_themes_dirs()

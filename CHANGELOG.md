@@ -1,27 +1,27 @@
 # Changelog
 
-Tutte le modifiche rilevanti a questo progetto sono documentate in questo file.
+All notable changes to this project are documented in this file.
 
-Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [0.9.0-beta3] - 2026-08-14
 
 ### Added
-- Aggiunta la possibilità di installare i temi nei percorsi legacy `~/.themes` e `~/.icons` sia da CLI (con flag `--legacy`) che da GUI (tramite switch dedicato).
-- Integrazione completa delle traduzioni in italiano (`it`) e inglese (`en`) con script di compilazione autonomi.
+- Added support for installing themes to legacy paths `~/.themes` and `~/.icons` via CLI (`--legacy` flag) and GUI (dedicated switch).
+- Full internationalization support with English (`en`) and Italian (`it`) translations, along with self-contained extraction/compilation scripts.
 
 ### Changed
-- Changed the project license from MIT to GPL-3.0-or-later.
+- Changed project license from MIT to GPL-3.0-or-later.
 - Updated source headers and SPDX identifiers.
 - Updated project metadata and documentation.
 - Documented third-party dependency and asset licensing.
 
 ### Fixed
-- **Propagazione Sandbox**: limitata l'esecuzione automatica solo quando sono coinvolti temi GTK o icone, evitando chiamate flatpak/snap inutili per cursori o shell.
-- **Gestione Errori Sandbox**: gli errori di esecuzione nel bridge Flatpak/Snap non causano più il fallimento dell'intera operazione ma vengono propagati come warning non fatali.
-- **Installazione Atomica**: implementato un controllo preventivo a due passaggi (*check-then-write*) per evitare installazioni parziali o inconsistenti in caso di conflitti su archivi multi-componente.
-- **Override GTK4/Libadwaita**: corretto lo stato di override "stale" ripulendo i file precedenti in `~/.config/gtk-4.0` quando si passa a un tema che non supporta GTK4/Libadwaita.
-- **GUI Installer**: corretto il malfunzionamento del pulsante "Seleziona cartella" attivando correttamente la finestra di dialogo `select_folder` su `Gtk.FileDialog`.
+- **Sandbox Propagation**: Limited automatic propagation strictly to GTK themes and icon packs, avoiding unnecessary flatpak/snap calls for cursor or shell themes.
+- **Sandbox Error Handling**: Bridge execution issues in Flatpak/Snap no longer fail the entire operation and are logged as non-fatal warnings.
+- **Atomic Installation**: Implemented a two-pass (*check-then-write*) check to prevent partial or inconsistent installation states on conflict in multi-theme archives.
+- **GTK4/Libadwaita Override**: Fixed stale override states by cleaning up previous files in `~/.config/gtk-4.0` when switching to a theme without GTK4 support.
+- **GUI Installer**: Fixed the "Select folder" action by correctly triggering `select_folder` on `Gtk.FileDialog`.
 
 ## [0.9.0-beta2] - 2026-08-13
 
@@ -38,24 +38,24 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/).
 ## [0.9.0-beta1] - 2026-08-13
 
 ### Added
-- Integrazione di backup e rollback sicuri in `GTK4ThemeLinker` per la directory `~/.config/gtk-4.0/`.
-- Manifest persistente ed atomico `gtk4_manifest.json` per tenere traccia delle preferenze applicate e dei backup.
-- Rilevamento delle modifiche manuali esterne apportate dall'utente (conflict resolution).
-- Validazione rigida sintattica dei nomi dei temi per Flatpak/Snap in `SandboxBridge`.
-- Costruzione dei comandi esterni Flatpak e Snap come liste di argomenti, escludendo l'uso di `shell=True`.
-- Eccezioni personalizzate: `ThemeApplyError`, `ThemeBackupError`, `ThemeRollbackError`, `SandboxCommandError`.
-- Test di integrazione reali del filesystem sul rollback e conflict resolution.
-- Automatizzazione e integrazione del linter/formatter `ruff` nel workflow di CI.
+- Safe backup and rollback integration in `GTK4ThemeLinker` for the `~/.config/gtk-4.0/` directory.
+- Persistent and atomic `gtk4_manifest.json` to track active preferences and backups.
+- External manual modification detection and conflict resolution.
+- Strict syntax validation for theme names in Flatpak/Snap inside `SandboxBridge`.
+- External Flatpak and Snap command generation as argument lists, eliminating `shell=True`.
+- Custom exceptions: `ThemeApplyError`, `ThemeBackupError`, `ThemeRollbackError`, `SandboxCommandError`.
+- Integration tests on real filesystem rollback and conflict resolution.
+- Automated linting and formatting with `ruff` in CI workflow.
 
 ## [0.1.0] - 2026-07-01
 
 ### Added
-- Struttura iniziale del progetto: CLI, core library, GUI GTK4/Libadwaita, GUI Tkinter legacy.
-- Gestione temi GTK, icone, cursori e GNOME Shell (current, list, apply, install, uninstall).
-- Sistema di preset (save, apply, delete, list).
-- Integrazione sandbox Snap/Flatpak (sandbox-status).
-- Packaging AppImage con build automatizzata via GitHub Actions.
+- Initial project structure: CLI, core library, GTK4/Libadwaita GUI, legacy Tkinter GUI.
+- Management of GTK themes, icon packs, cursor themes, and GNOME Shell themes (`current`, `list`, `apply`, `install`, `uninstall`).
+- Preset system (`save`, `apply`, `delete`, `list`).
+- Snap and Flatpak sandbox status inspection (`sandbox-status`).
+- AppImage packaging and automated build via GitHub Actions.
 
 ### Changed
-- Ripulita la struttura del repository: rimossi script ridondanti, documentazione duplicata e configurazioni interne non necessarie al pubblico.
-- Corretto `scripts/test_env.sh` per usare gli extra `[dev]` di `pyproject.toml` invece di un `requirements-dev.txt` inesistente.
+- Cleaned up repository structure: removed redundant scripts and duplicate internal documentation.
+- Fixed `scripts/test_env.sh` to use `[dev]` extras from `pyproject.toml`.
