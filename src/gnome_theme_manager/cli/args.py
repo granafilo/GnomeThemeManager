@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Definizione e configurazione del parser argomenti CLI con argparse."""
+"""CLI argument parser definition and configuration with argparse."""
 
 import argparse
 
@@ -8,10 +8,10 @@ from gnome_theme_manager import _, __version__
 
 
 def create_parser() -> argparse.ArgumentParser:
-    """Crea e configura l'ArgumentParser principale per l'applicazione."""
+    """Create and configure the main ArgumentParser for the application."""
     parser = argparse.ArgumentParser(
         prog="gnome-theme-manager",
-        description=_("Manager modulare per temi GTK, icone, cursori e GNOME Shell."),
+        description=_("Modular theme manager for GTK, icons, cursors, and GNOME Shell."),
     )
     parser.add_argument(
         "-v",
@@ -23,233 +23,233 @@ def create_parser() -> argparse.ArgumentParser:
         "-g",
         "--gui",
         action="store_true",
-        help=_("Avvia l'interfaccia grafica nativa GNOME GTK4/Libadwaita"),
+        help=_("Launch native GNOME GTK4/Libadwaita graphical interface"),
     )
 
     subparsers = parser.add_subparsers(
-        title=_("comandi"),
+        title=_("commands"),
         dest="command",
-        help=_("Comando da eseguire"),
+        help=_("Command to execute"),
     )
 
-    # Subcomando: gui (GTK4/Libadwaita)
+    # Subcommand: gui (GTK4/Libadwaita)
     subparsers.add_parser(
         "gui",
-        help=_("Avvia l'interfaccia grafica nativa GNOME GTK4/Libadwaita"),
+        help=_("Launch native GNOME GTK4/Libadwaita graphical interface"),
     )
 
-    # Subcomando: current
+    # Subcommand: current
     subparsers.add_parser(
         "current",
-        help=_("Mostra i temi attualmente applicati sul desktop GNOME"),
+        help=_("Show currently applied themes on GNOME desktop"),
     )
 
-    # Subcomando: sandbox-status
+    # Subcommand: sandbox-status
     subparsers.add_parser(
         "sandbox-status",
-        help=_("Mostra lo stato di integrazione con i runtime sandbox (Snap e Flatpak)"),
+        help=_("Show sandbox runtime integration status (Snap and Flatpak)"),
     )
 
-    # Subcomando: list
+    # Subcommand: list
     list_parser = subparsers.add_parser(
         "list",
-        help=_("Elenca i temi disponibili nel sistema"),
+        help=_("List available themes on the system"),
     )
     list_parser.add_argument(
         "-t",
         "--type",
         choices=["all", "gtk", "icon", "cursor", "shell"],
         default="all",
-        help=_("Filtra per tipologia di tema (default: all)"),
+        help=_("Filter by theme type (default: all)"),
     )
     list_parser.add_argument(
         "--user-only",
         action="store_true",
-        help=_("Mostra solo i temi installati a livello utente (~/.local/share/...)"),
+        help=_("Show only user-installed themes (~/.local/share/...)"),
     )
 
-    # Subcomando: apply
+    # Subcommand: apply
     apply_parser = subparsers.add_parser(
         "apply",
-        help=_("Applica uno o più temi su GNOME"),
+        help=_("Apply one or more themes on GNOME"),
     )
     apply_parser.add_argument(
         "--gtk",
-        metavar="NOME",
-        help=_("Nome del tema GTK da applicare"),
+        metavar="NAME",
+        help=_("GTK theme name to apply"),
     )
     apply_parser.add_argument(
         "--theme",
-        metavar="NOME",
+        metavar="NAME",
         help=_(
-            "Applica un tema unificato (GTK, Shell e override GTK4/Libadwaita) con lo stesso nome"
+            "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
         ),
     )
     apply_parser.add_argument(
         "--icon",
-        metavar="NOME",
-        help=_("Nome del tema di icone da applicare"),
+        metavar="NAME",
+        help=_("Icon theme name to apply"),
     )
     apply_parser.add_argument(
         "--cursor",
-        metavar="NOME",
-        help=_("Nome del tema dei cursori da applicare"),
+        metavar="NAME",
+        help=_("Cursor theme name to apply"),
     )
     apply_parser.add_argument(
         "--shell",
-        metavar="NOME",
-        help=_("Nome del tema per la GNOME Shell da applicare"),
+        metavar="NAME",
+        help=_("GNOME Shell theme name to apply"),
     )
     apply_parser.add_argument(
         "--color-scheme",
         choices=["default", "prefer-dark"],
-        help=_("Schema colore (default o prefer-dark per GNOME 42+)"),
+        help=_("Color scheme preference (default or prefer-dark for GNOME 42+)"),
     )
     apply_parser.add_argument(
         "--no-gtk4-override",
         action="store_true",
-        help=_("Non applicare l'override GTK4 in ~/.config/gtk-4.0 quando si imposta un tema GTK"),
+        help=_("Do not apply GTK4 override in ~/.config/gtk-4.0 when setting a GTK theme"),
     )
     apply_parser.add_argument(
         "--no-sandbox",
         action="store_true",
-        help=_("Non propagare il tema alle app Snap/Flatpak"),
+        help=_("Do not propagate theme to Snap/Flatpak apps"),
     )
 
-    # Subcomando: install
+    # Subcommand: install
     install_parser = subparsers.add_parser(
         "install",
-        help=_("Installa un tema a partire da un file archivio (.zip, .tar.*)"),
+        help=_("Install a theme from an archive file (.zip, .tar.*)"),
     )
     install_parser.add_argument(
         "-f",
         "--file",
         required=True,
-        metavar="PERCORSO",
-        help=_("Percorso del file archivio da installare"),
+        metavar="PATH",
+        help=_("Path of the archive file to install"),
     )
     install_parser.add_argument(
         "-t",
         "--type",
         choices=["gtk", "icon", "cursor", "shell"],
-        help=_("Tipo di tema (se non specificato, verrà effettuato il rilevamento automatico)"),
+        help=_("Theme type (if omitted, auto-detection will be performed)"),
     )
     install_parser.add_argument(
         "-n",
         "--name",
-        metavar="NOME",
-        help=_("Nome personalizzato per la cartella di destinazione del tema"),
+        metavar="NAME",
+        help=_("Custom name for the destination theme directory"),
     )
     install_parser.add_argument(
         "-y",
         "--overwrite",
         action="store_true",
-        help=_("Sovrascrive il tema se la cartella di destinazione esiste già"),
+        help=_("Overwrite theme if destination directory already exists"),
     )
     install_parser.add_argument(
         "--legacy",
         action="store_true",
         help=_(
-            "Installa nel percorso legacy ~/.themes e ~/.icons invece dello standard XDG (~/.local/share/themes)"
+            "Install into legacy paths ~/.themes and ~/.icons instead of XDG standard (~/.local/share/themes)"
         ),
     )
 
-    # Subcomando: uninstall
+    # Subcommand: uninstall
     uninstall_parser = subparsers.add_parser(
         "uninstall",
-        help=_("Disinstalla un tema specifico dalle directory utente"),
+        help=_("Uninstall a specific theme from user directories"),
     )
     uninstall_parser.add_argument(
         "-n",
         "--name",
         required=True,
-        metavar="NOME",
-        help=_("Nome del tema da disinstallare"),
+        metavar="NAME",
+        help=_("Name of the theme to uninstall"),
     )
     uninstall_parser.add_argument(
         "-t",
         "--type",
         choices=["gtk", "icon", "cursor", "shell"],
         required=True,
-        help=_("Tipo del tema da disinstallare"),
+        help=_("Type of the theme to uninstall"),
     )
     uninstall_parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
-        help=_("Conferma la disinstallazione senza prompt interattivo"),
+        help=_("Confirm uninstallation without interactive prompt"),
     )
 
-    # Subcomando: preset
+    # Subcommand: preset
     preset_parser = subparsers.add_parser(
         "preset",
-        help=_("Gestione di preset e profili di configurazione temi"),
+        help=_("Manage theme configuration presets and profiles"),
     )
     preset_subparsers = preset_parser.add_subparsers(
-        title=_("azioni preset"),
+        title=_("preset actions"),
         dest="preset_action",
-        help=_("Azione da eseguire sul preset"),
+        help=_("Action to perform on preset"),
     )
 
     # preset list
     preset_subparsers.add_parser(
         "list",
-        help=_("Elenca tutti i preset memorizzati"),
+        help=_("List all stored presets"),
     )
 
-    # preset save <nome> [--overwrite]
+    # preset save <name> [--overwrite]
     save_parser = preset_subparsers.add_parser(
         "save",
-        help=_("Salva la combinazione di temi corrente come nuovo preset"),
+        help=_("Save current theme combination as a new preset"),
     )
     save_parser.add_argument(
         "name",
-        metavar="NOME",
-        help=_("Nome identificativo del preset da salvare"),
+        metavar="NAME",
+        help=_("Identifier name of the preset to save"),
     )
     save_parser.add_argument(
         "-y",
         "--overwrite",
         action="store_true",
-        help=_("Sovrascrive il preset se già esistente"),
+        help=_("Overwrite preset if already existing"),
     )
 
-    # preset apply <nome> [--no-gtk4-override]
+    # preset apply <name> [--no-gtk4-override]
     apply_preset_parser = preset_subparsers.add_parser(
         "apply",
-        help=_("Applica un preset salvato"),
+        help=_("Apply a saved preset"),
     )
     apply_preset_parser.add_argument(
         "name",
-        metavar="NOME",
-        help=_("Nome del preset da applicare"),
+        metavar="NAME",
+        help=_("Name of the preset to apply"),
     )
     apply_preset_parser.add_argument(
         "--no-gtk4-override",
         action="store_true",
-        help=_("Non applicare l'override GTK4 in ~/.config/gtk-4.0"),
+        help=_("Do not apply GTK4 override in ~/.config/gtk-4.0"),
     )
     apply_preset_parser.add_argument(
         "--no-sandbox",
         action="store_true",
-        help=_("Non propagare il tema alle app Snap/Flatpak"),
+        help=_("Do not propagate theme to Snap/Flatpak apps"),
     )
 
-    # preset delete <nome> [-y]
+    # preset delete <name> [-y]
     delete_preset_parser = preset_subparsers.add_parser(
         "delete",
-        help=_("Elimina un preset memorizzato"),
+        help=_("Delete a stored preset"),
     )
     delete_preset_parser.add_argument(
         "name",
-        metavar="NOME",
-        help=_("Nome del preset da eliminare"),
+        metavar="NAME",
+        help=_("Name of the preset to delete"),
     )
     delete_preset_parser.add_argument(
         "-y",
         "--yes",
         action="store_true",
-        help=_("Conferma l'eliminazione senza prompt interattivo"),
+        help=_("Confirm deletion without interactive prompt"),
     )
 
     return parser

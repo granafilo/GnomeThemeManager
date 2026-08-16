@@ -353,14 +353,15 @@ def test_manager_apply_themes_missing_theme_raises(
     """Verifica che la mancanza di un tema sul filesystem sollevi ThemeNotFoundError."""
     mock_scanner.find_theme.return_value = None
 
-    with pytest.raises(ThemeNotFoundError, match="GTK 'NonExistent'"):
+    with pytest.raises(ThemeNotFoundError, match="GTK theme 'NonExistent' was not found"):
         manager.apply_themes(ThemeSet(gtk_theme="NonExistent"))
 
 
 def test_manager_apply_themes_invalid_color_scheme(manager: ThemeManager) -> None:
     """Verifica che uno schema colore non supportato sollevi ValueError."""
-    with pytest.raises(ValueError, match="Schema colore 'neon-dark' non valido"):
+    with pytest.raises(ValueError, match="Invalid color scheme 'neon-dark'"):
         manager.apply_themes(ThemeSet(color_scheme="neon-dark"))
+
 
 
 def test_manager_apply_themes_shell_unsupported_adds_warning(
@@ -423,8 +424,9 @@ def test_manager_apply_unified_theme_not_found(
     """Verifica che un tema unificato inesistente sollevi ThemeNotFoundError."""
     mock_scanner.find_theme.return_value = None
 
-    with pytest.raises(ThemeNotFoundError, match="non è stato trovato come GTK o GNOME Shell"):
+    with pytest.raises(ThemeNotFoundError, match="was not found as GTK or GNOME Shell"):
         manager.apply_unified_theme("InexistentTheme")
+
 
 
 # -----------------------------------------------------------------------------

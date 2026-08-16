@@ -1,39 +1,39 @@
-# 📦 Guida all'Installazione ed Esecuzione - GNOME Theme Manager
+# 📦 Installation and Execution Guide - GNOME Theme Manager
 
-Questa guida illustra come eseguire, installare ed eventualmente compilare da sorgenti il pacchetto **AppImage** di **GNOME Theme Manager**.
+This guide explains how to run, install, and optionally build the **GNOME Theme Manager** **AppImage** package from source.
 
 ---
 
-## ⚡ 1. Esecuzione Rapida via AppImage (Consigliata)
+## ⚡ 1. Quick Start via AppImage (Recommended)
 
-Un pacchetto **AppImage** è un singolo file eseguibile portabile che contiene l'applicazione e le sue dipendenze Python.
+An **AppImage** package is a single portable executable containing the application and its Python dependencies.
 
-### Passi per l'esecuzione:
+### Steps to run:
 
-1. Scarica l'ultima release del file `.AppImage` dalla sezione [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases).
-2. Apri il terminale nella cartella di download e assegna i permessi di esecuzione:
+1. Download the latest `.AppImage` release from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases).
+2. Open your terminal in the download folder and grant execution permissions:
 
 ```bash
 chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
 
-3. Avvia l'applicazione:
+3. Launch the application:
 
 ```bash
 ./GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
 
-### AppImage e FUSE
+### AppImage and FUSE
 
-La build dell'AppImage usa `appimagetool` in modalità `extract-and-run`, quindi la CI non richiede un mount FUSE.
+The AppImage build uses `appimagetool` in `extract-and-run` mode, so CI runners do not require a FUSE mount.
 
-Per eseguire l'AppImage finale su Ubuntu 24.04 può essere necessaria la libreria FUSE 2 compatibile:
+To run the AppImage on Ubuntu 24.04, the compatible FUSE 2 library may be required:
 
 ```bash
 sudo apt install libfuse2t64
 ```
 
-Per versioni Ubuntu precedenti (es. 22.04), utilizzare:
+For older Ubuntu releases (e.g. 22.04), use:
 
 ```bash
 sudo apt install libfuse2
@@ -41,11 +41,11 @@ sudo apt install libfuse2
 
 ---
 
-## 📋 2. Prerequisiti di Sistema
+## 📋 2. System Prerequisites
 
-Poiché GNOME Theme Manager è un'applicazione nativa **GTK4** e **Libadwaita**, il sistema operativo ospitante deve disporre delle librerie di runtime GTK4 / Libadwaita e di PyGObject.
+Because GNOME Theme Manager is a native **GTK4** and **Libadwaita** application, the host system must provide the GTK4 / Libadwaita runtime libraries and PyGObject.
 
-### Ubuntu 22.04 LTS / 24.04 LTS e Debian 12+
+### Ubuntu 22.04 LTS / 24.04 LTS and Debian 12+
 
 ```bash
 sudo apt update
@@ -66,43 +66,53 @@ sudo pacman -S --needed python-gobject gtk4 libadwaita
 
 ---
 
-## 🛠️ 3. Compilazione Locale dell'AppImage
+## 🛠️ 3. Building the AppImage Locally
 
-Se desideri pacchietare ed impacchettare autonomamente l'AppImage dal codice sorgente:
+If you want to package the AppImage locally from source:
 
-### 1. Clona la repository:
+### 1. Clone the repository:
 
 ```bash
 git clone https://github.com/granafilo/GnomeThemeManager.git
 cd GnomeThemeManager
 ```
 
-### 2. Assicurati che `appimagetool` sia presente o esegui lo script di build:
+### 2. Run the build script:
 
 ```bash
 chmod +x scripts/build-appimage.sh
 ./scripts/build-appimage.sh
 ```
 
-Lo script genererà il file `.AppImage` all'interno della cartella `dist/`.
+The script will generate the `.AppImage` bundle inside the `dist/` directory.
 
 ---
 
-## 🔍 4. Troubleshooting (Risoluzione Problemi)
+## 🔍 4. Troubleshooting
 
-### ⚠️ Errore: `dlopen(): error loading libfuse.so.2`
-Sulle distribuzioni recenti come Ubuntu 22.04+ / 24.04+, FUSE 2 potrebbe non essere preinstallato per impostazione predefinita.
+### ⚠️ Error: `dlopen(): error loading libfuse.so.2`
+On newer Linux distributions like Ubuntu 22.04+ / 24.04+, FUSE 2 might not be installed by default.
 
-**Soluzione (Ubuntu/Debian):**
+**Solution (Ubuntu/Debian):**
 ```bash
 sudo apt install -y libfuse2t64 || sudo apt install -y libfuse2
 ```
 
-In alternativa, puoi estrarre l'AppImage ed eseguirla direttamente senza FUSE:
-```bash
-./GNOMEThemeManager-1.0.0-x86_64.AppImage --appimage-extract
-./squashfs-root/AppRun
-```
+---
 
-### ⚠️ Errore PyGObject / `Namespace Gtk not available`
-Verifica che i pacchetti `gir1.2-gtk-4.0` e `gir1.2-adw-1` siano installati correttamente nel sistema ospitante.
+## ⚙️ 5. Development Mode (venv)
+
+To run in development mode without packaging:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e .[dev]
+
+# Run CLI
+gnome-theme-manager --help
+
+# Run GTK4 GUI
+gnome-theme-manager --gui
+```

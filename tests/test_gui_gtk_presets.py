@@ -22,7 +22,8 @@ def test_presets_page_instantiation_requires_ui_file(mock_theme_manager: MagicMo
     page = PresetsPage(manager=mock_theme_manager)
     assert page.widget is not None
     assert page.page_id == "presets"
-    assert page.title == "Profili e preset"
+    assert page.title == "Profiles and Presets"
+
 
 
 def test_presets_page_initial_state_loading(mock_theme_manager: MagicMock) -> None:
@@ -376,7 +377,8 @@ def test_presets_page_delete_not_found_shows_error(mock_theme_manager: MagicMock
         page._do_delete_preset("Fantasma")
 
     assert len(toasts) == 1
-    assert "errore" in toasts[0].lower() or "Fantasma" in toasts[0]
+    assert "error" in toasts[0].lower() or "Fantasma" in toasts[0]
+
 
 
 def test_presets_page_no_global_refresh_button(mock_theme_manager: MagicMock) -> None:

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Controller per la pagina 'Strumenti sandbox' (Fase 5.8).
+"""Controller for 'Sandbox Tools' page.
 
-Questo modulo gestisce la diagnostica dettagliata dei runtime sandbox (Flatpak e Snap),
-lo stato del pacchetto `gtk-common-themes`, la verifica di compatibilità dei temi attivi
-e la propagazione manuale controllata dei permessi di filesystem e variabili d'ambiente.
+Provides runtime diagnostics for sandbox environments (Flatpak and Snap),
+status of `gtk-common-themes` package, compatibility checks for active themes,
+and manual propagation of filesystem permissions and environment variables.
 """
 
 import logging
@@ -30,71 +30,56 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("gnome_theme_manager.gui_gtk")
 
-# Percorso del file template UI dedicato
 UI_FILE = Path(__file__).parent.parent / "ui" / "sandbox_page.ui"
 
 
 class SandboxPage:
-    """Controller della vista 'Strumenti sandbox' per la GUI GTK4/Libadwaita."""
+    """Controller for 'Sandbox Tools' GTK4/Libadwaita GUI view."""
 
     PAGE_ID: str = "sandbox"
-    TITLE: str = _("Strumenti sandbox")
     ICON_NAME: str = "security-high-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
-        """Inizializza il controller caricando il template sandbox_page.ui.
-
-        Args:
-            manager: Istanza coordinatrice ThemeManager.
-
-        Raises:
-            FileNotFoundError: Se il template sandbox_page.ui non è presente nel filesystem.
-        """
+        """Initialize controller loading sandbox_page.ui template."""
         self.page_id: str = self.PAGE_ID
-        self.title: str = self.TITLE
+        self.title: str = _("Sandbox Tools")
         self.icon_name: str = self.ICON_NAME
         self.manager: ThemeManager | None = manager
 
+
         if not UI_FILE.is_file():
-            raise FileNotFoundError(f"File template UI non trovato: {UI_FILE}")
+            raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
 
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain("gnomethememanager")
         self.builder.add_from_file(str(UI_FILE))
 
-        # Widget principale GtkStack con gli stati loading, ready, error
         self.widget: Gtk.Stack = self.builder.get_object("page_root")
 
-        # Widget dello stato LOADING
         self.loading_spinner: Gtk.Spinner = self.builder.get_object("loading_spinner")
         self.loading_label: Gtk.Label = self.builder.get_object("loading_label")
 
-        # Widget dello stato READY - Gruppo Flatpak
         self.flatpak_status_row: Adw.ActionRow = self.builder.get_object("flatpak_status_row")
         self.flatpak_status_icon: Gtk.Image | None = self.builder.get_object("flatpak_status_icon")
         self.flatpak_override_row: Adw.ActionRow = self.builder.get_object("flatpak_override_row")
         self.flatpak_notes_row: Adw.ActionRow = self.builder.get_object("flatpak_notes_row")
 
-        # Widget dello stato READY - Gruppo Snap
         self.snap_status_row: Adw.ActionRow = self.builder.get_object("snap_status_row")
         self.snap_status_icon: Gtk.Image | None = self.builder.get_object("snap_status_icon")
         self.snap_gtk_common_row: Adw.ActionRow = self.builder.get_object("snap_gtk_common_row")
         self.snap_theme_compat_row: Adw.ActionRow = self.builder.get_object("snap_theme_compat_row")
         self.snap_notes_row: Adw.ActionRow = self.builder.get_object("snap_notes_row")
 
-        # Pulsanti di azione
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
         self.propagate_button: Gtk.Button = self.builder.get_object("propagate_button")
 
-        # Widget dello stato ERROR
         self.error_status_page: Adw.StatusPage = self.builder.get_object("error_status_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
-        # Configurazione etichette native e icone per i pulsanti
         self._button_configs: dict[str, tuple[str, str]] = {
-            "refresh_button": (_("Ricarica stato"), "view-refresh-symbolic"),
-            "propagate_button": (_("Propaga tema alle applicazioni sandbox"), "emblem-ok-symbolic"),
-            "error_retry_button": (_("Riprova"), "view-refresh-symbolic"),
+            "refresh_button": (_("Refresh Status"), "view-refresh-symbolic"),
+            "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
+            "error_retry_button": (_("Retry"), "view-refresh-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
             btn = getattr(self, btn_attr, None)
@@ -103,7 +88,6 @@ class SandboxPage:
                 btn._icon_name = icon
                 btn.get_icon_name = lambda _b=btn, _ic=icon: _ic
 
-        # Stato interno
         self._is_loading: bool = False
         self._is_propagating: bool = False
         self._refresh_generation: int = 0
@@ -112,63 +96,36 @@ class SandboxPage:
         self._current_sandbox_status: SandboxStatus | None = None
         self._current_themes: ThemeSet | None = None
 
-        # Callback di notifica verso la finestra principale
         self.on_sandbox_propagated: Callable[[], None] | None = None
 
-        # Connessione segnali
         self.refresh_button.connect("clicked", lambda _: self.refresh())
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
         self.error_retry_button.connect("clicked", lambda _: self.refresh())
 
     def get_widget(self) -> Gtk.Stack:
-        """Restituisce il widget Gtk.Stack principale della pagina.
-
-        Returns:
-            Widget Gtk.Stack configurato con le viste dichiarative.
-        """
+        """Return main Gtk.Stack widget."""
         return self.widget
 
-    # -------------------------------------------------------------------------
-    # Gestione Stati e Sensibilità Controlli
-    # -------------------------------------------------------------------------
-
     def _set_state(self, state_name: str) -> None:
-        """Imposta lo stato visibile nello stack.
-
-        Args:
-            state_name: Nome dello stato ('loading', 'ready', 'error').
-        """
+        """Set visible stack state."""
         self.widget.set_visible_child_name(state_name)
 
     def _set_controls_sensitive(self, sensitive: bool) -> None:
-        """Abilita o disabilita i controlli di azione della pagina.
-
-        Args:
-            sensitive: True per abilitare, False per disabilitare.
-        """
+        """Enable or disable action controls."""
         self.refresh_button.set_sensitive(sensitive)
         self.error_retry_button.set_sensitive(sensitive)
 
         if not sensitive:
             self.propagate_button.set_sensitive(False)
         else:
-            # Abilitato solo se almeno un runtime sandbox è presente
             sb = self._current_sandbox_status
             can_propagate = bool(sb and (sb.flatpak_available or sb.snap_available))
             self.propagate_button.set_sensitive(can_propagate)
 
-    # -------------------------------------------------------------------------
-    # Operazione di Refresh Diagnostico
-    # -------------------------------------------------------------------------
-
     def refresh(self, sync: bool = False) -> None:
-        """Aggiorna lo stato diagnostico dei runtime sandbox e la compatibilità del tema.
-
-        Args:
-            sync: Se True, esegue l'operazione in modo sincrono sul thread corrente (test).
-        """
+        """Refresh sandbox diagnostics and compatibility."""
         if self._is_loading and not sync:
-            logger.debug("Refresh sandbox già in corso, richiesta ignorata.")
+            logger.debug("Sandbox refresh already in progress, request ignored.")
             return
 
         self._is_loading = True
@@ -204,9 +161,9 @@ class SandboxPage:
             sb_status, themes, error = result
 
             if error is not None:
-                logger.error("Errore durante il recupero diagnostica sandbox: %s", error)
+                logger.error("Error retrieving sandbox diagnostics: %s", error)
                 self.error_status_page.set_description(
-                    f"{_('Errore diagnostica sandbox:')} {error}"
+                    f"{_('Sandbox diagnostics error:')} {error}"
                 )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
@@ -224,7 +181,6 @@ class SandboxPage:
             res = worker_fetch()
             on_fetch_completed(res)
         else:
-
             def thread_target() -> None:
                 res = worker_fetch()
                 GLib.idle_add(on_fetch_completed, res)
@@ -236,92 +192,78 @@ class SandboxPage:
         sb: SandboxStatus | None,
         themes: ThemeSet | None,
     ) -> None:
-        """Aggiorna le righe di riepilogo con i dati diagnostici ricevuti.
-
-        Args:
-            sb: Istanza SandboxStatus o None.
-            themes: Istanza ThemeSet con i temi attualmente attivi.
-        """
+        """Update UI rows with diagnostic data."""
         if sb is None:
             sb = SandboxStatus()
 
-        # 1. Flatpak Status
         if sb.flatpak_available:
-            self.flatpak_status_row.set_subtitle(_("Disponibile nel sistema"))
+            self.flatpak_status_row.set_subtitle(_("Available on system"))
             if self.flatpak_status_icon is not None:
                 self.flatpak_status_icon.set_from_icon_name("emblem-default-symbolic")
         else:
-            self.flatpak_status_row.set_subtitle(_("Non installato"))
+            self.flatpak_status_row.set_subtitle(_("Not installed"))
             if self.flatpak_status_icon is not None:
                 self.flatpak_status_icon.set_from_icon_name("dialog-information-symbolic")
 
-        # 2. Flatpak Override
         if not sb.flatpak_available:
-            self.flatpak_override_row.set_subtitle(_("Non applicabile (Flatpak assente)"))
+            self.flatpak_override_row.set_subtitle(_("Not applicable (Flatpak not present)"))
         elif sb.flatpak_filesystem_override_active:
-            self.flatpak_override_row.set_subtitle(_("Attivo (~/.local/share/themes e icone)"))
+            self.flatpak_override_row.set_subtitle(_("Active (~/.local/share/themes and icons)"))
         else:
-            self.flatpak_override_row.set_subtitle(_("Non configurato"))
+            self.flatpak_override_row.set_subtitle(_("Not configured"))
 
-        # 3. Snap Status
         if sb.snap_available:
-            self.snap_status_row.set_subtitle(_("Disponibile nel sistema"))
+            self.snap_status_row.set_subtitle(_("Available on system"))
             if self.snap_status_icon is not None:
                 self.snap_status_icon.set_from_icon_name("emblem-default-symbolic")
         else:
-            self.snap_status_row.set_subtitle(_("Non installato"))
+            self.snap_status_row.set_subtitle(_("Not installed"))
             if self.snap_status_icon is not None:
                 self.snap_status_icon.set_from_icon_name("dialog-information-symbolic")
 
-        # 4. Snap gtk-common-themes
         if not sb.snap_available:
-            self.snap_gtk_common_row.set_subtitle(_("Non applicabile (Snap assente)"))
+            self.snap_gtk_common_row.set_subtitle(_("Not applicable (Snap not present)"))
         elif sb.snap_gtk_common_themes_installed:
-            self.snap_gtk_common_row.set_subtitle(_("Installato"))
+            self.snap_gtk_common_row.set_subtitle(_("Installed"))
         else:
-            self.snap_gtk_common_row.set_subtitle(_("Non installato (consigliato per temi GTK)"))
+            self.snap_gtk_common_row.set_subtitle(_("Not installed (recommended for GTK themes)"))
 
-        # 5. Snap Theme Compatibility
         active_gtk = (themes.gtk_theme or "") if themes else ""
         if not sb.snap_available or not sb.snap_gtk_common_themes_installed:
             self.snap_theme_compat_row.set_subtitle(
-                _("Non verificabile (Snap o gtk-common-themes assente)")
+                _("Not verifiable (Snap or gtk-common-themes absent)")
             )
         elif not active_gtk:
-            self.snap_theme_compat_row.set_subtitle(_("Nessun tema GTK attivo rilevato"))
+            self.snap_theme_compat_row.set_subtitle(_("No active GTK theme detected"))
         else:
             norm_name = active_gtk.strip().lower()
             if norm_name in KNOWN_SNAP_COMMON_THEMES:
                 self.snap_theme_compat_row.set_subtitle(
-                    f"{_('Tema')} '{active_gtk}' {_('supportato nativamente da gtk-common-themes')}"
+                    f"{_('Theme')} '{active_gtk}' {_('natively supported by gtk-common-themes')}"
                 )
             else:
                 self.snap_theme_compat_row.set_subtitle(
-                    f"{_('Tema')} '{active_gtk}' {_('personalizzato (richiede snap dedicato)')}"
+                    f"{_('Theme')} '{active_gtk}' {_('custom (requires dedicated snap)')}"
                 )
 
-    # -------------------------------------------------------------------------
-    # Flusso di Propagazione Tema
-    # -------------------------------------------------------------------------
-
     def _on_propagate_clicked(self, _button: Gtk.Button | None = None) -> None:
-        """Apre il dialogo di conferma modale prima di avviare la propagazione."""
+        """Open confirmation dialog before propagation."""
         if self._confirm_dialog_open:
             return
 
         self._confirm_dialog_open = True
         root_window = self._get_root_window()
-        heading = _("Propagare il tema alle applicazioni sandbox?")
+        heading = _("Propagate theme to sandboxed applications?")
         body = _(
-            "Questa operazione configura gli override di filesystem per Flatpak e "
-            "verifica la compatibilità dei temi attivi con Snap.\n\n"
-            "Non tutte le applicazioni sandbox o tutti i temi possono essere aggiornati automaticamente."
+            "This operation configures filesystem overrides for Flatpak and "
+            "verifies compatibility of active themes with Snap.\n\n"
+            "Not all sandboxed applications or themes can be updated automatically."
         )
 
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(heading, body)
-            dialog.add_response("cancel", _("Annulla"))
-            dialog.add_response("propagate", _("Propaga tema"))
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("propagate", _("Propagate Theme"))
             dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("propagate")
             dialog.set_close_response("cancel")
@@ -349,8 +291,8 @@ class SandboxPage:
                 heading,
                 body,
             )
-            dialog.add_response("cancel", _("Annulla"))
-            dialog.add_response("propagate", _("Propaga tema"))
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("propagate", _("Propagate Theme"))
             dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("propagate")
             dialog.set_close_response("cancel")
@@ -369,13 +311,9 @@ class SandboxPage:
             self._run_propagation()
 
     def _run_propagation(self, sync: bool = False) -> None:
-        """Esegue l'operazione di propagazione in modo asincrono (o sincrono nei test).
-
-        Args:
-            sync: Se True, esegue la propagazione in modo sincrono sul thread corrente.
-        """
+        """Execute propagation."""
         if self._is_propagating and not sync:
-            logger.debug("Propagazione già in corso, richiesta ignorata.")
+            logger.debug("Propagation already in progress, request ignored.")
             return
 
         self._is_propagating = True
@@ -402,27 +340,25 @@ class SandboxPage:
             self._is_propagating = False
             prop_res, error = result
 
-            # Ricarica la diagnostica aggiornata dopo l'operazione
             self.refresh(sync=True)
 
             if error is not None:
-                logger.error("Errore durante la propagazione sandbox: %s", error)
-                self._show_toast(f"{_('Errore durante la propagazione:')} {error}")
+                logger.error("Error during sandbox propagation: %s", error)
+                self._show_toast(f"{_('Error during propagation:')} {error}")
             elif prop_res is not None:
-                # Valutazione esito
                 if prop_res.warnings:
                     warn_summary = "; ".join(prop_res.warnings[:2])
-                    self._show_toast(f"{_('Propagazione completata con avvisi:')} {warn_summary}")
+                    self._show_toast(f"{_('Propagation completed with warnings:')} {warn_summary}")
                 elif prop_res.flatpak_success or prop_res.snap_success:
-                    self._show_toast(_("Tema propagato con successo alle applicazioni sandbox."))
+                    self._show_toast(_("Theme propagated successfully to sandboxed applications."))
                 else:
-                    self._show_toast(_("Nessuna modifica applicata agli ambienti sandbox."))
+                    self._show_toast(_("No changes applied to sandbox environments."))
 
                 if self.on_sandbox_propagated:
                     try:
                         self.on_sandbox_propagated()
                     except Exception as e:
-                        logger.warning("Errore nel callback on_sandbox_propagated: %s", e)
+                        logger.warning("Error in on_sandbox_propagated callback: %s", e)
 
             return GLib.SOURCE_REMOVE
 
@@ -430,37 +366,27 @@ class SandboxPage:
             res = worker_propagate()
             on_propagation_completed(res)
         else:
-
             def thread_target() -> None:
                 res = worker_propagate()
                 GLib.idle_add(on_propagation_completed, res)
 
             threading.Thread(target=thread_target, daemon=True).start()
 
-    # -------------------------------------------------------------------------
-    # Utility
-    # -------------------------------------------------------------------------
-
     def _get_root_window(self) -> Gtk.Window | None:
-        """Recupera la finestra Gtk.Window genitrice per dialoghi e toast."""
+        """Retrieve parent Gtk.Window."""
         root = self.widget.get_root()
         if isinstance(root, Gtk.Window):
             return root
         return None
 
     def _clear_toast(self) -> None:
-        """Richiede la chiusura del feedback persistente alla finestra principale."""
+        """Clear persistent feedback."""
         root = self.widget.get_root()
         if root is not None and hasattr(root, "clear_feedback"):
             root.clear_feedback()
 
     def _show_toast(self, message: str, timeout: int = 0) -> None:
-        """Mostra una notifica di feedback persistente tramite la finestra principale.
-
-        Args:
-            message: Testo della notifica da mostrare.
-            timeout: Durata di visualizzazione in secondi (0 = persistente).
-        """
+        """Show persistent feedback notification."""
         root = self.widget.get_root()
         if root is not None and hasattr(root, "add_toast"):
             root.add_toast(message, timeout=timeout)

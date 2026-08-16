@@ -1,58 +1,47 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Gerarchia delle eccezioni personalizzate per GnomeThemeManager."""
+"""Custom exception hierarchy for GnomeThemeManager."""
 
 
 class GnomeThemeManagerError(Exception):
-    """Eccezione base per tutti gli errori del package GnomeThemeManager.
+    """Base exception for all errors in GnomeThemeManager.
 
-    Funge da classe genitore per catturare qualsiasi anomalia specifica sollevata
-    dai vari sottosistemi core del gestore temi.
+    Serves as the parent class to catch any domain-specific anomalies raised
+    by core subsystems of the theme manager.
     """
 
 
 class GSettingsUnavailableError(GnomeThemeManagerError):
-    """Sollevata quando PyGObject o lo schema GSettings richiesto non è disponibile nel sistema.
+    """Raised when PyGObject or the required GSettings schema is unavailable on the system.
 
-    Questo può accadere se l'applicazione viene eseguita al di fuori di un ambiente desktop
-    GNOME o se mancano i pacchetti di sistema `python3-gi` / `libglib2.0`.
+    This may happen if executed outside a GNOME desktop environment or if
+    system packages like python3-gi / libglib2.0 are missing.
     """
 
 
 class ThemeNotFoundError(GnomeThemeManagerError):
-    """Sollevata quando un tema specificato per nome o tipologia non viene trovato sul filesystem.
-
-    Verificata dallo scanner prima di procedere con l'applicazione di modifiche ai temi.
-    """
+    """Raised when a theme specified by name or type is not found on the filesystem."""
 
 
 class ThemeValidationError(GnomeThemeManagerError):
-    """Sollevata quando la struttura di un tema estratto non è valida o non è supportata.
-
-    Viene generata se mancano i file descrittori minimi o se la cartella non rispetta
-    alcuno dei layout noti (GTK, icone, cursori, shell).
-    """
+    """Raised when the structure of an extracted theme is invalid or unsupported."""
 
 
 class ArchiveExtractionError(GnomeThemeManagerError):
-    """Sollevata durante errori di estrazione o violazioni di sicurezza negli archivi compressi.
-
-    Include casi di file corrotti, formati non supportati o rilevamenti di attacchi
-    di tipo Path Traversal (es. ZipSlip).
-    """
+    """Raised during archive extraction failures or security policy violations (e.g. Zip Slip)."""
 
 
 class ThemeApplyError(GnomeThemeManagerError):
-    """Sollevata per errori durante l'applicazione dei temi."""
+    """Raised for errors while applying themes."""
 
 
 class ThemeBackupError(GnomeThemeManagerError):
-    """Sollevata per errori nella creazione del backup dei temi."""
+    """Raised for errors creating theme backups."""
 
 
 class ThemeRollbackError(GnomeThemeManagerError):
-    """Sollevata quando il ripristino/rollback di un tema fallisce."""
+    """Raised when restoring or rolling back a theme fails."""
 
 
 class SandboxCommandError(GnomeThemeManagerError):
-    """Sollevata per timeout, comandi non disponibili o exit code inattesi da Flatpak/Snap."""
+    """Raised for timeouts, unavailable commands, or unexpected exit codes from Flatpak/Snap."""

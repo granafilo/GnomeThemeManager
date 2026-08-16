@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Template dichiarativo per la finestra principale GnomeThemeWindow (Fase 5.3.1) -->
+<!-- Declarative template for GnomeThemeWindow main window -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
@@ -13,7 +13,7 @@
         <property name="max-sidebar-width">280</property>
         <property name="sidebar">
           <object class="AdwNavigationPage" id="sidebar_page">
-            <property name="title" translatable="yes">Gnome Theme Manager</property>
+            <property name="title" translatable="yes">GNOME Theme Manager</property>
             <property name="tag">sidebar</property>
             <property name="child">
               <object class="AdwToolbarView" id="sidebar_toolbar_view">
@@ -50,7 +50,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Stato attuale</property>
+                                    <property name="label" translatable="yes">Current Status</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -102,7 +102,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Applicazioni (GTK)</property>
+                                    <property name="label" translatable="yes">Applications (GTK)</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -128,7 +128,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Icone</property>
+                                    <property name="label" translatable="yes">Icons</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -154,7 +154,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Cursori</property>
+                                    <property name="label" translatable="yes">Cursors</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -180,7 +180,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Profili e preset</property>
+                                    <property name="label" translatable="yes">Profiles and Presets</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -206,7 +206,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Installatore temi</property>
+                                    <property name="label" translatable="yes">Theme Installer</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -232,7 +232,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Strumenti sandbox</property>
+                                    <property name="label" translatable="yes">Sandbox Tools</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>
@@ -251,7 +251,7 @@
         </property>
         <property name="content">
           <object class="AdwNavigationPage" id="content_page">
-            <property name="title" translatable="yes">Stato attuale</property>
+            <property name="title" translatable="yes">Current Status</property>
             <property name="tag">content</property>
             <property name="child">
               <object class="AdwToolbarView" id="content_toolbar_view">
@@ -262,7 +262,7 @@
                     <child type="end">
                       <object class="GtkButton" id="refresh_button">
                         <property name="icon-name">view-refresh-symbolic</property>
-                        <property name="tooltip-text" translatable="yes">Aggiorna stato attuale</property>
+                        <property name="tooltip-text" translatable="yes">Refresh current status</property>
                         <style>
                           <class name="flat"/>
                         </style>
@@ -301,7 +301,7 @@
                             </child>
                             <child>
                               <object class="GtkLabel" id="feedback_label">
-                                <property name="label" translatable="yes">Notifica</property>
+                                <property name="label" translatable="yes">Notification</property>
                                 <property name="wrap">true</property>
                                 <property name="wrap-mode">word-char</property>
                                 <property name="xalign">0</property>
@@ -312,7 +312,7 @@
                             <child>
                               <object class="GtkButton" id="feedback_close_button">
                                 <property name="icon-name">window-close-symbolic</property>
-                                <property name="tooltip-text" translatable="yes">Chiudi notifica</property>
+                                <property name="tooltip-text" translatable="yes">Dismiss notification</property>
                                 <property name="valign">center</property>
                                 <style>
                                   <class name="flat"/>

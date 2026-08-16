@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo principale dell'applicazione Libadwaita (GnomeThemeApplication)."""
+"""Main module for the Libadwaita application (GnomeThemeApplication)."""
 
 import gi
 
@@ -16,13 +16,13 @@ APPLICATION_ID = "org.gnome.ThemeManager"
 
 
 class GnomeThemeApplication(Adw.Application):
-    """Applicazione nativa GNOME basata su Libadwaita."""
+    """Native GNOME application based on Libadwaita."""
 
     def __init__(self, manager: ThemeManager | None = None) -> None:
-        """Inizializza l'applicazione Libadwaita con application_id e flag standard.
+        """Initialize Libadwaita application with application_id and standard flags.
 
         Args:
-            manager: Istanza coordinatrice ThemeManager opzionale.
+            manager: Optional ThemeManager coordinator instance.
         """
         super().__init__(
             application_id=APPLICATION_ID,
@@ -32,9 +32,9 @@ class GnomeThemeApplication(Adw.Application):
         self.window: GnomeThemeWindow | None = None
 
     def do_activate(self) -> None:
-        """Gestore del segnale di attivazione dell'applicazione (activate).
+        """Handle application activation signal.
 
-        Crea o porta in primo piano la finestra principale GnomeThemeWindow.
+        Create or present the main GnomeThemeWindow.
         """
         if self.window is None:
             self.window = GnomeThemeWindow(app=self, manager=self.manager)

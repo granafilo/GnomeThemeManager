@@ -28,7 +28,7 @@ def test_cli_install_success(
 
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "Installazione completata con successo" in captured.out
+    assert "Installation completed successfully" in captured.out
     assert "CLITheme" in captured.out
     assert (user_themes / "CLITheme" / "gtk-3.0" / "gtk.css").exists()
 
@@ -51,7 +51,7 @@ def test_cli_install_legacy_flag(
 
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "Installazione completata con successo" in captured.out
+    assert "Installation completed successfully" in captured.out
     assert (legacy_themes / "CLILegacyTheme" / "gtk-3.0" / "gtk.css").exists()
     assert not (user_themes / "CLILegacyTheme").exists()
 
@@ -65,7 +65,7 @@ def test_cli_install_bad_archive(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
     assert exit_code == 1
     captured = capsys.readouterr()
-    assert "[ERRORE ESTRAZIONE ARCHIVIO]" in captured.err
+    assert "[ARCHIVE EXTRACTION ERROR]" in captured.err
 
 
 def test_cli_uninstall_success_with_yes(
@@ -82,7 +82,7 @@ def test_cli_uninstall_success_with_yes(
 
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "disinstallato con successo" in captured.out
+    assert "uninstalled successfully" in captured.out
     assert not theme_dir.exists()
 
 
@@ -101,7 +101,7 @@ def test_cli_uninstall_interactive_refused(
 
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "Operazione annullata" in captured.out
+    assert "Operation cancelled" in captured.out
     assert theme_dir.exists()
 
 
@@ -118,4 +118,5 @@ def test_cli_uninstall_non_existent(
 
     assert exit_code == 1
     captured = capsys.readouterr()
-    assert "[ERRORE TEMA]" in captured.err
+    assert "[THEME ERROR]" in captured.err
+

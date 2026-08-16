@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Template dichiarativo per la pagina 'Profili e preset' (Fase 5.6) -->
+<!-- Declarative template for 'Profiles and Presets' page -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
 
-  <!-- Stack principale con i 4 stati canonici: loading, ready, empty, error -->
+  <!-- Main stack with 4 canonical states: loading, ready, empty, error -->
   <object class="GtkStack" id="page_root">
     <property name="transition-type">crossfade</property>
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
 
-    <!-- 1. Stato LOADING -->
+    <!-- 1. LOADING State -->
     <child>
       <object class="GtkStackPage">
         <property name="name">loading</property>
@@ -20,8 +20,8 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">document-save-as-symbolic</property>
-            <property name="title" translatable="yes">Caricamento preset...</property>
-            <property name="description" translatable="yes">Lettura dei profili di configurazione salvati.</property>
+            <property name="title" translatable="yes">Loading presets...</property>
+            <property name="description" translatable="yes">Reading saved configuration profiles.</property>
             <property name="child">
               <object class="GtkSpinner" id="loading_spinner">
                 <property name="spinning">true</property>
@@ -37,7 +37,7 @@
       </object>
     </child>
 
-    <!-- 2. Stato READY: area scrollabile con pulsanti e lista preset -->
+    <!-- 2. READY State: scrollable area with action buttons and presets list -->
     <child>
       <object class="GtkStackPage">
         <property name="name">ready</property>
@@ -60,14 +60,14 @@
                     <property name="orientation">vertical</property>
                     <property name="spacing">24</property>
 
-                    <!-- Intestazione pagina -->
+                    <!-- Page header -->
                     <child>
                       <object class="GtkBox">
                         <property name="orientation">vertical</property>
                         <property name="spacing">4</property>
                         <child>
                           <object class="GtkLabel">
-                            <property name="label" translatable="yes">Profili e preset</property>
+                            <property name="label" translatable="yes">Profiles and Presets</property>
                             <property name="xalign">0</property>
                             <style>
                               <class name="title-1"/>
@@ -76,7 +76,7 @@
                         </child>
                         <child>
                           <object class="GtkLabel">
-                            <property name="label" translatable="yes">Salva e applica configurazioni complete dell'ambiente desktop GNOME.</property>
+                            <property name="label" translatable="yes">Save and apply complete GNOME desktop configurations.</property>
                             <property name="xalign">0</property>
                             <property name="wrap">true</property>
                             <style>
@@ -87,14 +87,14 @@
                       </object>
                     </child>
 
-                    <!-- Pulsanti azioni principali -->
+                    <!-- Action buttons -->
                     <child>
                       <object class="GtkBox" id="action_buttons_box">
                         <property name="orientation">horizontal</property>
                         <property name="spacing">8</property>
                         <child>
                           <object class="GtkButton" id="save_preset_button">
-                            <property name="label" translatable="yes">Salva configurazione attuale</property>
+                            <property name="label" translatable="yes">Save current configuration</property>
                             <property name="hexpand">false</property>
                             <style>
                               <class name="suggested-action"/>
@@ -108,9 +108,9 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="reload_presets_button">
-                            <property name="label" translatable="yes">Ricarica</property>
+                            <property name="label" translatable="yes">Reload</property>
                             <property name="hexpand">false</property>
-                            <property name="tooltip-text" translatable="yes">Ricarica la lista dei preset dal disco</property>
+                            <property name="tooltip-text" translatable="yes">Reload presets list from disk</property>
                             <child type="prefix">
                               <object class="GtkImage">
                                 <property name="icon-name">view-refresh-symbolic</property>
@@ -121,10 +121,10 @@
                       </object>
                     </child>
 
-                    <!-- Lista dei preset (ListBox in stile boxed-list) -->
+                    <!-- Presets ListBox -->
                     <child>
                       <object class="AdwPreferencesGroup" id="presets_group">
-                        <property name="title" translatable="yes">Preset salvati</property>
+                        <property name="title" translatable="yes">Saved Presets</property>
                         <child>
                           <object class="GtkListBox" id="presets_list_box">
                             <property name="selection-mode">none</property>
@@ -147,7 +147,7 @@
       </object>
     </child>
 
-    <!-- 3. Stato EMPTY: nessun preset salvato -->
+    <!-- 3. EMPTY State: no saved presets -->
     <child>
       <object class="GtkStackPage">
         <property name="name">empty</property>
@@ -156,11 +156,11 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">document-save-as-symbolic</property>
-            <property name="title" translatable="yes">Nessun preset salvato</property>
-            <property name="description" translatable="yes">Salva la configurazione attuale per creare il primo preset e poterla ripristinare in qualsiasi momento.</property>
+            <property name="title" translatable="yes">No presets saved</property>
+            <property name="description" translatable="yes">Save the current configuration to create your first preset and restore it at any time.</property>
             <property name="child">
               <object class="GtkButton" id="empty_save_button">
-                <property name="label" translatable="yes">Salva configurazione attuale</property>
+                <property name="label" translatable="yes">Save current configuration</property>
                 <property name="halign">center</property>
                 <style>
                   <class name="suggested-action"/>
@@ -173,7 +173,7 @@
       </object>
     </child>
 
-    <!-- 4. Stato ERROR: errore di lettura preset -->
+    <!-- 4. ERROR State: preset read error -->
     <child>
       <object class="GtkStackPage">
         <property name="name">error</property>
@@ -182,7 +182,7 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title" translatable="yes">Impossibile caricare i preset</property>
+            <property name="title" translatable="yes">Unable to load presets</property>
             <property name="child">
               <object class="GtkBox">
                 <property name="orientation">vertical</property>
@@ -190,7 +190,7 @@
                 <property name="halign">center</property>
                 <child>
                   <object class="GtkLabel" id="error_message_label">
-                    <property name="label" translatable="yes">Errore sconosciuto.</property>
+                    <property name="label" translatable="yes">Unknown error.</property>
                     <property name="wrap">true</property>
                     <property name="max-width-chars">60</property>
                     <property name="halign">center</property>
@@ -201,7 +201,7 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="error_retry_button">
-                    <property name="label" translatable="yes">Riprova</property>
+                    <property name="label" translatable="yes">Retry</property>
                     <property name="halign">center</property>
                     <property name="margin-top">8</property>
                     <style>

@@ -1,71 +1,71 @@
-# Fase 2: Gestione Archivi e Installazione Temi
+# Phase 2: Archive Management and Theme Installation
 
-## Obiettivi della Fase
+## Phase Goals
 
-Automatizzare e rendere sicura l'installazione di nuovi temi scaricati (es. da GNOME-Look o repository GitHub/GitLab):
-1. Supportare formati di archivio diffusi: `.zip`, `.tar.gz`, `.tar.xz`, `.tar.bz2`.
-2. Validare la struttura interna del tema prima dell'installazione.
-3. Installare il tema nella directory utente appropriata (`~/.local/share/themes` o `~/.local/share/icons`).
-4. Prevenire vulnerabilità di estrazione archivi (es. Zip Slip / directory traversal).
+Automate and secure the installation of downloaded themes (e.g. from GNOME-Look or GitHub/GitLab repositories):
+1. Support popular archive formats: `.zip`, `.tar.gz`, `.tar.xz`, `.tar.bz2`.
+2. Validate internal theme structure prior to installation.
+3. Install themes into appropriate user directories (`~/.local/share/themes` or `~/.local/share/icons`).
+4. Prevent archive extraction vulnerabilities (e.g. Zip Slip / directory traversal).
 
 ---
 
-## Architettura e Moduli Coinvolti
+## Architecture and Involved Modules
 
 ```text
 src/gnome_theme_manager/
 ├── core/
-│   ├── installer.py        # Logica di estrazione, validazione e copia
+│   ├── installer.py        # Extraction, validation, and copy logic
 │   └── errors.py           # ThemeValidationError, ArchiveExtractionError
 └── cli/
-    └── args.py             # Subcomando `install`
+    └── args.py             # `install` subcommand
 ```
 
 ---
 
-## Dettagli Tecnici e Specifiche
+## Technical Details and Specifications
 
-### 1. Riconoscimento e Tipologie di Archivio
-- Identificazione tramite estensione e/o magic bytes.
-- Utilizzo della libreria standard: `zipfile`, `tarfile`, `tempfile`, `shutil`.
+### 1. Archive Recognition and Formats
+- Identification via extension and/or magic bytes.
+- Standard library usage: `zipfile`, `tarfile`, `tempfile`, `shutil`.
 
-### 2. Validazione Strutturale del Tema
-Un archivio di tema può presentarsi in due layout tipici:
-- **Layout a radice singola**: `MyTheme/gtk-3.0/gtk.css`
-- **Layout flat**: `gtk-3.0/gtk.css` (richiede la creazione di una directory con il nome del tema).
+### 2. Structural Theme Validation
+A theme archive typically has one of two directory layouts:
+- **Single root layout**: `MyTheme/gtk-3.0/gtk.css`
+- **Flat layout**: `gtk-3.0/gtk.css` (requires creating a directory named after the theme).
 
-Regole di validazione:
-- **GTK Theme**: Presenza di almeno una tra le cartelle `gtk-3.0/`, `gtk-4.0/`, `gnome-shell/` o un file `index.theme` contenente la sezione `[Desktop Entry]`.
-- **Icon / Cursor Theme**: Presenza di `index.theme` con sezione `[Icon Theme]` e/o cartella `cursors/`.
+Validation rules:
+- **GTK Theme**: Presence of at least one of `gtk-3.0/`, `gtk-4.0/`, `gnome-shell/` directories or an `index.theme` file containing a `[Desktop Entry]` section.
+- **Icon / Cursor Theme**: Presence of `index.theme` with `[Icon Theme]` section and/or a `cursors/` directory.
 
-### 3. Sicurezza (Safe Extraction)
-- Prevenzione Path Traversal: verificare che nessun membro dell'archivio abbia percorsi assoluti o sequenze `..` che escano dalla directory temporanea di lavoro.
-- Utilizzo di `tarfile.data_filter` (Python 3.12+) o validazione esplicita su ogni `member.name`.
+### 3. Security (Safe Extraction)
+- Path Traversal prevention: ensure no archive member specifies absolute paths or `..` sequences escaping the destination directory.
+- Use `tarfile.data_filter` (Python 3.12+) or explicit validation on each `member.name`.
 
-### 4. Comandi CLI Estesi
+### 4. Extended CLI Commands
 
 ```bash
-# Installa specificando il tipo
+# Install specifying theme type
 gnome-theme-manager install --file ~/Downloads/Nordic.tar.xz --type gtk
 
-# Riconoscimento automatico (auto-detect) del tipo
+# Automatic type detection
 gnome-theme-manager install --file ~/Downloads/Tela-circle-blue.zip
 
-# Disinstallazione di un tema utente
+# Uninstall a user theme
 gnome-theme-manager uninstall --name "Nordic" --type gtk
 ```
 
 ---
 
-## Checklist di Implementazione
+## Implementation Checklist
 
-- [ ] **Modulo Installer**:
-  - Funzione `safe_extract(archive_path, dest_dir)`.
-  - Funzione `detect_theme_type(extracted_dir) -> ThemeType`.
-  - Funzione `install_theme(archive_path, theme_type=None, custom_name=None) -> Theme`.
-  - Funzione `uninstall_theme(theme_name, theme_type) -> bool`.
-- [ ] **CLI Subcommands**:
-  - Aggiunta di `install` e `uninstall` in `cli/args.py`.
-- [ ] **Test Unitari**:
-  - Test con archivi zip e tar mockati con layout validi e non validi.
-  - Test di protezione da archivio malevolo (tentativo di path traversal).
+- [x] **Installer Module**:
+  - `safe_extract(archive_path, dest_dir)` function.
+  - `detect_theme_type(extracted_dir) -> ThemeType` function.
+  - `install_theme(archive_path, theme_type=None, custom_name=None) -> Theme` function.
+  - `uninstall_theme(theme_name, theme_type) -> bool` function.
+- [x] **CLI Subcommands**:
+  - Added `install` and `uninstall` to `cli/args.py`.
+- [x] **Unit Tests**:
+  - Tests with mocked zip and tar archives covering valid and invalid layouts.
+  - Security tests verifying path traversal protection.

@@ -22,39 +22,35 @@ def test_mo_files_exist():
 
 
 def test_translation_loading_it():
-    """Verifica che la traduzione italiana venga caricata e traduca correttamente."""
+    """Verifica che la traduzione italiana venga caricata e traduca dall'inglese (sorgente) all'italiano."""
     trans = gettext.translation(
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["it"], fallback=False
     )
 
-    # Test della traduzione di una stringa
-    orig = "\nTemi attualmente attivi su GNOME:"
-    translated = trans.gettext(orig)
-    assert translated == "\nTemi attualmente attivi su GNOME:"
+    orig = "\nCurrently active GNOME themes:"
+    assert trans.gettext(orig) == "\nTemi attualmente attivi su GNOME:"
 
-    # Test della traduzione di un'altra stringa
-    orig_set = "Non impostato"
+    orig_set = "Not set"
     assert trans.gettext(orig_set) == "Non impostato"
     assert (
-        trans.gettext("Mostra i temi attualmente applicati sul desktop GNOME")
+        trans.gettext("Show currently applied themes on GNOME desktop")
         == "Mostra i temi attualmente applicati sul desktop GNOME"
     )
 
 
 def test_translation_loading_en():
-    """Verifica che la traduzione inglese traduca correttamente dall'italiano all'inglese."""
+    """Verifica che la traduzione inglese mantenga le stringhe sorgente in inglese."""
     trans = gettext.translation(
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["en"], fallback=False
     )
 
-    # Verifica le stringhe tradotte
     assert (
-        trans.gettext("\nTemi attualmente attivi su GNOME:") == "\nCurrently active GNOME themes:"
+        trans.gettext("\nCurrently active GNOME themes:") == "\nCurrently active GNOME themes:"
     )
-    assert trans.gettext("Non impostato") == "Not set"
-    assert trans.gettext("Default di sistema") == "System Default"
+    assert trans.gettext("Not set") == "Not set"
+    assert trans.gettext("System Default") == "System Default"
     assert (
-        trans.gettext("Mostra i temi attualmente applicati sul desktop GNOME")
+        trans.gettext("Show currently applied themes on GNOME desktop")
         == "Show currently applied themes on GNOME desktop"
     )
 
@@ -65,7 +61,7 @@ def test_translation_fallback():
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["fr"], fallback=True
     )
 
-    orig = "Test stringa non tradotta"
+    orig = "Untranslated test string"
     assert trans.gettext(orig) == orig
 
 
@@ -92,59 +88,32 @@ def test_gtk_builder_uses_translation_domain():
 
 
 def test_english_catalogue_has_key_gui_translations():
-    """Verifica che le stringhe principali della GUI siano effettivamente tradotte in inglese."""
+    """Verifica che le stringhe principali della GUI siano presenti nel catalogo en.po."""
     en_po = (ROOT_DIR / "po" / "en.po").read_text(encoding="utf-8")
     translations = {
-        "Stato attuale": "Current status",
-        "Configurazione corrente letta tramite GSettings.": "Current configuration read via GSettings.",
-        "Compatibilità con le applicazioni moderne GNOME.": "Compatibility with modern GNOME applications.",
+        "Current Status": "Current Status",
+        "Desktop Environment and Paths": "Desktop Environment and Paths",
+        "Currently Active GNOME Themes": "Currently Active GNOME Themes",
         "GSettings / Gio": "GSettings / Gio",
-        "Cartella Temi Utente": "User Themes Folder",
-        "Cartella Icone Utente": "User Icons Folder",
-        "Ambiente Desktop e Percorsi": "Desktop Environment and Paths",
-        "Temi Attivi su GNOME": "Currently Active GNOME Themes",
+        "User Themes Folder": "User Themes Folder",
+        "User Icons Folder": "User Icons Folder",
     }
     for msgid, expected in translations.items():
         pattern = f'msgid "{msgid}"\nmsgstr "{expected}"'
         assert pattern in en_po, f"Voce mancante in en.po: {msgid}"
 
 
-def test_english_catalogue_has_only_intentional_identical_entries():
-    """Verifica che le voci msgid==msgstr in en.po siano solo termini neutri/intenzionali."""
-    en_po = (ROOT_DIR / "po" / "en.po").read_text(encoding="utf-8")
-
-    entries = []
-    msgid = None
-    msgstr = None
-    for line in en_po.splitlines():
-        if line.startswith("msgid "):
-            if msgid is not None:
-                entries.append((msgid, msgstr if msgstr is not None else ""))
-            msgid = line[len("msgid ") :].strip().strip('"')
-            msgstr = None
-        elif line.startswith("msgstr "):
-            msgstr = line[len("msgstr ") :].strip().strip('"')
-    if msgid is not None:
-        entries.append((msgid, msgstr if msgstr is not None else ""))
-
-    identical = {mid for mid, mstr in entries if mid and mid == mstr}
-    allowed = {
-        "-",
-        "Flatpak",
-        "GNOME Shell",
-        "GSettings / Gio",
-        "GTK",
-        "GTK4 / Libadwaita",
-        "Gnome Theme Manager",
-        "No",
-        "OK",
-        "Preset",
-        "Snap",
-        "System",
-        "User",
-        "~/.local/share/icons",
-        "~/.local/share/themes",
+def test_italian_catalogue_has_key_gui_translations():
+    """Verifica che le stringhe principali della GUI abbiano traduzione italiana completa in it.po."""
+    it_po = (ROOT_DIR / "po" / "it.po").read_text(encoding="utf-8")
+    translations = {
+        "Current Status": "Stato attuale",
+        "Desktop Environment and Paths": "Ambiente Desktop e Percorsi",
+        "Currently Active GNOME Themes": "Temi Attivi su GNOME",
+        "GSettings / Gio": "GSettings / Gio",
+        "User Themes Folder": "Cartella Temi Utente",
+        "User Icons Folder": "Cartella Icone Utente",
     }
-    assert identical == allowed, (
-        f"Voci non tradotte inattese in en.po: {sorted(identical - allowed)}"
-    )
+    for msgid, expected in translations.items():
+        pattern = f'msgid "{msgid}"\nmsgstr "{expected}"'
+        assert pattern in it_po, f"Voce mancante o errata in it.po: {msgid}"

@@ -8,292 +8,309 @@
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 ![Status](https://img.shields.io/badge/Status-Beta-orange)
 
-## Stato del progetto
+## Project Status
 
-La versione 1.0.0 è una release destinata ai test pubblici.
-Non viene ancora garantita la compatibilità con tutte le distribuzioni,
-versioni di GNOME o temi non conformi agli standard attesi.
+Version 1.0.0 is a public testing release.
+Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
-Manager modulare in Python per gestire temi GTK, icone, cursori e GNOME Shell su desktop GNOME.
+Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
 
-## Tag
+## Tags
 
 GNOME, GTK4, Libadwaita, PyGObject, Themes, CLI, Linux Desktop, Snap, Flatpak
 
-## Indice
+## Table of Contents
 
-- [Panoramica](#panoramica)
-- [Feature](#feature)
-- [Requisiti](#requisiti)
-- [Installazione](#installazione)
+- [Overview](#overview)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Requirements](#requirements)
+- [Installation](#installation)
 - [Quick Start](#quick-start)
-- [Comandi CLI principali](#comandi-cli-principali)
-- [Avvio GUI](#avvio-gui)
-- [Sviluppo e test](#sviluppo-e-test)
-- [Traduzioni (i18n)](#traduzioni-i18n)
-- [Struttura repository](#struttura-repository)
-- [Documentazione](#documentazione)
-- [Licenza](#licenza)
+- [Main CLI Commands](#main-cli-commands)
+- [Graphical Interface (GUI)](#graphical-interface-gui)
+- [Development and Testing](#development-and-testing)
+- [Translations (i18n)](#translations-i18n)
+- [Repository Structure](#repository-structure)
+- [Documentation](#documentation)
+- [License](#license)
 
-## Panoramica
+## Overview
 
-Il progetto include:
-- CLI completa per automazione e scripting.
-- GUI nativa GNOME con GTK4/Libadwaita.
-- GUI Tkinter legacy come fallback temporaneo.
+The project includes:
+- A full-featured CLI for automation and scripting.
+- A native GNOME GUI built with GTK4 and Libadwaita.
+- Robust rollback, override management, and sandbox propagation features.
 
-Versione pacchetto attuale: 1.0.0 (PEP 440: 1.0.0)
+Current package version: 1.0.0 (PEP 440: 1.0.0)
 
-## Feature
+## Features
 
-- Lettura stato temi correnti con current
-- Elenco temi installati per tipo con list
-- Applicazione temi GTK, icone, cursori, shell con apply
-- Installazione temi da archivio con install
-- Disinstallazione temi utente con uninstall
-- Gestione preset con preset list, save, apply, delete
-- Stato integrazione sandbox Snap/Flatpak con sandbox-status
-- Propagazione tema verso runtime sandbox (opzionale)
-- Override GTK4 in ~/.config/gtk-4.0 quando applicabile
+- Read active theme status via `current`
+- List installed themes by type via `list`
+- Apply GTK, icon, cursor, and shell themes via `apply`
+- Install themes from archives via `install`
+- Uninstall user-installed themes via `uninstall`
+- Manage theme presets via `preset list`, `save`, `apply`, `delete`
+- Check Snap/Flatpak sandbox integration via `sandbox-status`
+- Propagate themes to sandbox runtimes (optional)
+- GTK4 / Libadwaita theme override in `~/.config/gtk-4.0` when applicable
 
-## Prerequisiti
+## Prerequisites
 
-Per garantire il corretto funzionamento dell'applicazione e del launcher:
+To ensure proper execution of the application and desktop launcher:
 
-1. **Permessi di Esecuzione**: Il launcher `gnome-theme-manager` deve avere i permessi di esecuzione configurati correttamente. È possibile abilitarli tramite CLI:
+1. **Execution Permissions**: Ensure execution permissions are set on the binary or launcher:
    ```bash
    chmod +x /path/to/gnome-theme-manager
    ```
-2. **Integrazione Flatpak & Snap**:
-   - Per Flatpak, i temi utente installati in `~/.themes` o `~/.icons` non sono visibili alle sandbox per impostazione predefinita. L'applicazione utilizza `flatpak override` per concedere l'accesso del filesystem all'host alle sandbox Flatpak.
-   - Per Snap, per consentire al sistema di dialogare e propagare i temi, assicurarsi che le estensioni e i temi di sistema comuni (ad esempio `gtk-common-themes`) siano correttamente installati e connessi all'host GNOME.
+2. **Flatpak & Snap Integration**:
+   - For Flatpak: user themes installed in `~/.themes` or `~/.icons` are not visible to sandboxes by default. The application uses `flatpak override` to grant filesystem access to Flatpak sandboxes.
+   - For Snap: ensure standard runtime theme snaps (such as `gtk-common-themes`) are installed and connected to your GNOME host.
 
-## Requisiti
+## Requirements
 
 - Python >= 3.10
-- Linux con ambiente desktop GNOME
-- gsettings disponibile nel sistema
+- Linux with a GNOME desktop environment
+- `gsettings` available on the system
 
-Dipendenze Python:
+Python dependencies:
 - PyGObject >= 3.42.0
 
-Pacchetti GUI GTK4/Libadwaita (Ubuntu/Debian):
+GTK4/Libadwaita system packages (Ubuntu/Debian):
 
-	sudo apt update
-	sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
+```bash
+sudo apt update
+sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
+```
 
-## Installazione
+## Installation
 
-### Opzione A: AppImage Portabile (Consigliata)
+### Option A: Portable AppImage (Recommended)
 
-Scarica il file eseguibile `.AppImage` dalle [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) e avvialo:
+Download the latest `.AppImage` executable from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) and launch it:
 
 ```bash
 chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
 ./GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
 
-Per le istruzioni dettagliate sui prerequisiti e compilazione locale, consulta **[INSTALL.md](INSTALL.md)**.
+For detailed instructions and prerequisites, see **[INSTALL.md](INSTALL.md)**.
 
-### Opzione B: Installazione da sorgenti (Venv)
+### Option B: From Source (Virtualenv)
 
-	git clone https://github.com/granafilo/GnomeThemeManager.git
-	cd GnomeThemeManager
+```bash
+git clone https://github.com/granafilo/GnomeThemeManager.git
+cd GnomeThemeManager
 
-	python3 -m venv .venv
-	source .venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
-	pip install --upgrade pip
-	pip install -e .
+pip install --upgrade pip
+pip install -e .
+```
 
-Per strumenti di sviluppo:
+For development dependencies:
 
-	pip install -e .[dev]
+```bash
+pip install -e .[dev]
+```
 
 ## Quick Start
 
-	gnome-theme-manager --help
-	gnome-theme-manager current
-	gnome-theme-manager list
+```bash
+gnome-theme-manager --help
+gnome-theme-manager current
+gnome-theme-manager list
+```
 
-## Comandi CLI principali
+## Main CLI Commands
 
-Mostra temi correnti:
-
-	gnome-theme-manager current
-
-Elenca solo temi GTK utente:
-
-	gnome-theme-manager list --type gtk --user-only
-
-Applica tema GTK e icone:
-
-	gnome-theme-manager apply --gtk Nordic-dark --icon Papirus-Dark
-
-Applica tema unificato (stesso nome per GTK/Shell se presenti):
-
-	gnome-theme-manager apply --theme Catppuccin-Mocha
-
-Installa tema da archivio:
-
-	gnome-theme-manager install --file ~/Scaricati/Nordic.tar.xz
-
-Disinstalla tema utente:
-
-	gnome-theme-manager uninstall --name Nordic --type gtk --yes
-
-Preset:
-
-	gnome-theme-manager preset save setup-lavoro
-	gnome-theme-manager preset list
-	gnome-theme-manager preset apply setup-lavoro
-
-Sandbox status:
-
-	gnome-theme-manager sandbox-status
-
-## Interfaccia grafica
-
-GNOME Theme Manager utilizza GTK4 e Libadwaita per l’interfaccia grafica.
-
-Tkinter non è più supportato.
-
-Avvio della GUI:
-
-	gnome-theme-manager --gui
-	gnome-theme-manager gui
-
-
-## Sviluppo e test
-
-Esegui test:
-
-	pytest -v
-
-Lint con Ruff:
-
-	ruff check src tests
-
-Script unico:
-
-	bash scripts/run_all_tests.sh
-
-Script utili:
-
-- scripts/run_cli.sh — esegue la CLI senza installare il pacchetto
-- scripts/run_all_tests.sh — suite completa pytest + ruff
-- scripts/test_env.sh — bootstrap ambiente di sviluppo (.venv + dipendenze)
-- scripts/cleanup-repo.sh — pulizia artefatti di build/cache locali
-
-## Configurazione, Backup e Ripristino
-
-Theme Manager memorizza i suoi dati e i backup in percorsi XDG standard:
-- **Manifest GTK4**: `$XDG_CONFIG_HOME/gnome-theme-manager/gtk4_manifest.json` (di default `~/.config/gnome-theme-manager/gtk4_manifest.json`).
-- **File di backup**: `$XDG_DATA_HOME/gnome-theme-manager/backups/` (di default `~/.local/share/gnome-theme-manager/backups/`).
-- **Preset**: `$XDG_CONFIG_HOME/gnome-theme-manager/presets/` (di default `~/.config/gnome-theme-manager/presets/`).
-
-### Procedura di Rollback manuale
-Se per qualsiasi motivo si desidera rimuovere l'override di Theme Manager e ripristinare i file originali manualmente:
-1. Rimuovere i collegamenti simbolici correnti:
-   `rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/gtk-dark.css`
-   `rm -rf ~/.config/gtk-4.0/assets`
-2. Copiare i file di backup dalla directory `backups` (se presenti) ripristinandoli con il nome originale in `~/.config/gtk-4.0/`.
-
-## Matrice di Compatibilità
-Gli ambienti testati e convalidati per questa release beta sono:
-
-| Distribuzione | Versione | GNOME | GTK | Installazione | GUI | CLI | GTK4 override | Esito |
-|---|---|---|---|---|---|---|---|---|
-| Ubuntu | 24.04 LTS | GNOME 46 | GTK4 / GTK3 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
-| Ubuntu | 22.04 LTS | GNOME 42 | GTK4 / GTK3 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
-| Fedora | 40 | GNOME 46 | GTK4 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
-| Arch Linux | Rolling | GNOME 46 | GTK4 | Convalidato | Convalidato | Convalidato | Convalidato | ✓ Supportato |
-| Debian | 12 | GNOME 43 | GTK4 / GTK3 | Non testato | Non testato | Non testato | Non testato | Parzialmente testato |
-
-### Limitazioni Sandbox (Snap & Flatpak)
-Le applicazioni all'interno di sandbox isolate (come Firefox in formato Snap o Flatpak) potrebbero non riflettere immediatamente i temi GTK installati nella cartella utente. Theme Manager include la propagazione automatica (tramite comandi `flatpak override` ed il controllo di `gtk-common-themes` per Snap), ma temi non standard richiedono pacchetti specifici della distribuzione.
-
-### Dipendenze residue dell'AppImage
-L'eseguibile AppImage di GNOME Theme Manager non include le librerie di runtime GTK4/Libadwaita o GObject Introspection host. Pertanto, l'ambiente host deve disporre di `python3-gi`, `gir1.2-gtk-4.0` e `gir1.2-adw-1` installati per garantire l'avvio della GUI nativa.
-
-## Traduzioni (i18n)
-
-GNOME Theme Manager supporta la localizzazione (i18n) tramite `gettext`.
-
-### Come avviare l'applicazione in una lingua specifica
-Per avviare l'applicazione forzando una lingua (ad esempio l'inglese o l'italiano), imposta le variabili d'ambiente `LANG` e `LC_ALL`:
+Show current themes:
 
 ```bash
-# Avvio in inglese
+gnome-theme-manager current
+```
+
+List only user GTK themes:
+
+```bash
+gnome-theme-manager list --type gtk --user-only
+```
+
+Apply GTK theme and icon pack:
+
+```bash
+gnome-theme-manager apply --gtk Nordic-dark --icon Papirus-Dark
+```
+
+Apply unified theme (same name across GTK/Shell when available):
+
+```bash
+gnome-theme-manager apply --theme Catppuccin-Mocha
+```
+
+Install theme from archive:
+
+```bash
+gnome-theme-manager install --file ~/Downloads/Nordic.tar.xz
+```
+
+Uninstall user theme:
+
+```bash
+gnome-theme-manager uninstall --name Nordic --type gtk --yes
+```
+
+Manage presets:
+
+```bash
+gnome-theme-manager preset save work-setup
+gnome-theme-manager preset list
+gnome-theme-manager preset apply work-setup
+```
+
+Inspect sandbox status:
+
+```bash
+gnome-theme-manager sandbox-status
+```
+
+## Graphical Interface (GUI)
+
+GNOME Theme Manager uses GTK4 and Libadwaita for its native graphical interface.
+
+Launch the GUI:
+
+```bash
+gnome-theme-manager --gui
+# or
+gnome-theme-manager gui
+```
+
+## Development and Testing
+
+Run tests:
+
+```bash
+pytest -v
+```
+
+Lint with Ruff:
+
+```bash
+ruff check src tests
+```
+
+Single test runner script:
+
+```bash
+bash scripts/run_all_tests.sh
+```
+
+Useful scripts:
+
+- `scripts/run_cli.sh` — run CLI without installing the package
+- `scripts/run_all_tests.sh` — full pytest + ruff test suite
+- `scripts/test_env.sh` — bootstrap development environment (.venv + dependencies)
+- `scripts/cleanup-repo.sh` — clean local build artifacts and caches
+
+## Configuration, Backup, and Recovery
+
+Theme Manager stores configuration and backups in standard XDG paths:
+- **GTK4 Manifest**: `$XDG_CONFIG_HOME/gnome-theme-manager/gtk4_manifest.json` (defaults to `~/.config/gnome-theme-manager/gtk4_manifest.json`).
+- **Backup files**: `$XDG_DATA_HOME/gnome-theme-manager/backups/` (defaults to `~/.local/share/gnome-theme-manager/backups/`).
+- **Presets**: `$XDG_CONFIG_HOME/gnome-theme-manager/presets/` (defaults to `~/.config/gnome-theme-manager/presets/`).
+
+### Manual Rollback Procedure
+If you want to manually remove the GTK4 override and restore original files:
+1. Remove current symlinks:
+   ```bash
+   rm -f ~/.config/gtk-4.0/gtk.css ~/.config/gtk-4.0/gtk-dark.css
+   rm -rf ~/.config/gtk-4.0/assets
+   ```
+2. Restore original backup files from the `backups` folder back to `~/.config/gtk-4.0/`.
+
+## Compatibility Matrix
+
+Tested and verified environments for this release:
+
+| Distribution | Version | GNOME | GTK | Installation | GUI | CLI | GTK4 override | Result |
+|---|---|---|---|---|---|---|---|---|
+| Ubuntu | 24.04 LTS | GNOME 46 | GTK4 / GTK3 | Verified | Verified | Verified | Verified | ✓ Supported |
+| Ubuntu | 22.04 LTS | GNOME 42 | GTK4 / GTK3 | Verified | Verified | Verified | Verified | ✓ Supported |
+| Fedora | 40 | GNOME 46 | GTK4 | Verified | Verified | Verified | Verified | ✓ Supported |
+| Arch Linux | Rolling | GNOME 46 | GTK4 | Verified | Verified | Verified | Verified | ✓ Supported |
+| Debian | 12 | GNOME 43 | GTK4 / GTK3 | Untested | Untested | Untested | Untested | Partially tested |
+
+### Sandbox Limitations (Snap & Flatpak)
+Applications running inside isolated sandboxes (such as Flatpak or Snap browsers) might not immediately reflect user-installed GTK themes. Theme Manager includes automatic propagation (via `flatpak override` and `gtk-common-themes` checking for Snap), but custom themes may require specific distribution runtime packages.
+
+### AppImage Host Dependencies
+The AppImage bundle does not bundle host GTK4/Libadwaita system C libraries. Therefore, the host system must have `python3-gi`, `gir1.2-gtk-4.0`, and `gir1.2-adw-1` installed to run the native GUI.
+
+## Translations (i18n)
+
+GNOME Theme Manager supports internationalization (i18n) via `gettext`.
+
+### Running in a specific language
+To run the application with a specific language override, set `LANG` and `LC_ALL`:
+
+```bash
+# Launch in English (default)
 LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 python3 -m gnome_theme_manager
 
-# Avvio in italiano
+# Launch in Italian
 LC_ALL=it_IT.UTF-8 LANG=it_IT.UTF-8 python3 -m gnome_theme_manager
 ```
 
-### AppImage e file di traduzione
-L'AppImage include i file `.mo` nell'installazione Python del package, sotto `gnome_theme_manager/locale/`. Durante la build viene effettuata una copia esplicita della directory locale e viene impostata la variabile `TEXTDOMAINDIR` per garantire che `gettext` trovi le traduzioni anche all'interno del filesystem montato dell'AppImage.
+### AppImage localization
+The AppImage bundles compiled `.mo` files under `gnome_theme_manager/locale/`. The build script sets `TEXTDOMAINDIR` so `gettext` accurately resolves translations inside the mounted filesystem.
 
-```bash
-./scripts/build-appimage.sh
-./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage --appimage-extract
-find squashfs-root -name "*.mo"
+### Adding or Updating Translations
+The project provides helper scripts in `po/` to automate template extraction and compilation:
 
-LANG=it_IT.UTF-8 ./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage
-LANG=en_US.UTF-8 ./dist/GNOMEThemeManager-1.0.0-x86_64.AppImage
-```
-
-### Come aggiungere o aggiornare le traduzioni
-Il progetto include script dedicati nella cartella `po/` per automatizzare l'estrazione e la compilazione delle stringhe senza dipendenze esterne:
-
-1. **Aggiungere una nuova lingua**: Aggiungi il codice locale a `po/LINGUAS` (es. `es` per lo spagnolo).
-2. **Estrarre le stringhe e aggiornare i file `.po`**:
-   Esegui lo script di aggiornamento:
+1. **Add new language**: Add the locale code to `po/LINGUAS` (e.g. `es`).
+2. **Extract strings and update `.po` files**:
    ```bash
    ./po/update-po.sh
    ```
-   Questo genererà/aggiornerà i file `.po` (es. `po/it.po` o `po/es.po`).
-3. **Tradurre**: Apri il file `.po` appena aggiornato con un editor di testo o un tool come Poedit e traduci le coppie `msgid` -> `msgstr`.
-4. **Compilare**: Rielabora `./po/update-po.sh` per compilare i file `.mo` pronti all'uso dell'applicazione in `src/gnome_theme_manager/locale/`.
+3. **Translate**: Edit `po/<lang>.po` with a text editor or Poedit (`msgid` -> `msgstr`).
+4. **Compile**: Run `./po/update-po.sh` to compile `.mo` catalogs into `src/gnome_theme_manager/locale/`.
 
-### Come testare le traduzioni
-Per convalidare e testare il funzionamento delle traduzioni, sono disponibili due strumenti:
-
-1. **Test automatici**:
-   Esegui la suite di test unitari dedicati con pytest:
+### Testing Translations
+1. **Automated tests**:
    ```bash
    pytest tests/test_i18n.py
    ```
-2. **Script di convalida manuale**:
-   Esegui lo script che mostra l'output del comando `current` in italiano e in inglese per verificarne la traduzione a runtime:
+2. **Manual validation script**:
    ```bash
    ./scripts/test-translation.sh
    ```
 
-## Struttura repository
+## Repository Structure
 
-	src/gnome_theme_manager/
-	  cli/        parser argomenti e routing comandi
-	  core/       logica dominio (scanner, manager, installer, gsettings, sandbox)
-	  gui_gtk/    GUI nativa GNOME (GTK4/Libadwaita)
-	tests/        test unitari e integrazione
-	docs/         roadmap e fasi implementative
+```text
+src/gnome_theme_manager/
+  cli/        argument parser and command routing
+  core/       domain logic (scanner, manager, installer, gsettings, sandbox)
+  gui_gtk/    native GNOME GUI (GTK4/Libadwaita)
+tests/        unit and integration test suite
+docs/         roadmap and phase documentation
+```
 
-## Documentazione
+## Documentation
 
-- [Guida Installazione AppImage](INSTALL.md)
+- [AppImage Installation Guide](INSTALL.md)
 - [Changelog](CHANGELOG.md)
 - [Roadmap](docs/ROADMAP.md)
-- [Fase 1 - CLI MVP](docs/phases/01-cli-mvp.md)
-- [Fase 2 - Theme Installer](docs/phases/02-theme-installer.md)
-- [Fase 3 - Core Architecture](docs/phases/03-core-architecture.md)
-- [Fase 5 - GUI GTK Native](docs/phases/05-gui-gtk-native.md)
-- [Fase 6 - Sandboxing & Hardening](docs/phases/06-sandboxing-hardening.md)
+- [Phase 1 - CLI MVP](docs/phases/01-cli-mvp.md)
+- [Phase 2 - Theme Installer](docs/phases/02-theme-installer.md)
+- [Phase 3 - Core Architecture](docs/phases/03-core-architecture.md)
+- [Phase 5 - GUI GTK Native](docs/phases/05-gui-gtk-native.md)
+- [Phase 6 - Sandboxing & Hardening](docs/phases/06-sandboxing-hardening.md)
 
-## Licenza
+## License
 
-GNOME Theme Manager è distribuito sotto licenza
+GNOME Theme Manager is released under the
 [GNU General Public License v3.0 or later](LICENSE).
-
-Il codice può essere utilizzato, studiato, modificato e redistribuito
-nel rispetto dei termini della GPL-3.0-or-later.

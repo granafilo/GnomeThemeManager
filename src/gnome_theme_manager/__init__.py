@@ -2,7 +2,7 @@
 
 """GnomeThemeManager package.
 
-Manager modulare per temi GTK, icone e cursori su GNOME.
+Modular manager for GTK themes, icons, cursors, and GNOME Shell themes.
 """
 
 import gettext
@@ -11,13 +11,13 @@ import os
 
 __version__ = "1.0.0"
 
-# Percorso delle traduzioni compiled (.mo)
+# Path to compiled translations (.mo)
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
 DOMAIN = "gnomethememanager"
 
 
 def _candidate_languages() -> list[str]:
-    """Restituisce l'ordine di preferenza delle lingue dal contesto di runtime."""
+    """Return language preference order from runtime environment context."""
     values = []
     for env_var in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
         value = os.environ.get(env_var)
@@ -36,28 +36,33 @@ def _candidate_languages() -> list[str]:
         final_languages.append(language)
         if "_" in language:
             final_languages.append(language.split("_")[0])
-    return final_languages or ["it", "en"]
+    return final_languages or ["en"]
 
 
-# Inizializza gettext per Python selezionando la lingua in base all'ambiente di esecuzione.
-gettext.bindtextdomain(DOMAIN, LOCALE_DIR)
-gettext.textdomain(DOMAIN)
-try:
-    _translation = gettext.translation(
-        DOMAIN,
-        localedir=LOCALE_DIR,
-        languages=_candidate_languages(),
-        fallback=True,
-    )
-    _ = _translation.gettext
-    gettext.install(DOMAIN, localedir=LOCALE_DIR, names=["gettext"])
-except (OSError, FileNotFoundError, ValueError):
-    _ = gettext.gettext
+def get_translation() -> gettext.NullTranslations:
+    """Return active gettext translation object based on environment variables."""
+    try:
+        return gettext.translation(
+            DOMAIN,
+            localedir=LOCALE_DIR,
+            languages=_candidate_languages(),
+            fallback=True,
+        )
+    except (OSError, FileNotFoundError, ValueError):
+        return gettext.NullTranslations()
 
-# Inizializza locale C e gettext a livello di sistema (necessario per tradurre stringhe nei file .ui caricati con Gtk.Builder)
+
+def _(message: str) -> str:
+    """Translate message dynamically using current runtime translation."""
+    return get_translation().gettext(message)
+
+
+
+# Initialize C locale and system gettext (required to translate strings in .ui templates loaded via Gtk.Builder)
 try:
     locale.setlocale(locale.LC_ALL, "")
     locale.bindtextdomain(DOMAIN, LOCALE_DIR)
     locale.bind_textdomain_codeset(DOMAIN, "UTF-8")
 except (locale.Error, AttributeError):
     pass
+

@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo per la gestione delle estensioni di GNOME Shell.
+"""GNOME Shell extensions management module.
 
-Fornisce il controllo dello stato di attivazione e l'abilitazione programmata dell'estensione
-'user-theme@gnome-shell-extensions.gcampax.github.com' necessaria per l'applicazione
-dei temi GNOME Shell.
+Provides inspection and activation of the
+'user-theme@gnome-shell-extensions.gcampax.github.com' extension required
+to apply GNOME Shell themes.
 """
 
 import logging
@@ -16,13 +16,13 @@ USER_THEME_EXTENSION_ID = "user-theme@gnome-shell-extensions.gcampax.github.com"
 
 
 class ExtensionsManager:
-    """Gestore delle estensioni GNOME Shell."""
+    """Manager for GNOME Shell extensions."""
 
     def is_user_theme_enabled(self) -> bool:
-        """Controlla se l'estensione user-theme è abilitata su GNOME Shell.
+        """Check if the user-theme extension is enabled on GNOME Shell.
 
         Returns:
-            True se l'estensione è attiva/abilitata, False altrimenti.
+            True if the extension is active/enabled, False otherwise.
         """
         try:
             res = subprocess.run(
@@ -36,15 +36,15 @@ class ExtensionsManager:
                 return USER_THEME_EXTENSION_ID in enabled_list
         except Exception as err:
             logger.warning(
-                "Impossibile determinare lo stato dell'estensione tramite gnome-extensions: %s", err
+                "Unable to determine extension status via gnome-extensions: %s", err
             )
         return False
 
     def enable_user_theme(self) -> bool:
-        """Tenta di abilitare l'estensione user-theme via cli 'gnome-extensions enable'.
+        """Attempt to enable the user-theme extension via 'gnome-extensions enable'.
 
         Returns:
-            True se l'operazione è andata a buon fine con exit code 0, False altrimenti.
+            True if the command succeeded with exit code 0, False otherwise.
         """
         try:
             res = subprocess.run(
@@ -55,5 +55,5 @@ class ExtensionsManager:
             )
             return res.returncode == 0
         except Exception as err:
-            logger.error("Errore durante l'abilitazione dell'estensione user-theme: %s", err)
+            logger.error("Error enabling user-theme extension: %s", err)
         return False

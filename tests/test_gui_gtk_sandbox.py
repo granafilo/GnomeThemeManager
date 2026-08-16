@@ -21,9 +21,9 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     page = SandboxPage(manager=mock_theme_manager)
 
     buttons = [
-        (page.refresh_button, "Ricarica stato", "view-refresh-symbolic"),
-        (page.propagate_button, "Propaga tema alle applicazioni sandbox", "emblem-ok-symbolic"),
-        (page.error_retry_button, "Riprova", "view-refresh-symbolic"),
+        (page.refresh_button, "Refresh Status", "view-refresh-symbolic"),
+        (page.propagate_button, "Propagate Theme to Sandboxed Apps", "emblem-ok-symbolic"),
+        (page.error_retry_button, "Retry", "view-refresh-symbolic"),
     ]
 
     for btn, expected_label, expected_icon in buttons:
@@ -48,11 +48,11 @@ def test_sandbox_page_refresh_flatpak_and_snap_available(mock_theme_manager: Mag
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    assert "Disponibile" in page.flatpak_status_row.get_subtitle()
-    assert "Attivo" in page.flatpak_override_row.get_subtitle()
-    assert "Disponibile" in page.snap_status_row.get_subtitle()
-    assert "Installato" in page.snap_gtk_common_row.get_subtitle()
-    assert "supportato nativamente" in page.snap_theme_compat_row.get_subtitle()
+    assert "Available" in page.flatpak_status_row.get_subtitle()
+    assert "Active" in page.flatpak_override_row.get_subtitle()
+    assert "Available" in page.snap_status_row.get_subtitle()
+    assert "Installed" in page.snap_gtk_common_row.get_subtitle()
+    assert "natively supported" in page.snap_theme_compat_row.get_subtitle()
     assert page.propagate_button.get_sensitive() is True
 
 
@@ -75,8 +75,8 @@ def test_sandbox_page_refresh_neither_available_disables_propagate(
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    assert "Non installato" in page.flatpak_status_row.get_subtitle()
-    assert "Non installato" in page.snap_status_row.get_subtitle()
+    assert "Not installed" in page.flatpak_status_row.get_subtitle()
+    assert "Not installed" in page.snap_status_row.get_subtitle()
     assert page.propagate_button.get_sensitive() is False
 
 
@@ -96,7 +96,7 @@ def test_sandbox_page_snap_custom_theme_warning(mock_theme_manager: MagicMock) -
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    assert "personalizzato" in page.snap_theme_compat_row.get_subtitle().lower()
+    assert "custom" in page.snap_theme_compat_row.get_subtitle().lower()
 
 
 def test_sandbox_page_snap_missing_gtk_common_themes(mock_theme_manager: MagicMock) -> None:
@@ -115,8 +115,8 @@ def test_sandbox_page_snap_missing_gtk_common_themes(mock_theme_manager: MagicMo
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    assert "Non installato" in page.snap_gtk_common_row.get_subtitle()
-    assert "Non verificabile" in page.snap_theme_compat_row.get_subtitle()
+    assert "Not installed" in page.snap_gtk_common_row.get_subtitle()
+    assert "Not verifiable" in page.snap_theme_compat_row.get_subtitle()
 
 
 def test_sandbox_page_refresh_error_state(mock_theme_manager: MagicMock) -> None:
@@ -164,8 +164,9 @@ def test_sandbox_page_propagation_confirmed_success(mock_theme_manager: MagicMoc
 
     mock_theme_manager.propagate_sandbox.assert_called_once()
     assert len(toasts) == 1
-    assert "successo" in toasts[0].lower()
+    assert "successfully" in toasts[0].lower()
     assert called_back is True
+
 
 
 def test_sandbox_page_propagation_partial_warnings(mock_theme_manager: MagicMock) -> None:

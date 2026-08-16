@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Wrapper sicuro per l'interazione con GSettings tramite PyGObject (Gio).
+"""Safe wrapper for GSettings interaction via PyGObject (Gio).
 
-In ambiente GNOME, GSettings è il sistema centralizzato di memorizzazione
-delle preferenze e configurazioni desktop (con backend principale in dconf).
-Questo modulo astrae e incapsula tutte le chiamate di lettura e scrittura verso:
-- `org.gnome.desktop.interface` (Temi GTK, Icone, Cursori, Color-Scheme)
-- `org.gnome.shell.extensions.user-theme` (Tema della GNOME Shell)
+In GNOME desktop environments, GSettings is the central storage system
+for desktop preferences and settings (backed primarily by dconf).
+This module encapsulates all read and write calls to:
+- `org.gnome.desktop.interface` (GTK, Icon, Cursor themes, and Color Scheme)
+- `org.gnome.shell.extensions.user-theme` (GNOME Shell theme)
 """
 
 from enum import Enum
@@ -25,7 +25,7 @@ from .constants import (
 from .errors import GSettingsUnavailableError
 from .models import ThemeSet
 
-# Import protetto di PyGObject
+# Protected PyGObject import
 try:
     import gi
 
@@ -39,14 +39,14 @@ except (ImportError, ValueError, AttributeError):
 
 
 class Gtk4OverrideStatus(Enum):
-    """Stato del file di override GTK4/Libadwaita."""
+    """GTK4 / Libadwaita override status."""
 
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
 
 
 class GSettingsClient:
-    """Client wrapper per leggere e modificare le impostazioni dei temi su GNOME."""
+    """Wrapper client for reading and updating GNOME theme preferences."""
 
     def __init__(
         self,
@@ -54,54 +54,54 @@ class GSettingsClient:
         shell_schema_name: str = GSETTINGS_SCHEMA_USER_THEME,
         custom_schema_dirs: list[Path] | None = None,
     ) -> None:
-        """Inizializza il client GSettings e verifica la disponibilità degli schemi.
+        """Initialize GSettings client and verify schema availability.
 
         Args:
-            schema_name: Schema principale per i temi desktop (default: org.gnome.desktop.interface).
-            shell_schema_name: Schema per il tema GNOME Shell (default: org.gnome.shell.extensions.user-theme).
-            custom_schema_dirs: Cartelle aggiuntive in cui cercare file di schema (opzionale).
+            schema_name: Primary schema for desktop themes (default: org.gnome.desktop.interface).
+            shell_schema_name: Schema for GNOME Shell theme (default: org.gnome.shell.extensions.user-theme).
+            custom_schema_dirs: Additional directories to search for schema files (optional).
 
         Raises:
-            GSettingsUnavailableError: Se PyGObject o lo schema principale dell'interfaccia non sono disponibili.
+            GSettingsUnavailableError: If PyGObject or the primary interface schema is unavailable.
         """
         self.schema_name = schema_name
         self.shell_schema_name = shell_schema_name
         self.custom_schema_dirs = custom_schema_dirs or []
 
-        # 1. Verifica disponibilità PyGObject
+        # 1. Verify PyGObject availability
         if not _GIO_AVAILABLE or Gio is None:
             raise GSettingsUnavailableError(
-                "PyGObject (gi.repository.Gio) non è disponibile nel sistema. "
-                "Assicurati di essere su un ambiente Linux compatibile con GNOME "
-                "e che i pacchetti python3-gi e libglib2.0 siano installati."
+                "PyGObject (gi.repository.Gio) is not available on this system. "
+                "Ensure you are running on a GNOME-compatible Linux environment "
+                "with python3-gi and libglib2.0 packages installed."
             )
 
-        # 2. Inizializzazione schema interfaccia principale (obbligatorio)
+        # 2. Initialize primary interface schema (mandatory)
         self._settings = self._get_settings_for_schema(schema_name)
         if self._settings is None:
             raise GSettingsUnavailableError(
-                f"Lo schema GSettings '{schema_name}' non è installato nel sistema. "
-                "Questo strumento richiede un ambiente desktop basato su GNOME."
+                f"GSettings schema '{schema_name}' is not installed on this system. "
+                "This tool requires a GNOME-based desktop environment."
             )
 
-        # 3. Inizializzazione schema Shell User-Theme (cerca nei percorsi di sistema e nelle estensioni utente)
+        # 3. Initialize Shell User-Theme schema (searches system and user extension paths)
         self._shell_settings = self._get_settings_for_schema(shell_schema_name)
 
     @property
     def is_shell_theme_supported(self) -> bool:
-        """Indica se l'estensione User Themes è installata e il tema Shell è configurabile."""
+        """Indicate whether the User Themes extension is available and Shell theme can be configured."""
         return self._shell_settings is not None
 
     # -------------------------------------------------------------------------
-    # Ricerca Dinamica degli Schemi (Inclusi Schemi Estensioni Utente)
+    # Dynamic Schema Resolution (Including User Extensions)
     # -------------------------------------------------------------------------
 
     def _get_settings_for_schema(self, target_schema: str) -> object | None:
-        """Trova e istanzia un oggetto Gio.Settings per uno schema.
+        """Find and instantiate a Gio.Settings object for a schema.
 
-        Cerca prima nei percorsi globali di sistema ($XDG_DATA_DIRS/glib-2.0/schemas).
-        Se non lo trova (come accade spesso per le estensioni GNOME installate dall'utente in ~/.local),
-        effettua una scansione nelle cartelle delle estensioni di sistema e utente.
+        Checks global system locations first ($XDG_DATA_DIRS/glib-2.0/schemas).
+        If not found (as is common for user-installed extensions in ~/.local),
+        scans extension directories.
         """
         schema_source = Gio.SettingsSchemaSource.get_default()
         if schema_source is not None:
@@ -114,7 +114,7 @@ class GSettingsClient:
                 except Exception:
                     pass
 
-        # Percorsi delle estensioni GNOME (sia utente che di sistema)
+        # GNOME extension paths (both user and system)
         search_dirs = list(self.custom_schema_dirs)
         search_dirs.extend(
             [
@@ -128,7 +128,7 @@ class GSettingsClient:
             if not base.is_dir():
                 continue
             try:
-                # Scandiamo le sottocartelle delle estensioni cercando le directory 'schemas'
+                # Scan extension subdirectories for 'schemas' folder
                 for entry in base.iterdir():
                     schema_dir = entry / "schemas" if entry.is_dir() else None
                     if schema_dir and schema_dir.is_dir():
@@ -151,15 +151,15 @@ class GSettingsClient:
         return None
 
     # -------------------------------------------------------------------------
-    # Metodi di Lettura
+    # Read Methods
     # -------------------------------------------------------------------------
 
     def get_current(self) -> ThemeSet:
-        """Legge e restituisce l'insieme dei temi attualmente attivi sul desktop.
+        """Read and return current active desktop themes.
 
         Returns:
-            Un oggetto ThemeSet contenente i nomi dei temi GTK, icone, cursori,
-            schema colori e tema Shell (se supportato).
+            A ThemeSet object containing active GTK, Icon, Cursor,
+            color scheme, and Shell theme (if supported).
         """
         gtk_theme = self._settings.get_string(GSETTINGS_KEY_GTK_THEME)
         icon_theme = self._settings.get_string(GSETTINGS_KEY_ICON_THEME)
@@ -182,14 +182,14 @@ class GSettingsClient:
         )
 
     # -------------------------------------------------------------------------
-    # Metodi di Scrittura
+    # Write Methods
     # -------------------------------------------------------------------------
 
     def apply(self, theme_set: ThemeSet) -> None:
-        """Applica in blocco tutti i temi valorizzati presenti nel ThemeSet.
+        """Apply all populated theme settings from a ThemeSet.
 
         Args:
-            theme_set: Oggetto ThemeSet con le configurazioni da applicare.
+            theme_set: ThemeSet instance with settings to apply.
         """
         if theme_set.gtk_theme is not None:
             self.set_gtk_theme(theme_set.gtk_theme)
@@ -209,53 +209,53 @@ class GSettingsClient:
         self._sync()
 
     def set_gtk_theme(self, name: str) -> None:
-        """Imposta il tema GTK."""
+        """Set GTK theme."""
         self._settings.set_string(GSETTINGS_KEY_GTK_THEME, name)
 
     def set_icon_theme(self, name: str) -> None:
-        """Imposta il set di icone."""
+        """Set icon pack."""
         self._settings.set_string(GSETTINGS_KEY_ICON_THEME, name)
 
     def set_cursor_theme(self, name: str) -> None:
-        """Imposta il tema dei cursori."""
+        """Set cursor theme."""
         self._settings.set_string(GSETTINGS_KEY_CURSOR_THEME, name)
 
     def set_color_scheme(self, scheme: str) -> None:
-        """Imposta lo schema colori (chiaro/scuro, GNOME 42+)."""
+        """Set color scheme preference (light/dark, GNOME 42+)."""
         valid_schemes = ["default", "prefer-dark", "prefer-light"]
         if scheme not in valid_schemes:
             raise ValueError(
-                f"Schema colore '{scheme}' non valido. Scelte ammesse: {valid_schemes}"
+                f"Invalid color scheme '{scheme}'. Allowed choices: {valid_schemes}"
             )
 
         if self._has_key(self._settings, GSETTINGS_KEY_COLOR_SCHEME):
             self._settings.set_string(GSETTINGS_KEY_COLOR_SCHEME, scheme)
 
     def set_shell_theme(self, name: str) -> None:
-        """Imposta il tema per la GNOME Shell.
+        """Set GNOME Shell theme.
 
         Args:
-            name: Il nome del tema Shell (o stringa vuota per ripristinare default).
+            name: Shell theme name (or empty string for system default).
 
         Raises:
-            GSettingsUnavailableError: Se l'estensione GNOME 'User Themes' non è installata.
+            GSettingsUnavailableError: If the 'User Themes' GNOME extension is not installed.
         """
         if self._shell_settings is None:
             raise GSettingsUnavailableError(
-                "Impossibile impostare il tema della Shell: l'estensione GNOME 'User Themes' "
-                "(schema org.gnome.shell.extensions.user-theme) non è installata o abilitata. "
-                "Puoi installarla su Ubuntu con: sudo apt install gnome-shell-extension-user-theme"
+                "Cannot set GNOME Shell theme: the 'User Themes' extension "
+                "(schema org.gnome.shell.extensions.user-theme) is not installed or enabled. "
+                "You can install it on Ubuntu with: sudo apt install gnome-shell-extension-user-theme"
             )
 
         self._shell_settings.set_string(GSETTINGS_KEY_SHELL_THEME, name)
 
     # -------------------------------------------------------------------------
-    # Helper Interni
+    # Internal Helpers
     # -------------------------------------------------------------------------
 
     @staticmethod
     def _has_key(settings_obj: object | None, key: str) -> bool:
-        """Verifica in modo sicuro se una chiave è supportata dallo schema corrente."""
+        """Safely check if a key is supported by the current schema."""
         if settings_obj is None:
             return False
         try:
@@ -268,17 +268,17 @@ class GSettingsClient:
         return False
 
     def _sync(self) -> None:
-        """Sincronizza le modifiche con il backend dconf."""
+        """Sync changes with the dconf backend."""
         try:
             Gio.Settings.sync()
         except Exception:
             pass
 
     def detect_gtk4_override(self) -> Gtk4OverrideStatus:
-        """Verifica se l'override GTK4 è attivo o inattivo.
+        """Check whether GTK4 override is active or inactive.
 
         Returns:
-            Gtk4OverrideStatus corrispondente allo stato reale del file gtk.css.
+            Gtk4OverrideStatus corresponding to gtk.css presence.
         """
         css_file = GTK4_CONFIG_DIR / "gtk.css"
         if css_file.is_file():

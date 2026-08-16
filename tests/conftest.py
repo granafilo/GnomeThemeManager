@@ -1,11 +1,19 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-
-"""Configurazione globale e fixture per pytest."""
-
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+
+import gnome_theme_manager
+
+
+@pytest.fixture(autouse=True)
+def default_test_locale_en(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure tests run with English locale by default unless explicitly overridden."""
+    monkeypatch.setenv("LANGUAGE", "en")
+    monkeypatch.setenv("LC_ALL", "C.UTF-8")
+    monkeypatch.setenv("LANG", "C.UTF-8")
+    # Bind gettext to English identity/fallback
+    gnome_theme_manager._ = lambda s: s
 
 from gnome_theme_manager.core.gsettings import Gtk4OverrideStatus
 from gnome_theme_manager.core.manager import ThemeManager

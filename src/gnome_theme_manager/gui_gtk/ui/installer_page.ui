@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Template dichiarativo per la pagina 'Installatore temi' (Fase 5.7) -->
+<!-- Declarative template for 'Theme Installer' page -->
 <interface>
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
@@ -11,7 +11,7 @@
     <property name="transition-type">crossfade</property>
 
     <!-- ================================================================= -->
-    <!-- 1. STATO INITIAL: Invito alla selezione di cartella o archivio    -->
+    <!-- 1. INITIAL STATE: Prompt to choose folder or archive              -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -19,8 +19,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="initial_status_page">
             <property name="icon-name">system-software-install-symbolic</property>
-            <property name="title" translatable="yes">Installatore temi</property>
-            <property name="description" translatable="yes">Seleziona una cartella o un archivio compresso (.zip, .tar.gz, .tar.xz) per installare nuovi temi.</property>
+            <property name="title" translatable="yes">Theme Installer</property>
+            <property name="description" translatable="yes">Select a folder or compressed archive (.zip, .tar.gz, .tar.xz) to install new themes.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -33,8 +33,8 @@
                     <property name="margin-top">24</property>
                     <child>
                       <object class="GtkButton" id="select_folder_button">
-                        <property name="label" translatable="yes">Seleziona cartella</property>
-                        <property name="tooltip-text" translatable="yes">Seleziona una cartella di tema già estratta sul filesystem</property>
+                        <property name="label" translatable="yes">Select Folder</property>
+                        <property name="tooltip-text" translatable="yes">Select an extracted theme folder on the filesystem</property>
                         <style>
                           <class name="pill"/>
                         </style>
@@ -42,8 +42,8 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="select_archive_button">
-                        <property name="label" translatable="yes">Seleziona archivio</property>
-                        <property name="tooltip-text" translatable="yes">Seleziona un file compresso (.zip, .tar.gz, .tar.xz, .tar.bz2)</property>
+                        <property name="label" translatable="yes">Select Archive</property>
+                        <property name="tooltip-text" translatable="yes">Select a compressed archive file (.zip, .tar.gz, .tar.xz, .tar.bz2)</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>
@@ -60,7 +60,7 @@
     </child>
 
     <!-- ================================================================= -->
-    <!-- 2. STATO ANALYZING: Spinner e indicatore di analisi sorgente      -->
+    <!-- 2. ANALYZING STATE: Spinner and source inspection indicator        -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -82,7 +82,7 @@
             </child>
             <child>
               <object class="GtkLabel" id="analyzing_label">
-                <property name="label" translatable="yes">Analisi della sorgente in corso…</property>
+                <property name="label" translatable="yes">Analyzing source…</property>
                 <style>
                   <class name="title-3"/>
                 </style>
@@ -90,7 +90,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label" translatable="yes">Verifica di sicurezza ed estrazione componenti</property>
+                <property name="label" translatable="yes">Security verification and component detection</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -102,7 +102,7 @@
     </child>
 
     <!-- ================================================================= -->
-    <!-- 3. STATO READY: Dettagli tema rilevato e pulsanti di azione       -->
+    <!-- 3. READY STATE: Detected theme details and action buttons         -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -126,40 +126,40 @@
                     <property name="spacing">24</property>
                     <child>
                       <object class="AdwPreferencesGroup">
-                        <property name="title" translatable="yes">Dettagli sorgente</property>
-                        <property name="description" translatable="yes">Informazioni sul tema rilevato nella sorgente selezionata.</property>
+                        <property name="title" translatable="yes">Source Details</property>
+                        <property name="description" translatable="yes">Detected theme information from selected source.</property>
                         <child>
                           <object class="AdwActionRow" id="source_name_row">
-                            <property name="title" translatable="yes">Sorgente selezionata</property>
+                            <property name="title" translatable="yes">Selected Source</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">folder-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="source_type_row">
-                            <property name="title" translatable="yes">Tipo sorgente</property>
+                            <property name="title" translatable="yes">Source Type</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">dialog-information-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_theme_name_row">
-                            <property name="title" translatable="yes">Nome tema rilevato</property>
+                            <property name="title" translatable="yes">Detected Theme Name</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">preferences-desktop-theme-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_components_row">
-                            <property name="title" translatable="yes">Componenti supportati</property>
+                            <property name="title" translatable="yes">Supported Components</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">emblem-default-symbolic</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="target_dir_row">
-                            <property name="title" translatable="yes">Installa nel percorso legacy ~/.themes e ~/.icons</property>
-                            <property name="subtitle" translatable="yes">Se disattivato, usa lo standard XDG (~/.local/share/themes)</property>
+                            <property name="title" translatable="yes">Install into legacy path ~/.themes and ~/.icons</property>
+                            <property name="subtitle" translatable="yes">If disabled, uses XDG standard (~/.local/share/themes)</property>
                             <property name="icon-name">folder-remote-symbolic</property>
                             <child>
                               <object class="GtkSwitch" id="target_dir_switch">
@@ -179,7 +179,7 @@
                         <property name="margin-top">8</property>
                         <child>
                           <object class="GtkButton" id="change_source_button">
-                            <property name="label" translatable="yes">Cambia sorgente</property>
+                            <property name="label" translatable="yes">Change Source</property>
                             <style>
                               <class name="pill"/>
                             </style>
@@ -187,7 +187,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="install_button">
-                            <property name="label" translatable="yes">Installa</property>
+                            <property name="label" translatable="yes">Install</property>
                             <style>
                               <class name="pill"/>
                             </style>
@@ -195,7 +195,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="install_apply_button">
-                            <property name="label" translatable="yes">Installa e Applica</property>
+                            <property name="label" translatable="yes">Install and Apply</property>
                             <style>
                               <class name="pill"/>
                               <class name="suggested-action"/>
@@ -214,7 +214,7 @@
     </child>
 
     <!-- ================================================================= -->
-    <!-- 4. STATO INSTALLING: Spinner e avanzamento installazione          -->
+    <!-- 4. INSTALLING STATE: Spinner and installation progress            -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -236,7 +236,7 @@
             </child>
             <child>
               <object class="GtkLabel" id="installing_status_label">
-                <property name="label" translatable="yes">Installazione del tema in corso…</property>
+                <property name="label" translatable="yes">Installing theme…</property>
                 <style>
                   <class name="title-3"/>
                 </style>
@@ -244,7 +244,7 @@
             </child>
             <child>
               <object class="GtkLabel">
-                <property name="label" translatable="yes">Copia dei file nelle cartelle utente XDG</property>
+                <property name="label" translatable="yes">Copying files into XDG user directories</property>
                 <style>
                   <class name="dim-label"/>
                 </style>
@@ -256,7 +256,7 @@
     </child>
 
     <!-- ================================================================= -->
-    <!-- 5. STATO SUCCESS: Conferma e riepilogo con azione per nuova op    -->
+    <!-- 5. SUCCESS STATE: Confirmation and action for new operation       -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -264,8 +264,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="success_status_page">
             <property name="icon-name">emblem-ok-symbolic</property>
-            <property name="title" translatable="yes">Installazione completata</property>
-            <property name="description" translatable="yes">Il tema è stato installato con successo nelle directory utente.</property>
+            <property name="title" translatable="yes">Installation Completed</property>
+            <property name="description" translatable="yes">The theme was successfully installed in user directories.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -277,7 +277,7 @@
                     <property name="margin-top">16</property>
                     <child>
                       <object class="GtkButton" id="success_new_source_button">
-                        <property name="label" translatable="yes">Seleziona un'altra sorgente</property>
+                        <property name="label" translatable="yes">Select Another Source</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>
@@ -294,7 +294,7 @@
     </child>
 
     <!-- ================================================================= -->
-    <!-- 6. STATO ERROR: Messaggio di errore, pulsante Riprova e Reset     -->
+    <!-- 6. ERROR STATE: Error message, retry button and reset             -->
     <!-- ================================================================= -->
     <child>
       <object class="GtkStackPage">
@@ -302,8 +302,8 @@
         <property name="child">
           <object class="AdwStatusPage" id="error_status_page">
             <property name="icon-name">dialog-error-symbolic</property>
-            <property name="title" translatable="yes">Errore durante l'operazione</property>
-            <property name="description" translatable="yes">Si è verificato un errore durante l'analisi o l'installazione.</property>
+            <property name="title" translatable="yes">Operation Error</property>
+            <property name="description" translatable="yes">An error occurred during inspection or installation.</property>
             <property name="child">
               <object class="AdwClamp">
                 <property name="maximum-size">450</property>
@@ -315,7 +315,7 @@
                     <property name="margin-top">16</property>
                     <child>
                       <object class="GtkButton" id="error_retry_button">
-                        <property name="label" translatable="yes">Riprova</property>
+                        <property name="label" translatable="yes">Retry</property>
                         <style>
                           <class name="pill"/>
                         </style>
@@ -323,7 +323,7 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="error_new_source_button">
-                        <property name="label" translatable="yes">Seleziona un'altra sorgente</property>
+                        <property name="label" translatable="yes">Select Another Source</property>
                         <style>
                           <class name="pill"/>
                           <class name="suggested-action"/>
