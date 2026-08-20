@@ -209,6 +209,18 @@ class ThemeValidator:
                 valid=False, warnings=warnings, missing_files=missing_files
             )
 
+        # Check if theme inherits from parent icon packs (e.g. Yaru, Humanity, Adwaita, hicolor)
+        inherits_parents = False
+        try:
+            config = configparser.ConfigParser(interpolation=None)
+            config.read(index_path, encoding="utf-8")
+            for sec in ("Icon Theme", "Desktop Entry"):
+                if config.has_section(sec) and config.get(sec, "Inherits", fallback="").strip():
+                    inherits_parents = True
+                    break
+        except Exception:
+            pass
+
         # Count detected standard icons across all subdirectories
         found_standard_icons: set[str] = set()
         for p in path.rglob("*"):
@@ -217,7 +229,8 @@ class ThemeValidator:
                 if stem in STANDARD_ICON_BASENAMES:
                     found_standard_icons.add(stem)
 
-        if len(found_standard_icons) < 5:
+        # Only warn for standalone icon packs that do NOT inherit from parent themes and have < 5 icons
+        if len(found_standard_icons) < 5 and not inherits_parents:
             warnings.append(
                 f"Icon pack has only {len(found_standard_icons)} standard icons detected "
                 "(recommended minimum: 5)."

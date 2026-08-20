@@ -26,6 +26,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk, Pango
 
 from ...core.errors import GnomeThemeManagerError
 from ...core.models import ApplyResult, Theme, ThemeSet, ThemeType
+from ..widgets.icon_pack_preview import IconPackPreview
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -633,6 +634,14 @@ class ThemesPage:
             lbl_active.add_css_class("dim-label")
             lbl_active.set_halign(Gtk.Align.CENTER)
             extra_box.append(lbl_active)
+
+        # Visual preview grid for Icon packs (Task 1.4)
+        if item.theme_type == ThemeType.ICON:
+            t_path = Path(item.path_display) if item.path_display else None
+            preview_widget = IconPackPreview(theme_name=item.name, theme_path=t_path, icon_size=36)
+            preview_widget.set_margin_top(8)
+            preview_widget.set_margin_bottom(4)
+            extra_box.append(preview_widget)
 
         cross_checkbox = None
         if self.manager is not None:

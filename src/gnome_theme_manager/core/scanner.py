@@ -409,11 +409,12 @@ class ThemeScanner:
     def _is_icon_theme(path: Path) -> bool:
         """Check if directory contains a valid icon pack."""
         index_file = path / "index.theme"
+        has_icon_dirs_in_index = False
         if index_file.is_file():
             try:
                 content = index_file.read_text(encoding="utf-8", errors="ignore")
-                if "[Icon Theme]" in content or "Directories=" in content:
-                    return True
+                if "Directories=" in content:
+                    has_icon_dirs_in_index = True
             except OSError:
                 pass
 
@@ -430,8 +431,7 @@ class ThemeScanner:
             "256x256",
             "512x512",
         ]
-        for subdir in icon_subdirs:
-            if (path / subdir).is_dir():
-                return True
+        has_icon_subdirs = any((path / subdir).is_dir() for subdir in icon_subdirs)
 
-        return False
+        # An icon theme MUST have either Directories= specified or actual icon subdirectories
+        return has_icon_dirs_in_index or has_icon_subdirs
