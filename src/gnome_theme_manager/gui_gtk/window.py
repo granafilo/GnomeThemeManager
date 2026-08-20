@@ -63,6 +63,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.set_default_size(1000, 700)
 
         self.manager = manager or ThemeManager()
+        try:
+            self.manager.installer.ensure_user_directories()
+        except Exception as err:
+            logger.warning("Failed to initialize user theme directories: %s", err)
 
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")

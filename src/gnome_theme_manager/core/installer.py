@@ -272,6 +272,32 @@ class ThemeInstaller:
             Path(user_icons_dir).expanduser() if user_icons_dir else USER_ICONS_DIRS[0]
         )
 
+    def ensure_user_directories(self) -> list[Path]:
+        """Ensure all standard user theme directories exist on the filesystem.
+
+        Creates ~/.local/share/themes, ~/.themes, ~/.local/share/icons, and ~/.icons
+        if they do not already exist.
+
+        Returns:
+            List of Path objects that were verified/created.
+        """
+        dirs_to_ensure: list[Path] = [self.user_themes_dir, self.user_icons_dir]
+
+        for d in USER_THEMES_DIRS:
+            expanded = d.expanduser()
+            if expanded not in dirs_to_ensure:
+                dirs_to_ensure.append(expanded)
+
+        for d in USER_ICONS_DIRS:
+            expanded = d.expanduser()
+            if expanded not in dirs_to_ensure:
+                dirs_to_ensure.append(expanded)
+
+        for directory in dirs_to_ensure:
+            directory.mkdir(parents=True, exist_ok=True)
+
+        return dirs_to_ensure
+
     def inspect_source(
         self,
         source_path: Path,
@@ -363,6 +389,7 @@ class ThemeInstaller:
             targets = [(custom_name, t[1], t[2]) for t in targets]
 
         # Determine target base directories (XDG vs Legacy)
+        self.ensure_user_directories()
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
             base_themes_dir = USER_THEMES_DIRS[1]
             base_icons_dir = USER_ICONS_DIRS[1]
