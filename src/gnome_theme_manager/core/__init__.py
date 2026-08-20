@@ -20,6 +20,7 @@ from .constants import (
     USER_ICONS_DIRS,
     USER_THEMES_DIRS,
 )
+from .css_extractor import ExtractedColors, extract_theme_colors, parse_css_define_colors
 from .errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
@@ -71,6 +72,7 @@ __all__ = [
     "USER_THEMES_DIRS",
     "ApplyResult",
     "ArchiveExtractionError",
+    "ExtractedColors",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
@@ -95,6 +97,8 @@ __all__ = [
     "ThemeValidationResult",
     "ThemeValidator",
     "detect_theme_types",
+    "extract_theme_colors",
     "inspect_extracted_tree",
+    "parse_css_define_colors",
     "safe_extract",
 ]
