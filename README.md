@@ -10,7 +10,9 @@
 
 ## Project Status
 
-Version 1.0.0 is a public testing release.
+**Current release:** v1.1.0
+
+Version 1.1.0 is a public testing release.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -113,8 +115,8 @@ pip install -e ".[dev]"
 Download the latest `.AppImage` executable from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) and launch it:
 
 ```bash
-chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
-./GNOMEThemeManager-1.0.0-x86_64.AppImage
+chmod +x GNOMEThemeManager-1.1.0-x86_64.AppImage
+./GNOMEThemeManager-1.1.0-x86_64.AppImage
 ```
 
 > [!NOTE]
@@ -124,7 +126,7 @@ chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
 > - **Fedora**: `sudo dnf install -y fuse-libs`
 > - **Arch Linux**: `sudo pacman -S fuse2`
 >
-> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.0.0-x86_64.AppImage --appimage-extract-and-run`
+> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.1.0-x86_64.AppImage --appimage-extract-and-run`
 
 For detailed instructions and prerequisites, see **[INSTALL.md](INSTALL.md)**.
 

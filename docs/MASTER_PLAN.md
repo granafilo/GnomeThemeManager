@@ -141,14 +141,18 @@ Dopo la conferma, eseguire in ordine:
 **Step C — Traduzioni**: estrazione stringhe aggiornata; `po/en.po` e `po/it.po` sincronizzati, nessun fuzzy; `msgfmt` senza warning; nessuna stringa UI hardcodata; encoding UTF-8 verificato.
 
 **Step D — Version bump**
-1. Determinare la nuova versione dal mapping §2.7 (fase → minor; chore → patch).
+
+1. Nuova versione dal mapping §2.7.
 2. Aggiornare l'unica fonte: `__version__` in `src/gnome_theme_manager/__init__.py`.
-3. Propagare dove non derivabile: nuova entry CHANGELOG con versione + data;
-   entry release in metainfo/.desktop se presenti.
-4. Verifica consistenza:
-   - `grep -rIn "<vecchia versione>" . --exclude-dir=.git` → zero hit
-   - `python -m gnome_theme_manager --version` → stampa la nuova
-5. Il bump rientra nel commit finale di chiusura.
+3. Aggiornare la **version surface** (tutti i marker "versione corrente"):
+   - `CHANGELOG.md`: entry in cima `## [X.Y.Z] - YYYY-MM-DD`
+   - `README.md`: riga standard `**Current release:** vX.Y.Z` + tutte le reference alla versione corrente
+   - metainfo `.xml` / `.desktop` (se presenti): ultima `<release version="X.Y.Z"/>`
+   - `docs/ROADMAP.md`: riga "current version" se presente
+   - (`docs/FEATURE_GUIDE.md` NON va toccata: contiene versioni storiche)
+4. Eseguire in locale: `python3 scripts/check_version_coherence.py` → deve passare.
+5. Regola grep: nessun marker "corrente" con la vecchia versione.
+6. Il bump rientra nel commit finale di chiusura.
 
 **Step E — Comando di commit finale**: stampare (NON eseguire):
 
@@ -159,6 +163,37 @@ git add -A && git commit -m "chore: phase {N} completion — v{X.Y.Z} — docs, 
 > Nota: i file di codice/test sono già stati committati per-task durante la fase.
 > Questo commit contiene esclusivamente gli esiti degli step A–D.
 > Il tag `v{X.Y.Z}` viene creato dall'utente dopo il merge.
+
+**Step F — PR summary**
+Dopo lo step E, stampare un PR summary pronto da incollare (titolo + body),
+costruito dal `git log` della branch e dalle righe GUI CHECK della fase:
+
+```
+## Summary — Phase {N}: <nome> (v{X.Y.Z})
+
+<2-3 righe: cosa introduce la fase nel complesso>
+
+## Tasks
+- [x] {N}.1 <nome> — una riga su cosa introduce
+- [x] {N}.2 <nome> — ...
+- [x] <eventuali commit chore della fase (i18n backfill, docs deps...)>
+
+## Manual verification (GUI CHECK)
+- <comportamento> -> <verifica GUI>
+- ...
+
+## Tests & quality
+- pytest verde, coverage core >= 80% · ruff/mypy puliti
+- i18n en/it sincronizzati, msgfmt ok · versione allineata a v{X.Y.Z}
+
+## Breaking changes / note
+- <se presenti, altrimenti "none">
+
+## Post-merge
+- tag v{X.Y.Z}
+```
+
+L'utente lo incolla in `gh pr create --body`. Non eseguire la PR: spetta all'utente.
 
 ### 1.5 Gestione modifiche post-conferma
 Se l'utente richiede modifiche dopo la chiusura, il ciclo riprende dalla feature modificata e gli step A–D vanno rieseguiti integralmente.

@@ -54,6 +54,7 @@ trigger: always_on
 - Phase closure commit contains ONLY docs/i18n/verification changes
 - NEVER execute commits yourself: print the command, the user executes it
 - Per-task commits use explicit git add, never git add -A
+- After phase-close confirmation, ALWAYS print a paste-ready PR summary (step F).
 
 ## Current Phase Reference
 
