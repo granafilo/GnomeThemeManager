@@ -21,6 +21,7 @@ from .constants import (
     USER_THEMES_DIRS,
 )
 from .css_extractor import ExtractedColors, extract_theme_colors, parse_css_define_colors
+from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
@@ -78,6 +79,8 @@ __all__ = [
     "USER_THEMES_DIRS",
     "ApplyResult",
     "ArchiveExtractionError",
+    "EditorDraft",
+    "EditorDraftManager",
     "ExtractedColors",
     "GSettingsClient",
     "GSettingsUnavailableError",

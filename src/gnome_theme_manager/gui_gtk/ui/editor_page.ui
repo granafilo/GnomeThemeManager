@@ -95,6 +95,15 @@
                       </object>
                     </child>
 
+                    <!-- Unsaved Draft Prompt Banner -->
+                    <child>
+                      <object class="AdwBanner" id="draft_banner">
+                        <property name="title" translatable="yes">Unfinished draft found. Would you like to resume it?</property>
+                        <property name="button-label" translatable="yes">Resume Draft</property>
+                        <property name="revealed">false</property>
+                      </object>
+                    </child>
+
                     <!-- Action Bar Top -->
                     <child>
                       <object class="GtkBox" id="action_box">

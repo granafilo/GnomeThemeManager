@@ -122,3 +122,35 @@ def test_theme_editor_preview_in_app(mock_theme_manager: MagicMock) -> None:
 
     page._on_preview_clicked(None)
     assert mock_theme_manager.theme_preview.start_preview.called
+
+
+def test_theme_editor_draft_auto_save_and_prompt(mock_theme_manager: MagicMock) -> None:
+    """Verify editor auto-saves draft on change and shows banner if draft exists on refresh."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gnome_theme_manager.core.editor_draft import EditorDraft, EditorDraftManager
+    from gnome_theme_manager.gui_gtk.pages.editor_view import ThemeEditorPage
+
+    mock_draft_manager = MagicMock(spec=EditorDraftManager)
+    mock_draft_manager.has_draft.return_value = True
+    saved_draft = EditorDraft(
+        theme_name="Unfinished Masterpiece",
+        gtk_theme="Adwaita-dark",
+        colors={"theme_bg_color": "#112233"},
+    )
+    mock_draft_manager.load_draft.return_value = saved_draft
+    mock_theme_manager.editor_drafts = mock_draft_manager
+
+    page = ThemeEditorPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    # Draft banner should be revealed
+    assert page.draft_banner is not None
+    assert page.draft_banner.get_revealed() is True
+
+    # Clicking resume should load draft into entry and controls
+    page._on_resume_draft_clicked(None)
+    assert page.theme_name_entry.get_text() == "Unfinished Masterpiece"
+    assert page.draft_banner.get_revealed() is False
+

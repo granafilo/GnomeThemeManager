@@ -274,15 +274,17 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 - Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
 
 ### 2.8 i18n follows the feature
-Ogni task che introduce stringhe user-visible (GUI, CLI, dialoghi) DEVE,
-nello STESSO commit del task:
+Ogni task che introduce stringhe user-visible DEVE, nello STESSO commit:
 1. Wrappare le stringhe in gettext (`_()`)
-2. Aggiungere i msgid a `po/en.po` (lingua sorgente)
-3. Aggiungere le traduzioni IT a `po/it.po` (nessun untranslated/fuzzy)
+2. Aggiungere i msgid a `po/en.po`
+3. Aggiungere le traduzioni IT a `po/it.po` (niente untranslated/fuzzy)
+4. Ricompilare le traduzioni: `python3 scripts/compile_translations.py`
+   (i `.po` sono sorgenti; l'app legge i `.mo` binari). I `.mo` NON sono
+   committati (`*.mo` in `.gitignore`): generati a fine task e in packaging.
+5. Se il task aggiunge/cambia stringhe, il GUI CHECK include la verifica con
+   `LANG=it_IT.UTF-8` (italiano) e senza (inglese).
 
-Lo step C della chiusura fase è SOLO verifica finale di consistenza,
-non il momento in cui si traduce.
-I test che asseriscono su stringhe usano i msgid, mai le traduzioni.
+Lo step C della chiusura fase è SOLO verifica finale di consistenza.
 
 ---
 

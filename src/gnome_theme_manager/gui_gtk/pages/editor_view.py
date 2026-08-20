@@ -22,6 +22,7 @@ gi.require_version("GLib", "2.0")
 from gi.repository import Adw, GLib, Gtk
 
 from ...core.css_extractor import ExtractedColors, extract_theme_colors
+from ...core.editor_draft import EditorDraft
 from ...core.models import Theme, ThemeSet, ThemeType
 from ...core.theme_editor import ThemeComposition
 from ..widgets.color_picker import ColorPickerButton
@@ -69,6 +70,10 @@ class ThemeEditorPage:
         if self.preview_banner:
             self.preview_banner.connect("button-clicked", self._on_stop_preview_clicked)
 
+        self.draft_banner: Adw.Banner | None = self.builder.get_object("draft_banner")
+        if self.draft_banner:
+            self.draft_banner.connect("button-clicked", self._on_resume_draft_clicked)
+
         # Component dropdowns
         self.gtk_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_gtk")
         self.shell_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_shell")
@@ -115,7 +120,11 @@ class ThemeEditorPage:
         for cs in self._color_schemes:
             self._color_scheme_model.append(cs)
 
+        self._is_restoring_draft = False
+
         # Connect event handlers
+        if self.theme_name_entry:
+            self.theme_name_entry.connect("changed", self._on_user_edited)
         if self.save_button:
             self.save_button.connect("clicked", self._on_save_as_global_theme_clicked)
         if self.preview_button:
@@ -275,6 +284,105 @@ class ThemeEditorPage:
         self.color_scheme_dropdown.set_selected(cs_idx)
 
         self._update_colors_from_selected_gtk()
+        self._check_for_saved_draft()
+
+    def _check_for_saved_draft(self) -> None:
+        """Reveal draft_banner if an unsaved draft exists in manager."""
+        if (
+            hasattr(self.manager, "editor_drafts")
+            and self.manager.editor_drafts.has_draft()
+            and self.draft_banner
+        ):
+            self.draft_banner.set_revealed(True)
+
+    def _on_user_edited(self, *_: Any) -> None:
+        """Auto-save current editor state to editor_draft.json on any user change."""
+        if self._is_restoring_draft or self._is_loading:
+            return
+        self._save_current_draft()
+
+    def _save_current_draft(self) -> None:
+        """Serialize and write current editor state to manager.editor_drafts."""
+        if not hasattr(self.manager, "editor_drafts"):
+            return
+
+        draft = EditorDraft(
+            theme_name=self.theme_name_entry.get_text().strip(),
+            gtk_theme=self._get_selected_string(self.gtk_dropdown),
+            shell_theme=self._get_selected_string(self.shell_dropdown),
+            icon_theme=self._get_selected_string(self.icon_dropdown),
+            cursor_theme=self._get_selected_string(self.cursor_dropdown),
+            color_scheme=self._get_selected_string(self.color_scheme_dropdown),
+            colors=self._get_current_colors(),
+        )
+        self.manager.editor_drafts.save_draft(draft)
+
+    def _on_resume_draft_clicked(self, _banner: Any) -> None:
+        """Restore all controls from saved draft and hide banner."""
+        if not hasattr(self.manager, "editor_drafts"):
+            return
+
+        draft = self.manager.editor_drafts.load_draft()
+        if not draft:
+            if self.draft_banner:
+                self.draft_banner.set_revealed(False)
+            return
+
+        self._is_restoring_draft = True
+        try:
+            if draft.theme_name:
+                self.theme_name_entry.set_text(draft.theme_name)
+
+            if draft.gtk_theme:
+                gtk_idx = self._find_model_index(self._gtk_model, draft.gtk_theme)
+                if gtk_idx >= 0:
+                    self.gtk_dropdown.set_selected(gtk_idx)
+
+            if draft.shell_theme:
+                shell_idx = self._find_model_index(self._shell_model, draft.shell_theme)
+                if shell_idx >= 0:
+                    self.shell_dropdown.set_selected(shell_idx)
+
+            if draft.icon_theme:
+                icon_idx = self._find_model_index(self._icon_model, draft.icon_theme)
+                if icon_idx >= 0:
+                    self.icon_dropdown.set_selected(icon_idx)
+
+            if draft.cursor_theme:
+                cursor_idx = self._find_model_index(self._cursor_model, draft.cursor_theme)
+                if cursor_idx >= 0:
+                    self.cursor_dropdown.set_selected(cursor_idx)
+
+            if draft.color_scheme and draft.color_scheme in self._color_schemes:
+                self.color_scheme_dropdown.set_selected(
+                    self._color_schemes.index(draft.color_scheme)
+                )
+
+            if draft.colors:
+                if "theme_fg_color" in draft.colors:
+                    self.fg_color_button.set_color_hex(draft.colors["theme_fg_color"])
+                if "theme_bg_color" in draft.colors:
+                    self.bg_color_button.set_color_hex(draft.colors["theme_bg_color"])
+                if "theme_selected_bg_color" in draft.colors:
+                    self.accent_color_button.set_color_hex(draft.colors["theme_selected_bg_color"])
+                if "theme_selected_fg_color" in draft.colors:
+                    self.accent_fg_color_button.set_color_hex(
+                        draft.colors["theme_selected_fg_color"]
+                    )
+
+            if self.draft_banner:
+                self.draft_banner.set_revealed(False)
+            if self.on_notify_message:
+                self.on_notify_message(_("Draft resumed successfully."), False)
+        finally:
+            self._is_restoring_draft = False
+
+    def _find_model_index(self, string_list: Gtk.StringList, target: str) -> int:
+        """Find index of target item in Gtk.StringList."""
+        for i in range(string_list.get_n_items()):
+            if string_list.get_string(i) == target:
+                return i
+        return -1
 
     def _get_selected_string(self, dropdown: Gtk.DropDown) -> str | None:
         """Helper to get text of selected item in DropDown."""
@@ -311,16 +419,20 @@ class ThemeEditorPage:
 
     def _on_gtk_theme_changed(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
         """Handle GTK theme selection change by re-extracting colors and updating preview."""
-        self._update_colors_from_selected_gtk()
-        self._update_live_preview_if_active()
+        if not self._is_restoring_draft:
+            self._update_colors_from_selected_gtk()
+            self._update_live_preview_if_active()
+            self._on_user_edited()
 
     def _on_component_changed_while_preview(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
         """Update live preview dynamically when any component dropdown selection changes."""
         self._update_live_preview_if_active()
+        self._on_user_edited()
 
     def _on_color_value_changed(self, _picker: Any, _color_hex: str) -> None:
         """Update live preview dynamically when color picker value changes."""
         self._update_live_preview_if_active()
+        self._on_user_edited()
 
     def _update_live_preview_if_active(self) -> None:
         """If a live preview is currently active on the desktop, re-apply with new values."""
@@ -492,10 +604,15 @@ class ThemeEditorPage:
         )
 
     def _on_save_as_global_theme_clicked(self, _btn: Gtk.Button | None) -> None:
-        """Save composition as Global Theme."""
+        """Save composition as Global Theme and clear draft."""
         try:
             composition = self._get_current_composition()
             saved = self.manager.save_theme_composition(composition, overwrite=True)
+            if hasattr(self.manager, "editor_drafts"):
+                self.manager.editor_drafts.clear_draft()
+            if self.draft_banner:
+                self.draft_banner.set_revealed(False)
+
             msg = _("Global Theme '{name}' saved successfully.").format(name=saved.name)
             if self.on_notify_message:
                 self.on_notify_message(msg, False)

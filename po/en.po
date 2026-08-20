@@ -1949,4 +1949,13 @@ msgstr "Preview"
 msgid "Live preview reverted to previous system themes."
 msgstr "Live preview reverted to previous system themes."
 
+msgid "Unfinished draft found. Would you like to resume it?"
+msgstr "Unfinished draft found. Would you like to resume it?"
+
+msgid "Resume Draft"
+msgstr "Resume Draft"
+
+msgid "Draft resumed successfully."
+msgstr "Draft resumed successfully."
+
 

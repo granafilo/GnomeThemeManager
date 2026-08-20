@@ -15,6 +15,7 @@ import logging
 from pathlib import Path
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
+from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
 from .global_themes import GlobalTheme, GlobalThemeManager
@@ -62,6 +63,7 @@ class ThemeManager:
         validator: ThemeValidator | None = None,
         theme_mixer: ThemeMixer | None = None,
         theme_forks: ThemeForkManager | None = None,
+        editor_drafts: EditorDraftManager | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -77,6 +79,7 @@ class ThemeManager:
             validator: Custom ThemeValidator instance (optional).
             theme_mixer: Custom ThemeMixer instance (optional).
             theme_forks: Custom ThemeForkManager instance (optional).
+            editor_drafts: Custom EditorDraftManager instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -108,6 +111,12 @@ class ThemeManager:
             global_theme_manager=self._global_themes,
         )
         self._theme_forks = theme_forks or ThemeForkManager()
+        self._editor_drafts = editor_drafts or EditorDraftManager()
+
+    @property
+    def editor_drafts(self) -> EditorDraftManager:
+        """Return editor draft manager."""
+        return self._editor_drafts
 
     @property
     def theme_forks(self) -> ThemeForkManager:

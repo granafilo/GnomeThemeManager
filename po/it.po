@@ -1949,4 +1949,13 @@ msgstr "Anteprima"
 msgid "Live preview reverted to previous system themes."
 msgstr "Anteprima live ripristinata ai temi precedenti di sistema."
 
+msgid "Unfinished draft found. Would you like to resume it?"
+msgstr "Trovata una bozza non salvata. Vuoi riprenderla?"
+
+msgid "Resume Draft"
+msgstr "Riprendi Bozza"
+
+msgid "Draft resumed successfully."
+msgstr "Bozza ripristinata con successo."
+
 

@@ -19,6 +19,9 @@ trigger: always_on
 ## i18n Rule (hard rule)
 - New user-visible strings => gettext `_()` + po/en.po + po/it.po updated
   in the SAME commit as the feature. Never defer translations to phase close.
+- After touching .po files: run scripts/compile_translations.py before GUI CHECK.
+- *.mo are gitignored build artifacts; packaging scripts must compile them.
+- Verify UI both with and without LANG=it_IT.UTF-8.
 
 ## STOP Conditions (hard rule)
 - Any failure in $TEST_SUITE, $LINT_CMD, $TYPE_CHECK_CMD, or a crash in
