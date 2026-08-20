@@ -15,6 +15,7 @@ import logging
 from pathlib import Path
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
+from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
 from .global_themes import GlobalTheme, GlobalThemeManager
@@ -34,7 +35,11 @@ from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
+from .shell_editor import ShellThemeForkManager
+from .theme_editor import ThemeComposition, ThemeMixer
+from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
+from .wallpaper_color import WallpaperColorExtractor
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
@@ -43,7 +48,7 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator, ThemeMixer, ThemeForkManager), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -58,6 +63,9 @@ class ThemeManager:
         extensions: ExtensionsManager | None = None,
         global_themes: GlobalThemeManager | None = None,
         validator: ThemeValidator | None = None,
+        theme_mixer: ThemeMixer | None = None,
+        theme_forks: ThemeForkManager | None = None,
+        editor_drafts: EditorDraftManager | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -71,6 +79,9 @@ class ThemeManager:
             extensions: Custom ExtensionsManager instance (optional).
             global_themes: Custom GlobalThemeManager instance (optional).
             validator: Custom ThemeValidator instance (optional).
+            theme_mixer: Custom ThemeMixer instance (optional).
+            theme_forks: Custom ThemeForkManager instance (optional).
+            editor_drafts: Custom EditorDraftManager instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -98,6 +109,37 @@ class ThemeManager:
             scanner=self._scanner,
             current_themes_provider=self._get_current_themes_safe,
         )
+        self._theme_mixer = theme_mixer or ThemeMixer(
+            global_theme_manager=self._global_themes,
+        )
+        self._theme_forks = theme_forks or ThemeForkManager()
+        self._shell_forks = ShellThemeForkManager()
+        self._editor_drafts = editor_drafts or EditorDraftManager()
+        self._wallpaper_colors = WallpaperColorExtractor(gsettings=self._gsettings)
+
+    @property
+    def editor_drafts(self) -> EditorDraftManager:
+        """Return editor draft manager."""
+        return self._editor_drafts
+
+    @property
+    def wallpaper_colors(self) -> WallpaperColorExtractor:
+        """Return wallpaper adaptive color extractor."""
+        return self._wallpaper_colors
+
+    def get_wallpaper_palette(self, k: int = 5) -> list[str]:
+        """Return dominant palette extracted from active desktop wallpaper."""
+        return self._wallpaper_colors.get_current_wallpaper_palette(k=k)
+
+    @property
+    def theme_forks(self) -> ThemeForkManager:
+        """Return theme fork manager."""
+        return self._theme_forks
+
+    @property
+    def shell_forks(self) -> ShellThemeForkManager:
+        """Return shell theme fork manager."""
+        return self._shell_forks
 
     def _get_current_themes_safe(self) -> ThemeSet:
         """Helper to get current themes safely without raising exceptions."""
@@ -844,6 +886,22 @@ class ThemeManager:
             description=description,
             overwrite=overwrite,
         )
+
+    def save_theme_composition(
+        self,
+        composition: ThemeComposition,
+        overwrite: bool = False,
+    ) -> GlobalTheme:
+        """Save a ThemeComposition as a user-composed Global Theme.
+
+        Args:
+            composition: ThemeComposition object containing component selections.
+            overwrite: If True, replace existing user theme with same name.
+
+        Returns:
+            Saved GlobalTheme instance.
+        """
+        return self._theme_mixer.mix_and_save(composition, overwrite=overwrite)
 
     def delete_global_theme(self, theme_id_or_name: str) -> bool:
         """Delete a user-created Global Theme.

@@ -88,10 +88,51 @@ class GSettingsClient:
         # 3. Initialize Shell User-Theme schema (searches system and user extension paths)
         self._shell_settings: Any = self._get_settings_for_schema(shell_schema_name)
 
+        # 4. Initialize Desktop Background schema (optional fallback for wallpaper)
+        self._bg_settings: Any = self._get_settings_for_schema("org.gnome.desktop.background")
+
     @property
     def is_shell_theme_supported(self) -> bool:
         """Indicate whether the User Themes extension is available and Shell theme can be configured."""
         return self._shell_settings is not None
+
+    def get_wallpaper_path(self) -> Path | None:
+        """Get the filesystem path to the currently configured wallpaper image.
+
+        Returns:
+            Path to wallpaper image or None if unset or unavailable.
+        """
+        if self._bg_settings is None:
+            return None
+
+        # Check dark mode wallpaper first if prefer-dark is active
+        color_scheme = (
+            self._settings.get_string(GSETTINGS_KEY_COLOR_SCHEME)
+            if self._has_key(self._settings, GSETTINGS_KEY_COLOR_SCHEME)
+            else None
+        )
+        uri = None
+        if color_scheme == "prefer-dark" and self._has_key(self._bg_settings, "picture-uri-dark"):
+            uri = self._bg_settings.get_string("picture-uri-dark")
+
+        if not uri and self._has_key(self._bg_settings, "picture-uri"):
+            uri = self._bg_settings.get_string("picture-uri")
+
+        if not uri:
+            return None
+
+        clean_uri = uri.strip().strip("'\"")
+        if clean_uri.startswith("file://"):
+            from urllib.parse import unquote, urlparse
+
+            parsed = urlparse(clean_uri)
+            file_path = Path(unquote(parsed.path))
+            return file_path if file_path.is_file() else None
+        elif clean_uri.startswith("/"):
+            file_path = Path(clean_uri)
+            return file_path if file_path.is_file() else None
+
+        return None
 
     # -------------------------------------------------------------------------
     # Dynamic Schema Resolution (Including User Extensions)

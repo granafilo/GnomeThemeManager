@@ -20,6 +20,8 @@ from .constants import (
     USER_ICONS_DIRS,
     USER_THEMES_DIRS,
 )
+from .css_extractor import ExtractedColors, extract_theme_colors, parse_css_define_colors
+from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
@@ -49,7 +51,27 @@ from .models import (
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
+from .shell_editor import (
+    ShellColorExtractor,
+    ShellExtractedColors,
+    ShellThemeFork,
+    ShellThemeForkManager,
+    extract_shell_colors,
+    generate_shell_css_override,
+)
+from .theme_editor import ThemeComposition, ThemeMixer
+from .theme_forks import (
+    ThemeFork,
+    ThemeForkManager,
+    create_theme_fork,
+    revert_theme_fork,
+)
 from .theme_validator import ThemeValidationResult, ThemeValidator
+from .wallpaper_color import (
+    WallpaperColorExtractor,
+    extract_dominant_colors_from_image,
+    extract_wallpaper_palette,
+)
 
 __all__ = [
     "GLOBAL_THEMES_FILE",
@@ -70,6 +92,9 @@ __all__ = [
     "USER_THEMES_DIRS",
     "ApplyResult",
     "ArchiveExtractionError",
+    "EditorDraft",
+    "EditorDraftManager",
+    "ExtractedColors",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
@@ -80,10 +105,18 @@ __all__ = [
     "PropagationResult",
     "SandboxBridge",
     "SandboxStatus",
+    "ShellColorExtractor",
+    "ShellExtractedColors",
+    "ShellThemeFork",
+    "ShellThemeForkManager",
     "SystemStatus",
     "Theme",
+    "ThemeComposition",
+    "ThemeFork",
+    "ThemeForkManager",
     "ThemeInstaller",
     "ThemeManager",
+    "ThemeMixer",
     "ThemeNotFoundError",
     "ThemeScanner",
     "ThemeSet",
@@ -91,7 +124,16 @@ __all__ = [
     "ThemeValidationError",
     "ThemeValidationResult",
     "ThemeValidator",
+    "WallpaperColorExtractor",
+    "create_theme_fork",
     "detect_theme_types",
+    "extract_dominant_colors_from_image",
+    "extract_shell_colors",
+    "extract_theme_colors",
+    "extract_wallpaper_palette",
+    "generate_shell_css_override",
     "inspect_extracted_tree",
+    "parse_css_define_colors",
+    "revert_theme_fork",
     "safe_extract",
 ]

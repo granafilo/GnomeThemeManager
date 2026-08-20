@@ -17,6 +17,11 @@ GSETTINGS_KEY_COLOR_SCHEME = "color-scheme"
 GSETTINGS_SCHEMA_USER_THEME = "org.gnome.shell.extensions.user-theme"
 GSETTINGS_KEY_SHELL_THEME = "name"
 
+# Schema and keys for GNOME Desktop Background (Wallpaper)
+GSETTINGS_SCHEMA_BACKGROUND = "org.gnome.desktop.background"
+GSETTINGS_KEY_PICTURE_URI = "picture-uri"
+GSETTINGS_KEY_PICTURE_URI_DARK = "picture-uri-dark"
+
 # Supported GNOME color schemes (light/dark preference, GNOME 42+)
 GSETTINGS_COLOR_SCHEMES = ("default", "prefer-dark", "prefer-light")
 
@@ -31,6 +36,15 @@ PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
 
 # Global themes state file
 GLOBAL_THEMES_FILE = STATE_DIR / "global_themes.json"
+
+# Theme color forks state file (~/.local/state/gnome-theme-manager/theme_forks.json)
+THEME_FORKS_FILE = STATE_DIR / "theme_forks.json"
+
+# Persistent editor draft state file (~/.local/state/gnome-theme-manager/editor_draft.json)
+EDITOR_DRAFT_FILE = STATE_DIR / "editor_draft.json"
+
+# Persistent editor settings state file (~/.local/state/gnome-theme-manager/editor_settings.json)
+EDITOR_SETTINGS_FILE = STATE_DIR / "editor_settings.json"
 
 
 # -----------------------------------------------------------------------------

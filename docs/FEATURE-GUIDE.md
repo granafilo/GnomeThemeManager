@@ -66,22 +66,24 @@ One-click complete looks, and the app protects you from broken themes.
 
 ---
 
-## Phase 2 — Theme Editor (v1.2)
+## Phase 2 — Theme Editor (v1.2) ✅
 
 Build your own look: mix themes and edit colors, safely.
 
 - **2.1** Theme mixer: combine pieces from different themes (e.g. GTK3 from
-  one, icons from another) into your own named Global Theme.
+  one, icons from another) into your own named Global Theme. ✅
 - **2.2** Color extractor: the app reads a theme's colors (foreground,
-  background, accent) so you can see and edit them.
+  background, accent) so you can see and edit them. ✅
 - **2.3** Editor UI: pick components, change colors with color pickers,
-  preview in-app, save as your own Global Theme.
+  preview in-app, save as your own Global Theme. ✅
 - **2.4** Color forks: your color edits are saved as a *copy* of the theme;
-  the original stays untouched; fully reversible.
+  the original stays untouched; fully reversible. ✅
 - **2.5** Drafts: your work-in-progress is saved automatically and can be
-  resumed next time you open the app.
+  resumed next time you open the app. ✅
 - **2.6** *(stretch)* Adaptive color: suggest a palette extracted from your
-  current wallpaper.
+  current wallpaper. ✅
+- **2.7** Shell editor: change panel, overview and accent colors of your
+  GNOME Shell theme; applied with live preview and safety auto-rollback, fully reversible. ✅
 
 ---
 

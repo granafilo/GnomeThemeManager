@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 
 APP_NAME="GNOMEThemeManager"
 APP_ID="io.github.granafilo.ThemeManager"
-VERSION="1.1.0"
+VERSION="1.2.0"
 ARCH="${ARCH:-x86_64}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -60,6 +60,9 @@ echo -e "${GREEN}✓ Strumenti ok (appimagetool: ${APPIMAGETOOL_BIN})${NC}"
 # 2. Pulizia e creazione struttura AppDir
 # ------------------------------------------------------------------------------
 echo -e "\n${YELLOW}[2/6] Preparazione struttura directory AppDir...${NC}"
+
+# Compilazione delle traduzioni .po in .mo prima di copiare i sorgenti
+python3 "$ROOT_DIR/scripts/compile_translations.py"
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/usr/bin"

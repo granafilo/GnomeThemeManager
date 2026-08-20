@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="1.2.0" date="2026-08-20">
+      <description>
+        <p>Release 1.2.0: Theme Editor &amp; Component Mixer, GTK and GNOME Shell color customization, persistent theme forks, session draft auto-save and recovery, and adaptive wallpaper color palette extraction.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-08-20">
       <description>
         <p>Release 1.1.0: Global Themes unified view, structural Theme Validator, corruption detection and pre-apply warnings, in-app and desktop live previews with auto-rollback, icon pack preview grid, automated user directory creation, and assisted theme installer.</p>

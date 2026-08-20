@@ -1823,3 +1823,243 @@ msgstr "Valido (tutti i controlli superati)"
 msgid "more"
 msgstr "altri"
 
+msgid "Theme Editor"
+msgstr "Editor Temi"
+
+msgid "Theme Editor & Mixer"
+msgstr "Editor & Mixer Temi"
+
+msgid "Loading Theme Editor..."
+msgstr "Caricamento Editor Temi..."
+
+msgid "Discovering installed components and extracting colors."
+msgstr "Ricerca componenti installati ed estrazione colori in corso."
+
+msgid "Mix installed components, customize GTK colors, preview live, and save as a custom Global Theme."
+msgstr "Combina componenti installati, personalizza i colori GTK, prova l'anteprima e salva come Tema Globale personalizzato."
+
+msgid "Custom Theme Name..."
+msgstr "Nome tema personalizzato..."
+
+msgid "Save as Global Theme"
+msgstr "Salva come Tema Globale"
+
+msgid "Live test theme components and colors with safety rollback"
+msgstr "Testa i componenti e i colori con ripristino sicuro di sicurezza"
+
+msgid "Component Mixer"
+msgstr "Mixer Componenti"
+
+msgid "Select individual components from installed desktop themes"
+msgstr "Seleziona singoli componenti dai temi desktop installati"
+
+msgid "GTK Theme (Applications)"
+msgstr "Tema GTK (Applicazioni)"
+
+msgid "Controls window background, widgets, and GTK3/GTK4 styling"
+msgstr "Controlla lo sfondo delle finestre, i widget e lo stile GTK3/GTK4"
+
+msgid "GNOME Shell Theme"
+msgstr "Tema GNOME Shell"
+
+msgid "Controls panel, dash, notification popups, and lockscreen"
+msgstr "Controlla pannello, dock, notifiche e schermata di blocco"
+
+msgid "Icon Pack"
+msgstr "Pacchetto Icone"
+
+msgid "Application icons, folder icons, and file type symbols"
+msgstr "Icone applicazioni, cartelle e simboli dei file"
+
+msgid "Cursor Theme"
+msgstr "Tema Cursore"
+
+msgid "Mouse pointer and interaction animations"
+msgstr "Puntatore del mouse e animazioni"
+
+msgid "Color Scheme Preference"
+msgstr "Preferenza Schema Colori"
+
+msgid "System dark/light mode preference"
+msgstr "Preferenza modalità scura/chiara di sistema"
+
+msgid "Color Customization"
+msgstr "Personalizzazione Colori"
+
+msgid "Fine-tune foreground, background, and accent colors extracted from selected GTK theme"
+msgstr "Modifica i colori di primo piano, sfondo e accento estratti dal tema GTK selezionato"
+
+msgid "Reset Colors"
+msgstr "Ripristina Colori"
+
+msgid "Foreground / Text Color"
+msgstr "Colore Testo / Primo Piano"
+
+msgid "@define-color theme_fg_color"
+msgstr "@define-color theme_fg_color"
+
+msgid "Background / Window Color"
+msgstr "Colore Sfondo / Finestra"
+
+msgid "@define-color theme_bg_color"
+msgstr "@define-color theme_bg_color"
+
+msgid "Accent / Selection Color"
+msgstr "Colore Accento / Selezione"
+
+msgid "@define-color theme_selected_bg_color"
+msgstr "@define-color theme_selected_bg_color"
+
+msgid "Accent Text Color"
+msgstr "Colore Testo Accento"
+
+msgid "@define-color theme_selected_fg_color"
+msgstr "@define-color theme_selected_fg_color"
+
+msgid "Foreground Color"
+msgstr "Colore Primo Piano"
+
+msgid "Background Color"
+msgstr "Colore Sfondo"
+
+msgid "Accent Color"
+msgstr "Colore Accento"
+
+msgid "Custom Mix"
+msgstr "Mix Personalizzato"
+
+msgid "Composed in Theme Editor"
+msgstr "Composto nell'Editor Temi"
+
+msgid "Global Theme '{name}' saved successfully."
+msgstr "Tema Globale '{name}' salvato con successo."
+
+msgid "Preview started for '{name}'. Dismiss or commit to finalize."
+msgstr "Anteprima avviata per '{name}'. Chiudi o conferma per finalizzare."
+
+msgid "👁️ Live Desktop Preview Active"
+msgstr "👁️ Anteprima Desktop Live Attiva"
+
+msgid "Stop Preview"
+msgstr "Interrompi Anteprima"
+
+msgid "Preview"
+msgstr "Anteprima"
+
+msgid "Live preview reverted to previous system themes."
+msgstr "Anteprima live ripristinata ai temi precedenti di sistema."
+
+msgid "Unfinished draft found. Would you like to resume it?"
+msgstr "Trovata una bozza non salvata. Vuoi riprenderla?"
+
+msgid "Resume Draft"
+msgstr "Riprendi Bozza"
+
+msgid "Draft resumed successfully."
+msgstr "Bozza ripristinata con successo."
+
+msgid "From Wallpaper"
+msgstr "Dal Wallpaper"
+
+msgid "Extract dominant adaptive color palette from current desktop wallpaper"
+msgstr "Estrai la palette adattiva dominante dallo sfondo corrente del desktop"
+
+msgid "Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper"
+msgstr "Perfeziona colori primari, sfondo e accenti, o estrai la palette adattiva dal wallpaper corrente"
+
+msgid "Adaptive Wallpaper Palette"
+msgstr "Palette Adattiva dal Wallpaper"
+
+msgid "Click a swatch to apply as Accent color"
+msgstr "Clicca su un campione per applicarlo come colore di accento"
+
+msgid "Click to set as Accent Color"
+msgstr "Clicca per impostare come Colore di Accento"
+
+msgid "Adaptive palette extracted from current wallpaper."
+msgstr "Palette adattiva estratta con successo dal wallpaper corrente."
+
+msgid "Discard Draft"
+msgstr "Elimina Bozza"
+
+msgid "Delete saved draft and reset editor"
+msgstr "Cancella la bozza salvata e ripristina l'editor"
+
+msgid "Active draft discarded successfully."
+msgstr "Bozza attiva rimossa con successo."
+
+msgid "Draft Settings"
+msgstr "Impostazioni Bozza"
+
+msgid "Auto-save Draft"
+msgstr "Salvataggio Automatico Bozza"
+
+msgid "Automatically preserve unfinished editor work across app restarts"
+msgstr "Preserva automaticamente il lavoro non completato tra i riavvii dell'app"
+
+msgid "Draft auto-save disabled."
+msgstr "Salvataggio automatico della bozza disattivato."
+
+msgid "Draft auto-save enabled."
+msgstr "Salvataggio automatico della bozza attivato."
+
+msgid "GNOME Shell Colors"
+msgstr "Colori GNOME Shell"
+
+msgid "Fine-tune panel, text, overview, and accent colors for GNOME Shell (User Themes extension required)"
+msgstr "Personalizza i colori del pannello, testo, overview e selezione per GNOME Shell (richiede estensione User Themes)"
+
+msgid "Reset Shell Colors"
+msgstr "Reimposta Colori Shell"
+
+msgid "Panel Background"
+msgstr "Sfondo Pannello"
+
+msgid "Panel Text & Icons"
+msgstr "Testo e Icone Pannello"
+
+msgid "Overview Background"
+msgstr "Sfondo Panoramica (Overview)"
+
+msgid "Shell Accent / Selection"
+msgstr "Accento / Selezione Shell"
+
+msgid "Pick"
+msgstr "Scegli"
+
+msgid "Click to set {color} as Accent for GTK and GNOME Shell"
+msgstr "Clicca per impostare {color} come colore di accento per GTK e GNOME Shell"
+
+msgid "Adaptive palette extracted from wallpaper applied to GTK and Shell."
+msgstr "Palette adattiva estratta dal wallpaper applicata sia a GTK che a GNOME Shell."
+
+msgid "Wallpaper Colors"
+msgstr "Colori dallo Sfondo"
+
+msgid "Extract dominant adaptive colors from desktop wallpaper and apply them globally to GTK and GNOME Shell"
+msgstr "Estrae i colori dominanti dallo sfondo del desktop e li applica sia a GTK che a GNOME Shell"
+
+msgid "Extract from Wallpaper"
+msgstr "Estrai dallo Sfondo"
+
+msgid "Click a swatch to apply as Accent color for both GTK and Shell"
+msgstr "Clicca su un colore per impostarlo come accento sia per GTK che per la Shell"
+
+msgid "Restore GNOME Shell colors to original theme defaults"
+msgstr "Ripristina i colori di GNOME Shell ai valori originali del tema"
+
+msgid "GTK Theme Colors"
+msgstr "Colori del Tema GTK"
+
+msgid "Fine-tune foreground, background, and accent colors for GTK applications"
+msgstr "Personalizza i colori di testo, sfondo e accento per le applicazioni GTK"
+
+msgid "Reset GTK Colors"
+msgstr "Ripristina Colori GTK"
+
+msgid "Restore GTK colors to original theme defaults"
+msgstr "Ripristina i colori GTK ai valori originali del tema"
+
+
+
+

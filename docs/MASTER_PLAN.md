@@ -274,15 +274,17 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 - Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
 
 ### 2.8 i18n follows the feature
-Ogni task che introduce stringhe user-visible (GUI, CLI, dialoghi) DEVE,
-nello STESSO commit del task:
+Ogni task che introduce stringhe user-visible DEVE, nello STESSO commit:
 1. Wrappare le stringhe in gettext (`_()`)
-2. Aggiungere i msgid a `po/en.po` (lingua sorgente)
-3. Aggiungere le traduzioni IT a `po/it.po` (nessun untranslated/fuzzy)
+2. Aggiungere i msgid a `po/en.po`
+3. Aggiungere le traduzioni IT a `po/it.po` (niente untranslated/fuzzy)
+4. Ricompilare le traduzioni: `python3 scripts/compile_translations.py`
+   (i `.po` sono sorgenti; l'app legge i `.mo` binari). I `.mo` NON sono
+   committati (`*.mo` in `.gitignore`): generati a fine task e in packaging.
+5. Se il task aggiunge/cambia stringhe, il GUI CHECK include la verifica con
+   `LANG=it_IT.UTF-8` (italiano) e senza (inglese).
 
-Lo step C della chiusura fase è SOLO verifica finale di consistenza,
-non il momento in cui si traduce.
-I test che asseriscono su stringhe usano i msgid, mai le traduzioni.
+Lo step C della chiusura fase è SOLO verifica finale di consistenza.
 
 ---
 
@@ -351,32 +353,59 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 ---
 
-### 🔷 FASE 2 — Theme Editor (v1.2)
+### 🔷 FASE 2 — Theme Editor (v1.2) — ✅ COMPLETATA (agosto 2026)
 
 **Branch:** `feature/phase-2-theme-editor`
 
-#### Task 2.1 — Theme Mixer
-- `core/theme_editor.py`: `ThemeComposition(gtk3, gtk4, shell, icon, cursor, custom_name)` → Global Theme utente con `user_composed: true`
+- [x] 2.1 Theme Mixer (`core/theme_editor.py`: `ThemeComposition` → Global Theme utente)
+- [x] 2.2 CSS Color Extractor (`core/css_extractor.py`: estrazione token colore e `@define-color`)
+- [x] 2.3 Theme Editor UI (`gui_gtk/pages/editor_view.py` + `color_picker.py`: Mixer + selettori colore + preview)
+- [x] 2.4 Override colori persistente (`core/theme_forks.py`: fork GTK4 in `~/.themes/{name}-gtk4`)
+- [x] 2.5 Bozze persistenti (`core/editor_draft.py`: auto-save configurabile e resume draft)
+- [x] 2.6 Adaptive Color dal wallpaper (`core/wallpaper_color.py`: k-means palette e applicazione globale GTK+Shell)
+- [x] 2.7 Shell Theme Editor (`core/shell_editor.py`: fork Shell con override CSS marker engine)
 
-Il Theme Mixer salva le composizioni come Global Theme con `origin: "user"`:
-appaiono in cima alla lista della view unica (regola Task 1.1).
+**Acceptance Fase 2:** ✅ mixer 5 componenti funzionante · estrazione colori GTK/Shell accurata · anteprima live con auto-revert · fork GTK4 e Shell persistenti senza corrompere i temi base · recupero bozze affidabile · palette wallpaper sincronizzata · coverage ≥80% · protocollo §1.4 post-conferma.
 
-#### Task 2.2 — CSS Color Extractor
-- `core/css_extractor.py`: parse `gtk-4.0/gtk.css` / `gtk-3.0/gtk-main.css`; estrae `@define-color` (theme_fg_color, theme_bg_color, theme_selected_bg_color, theme_selected_fg_color, wm_* opzionali)
+#### Task 2.7 — Shell Theme Editor (editing anche per GNOME Shell)
+- Moduli: `core/shell_editor.py` (nuovo); UI: sezione "Shell" in
+  `gui_gtk/views/editor_view.py`
+- **Fork shell**: copia della porzione shell del tema base in
+  `~/.themes/{custom_name}-shell/`; metadata in `theme_forks.json`
+  (componente "shell"); fork reversibile (elimina dir + ripristina setting)
+- **Estrazione colori chiave** (`ShellColorExtractor`):
+  1. Se `gnome-shell.css` contiene `@define-color` → usa quelli
+  2. Altrimenti euristiche su selettori stabili: `#panel` (background),
+     `.panel-button` (color), `.overview` (background), selezione/accent
+- **Colori editabili** (ColorDialogButton): accent/selezione, background
+  panel, testo panel, background overview
+- **Override generato**: blocco CSS appended al `gnome-shell.css` forkato,
+  delimitato da marker `/* GTM-OVERRIDE-START */` / `/* GTM-OVERRIDE-END */`;
+  il re-editing SOSTITUISCE il blocco tra i marker (idempotente)
+- **Apply**: `org.gnome.shell.extensions.user-theme` (riusa
+  `core/extensions.py`, Task 0.6). Preview in-app NON possibile per la shell:
+  apply con **auto-revert di sicurezza**: `Adw.MessageDialog` con countdown
+  15s; senza conferma → ripristino automatico del tema shell precedente
+  (pattern tipo impostazioni display di GNOME)
+- **Integrazione**: il tema shell forkato è selezionabile come componente
+  shell nel Theme Mixer (Task 2.1) e nei Global Themes (origin "user")
+- **Limitazione documentata** (UI + docs): su Wayland può servire logout o
+  `Alt+F2 r` per il reload completo del tema shell
+- i18n §2.8 per le nuove stringhe; GUI CHECK con e senza `LANG=it_IT.UTF-8`
+- Test: estrattore su fixture css (tmp_path) + idempotenza override +
+  auto-revert con gsettings mockato
 
-#### Task 2.3 — Theme Editor UI
-- `gui_gtk/views/editor_view.py` + `color_picker.py`: 5 dropdown componenti, 4 ColorDialogButton (fg/bg/accent/accent_fg), Anteprima (Task 1.5), "Salva come Global Theme", "Reset colori"
+**Acceptance Fase 2:**
 
-#### Task 2.4 — Override colori persistente (fork tema)
-- Copia tema in `~/.themes/{custom_name}-gtk4/`; modifica solo `@define-color`; metadata in `theme_forks.json`; etichetta `(edited)`; fork reversibile
-
-#### Task 2.5 — Bozze persistenti
-- `editor_draft.json` salvato ad ogni modifica; prompt "Riprendi bozza?" al riavvio
-
-#### Task 2.6 — Stretch goal: Adaptive Colour dal wallpaper
-- Palette dominante (k-means k=5) dal wallpaper corrente → proposte nei picker. Se troppo complesso: saltare e documentare come TODO
-
-**Acceptance Fase 2:** mix 5 temi salvabile · colori modificabili con fork funzionante e reversibile · bozze persistenti · coverage ≥80% · protocollo §1.4
+- [x] mix 5 temi salvabile 
+- [x] colori modificabili con fork funzionante e reversibile
+- [x] bozze persistenti
+- [x] coverage ≥80% 
+- [x] protocollo §1.4
+- [x] Tema shell editabile (4 colori chiave)
+- [x] fork reversibile; 
+- [x] override idempotente su edit ripetuti
+- [x] apply con auto-revert 15s funzionante
 
 ---
 

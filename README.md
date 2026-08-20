@@ -10,9 +10,9 @@
 
 ## Project Status
 
-**Current release:** v1.1.0
+**Current release:** v1.2.0
 
-Version 1.1.0 is a public testing release.
+Version 1.2.0 introduces the Theme Editor, color customization forks, and wallpaper adaptive color extraction.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -44,12 +44,17 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.1.0 (PEP 440: 1.1.0)
+Current package version: 1.2.0 (PEP 440: 1.2.0)
 
 ## Features
 
 - **Status & Discovery**: Read active theme status via `current` and list installed themes by category (`list`).
 - **Selective & Global Apply**: Apply individual components (GTK, icon, cursor, shell) or unified **Global Themes** in 1 click.
+- **Theme Editor & Mixer**:
+  - Mix and match GTK, Shell, Icons, Cursors, and Color Scheme into custom user-composed Global Themes.
+  - Fine-tune GTK and GNOME Shell colors (panel, overview, text, accents) with reversible theme forking.
+  - Extract adaptive dominant palettes from the desktop wallpaper with 1-click global accent application.
+  - Persistent editor drafts with auto-save toggle and resume prompt.
 - **Theme Previews**:
   - Live system theme preview with instant in-app hot-reload and safe auto-rollback on exit/cancel.
   - Icon pack visual preview grid rendering real GNOME app icons without altering system configuration.
@@ -115,18 +120,16 @@ pip install -e ".[dev]"
 Download the latest `.AppImage` executable from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) and launch it:
 
 ```bash
-chmod +x GNOMEThemeManager-1.1.0-x86_64.AppImage
-./GNOMEThemeManager-1.1.0-x86_64.AppImage
+chmod +x GNOMEThemeManager-1.2.0-x86_64.AppImage
+./GNOMEThemeManager-1.2.0-x86_64.AppImage
 ```
 
-> [!NOTE]
-> **FUSE Requirement for AppImage**: Like most AppImage packages on Linux, running the AppImage requires `libfuse` to mount the executable.
-> - **Ubuntu 24.04 LTS / Debian 13+**: `sudo apt install -y libfuse2t64`
-> - **Ubuntu 22.04 LTS / Debian 12**: `sudo apt install -y libfuse2`
-> - **Fedora**: `sudo dnf install -y fuse-libs`
-> - **Arch Linux**: `sudo pacman -S fuse2`
->
-> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.1.0-x86_64.AppImage --appimage-extract-and-run`
+> [!TIP]
+> If you encounter AppImage FUSE issues on modern distributions (e.g. Ubuntu 24.04), install `libfuse2` via:
+> ```bash
+> sudo apt install -y libfuse2
+> ```
+> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.2.0-x86_64.AppImage --appimage-extract-and-run`
 
 For detailed instructions and prerequisites, see **[INSTALL.md](INSTALL.md)**.
 
