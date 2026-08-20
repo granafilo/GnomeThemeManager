@@ -145,12 +145,12 @@ def test_theme_editor_draft_auto_save_and_prompt(mock_theme_manager: MagicMock) 
     page = ThemeEditorPage(manager=mock_theme_manager)
     page.refresh(sync=True)
 
-    # Draft banner should be revealed
-    assert page.draft_banner is not None
-    assert page.draft_banner.get_revealed() is True
+    # Draft banner should be visible
+    assert page.draft_banner_box is not None
+    assert page.draft_banner_box.get_visible() is True
 
     # Clicking resume should load draft into entry and controls
     page._on_resume_draft_clicked(None)
     assert page.theme_name_entry.get_text() == "Unfinished Masterpiece"
-    assert page.draft_banner.get_revealed() is False
+    assert page.draft_banner_box.get_visible() is False
 

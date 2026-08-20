@@ -85,3 +85,23 @@ def test_editor_draft_manager_corrupted_file(tmp_path: Path) -> None:
     manager = EditorDraftManager(draft_file=draft_file)
     assert not manager.has_draft()
     assert manager.load_draft() is None
+
+
+def test_editor_draft_manager_auto_save_toggle(tmp_path: Path) -> None:
+    """Test disabling auto-save prevents writing draft files and persists across instances."""
+    draft_file = tmp_path / "editor_draft.json"
+    settings_file = tmp_path / "editor_settings.json"
+    manager = EditorDraftManager(draft_file=draft_file, settings_file=settings_file)
+
+    assert manager.auto_save_enabled is True
+    manager.auto_save_enabled = False
+    assert manager.auto_save_enabled is False
+
+    draft = EditorDraft(theme_name="Should Not Save")
+    manager.save_draft(draft)
+    assert not manager.has_draft()
+    assert not draft_file.exists()
+
+    # Create new manager instance simulating next app launch
+    manager_next_session = EditorDraftManager(draft_file=draft_file, settings_file=settings_file)
+    assert manager_next_session.auto_save_enabled is False

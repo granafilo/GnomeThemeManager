@@ -70,9 +70,10 @@ class ThemeEditorPage:
         if self.preview_banner:
             self.preview_banner.connect("button-clicked", self._on_stop_preview_clicked)
 
-        self.draft_banner: Adw.Banner | None = self.builder.get_object("draft_banner")
-        if self.draft_banner:
-            self.draft_banner.connect("button-clicked", self._on_resume_draft_clicked)
+        self.draft_banner_box: Gtk.Box | None = self.builder.get_object("draft_banner_box")
+        self.resume_draft_button: Gtk.Button | None = self.builder.get_object("resume_draft_button")
+        if self.resume_draft_button:
+            self.resume_draft_button.connect("clicked", self._on_resume_draft_clicked)
 
         # Component dropdowns
         self.gtk_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_gtk")
@@ -81,8 +82,20 @@ class ThemeEditorPage:
         self.cursor_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_cursor")
         self.color_scheme_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_color_scheme")
 
-        # Color reset button
+        # Discard draft and auto-save controls
+        self.discard_draft_button: Gtk.Button | None = self.builder.get_object("discard_draft_button")
+        self.auto_save_draft_switch: Gtk.Switch | None = self.builder.get_object("auto_save_draft_switch")
+        if self.auto_save_draft_switch and hasattr(self.manager, "editor_drafts"):
+            self.auto_save_draft_switch.set_active(self.manager.editor_drafts.auto_save_enabled)
+
+        # Color reset and wallpaper adaptive buttons
         self.reset_colors_button: Gtk.Button = self.builder.get_object("reset_colors_button")
+        self.wallpaper_colors_button: Gtk.Button | None = self.builder.get_object(
+            "wallpaper_colors_button"
+        )
+        self.wallpaper_palette_container: Gtk.Box | None = self.builder.get_object(
+            "wallpaper_palette_container"
+        )
 
         # Containers for ColorPickerButtons
         self.fg_color_container: Gtk.Box = self.builder.get_object("fg_color_container")
@@ -129,8 +142,14 @@ class ThemeEditorPage:
             self.save_button.connect("clicked", self._on_save_as_global_theme_clicked)
         if self.preview_button:
             self.preview_button.connect("clicked", self._on_preview_clicked)
+        if self.discard_draft_button:
+            self.discard_draft_button.connect("clicked", self._on_discard_draft_clicked)
+        if self.auto_save_draft_switch:
+            self.auto_save_draft_switch.connect("state-set", self._on_auto_save_switch_toggled)
         if self.reset_colors_button:
             self.reset_colors_button.connect("clicked", self._on_reset_colors_clicked)
+        if self.wallpaper_colors_button:
+            self.wallpaper_colors_button.connect("clicked", self._on_extract_wallpaper_colors_clicked)
 
         self.gtk_dropdown.connect("notify::selected-item", self._on_gtk_theme_changed)
         self.shell_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
@@ -287,13 +306,13 @@ class ThemeEditorPage:
         self._check_for_saved_draft()
 
     def _check_for_saved_draft(self) -> None:
-        """Reveal draft_banner if an unsaved draft exists in manager."""
+        """Reveal draft_banner_box if an unsaved draft exists in manager."""
         if (
             hasattr(self.manager, "editor_drafts")
             and self.manager.editor_drafts.has_draft()
-            and self.draft_banner
+            and self.draft_banner_box
         ):
-            self.draft_banner.set_revealed(True)
+            self.draft_banner_box.set_visible(True)
 
     def _on_user_edited(self, *_: Any) -> None:
         """Auto-save current editor state to editor_draft.json on any user change."""
@@ -317,15 +336,15 @@ class ThemeEditorPage:
         )
         self.manager.editor_drafts.save_draft(draft)
 
-    def _on_resume_draft_clicked(self, _banner: Any) -> None:
+    def _on_resume_draft_clicked(self, _btn: Any) -> None:
         """Restore all controls from saved draft and hide banner."""
         if not hasattr(self.manager, "editor_drafts"):
             return
 
         draft = self.manager.editor_drafts.load_draft()
         if not draft:
-            if self.draft_banner:
-                self.draft_banner.set_revealed(False)
+            if self.draft_banner_box:
+                self.draft_banner_box.set_visible(False)
             return
 
         self._is_restoring_draft = True
@@ -370,12 +389,46 @@ class ThemeEditorPage:
                         draft.colors["theme_selected_fg_color"]
                     )
 
-            if self.draft_banner:
-                self.draft_banner.set_revealed(False)
+            if self.draft_banner_box:
+                self.draft_banner_box.set_visible(False)
             if self.on_notify_message:
                 self.on_notify_message(_("Draft resumed successfully."), False)
         finally:
             self._is_restoring_draft = False
+
+    def _on_discard_draft_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Discard active draft from disk and reset UI without triggering auto-save."""
+        self._is_restoring_draft = True
+        try:
+            self.theme_name_entry.set_text("")
+            self._on_reset_colors_clicked(None)
+            if hasattr(self.manager, "editor_drafts"):
+                self.manager.editor_drafts.clear_draft()
+
+            if self.draft_banner_box:
+                self.draft_banner_box.set_visible(False)
+
+            if self.on_notify_message:
+                self.on_notify_message(_("Active draft discarded successfully."), False)
+        finally:
+            self._is_restoring_draft = False
+
+    def _on_auto_save_switch_toggled(self, _switch: Gtk.Switch, state: bool) -> bool:
+        """Handle auto-save draft toggle switch change."""
+        if hasattr(self.manager, "editor_drafts"):
+            self.manager.editor_drafts.auto_save_enabled = state
+            if not state:
+                # Disabling auto-save clears any existing draft file
+                self.manager.editor_drafts.clear_draft()
+                if self.draft_banner_box:
+                    self.draft_banner_box.set_visible(False)
+                if self.on_notify_message:
+                    self.on_notify_message(_("Draft auto-save disabled."), False)
+            else:
+                self._save_current_draft()
+                if self.on_notify_message:
+                    self.on_notify_message(_("Draft auto-save enabled."), False)
+        return False
 
     def _find_model_index(self, string_list: Gtk.StringList, target: str) -> int:
         """Find index of target item in Gtk.StringList."""
@@ -490,6 +543,61 @@ class ThemeEditorPage:
             self.accent_fg_color_button.set_color_hex("#ffffff")
 
         self._update_live_preview_if_active()
+        self._on_user_edited()
+
+    def _on_extract_wallpaper_colors_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Extract dominant color palette from desktop wallpaper and populate swatches."""
+        if not hasattr(self.manager, "get_wallpaper_palette"):
+            return
+
+        palette = self.manager.get_wallpaper_palette(k=5)
+        self._populate_wallpaper_palette_swatches(palette)
+        if palette:
+            # Auto-apply primary adaptive color as accent
+            self.accent_color_button.set_color_hex(palette[0])
+            self._update_live_preview_if_active()
+            self._on_user_edited()
+            if self.on_notify_message:
+                self.on_notify_message(
+                    _("Adaptive palette extracted from current wallpaper."), False
+                )
+
+    def _populate_wallpaper_palette_swatches(self, palette: list[str]) -> None:
+        """Create clickable color swatches for each extracted adaptive color."""
+        if not self.wallpaper_palette_container:
+            return
+
+        # Clear previous swatches
+        while child := self.wallpaper_palette_container.get_first_child():
+            self.wallpaper_palette_container.remove(child)
+
+        for color_hex in palette:
+            btn = Gtk.Button()
+            btn.set_tooltip_text(f"{color_hex} - " + _("Click to set as Accent Color"))
+            btn.add_css_class("flat")
+
+            swatch = Gtk.Box()
+            swatch.set_size_request(24, 24)
+            swatch.add_css_class("card")
+
+            provider = Gtk.CssProvider()
+            provider.load_from_data(
+                f"box {{ background-color: {color_hex}; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.4); min-width: 24px; min-height: 24px; }}".encode()
+            )
+            swatch.get_style_context().add_provider(
+                provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
+            )
+
+            btn.set_child(swatch)
+
+            # Click handler to apply this color as accent
+            def _apply_swatch(_b: Gtk.Button, c: str = color_hex) -> None:
+                self.accent_color_button.set_color_hex(c)
+                self._update_live_preview_if_active()
+                self._on_user_edited()
+
+            btn.connect("clicked", _apply_swatch)
+            self.wallpaper_palette_container.append(btn)
 
     def _get_current_colors(self) -> dict[str, str]:
         """Return dict of currently chosen colors from picker buttons."""
@@ -610,8 +718,8 @@ class ThemeEditorPage:
             saved = self.manager.save_theme_composition(composition, overwrite=True)
             if hasattr(self.manager, "editor_drafts"):
                 self.manager.editor_drafts.clear_draft()
-            if self.draft_banner:
-                self.draft_banner.set_revealed(False)
+            if self.draft_banner_box:
+                self.draft_banner_box.set_visible(False)
 
             msg = _("Global Theme '{name}' saved successfully.").format(name=saved.name)
             if self.on_notify_message:

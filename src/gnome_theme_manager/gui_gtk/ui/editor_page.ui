@@ -95,12 +95,53 @@
                       </object>
                     </child>
 
-                    <!-- Unsaved Draft Prompt Banner -->
+                    <!-- Unsaved Draft Prompt Box / Banner -->
                     <child>
-                      <object class="AdwBanner" id="draft_banner">
-                        <property name="title" translatable="yes">Unfinished draft found. Would you like to resume it?</property>
-                        <property name="button-label" translatable="yes">Resume Draft</property>
-                        <property name="revealed">false</property>
+                      <object class="GtkBox" id="draft_banner_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">12</property>
+                        <property name="visible">false</property>
+                        <style>
+                          <class name="card"/>
+                          <class name="accent"/>
+                        </style>
+                        <child>
+                          <object class="GtkImage">
+                            <property name="icon-name">document-edit-symbolic</property>
+                            <property name="margin-start">12</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label" translatable="yes">Unfinished draft found. Would you like to resume it?</property>
+                            <property name="hexpand">true</property>
+                            <property name="xalign">0</property>
+                            <property name="margin-top">8</property>
+                            <property name="margin-bottom">8</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="resume_draft_button">
+                            <property name="label" translatable="yes">Resume Draft</property>
+                            <property name="valign">center</property>
+                            <style>
+                              <class name="suggested-action"/>
+                              <class name="pill"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="discard_draft_button">
+                            <property name="label" translatable="yes">Discard Draft</property>
+                            <property name="tooltip-text" translatable="yes">Delete saved draft and reset editor</property>
+                            <property name="valign">center</property>
+                            <property name="margin-end">12</property>
+                            <style>
+                              <class name="destructive-action"/>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
 
@@ -209,20 +250,55 @@
                     <child>
                       <object class="AdwPreferencesGroup" id="color_customization_group">
                         <property name="title" translatable="yes">Color Customization</property>
-                        <property name="description" translatable="yes">Fine-tune foreground, background, and accent colors extracted from selected GTK theme</property>
+                        <property name="description" translatable="yes">Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper</property>
                         <property name="header-suffix">
-                          <object class="GtkButton" id="reset_colors_button">
-                            <property name="label" translatable="yes">Reset Colors</property>
-                            <style>
-                              <class name="flat"/>
-                            </style>
-                            <child type="prefix">
-                              <object class="GtkImage">
-                                <property name="icon-name">edit-undo-symbolic</property>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">6</property>
+                            <child>
+                              <object class="GtkButton" id="wallpaper_colors_button">
+                                <property name="label" translatable="yes">From Wallpaper</property>
+                                <property name="tooltip-text" translatable="yes">Extract dominant adaptive color palette from current desktop wallpaper</property>
+                                <style>
+                                  <class name="flat"/>
+                                </style>
+                                <child type="prefix">
+                                  <object class="GtkImage">
+                                    <property name="icon-name">preferences-desktop-wallpaper-symbolic</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="reset_colors_button">
+                                <property name="label" translatable="yes">Reset Colors</property>
+                                <style>
+                                  <class name="flat"/>
+                                </style>
+                                <child type="prefix">
+                                  <object class="GtkImage">
+                                    <property name="icon-name">edit-undo-symbolic</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
                         </property>
+
+                        <!-- Wallpaper Palette Swatches Row -->
+                        <child>
+                          <object class="AdwActionRow" id="row_wallpaper_palette">
+                            <property name="title" translatable="yes">Adaptive Wallpaper Palette</property>
+                            <property name="subtitle" translatable="yes">Click a swatch to apply as Accent color</property>
+                            <child type="suffix">
+                              <object class="GtkBox" id="wallpaper_palette_container">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
 
                         <child>
                           <object class="AdwActionRow" id="row_fg_color">
@@ -272,6 +348,26 @@
                           </object>
                         </child>
 
+                      </object>
+                    </child>
+
+                    <!-- Section 3: Draft Settings -->
+                    <child>
+                      <object class="AdwPreferencesGroup" id="draft_settings_group">
+                        <property name="title" translatable="yes">Draft Settings</property>
+                        <child>
+                          <object class="AdwActionRow" id="row_auto_save_draft">
+                            <property name="title" translatable="yes">Auto-save Draft</property>
+                            <property name="subtitle" translatable="yes">Automatically preserve unfinished editor work across app restarts</property>
+                            <property name="activatable-widget">auto_save_draft_switch</property>
+                            <child type="suffix">
+                              <object class="GtkSwitch" id="auto_save_draft_switch">
+                                <property name="active">true</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
 

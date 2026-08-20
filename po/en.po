@@ -1958,4 +1958,49 @@ msgstr "Resume Draft"
 msgid "Draft resumed successfully."
 msgstr "Draft resumed successfully."
 
+msgid "From Wallpaper"
+msgstr "From Wallpaper"
+
+msgid "Extract dominant adaptive color palette from current desktop wallpaper"
+msgstr "Extract dominant adaptive color palette from current desktop wallpaper"
+
+msgid "Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper"
+msgstr "Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper"
+
+msgid "Adaptive Wallpaper Palette"
+msgstr "Adaptive Wallpaper Palette"
+
+msgid "Click a swatch to apply as Accent color"
+msgstr "Click a swatch to apply as Accent color"
+
+msgid "Click to set as Accent Color"
+msgstr "Click to set as Accent Color"
+
+msgid "Adaptive palette extracted from current wallpaper."
+msgstr "Adaptive palette extracted from current wallpaper."
+
+msgid "Discard Draft"
+msgstr "Discard Draft"
+
+msgid "Delete saved draft and reset editor"
+msgstr "Delete saved draft and reset editor"
+
+msgid "Active draft discarded successfully."
+msgstr "Active draft discarded successfully."
+
+msgid "Draft Settings"
+msgstr "Draft Settings"
+
+msgid "Auto-save Draft"
+msgstr "Auto-save Draft"
+
+msgid "Automatically preserve unfinished editor work across app restarts"
+msgstr "Automatically preserve unfinished editor work across app restarts"
+
+msgid "Draft auto-save disabled."
+msgstr "Draft auto-save disabled."
+
+msgid "Draft auto-save enabled."
+msgstr "Draft auto-save enabled."
+
 

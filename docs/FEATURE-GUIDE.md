@@ -82,6 +82,9 @@ Build your own look: mix themes and edit colors, safely.
   resumed next time you open the app.
 - **2.6** *(stretch)* Adaptive color: suggest a palette extracted from your
   current wallpaper.
+- **2.7** Shell editor: change panel, overview and accent colors of your
+  GNOME Shell theme; applied with a 15-second "confirm or auto-revert"
+  safety, fully reversible.
 
 ---
 

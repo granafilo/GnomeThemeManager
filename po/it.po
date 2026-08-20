@@ -1958,4 +1958,49 @@ msgstr "Riprendi Bozza"
 msgid "Draft resumed successfully."
 msgstr "Bozza ripristinata con successo."
 
+msgid "From Wallpaper"
+msgstr "Dal Wallpaper"
+
+msgid "Extract dominant adaptive color palette from current desktop wallpaper"
+msgstr "Estrai la palette adattiva dominante dallo sfondo corrente del desktop"
+
+msgid "Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper"
+msgstr "Perfeziona colori primari, sfondo e accenti, o estrai la palette adattiva dal wallpaper corrente"
+
+msgid "Adaptive Wallpaper Palette"
+msgstr "Palette Adattiva dal Wallpaper"
+
+msgid "Click a swatch to apply as Accent color"
+msgstr "Clicca su un campione per applicarlo come colore di accento"
+
+msgid "Click to set as Accent Color"
+msgstr "Clicca per impostare come Colore di Accento"
+
+msgid "Adaptive palette extracted from current wallpaper."
+msgstr "Palette adattiva estratta con successo dal wallpaper corrente."
+
+msgid "Discard Draft"
+msgstr "Elimina Bozza"
+
+msgid "Delete saved draft and reset editor"
+msgstr "Cancella la bozza salvata e ripristina l'editor"
+
+msgid "Active draft discarded successfully."
+msgstr "Bozza attiva rimossa con successo."
+
+msgid "Draft Settings"
+msgstr "Impostazioni Bozza"
+
+msgid "Auto-save Draft"
+msgstr "Salvataggio Automatico Bozza"
+
+msgid "Automatically preserve unfinished editor work across app restarts"
+msgstr "Preserva automaticamente il lavoro non completato tra i riavvii dell'app"
+
+msgid "Draft auto-save disabled."
+msgstr "Salvataggio automatico della bozza disattivato."
+
+msgid "Draft auto-save enabled."
+msgstr "Salvataggio automatico della bozza attivato."
+
 

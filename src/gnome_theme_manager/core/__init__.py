@@ -59,6 +59,11 @@ from .theme_forks import (
     revert_theme_fork,
 )
 from .theme_validator import ThemeValidationResult, ThemeValidator
+from .wallpaper_color import (
+    WallpaperColorExtractor,
+    extract_dominant_colors_from_image,
+    extract_wallpaper_palette,
+)
 
 __all__ = [
     "GLOBAL_THEMES_FILE",
@@ -107,9 +112,12 @@ __all__ = [
     "ThemeValidationError",
     "ThemeValidationResult",
     "ThemeValidator",
+    "WallpaperColorExtractor",
     "create_theme_fork",
     "detect_theme_types",
+    "extract_dominant_colors_from_image",
     "extract_theme_colors",
+    "extract_wallpaper_palette",
     "inspect_extracted_tree",
     "parse_css_define_colors",
     "revert_theme_fork",

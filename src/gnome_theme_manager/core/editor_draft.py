@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .constants import EDITOR_DRAFT_FILE
+from .constants import EDITOR_DRAFT_FILE, EDITOR_SETTINGS_FILE
 
 logger = logging.getLogger("gnome_theme_manager.core.editor_draft")
 
@@ -71,15 +71,59 @@ class EditorDraft:
 
 
 class EditorDraftManager:
-    """Manages reading, writing and clearing editor_draft.json."""
+    """Manages reading, writing, clearing, and auto-save toggling for editor_draft.json."""
 
-    def __init__(self, draft_file: Path | None = None) -> None:
+    def __init__(
+        self,
+        draft_file: Path | None = None,
+        settings_file: Path | None = None,
+    ) -> None:
         """Initialize EditorDraftManager.
 
         Args:
             draft_file: Path to editor_draft.json file.
+            settings_file: Path to editor_settings.json file.
         """
         self._draft_file = draft_file or EDITOR_DRAFT_FILE
+        self._settings_file = settings_file or EDITOR_SETTINGS_FILE
+        self._auto_save_enabled = self._load_auto_save_setting()
+
+    def _load_auto_save_setting(self) -> bool:
+        """Read auto_save_enabled preference from settings file, defaulting to True."""
+        if not self._settings_file.is_file():
+            return True
+        try:
+            content = self._settings_file.read_text(encoding="utf-8")
+            data = json.loads(content)
+            if isinstance(data, dict):
+                return bool(data.get("auto_save_enabled", True))
+        except Exception as err:
+            logger.debug("Failed to load editor settings from %s: %s", self._settings_file, err)
+        return True
+
+    def _save_auto_save_setting(self, enabled: bool) -> None:
+        """Persist auto_save_enabled preference to settings file."""
+        try:
+            self._settings_file.parent.mkdir(parents=True, exist_ok=True)
+            temp_file = self._settings_file.with_suffix(".tmp")
+            temp_file.write_text(
+                json.dumps({"auto_save_enabled": enabled}, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            temp_file.replace(self._settings_file)
+        except Exception as err:
+            logger.warning("Failed to save editor settings to %s: %s", self._settings_file, err)
+
+    @property
+    def auto_save_enabled(self) -> bool:
+        """Return True if auto-saving editor drafts is enabled."""
+        return self._auto_save_enabled
+
+    @auto_save_enabled.setter
+    def auto_save_enabled(self, value: bool) -> None:
+        """Toggle auto-save behavior and persist setting across sessions."""
+        self._auto_save_enabled = bool(value)
+        self._save_auto_save_setting(self._auto_save_enabled)
 
     def has_draft(self) -> bool:
         """Return True if a valid non-empty draft exists."""
@@ -102,7 +146,10 @@ class EditorDraftManager:
         return None
 
     def save_draft(self, draft: EditorDraft) -> None:
-        """Save EditorDraft to json file atomically."""
+        """Save EditorDraft to json file atomically if auto-save is enabled."""
+        if not self._auto_save_enabled:
+            return
+
         try:
             self._draft_file.parent.mkdir(parents=True, exist_ok=True)
             temp_file = self._draft_file.with_suffix(".tmp")

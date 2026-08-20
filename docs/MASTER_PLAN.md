@@ -378,7 +378,48 @@ appaiono in cima alla lista della view unica (regola Task 1.1).
 #### Task 2.6 — Stretch goal: Adaptive Colour dal wallpaper
 - Palette dominante (k-means k=5) dal wallpaper corrente → proposte nei picker. Se troppo complesso: saltare e documentare come TODO
 
-**Acceptance Fase 2:** mix 5 temi salvabile · colori modificabili con fork funzionante e reversibile · bozze persistenti · coverage ≥80% · protocollo §1.4
+#### Task 2.7 — Shell Theme Editor (editing anche per GNOME Shell)
+- Moduli: `core/shell_editor.py` (nuovo); UI: sezione "Shell" in
+  `gui_gtk/views/editor_view.py`
+- **Fork shell**: copia della porzione shell del tema base in
+  `~/.themes/{custom_name}-shell/`; metadata in `theme_forks.json`
+  (componente "shell"); fork reversibile (elimina dir + ripristina setting)
+- **Estrazione colori chiave** (`ShellColorExtractor`):
+  1. Se `gnome-shell.css` contiene `@define-color` → usa quelli
+  2. Altrimenti euristiche su selettori stabili: `#panel` (background),
+     `.panel-button` (color), `.overview` (background), selezione/accent
+- **Colori editabili** (ColorDialogButton): accent/selezione, background
+  panel, testo panel, background overview
+- **Override generato**: blocco CSS appended al `gnome-shell.css` forkato,
+  delimitato da marker `/* GTM-OVERRIDE-START */` / `/* GTM-OVERRIDE-END */`;
+  il re-editing SOSTITUISCE il blocco tra i marker (idempotente)
+- **Apply**: `org.gnome.shell.extensions.user-theme` (riusa
+  `core/extensions.py`, Task 0.6). Preview in-app NON possibile per la shell:
+  apply con **auto-revert di sicurezza**: `Adw.MessageDialog` con countdown
+  15s; senza conferma → ripristino automatico del tema shell precedente
+  (pattern tipo impostazioni display di GNOME)
+- **Integrazione**: il tema shell forkato è selezionabile come componente
+  shell nel Theme Mixer (Task 2.1) e nei Global Themes (origin "user")
+- **Limitazione documentata** (UI + docs): su Wayland può servire logout o
+  `Alt+F2 r` per il reload completo del tema shell
+- i18n §2.8 per le nuove stringhe; GUI CHECK con e senza `LANG=it_IT.UTF-8`
+- Test: estrattore su fixture css (tmp_path) + idempotenza override +
+  auto-revert con gsettings mockato
+
+**Acceptance Fase 2:**
+
+- [ ] mix 5 temi salvabile 
+
+- [ ] colori modificabili con fork funzionante e reversibile
+
+- [ ] bozze persistenti
+- [ ] coverage ≥80% 
+- [ ] protocollo §1.4
+
+- [ ] Tema shell editabile (4 colori chiave)
+- [ ] fork reversibile; 
+- [ ] override idempotente su edit ripetuti
+- [ ] apply con auto-revert 15s funzionante
 
 ---
 

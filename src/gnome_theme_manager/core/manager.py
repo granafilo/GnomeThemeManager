@@ -38,6 +38,7 @@ from .scanner import ThemeScanner
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
+from .wallpaper_color import WallpaperColorExtractor
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
@@ -112,11 +113,21 @@ class ThemeManager:
         )
         self._theme_forks = theme_forks or ThemeForkManager()
         self._editor_drafts = editor_drafts or EditorDraftManager()
+        self._wallpaper_colors = WallpaperColorExtractor(gsettings=self._gsettings)
 
     @property
     def editor_drafts(self) -> EditorDraftManager:
         """Return editor draft manager."""
         return self._editor_drafts
+
+    @property
+    def wallpaper_colors(self) -> WallpaperColorExtractor:
+        """Return wallpaper adaptive color extractor."""
+        return self._wallpaper_colors
+
+    def get_wallpaper_palette(self, k: int = 5) -> list[str]:
+        """Return dominant palette extracted from active desktop wallpaper."""
+        return self._wallpaper_colors.get_current_wallpaper_palette(k=k)
 
     @property
     def theme_forks(self) -> ThemeForkManager:
