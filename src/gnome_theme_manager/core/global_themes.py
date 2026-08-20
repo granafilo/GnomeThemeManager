@@ -38,6 +38,7 @@ class GlobalTheme:
     created_at: str | None = None
     thumbnail_path: Path | None = None
     tags: list[str] = field(default_factory=list)
+    user_composed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize GlobalTheme to dictionary."""
@@ -52,6 +53,7 @@ class GlobalTheme:
             "thumbnail_path": str(self.thumbnail_path) if self.thumbnail_path else None,
             "tags": list(self.tags),
             "components": self.components.to_dict(),
+            "user_composed": self.user_composed,
         }
 
     @classmethod
@@ -96,6 +98,7 @@ class GlobalTheme:
         )
 
         tags = list(data.get("tags", []))
+        user_composed = bool(data.get("user_composed", False))
 
         return cls(
             id=theme_id,
@@ -108,6 +111,7 @@ class GlobalTheme:
             created_at=created_at,
             thumbnail_path=thumb_path,
             tags=tags,
+            user_composed=user_composed,
         )
 
 
@@ -168,6 +172,7 @@ class GlobalThemeManager:
         theme_set: ThemeSet,
         description: str = "",
         overwrite: bool = False,
+        user_composed: bool = False,
     ) -> GlobalTheme:
         """Save a ThemeSet as a user-level Global Theme.
 
@@ -176,6 +181,7 @@ class GlobalThemeManager:
             theme_set: ThemeSet components.
             description: Optional description.
             overwrite: If True, overwrite existing user theme with same name.
+            user_composed: If True, indicates the theme was created via Theme Mixer/Editor.
 
         Returns:
             The saved GlobalTheme instance.
@@ -208,6 +214,7 @@ class GlobalThemeManager:
             origin="user",
             is_bundled=False,
             created_at=now_iso,
+            user_composed=user_composed,
         )
 
         all_state = self._load_state_themes()

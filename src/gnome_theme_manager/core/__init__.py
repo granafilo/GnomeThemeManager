@@ -49,6 +49,7 @@ from .models import (
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
+from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_validator import ThemeValidationResult, ThemeValidator
 
 __all__ = [
@@ -82,8 +83,10 @@ __all__ = [
     "SandboxStatus",
     "SystemStatus",
     "Theme",
+    "ThemeComposition",
     "ThemeInstaller",
     "ThemeManager",
+    "ThemeMixer",
     "ThemeNotFoundError",
     "ThemeScanner",
     "ThemeSet",

@@ -34,6 +34,7 @@ from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
+from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_validator import ThemeValidationResult, ThemeValidator
 
 logger = logging.getLogger("gnome_theme_manager.core")
@@ -43,7 +44,7 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator, ThemeMixer), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -58,6 +59,7 @@ class ThemeManager:
         extensions: ExtensionsManager | None = None,
         global_themes: GlobalThemeManager | None = None,
         validator: ThemeValidator | None = None,
+        theme_mixer: ThemeMixer | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -71,6 +73,7 @@ class ThemeManager:
             extensions: Custom ExtensionsManager instance (optional).
             global_themes: Custom GlobalThemeManager instance (optional).
             validator: Custom ThemeValidator instance (optional).
+            theme_mixer: Custom ThemeMixer instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -97,6 +100,9 @@ class ThemeManager:
         self._global_themes = global_themes or GlobalThemeManager(
             scanner=self._scanner,
             current_themes_provider=self._get_current_themes_safe,
+        )
+        self._theme_mixer = theme_mixer or ThemeMixer(
+            global_theme_manager=self._global_themes,
         )
 
     def _get_current_themes_safe(self) -> ThemeSet:
@@ -844,6 +850,22 @@ class ThemeManager:
             description=description,
             overwrite=overwrite,
         )
+
+    def save_theme_composition(
+        self,
+        composition: ThemeComposition,
+        overwrite: bool = False,
+    ) -> GlobalTheme:
+        """Save a ThemeComposition as a user-composed Global Theme.
+
+        Args:
+            composition: ThemeComposition object containing component selections.
+            overwrite: If True, replace existing user theme with same name.
+
+        Returns:
+            Saved GlobalTheme instance.
+        """
+        return self._theme_mixer.mix_and_save(composition, overwrite=overwrite)
 
     def delete_global_theme(self, theme_id_or_name: str) -> bool:
         """Delete a user-created Global Theme.
