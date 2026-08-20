@@ -23,6 +23,8 @@ def test_manager_apply_component() -> None:
     mock_installer = MagicMock()
     mock_presets = MagicMock()
     mock_sandbox = MagicMock()
+    mock_validator = MagicMock()
+    mock_validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
 
     manager = ThemeManager(
         scanner=mock_scanner,
@@ -31,6 +33,7 @@ def test_manager_apply_component() -> None:
         installer=mock_installer,
         presets=mock_presets,
         sandbox_bridge=mock_sandbox,
+        validator=mock_validator,
     )
 
     # Configura il mock dello scanner per trovare il tema
