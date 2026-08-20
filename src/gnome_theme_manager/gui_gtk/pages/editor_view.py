@@ -19,7 +19,7 @@ from gnome_theme_manager import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
-from gi.repository import GLib, Gtk
+from gi.repository import Adw, GLib, Gtk
 
 from ...core.css_extractor import ExtractedColors, extract_theme_colors
 from ...core.models import Theme, ThemeSet, ThemeType
@@ -65,6 +65,9 @@ class ThemeEditorPage:
         self.theme_name_entry: Gtk.Entry = self.builder.get_object("theme_name_entry")
         self.save_button: Gtk.Button = self.builder.get_object("save_as_global_theme_button")
         self.preview_button: Gtk.Button = self.builder.get_object("preview_button")
+        self.preview_banner: Adw.Banner | None = self.builder.get_object("preview_banner")
+        if self.preview_banner:
+            self.preview_banner.connect("button-clicked", self._on_stop_preview_clicked)
 
         # Component dropdowns
         self.gtk_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_gtk")
@@ -121,6 +124,17 @@ class ThemeEditorPage:
             self.reset_colors_button.connect("clicked", self._on_reset_colors_clicked)
 
         self.gtk_dropdown.connect("notify::selected-item", self._on_gtk_theme_changed)
+        self.shell_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
+        self.icon_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
+        self.cursor_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
+        self.color_scheme_dropdown.connect(
+            "notify::selected-item", self._on_component_changed_while_preview
+        )
+
+        self.fg_color_button.connect("color-changed", self._on_color_value_changed)
+        self.bg_color_button.connect("color-changed", self._on_color_value_changed)
+        self.accent_color_button.connect("color-changed", self._on_color_value_changed)
+        self.accent_fg_color_button.connect("color-changed", self._on_color_value_changed)
 
         self._extracted_colors: ExtractedColors | None = None
         self._installed_gtk_themes: dict[str, Theme] = {}
@@ -281,44 +295,185 @@ class ThemeEditorPage:
         if theme_path and theme_path.is_dir():
             extracted = extract_theme_colors(theme_path)
             self._extracted_colors = extracted
-            if extracted.theme_fg_color:
-                self.fg_color_button.set_color_hex(extracted.theme_fg_color)
-            if extracted.theme_bg_color:
-                self.bg_color_button.set_color_hex(extracted.theme_bg_color)
-            if extracted.theme_selected_bg_color:
-                self.accent_color_button.set_color_hex(extracted.theme_selected_bg_color)
-            if extracted.theme_selected_fg_color:
-                self.accent_fg_color_button.set_color_hex(extracted.theme_selected_fg_color)
-
-    def _on_gtk_theme_changed(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
-        """Handle GTK theme selection change by re-extracting colors."""
-        self._update_colors_from_selected_gtk()
-
-    def _on_reset_colors_clicked(self, _btn: Gtk.Button | None) -> None:
-        """Reset colors to extracted or default palette."""
-        if self._extracted_colors and not self._extracted_colors.is_empty():
-            if self._extracted_colors.theme_fg_color:
-                self.fg_color_button.set_color_hex(self._extracted_colors.theme_fg_color)
-            if self._extracted_colors.theme_bg_color:
-                self.bg_color_button.set_color_hex(self._extracted_colors.theme_bg_color)
-            if self._extracted_colors.theme_selected_bg_color:
-                self.accent_color_button.set_color_hex(
-                    self._extracted_colors.theme_selected_bg_color
-                )
-            if self._extracted_colors.theme_selected_fg_color:
-                self.accent_fg_color_button.set_color_hex(
-                    self._extracted_colors.theme_selected_fg_color
-                )
+            self.fg_color_button.set_color_hex(extracted.theme_fg_color or "#ffffff")
+            self.bg_color_button.set_color_hex(extracted.theme_bg_color or "#242424")
+            self.accent_color_button.set_color_hex(
+                extracted.theme_selected_bg_color or "#3584e4"
+            )
+            self.accent_fg_color_button.set_color_hex(
+                extracted.theme_selected_fg_color or "#ffffff"
+            )
         else:
             self.fg_color_button.set_color_hex("#ffffff")
             self.bg_color_button.set_color_hex("#242424")
             self.accent_color_button.set_color_hex("#3584e4")
             self.accent_fg_color_button.set_color_hex("#ffffff")
 
+    def _on_gtk_theme_changed(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
+        """Handle GTK theme selection change by re-extracting colors and updating preview."""
+        self._update_colors_from_selected_gtk()
+        self._update_live_preview_if_active()
+
+    def _on_component_changed_while_preview(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
+        """Update live preview dynamically when any component dropdown selection changes."""
+        self._update_live_preview_if_active()
+
+    def _on_color_value_changed(self, _picker: Any, _color_hex: str) -> None:
+        """Update live preview dynamically when color picker value changes."""
+        self._update_live_preview_if_active()
+
+    def _update_live_preview_if_active(self) -> None:
+        """If a live preview is currently active on the desktop, re-apply with new values."""
+        if hasattr(self.manager, "theme_preview") and self.manager.theme_preview.is_preview_active:
+            name = self.theme_name_entry.get_text().strip() or _("Custom Mix")
+            try:
+                effective_gtk, theme_path = self._get_or_create_fork_if_needed(name)
+                if not effective_gtk:
+                    effective_gtk = self._get_selected_string(self.gtk_dropdown)
+                    theme = self._installed_gtk_themes.get(effective_gtk) if effective_gtk else None
+                    theme_path = theme.path if theme else None
+
+                shell_name = self._get_selected_string(self.shell_dropdown)
+                icon_name = self._get_selected_string(self.icon_dropdown)
+                cursor_name = self._get_selected_string(self.cursor_dropdown)
+                color_scheme = self._get_selected_string(self.color_scheme_dropdown)
+
+                theme_set = ThemeSet(
+                    gtk_theme=effective_gtk,
+                    icon_theme=icon_name,
+                    cursor_theme=cursor_name,
+                    shell_theme=shell_name,
+                    color_scheme=color_scheme,
+                )
+                self.manager.theme_preview.start_preview(
+                    theme_set=theme_set,
+                    theme_path=theme_path,
+                    force=True,
+                )
+            except Exception as err:
+                logger.debug("Could not auto-update active live preview: %s", err)
+
+    def _on_reset_colors_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Reset colors to extracted GTK theme defaults or standard fallback and update active preview."""
+        gtk_name = self._get_selected_string(self.gtk_dropdown)
+        theme = self._installed_gtk_themes.get(gtk_name) if gtk_name else None
+        theme_path = theme.path if theme else None
+
+        if theme_path and theme_path.is_dir():
+            extracted = extract_theme_colors(theme_path)
+            self._extracted_colors = extracted
+            self.fg_color_button.set_color_hex(extracted.theme_fg_color or "#ffffff")
+            self.bg_color_button.set_color_hex(extracted.theme_bg_color or "#242424")
+            self.accent_color_button.set_color_hex(
+                extracted.theme_selected_bg_color or "#3584e4"
+            )
+            self.accent_fg_color_button.set_color_hex(
+                extracted.theme_selected_fg_color or "#ffffff"
+            )
+        else:
+            self._extracted_colors = None
+            self.fg_color_button.set_color_hex("#ffffff")
+            self.bg_color_button.set_color_hex("#242424")
+            self.accent_color_button.set_color_hex("#3584e4")
+            self.accent_fg_color_button.set_color_hex("#ffffff")
+
+        self._update_live_preview_if_active()
+
+    def _get_current_colors(self) -> dict[str, str]:
+        """Return dict of currently chosen colors from picker buttons."""
+        return {
+            "theme_fg_color": self.fg_color_button.get_color_hex(),
+            "theme_bg_color": self.bg_color_button.get_color_hex(),
+            "theme_selected_bg_color": self.accent_color_button.get_color_hex(),
+            "theme_selected_fg_color": self.accent_fg_color_button.get_color_hex(),
+            "accent_color": self.accent_color_button.get_color_hex(),
+            "accent_bg_color": self.accent_color_button.get_color_hex(),
+            "accent_fg_color": self.accent_fg_color_button.get_color_hex(),
+        }
+
+    def _get_customized_colors(self) -> dict[str, str]:
+        """Return dict containing only the colors that the user actually modified."""
+        current = self._get_current_colors()
+        if not self._extracted_colors or self._extracted_colors.is_empty():
+            return current
+
+        customized: dict[str, str] = {}
+        if (
+            not self._extracted_colors.theme_fg_color
+            or current["theme_fg_color"].lower()
+            != self._extracted_colors.theme_fg_color.lower()
+        ):
+            customized["theme_fg_color"] = current["theme_fg_color"]
+            customized["window_fg_color"] = current["theme_fg_color"]
+            customized["view_fg_color"] = current["theme_fg_color"]
+            customized["theme_text_color"] = current["theme_fg_color"]
+
+        if (
+            not self._extracted_colors.theme_bg_color
+            or current["theme_bg_color"].lower()
+            != self._extracted_colors.theme_bg_color.lower()
+        ):
+            customized["theme_bg_color"] = current["theme_bg_color"]
+            customized["window_bg_color"] = current["theme_bg_color"]
+            customized["view_bg_color"] = current["theme_bg_color"]
+            customized["theme_base_color"] = current["theme_bg_color"]
+
+        if (
+            not self._extracted_colors.theme_selected_bg_color
+            or current["theme_selected_bg_color"].lower()
+            != self._extracted_colors.theme_selected_bg_color.lower()
+        ):
+            customized["theme_selected_bg_color"] = current["theme_selected_bg_color"]
+            customized["accent_bg_color"] = current["theme_selected_bg_color"]
+            customized["accent_color"] = current["theme_selected_bg_color"]
+
+        if (
+            not self._extracted_colors.theme_selected_fg_color
+            or current["theme_selected_fg_color"].lower()
+            != self._extracted_colors.theme_selected_fg_color.lower()
+        ):
+            customized["theme_selected_fg_color"] = current["theme_selected_fg_color"]
+            customized["accent_fg_color"] = current["theme_selected_fg_color"]
+
+        return customized
+
+    def _are_colors_customized(self) -> bool:
+        """Check if any color differs from extracted base theme values."""
+        return bool(self._get_customized_colors())
+
+    def _get_or_create_fork_if_needed(self, custom_name: str) -> tuple[str | None, Path | None]:
+        """Create a persistent theme fork if colors were customized.
+
+        Returns:
+            Tuple of (effective_gtk_name, effective_theme_path).
+        """
+        base_gtk_name = self._get_selected_string(self.gtk_dropdown)
+        if not base_gtk_name:
+            return None, None
+
+        base_theme = self._installed_gtk_themes.get(base_gtk_name)
+        base_path = base_theme.path if base_theme else None
+
+        colors = self._get_customized_colors()
+        if not colors or not base_path or not base_path.is_dir():
+            return base_gtk_name, base_path
+
+        fork_name = f"{custom_name}"
+        fork = self.manager.theme_forks.create_fork(
+            base_theme_name=base_gtk_name,
+            base_theme_path=base_path,
+            custom_name=fork_name,
+            colors=colors,
+            overwrite=True,
+        )
+        return fork.fork_name, fork.fork_path
+
     def _get_current_composition(self) -> ThemeComposition:
         """Build ThemeComposition from current UI widget selections."""
         name = self.theme_name_entry.get_text().strip() or _("Custom Mix")
-        gtk_name = self._get_selected_string(self.gtk_dropdown)
+        fork_gtk, _fork_path = self._get_or_create_fork_if_needed(name)
+        gtk_name = fork_gtk or self._get_selected_string(self.gtk_dropdown)
+
         shell_name = self._get_selected_string(self.shell_dropdown)
         icon_name = self._get_selected_string(self.icon_dropdown)
         cursor_name = self._get_selected_string(self.cursor_dropdown)
@@ -338,8 +493,8 @@ class ThemeEditorPage:
 
     def _on_save_as_global_theme_clicked(self, _btn: Gtk.Button | None) -> None:
         """Save composition as Global Theme."""
-        composition = self._get_current_composition()
         try:
+            composition = self._get_current_composition()
             saved = self.manager.save_theme_composition(composition, overwrite=True)
             msg = _("Global Theme '{name}' saved successfully.").format(name=saved.name)
             if self.on_notify_message:
@@ -352,22 +507,62 @@ class ThemeEditorPage:
                 self.on_notify_message(str(err), True)
 
     def _on_preview_clicked(self, _btn: Gtk.Button | None) -> None:
-        """Trigger in-app/system preview of the composed theme."""
-        comp = self._get_current_composition()
-        theme_set = comp.to_theme_set()
+        """Trigger in-app/system preview of the composed theme with customized colors."""
+        if hasattr(self.manager, "theme_preview") and self.manager.theme_preview.is_preview_active:
+            self._on_stop_preview_clicked(None)
+            return
 
-        gtk_name = comp.gtk4 or comp.gtk3
-        theme = self._installed_gtk_themes.get(gtk_name) if gtk_name else None
-        theme_path = theme.path if theme else None
+        name = self.theme_name_entry.get_text().strip() or _("Custom Mix")
+        try:
+            effective_gtk, theme_path = self._get_or_create_fork_if_needed(name)
+            if not effective_gtk:
+                effective_gtk = self._get_selected_string(self.gtk_dropdown)
+                theme = self._installed_gtk_themes.get(effective_gtk) if effective_gtk else None
+                theme_path = theme.path if theme else None
 
-        if hasattr(self.manager, "theme_preview") and self.manager.theme_preview:
-            self.manager.theme_preview.start_preview(
-                theme_set=theme_set,
-                theme_path=theme_path,
-                force=True,
+            shell_name = self._get_selected_string(self.shell_dropdown)
+            icon_name = self._get_selected_string(self.icon_dropdown)
+            cursor_name = self._get_selected_string(self.cursor_dropdown)
+            color_scheme = self._get_selected_string(self.color_scheme_dropdown)
+
+            theme_set = ThemeSet(
+                gtk_theme=effective_gtk,
+                icon_theme=icon_name,
+                cursor_theme=cursor_name,
+                shell_theme=shell_name,
+                color_scheme=color_scheme,
             )
-            msg = _("Preview started for '{name}'. Dismiss or commit to finalize.").format(
-                name=comp.name
-            )
+
+            if hasattr(self.manager, "theme_preview") and self.manager.theme_preview:
+                self.manager.theme_preview.start_preview(
+                    theme_set=theme_set,
+                    theme_path=theme_path,
+                    force=True,
+                )
+                if self.preview_banner:
+                    self.preview_banner.set_revealed(True)
+                if self.preview_button:
+                    self.preview_button.set_label(_("Stop Preview"))
+                    self.preview_button.add_css_class("destructive-action")
+
+                msg = _("Preview started for '{name}'. Dismiss or commit to finalize.").format(
+                    name=name
+                )
+                if self.on_notify_message:
+                    self.on_notify_message(msg, False)
+        except Exception as err:
+            logger.error("Failed to start preview: %s", err)
             if self.on_notify_message:
-                self.on_notify_message(msg, False)
+                self.on_notify_message(str(err), True)
+
+    def _on_stop_preview_clicked(self, _btn: Any) -> None:
+        """Stop the active live preview and restore previous desktop themes."""
+        if hasattr(self.manager, "theme_preview") and self.manager.theme_preview.is_preview_active:
+            self.manager.theme_preview.cancel_preview()
+            if self.preview_banner:
+                self.preview_banner.set_revealed(False)
+            if self.preview_button:
+                self.preview_button.set_label(_("Preview"))
+                self.preview_button.remove_css_class("destructive-action")
+            if self.on_notify_message:
+                self.on_notify_message(_("Live preview reverted to previous system themes."), False)

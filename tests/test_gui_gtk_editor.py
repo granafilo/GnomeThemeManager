@@ -114,6 +114,7 @@ def test_theme_editor_preview_in_app(mock_theme_manager: MagicMock) -> None:
     from gnome_theme_manager.gui_gtk.pages.editor_view import ThemeEditorPage
 
     mock_theme_manager.theme_preview = MagicMock()
+    mock_theme_manager.theme_preview.is_preview_active = False
     mock_theme_manager.theme_preview.start_preview.return_value = True
 
     page = ThemeEditorPage(manager=mock_theme_manager)

@@ -71,23 +71,37 @@ class ExtractedColors:
 
 
 def parse_css_define_colors(css_text: str) -> dict[str, str]:
-    """Extract all `@define-color` name-value pairs from raw CSS content.
+    """Extract all `@define-color` name-value pairs from raw CSS content and resolve variable references.
 
     Args:
         css_text: Raw CSS text.
 
     Returns:
-        Dictionary mapping color variable names to their definitions.
+        Dictionary mapping color variable names to their hex/rgb definitions.
     """
     clean_css = COMMENT_REGEX.sub("", css_text)
-    colors: dict[str, str] = {}
+    raw_colors: dict[str, str] = {}
 
     for match in DEFINE_COLOR_REGEX.finditer(clean_css):
         name = match.group(1).strip()
         value = match.group(2).strip()
-        colors[name] = value
+        raw_colors[name] = value
 
-    return colors
+    # Resolve references (e.g. @window_fg_color or @theme_selected_bg_color)
+    resolved: dict[str, str] = {}
+    for name, val in raw_colors.items():
+        curr_val = val
+        depth = 0
+        while curr_val.startswith("@") and depth < 5:
+            ref_name = curr_val[1:].strip()
+            if ref_name in raw_colors:
+                curr_val = raw_colors[ref_name]
+                depth += 1
+            else:
+                break
+        resolved[name] = curr_val
+
+    return resolved
 
 
 def _parse_css_file_recursive(
@@ -170,18 +184,49 @@ def extract_theme_colors(theme_dir_or_file: Path) -> ExtractedColors:
         if candidate.is_file():
             raw_colors = _parse_css_file_recursive(candidate)
             if raw_colors:
-                return ExtractedColors(
-                    theme_fg_color=raw_colors.get("theme_fg_color"),
-                    theme_bg_color=raw_colors.get("theme_bg_color"),
-                    theme_selected_bg_color=raw_colors.get("theme_selected_bg_color"),
-                    theme_selected_fg_color=raw_colors.get("theme_selected_fg_color"),
-                    accent_color=raw_colors.get("accent_color")
-                    or raw_colors.get("theme_selected_bg_color"),
-                    accent_bg_color=raw_colors.get("accent_bg_color")
+                fg = (
+                    raw_colors.get("theme_fg_color")
+                    or raw_colors.get("theme_text_color")
+                    or raw_colors.get("window_fg_color")
+                    or raw_colors.get("view_fg_color")
+                )
+                bg = (
+                    raw_colors.get("theme_bg_color")
+                    or raw_colors.get("theme_base_color")
+                    or raw_colors.get("window_bg_color")
+                    or raw_colors.get("view_bg_color")
+                )
+                theme_selected = (
+                    raw_colors.get("theme_selected_bg_color")
+                    or raw_colors.get("accent_bg_color")
                     or raw_colors.get("accent_color")
-                    or raw_colors.get("theme_selected_bg_color"),
-                    accent_fg_color=raw_colors.get("accent_fg_color")
-                    or raw_colors.get("theme_selected_fg_color"),
+                )
+                theme_selected_fg = (
+                    raw_colors.get("theme_selected_fg_color")
+                    or raw_colors.get("accent_fg_color")
+                )
+                accent = (
+                    raw_colors.get("accent_color")
+                    or raw_colors.get("theme_selected_bg_color")
+                )
+                accent_bg = (
+                    raw_colors.get("accent_bg_color")
+                    or raw_colors.get("accent_color")
+                    or raw_colors.get("theme_selected_bg_color")
+                )
+                accent_fg = (
+                    raw_colors.get("accent_fg_color")
+                    or raw_colors.get("theme_selected_fg_color")
+                )
+
+                return ExtractedColors(
+                    theme_fg_color=fg,
+                    theme_bg_color=bg,
+                    theme_selected_bg_color=theme_selected,
+                    theme_selected_fg_color=theme_selected_fg,
+                    accent_color=accent,
+                    accent_bg_color=accent_bg,
+                    accent_fg_color=accent_fg,
                     wm_title=raw_colors.get("wm_title"),
                     wm_bg_a=raw_colors.get("wm_bg_a"),
                     wm_bg_b=raw_colors.get("wm_bg_b"),

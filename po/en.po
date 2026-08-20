@@ -1937,4 +1937,16 @@ msgstr "Global Theme '{name}' saved successfully."
 msgid "Preview started for '{name}'. Dismiss or commit to finalize."
 msgstr "Preview started for '{name}'. Dismiss or commit to finalize."
 
+msgid "👁️ Live Desktop Preview Active"
+msgstr "👁️ Live Desktop Preview Active"
+
+msgid "Stop Preview"
+msgstr "Stop Preview"
+
+msgid "Preview"
+msgstr "Preview"
+
+msgid "Live preview reverted to previous system themes."
+msgstr "Live preview reverted to previous system themes."
+
 

@@ -32,6 +32,9 @@ PRESETS_DIR = Path.home() / ".config" / "gnome-theme-manager" / "presets"
 # Global themes state file
 GLOBAL_THEMES_FILE = STATE_DIR / "global_themes.json"
 
+# Theme color forks state file (~/.local/state/gnome-theme-manager/theme_forks.json)
+THEME_FORKS_FILE = STATE_DIR / "theme_forks.json"
+
 
 # -----------------------------------------------------------------------------
 # Dynamic Theme and Icon Path Resolution (XDG Standard + Legacy Fallback)

@@ -51,6 +51,12 @@ from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
 from .theme_editor import ThemeComposition, ThemeMixer
+from .theme_forks import (
+    ThemeFork,
+    ThemeForkManager,
+    create_theme_fork,
+    revert_theme_fork,
+)
 from .theme_validator import ThemeValidationResult, ThemeValidator
 
 __all__ = [
@@ -86,6 +92,8 @@ __all__ = [
     "SystemStatus",
     "Theme",
     "ThemeComposition",
+    "ThemeFork",
+    "ThemeForkManager",
     "ThemeInstaller",
     "ThemeManager",
     "ThemeMixer",
@@ -96,9 +104,11 @@ __all__ = [
     "ThemeValidationError",
     "ThemeValidationResult",
     "ThemeValidator",
+    "create_theme_fork",
     "detect_theme_types",
     "extract_theme_colors",
     "inspect_extracted_tree",
     "parse_css_define_colors",
+    "revert_theme_fork",
     "safe_extract",
 ]

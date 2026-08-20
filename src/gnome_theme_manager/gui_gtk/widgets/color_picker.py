@@ -3,6 +3,7 @@
 """Custom color picker button and dialog wrapper."""
 
 import logging
+import re
 from typing import Any, ClassVar
 
 import gi
@@ -31,7 +32,7 @@ def hex_to_rgba(hex_str: str) -> Gdk.RGBA:
 
 
 class ColorPickerButton(Gtk.Box):
-    """Button with color preview swatch and title that opens a Gtk.ColorDialog."""
+    """Widget with an editable HEX entry and a clickable color picker button with preview swatch."""
 
     __gtype_name__ = "ColorPickerButton"
 
@@ -42,28 +43,32 @@ class ColorPickerButton(Gtk.Box):
     def __init__(self, title: str, default_hex: str = "#3584e4") -> None:
         super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         self._current_hex = default_hex
+        self._updating_entry = False
 
+        # 1. Direct editable HEX entry
+        self.entry = Gtk.Entry()
+        self.entry.set_max_length(9)
+        self.entry.set_width_chars(8)
+        self.entry.set_placeholder_text("#RRGGBB")
+        self.entry.add_css_class("numeric")
+        self.entry.set_text(default_hex)
+        self.entry.connect("changed", self._on_entry_changed)
+        self.append(self.entry)
+
+        # 2. Clickable Swatch Button (opens Gtk.ColorDialog)
         self.button = Gtk.Button()
         self.button.set_tooltip_text(title)
         self.button.add_css_class("flat")
 
-        btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-
-        # Color swatch preview
         self.swatch = Gtk.Box()
-        self.swatch.set_size_request(24, 24)
+        self.swatch.set_size_request(26, 26)
         self.swatch.add_css_class("card")
         self._swatch_provider = Gtk.CssProvider()
         self.swatch.get_style_context().add_provider(
             self._swatch_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
         )
 
-        self.label = Gtk.Label(label=default_hex)
-        self.label.add_css_class("numeric")
-
-        btn_content.append(self.swatch)
-        btn_content.append(self.label)
-        self.button.set_child(btn_content)
+        self.button.set_child(self.swatch)
         self.append(self.button)
 
         self.dialog = Gtk.ColorDialog.new()
@@ -78,14 +83,51 @@ class ColorPickerButton(Gtk.Box):
         return self._current_hex
 
     def set_color_hex(self, hex_color: str) -> None:
-        """Set current color from hex string."""
-        self._current_hex = hex_color
-        self.label.set_label(hex_color)
-        css = f"box {{ background-color: {hex_color}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.3); }}"
+        """Set current color from hex string with validation."""
+        cleaned = hex_color.strip() if hex_color else ""
+        if not cleaned:
+            cleaned = "#3584e4"
+        elif not cleaned.startswith("#"):
+            cleaned = f"#{cleaned}"
+
+        if not re.match(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", cleaned):
+            return
+
+        self._current_hex = cleaned
+        if not self._updating_entry:
+            self._updating_entry = True
+            try:
+                self.entry.set_text(cleaned)
+            finally:
+                self._updating_entry = False
+
+        css = f"box {{ background-color: {cleaned}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
         try:
             self._swatch_provider.load_from_data(css.encode("utf-8"))
         except Exception:
             pass
+
+    def _on_entry_changed(self, entry: Gtk.Entry) -> None:
+        """Handle manual hex input from user."""
+        if self._updating_entry:
+            return
+
+        text = entry.get_text().strip()
+        if not text:
+            return
+
+        if not text.startswith("#"):
+            text = f"#{text}"
+
+        # Validate hex pattern
+        if re.match(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", text):
+            self._current_hex = text
+            css = f"box {{ background-color: {text}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
+            try:
+                self._swatch_provider.load_from_data(css.encode("utf-8"))
+            except Exception:
+                pass
+            self.emit("color-changed", text)
 
     def _on_button_clicked(self, _btn: Gtk.Button) -> None:
         """Open ColorDialog to choose color."""

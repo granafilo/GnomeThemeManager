@@ -35,6 +35,7 @@ from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
 from .theme_editor import ThemeComposition, ThemeMixer
+from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
 
 logger = logging.getLogger("gnome_theme_manager.core")
@@ -44,7 +45,7 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator, ThemeMixer), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator, ThemeMixer, ThemeForkManager), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -60,6 +61,7 @@ class ThemeManager:
         global_themes: GlobalThemeManager | None = None,
         validator: ThemeValidator | None = None,
         theme_mixer: ThemeMixer | None = None,
+        theme_forks: ThemeForkManager | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -74,6 +76,7 @@ class ThemeManager:
             global_themes: Custom GlobalThemeManager instance (optional).
             validator: Custom ThemeValidator instance (optional).
             theme_mixer: Custom ThemeMixer instance (optional).
+            theme_forks: Custom ThemeForkManager instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -104,6 +107,12 @@ class ThemeManager:
         self._theme_mixer = theme_mixer or ThemeMixer(
             global_theme_manager=self._global_themes,
         )
+        self._theme_forks = theme_forks or ThemeForkManager()
+
+    @property
+    def theme_forks(self) -> ThemeForkManager:
+        """Return theme fork manager."""
+        return self._theme_forks
 
     def _get_current_themes_safe(self) -> ThemeSet:
         """Helper to get current themes safely without raising exceptions."""
