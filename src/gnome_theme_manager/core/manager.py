@@ -312,6 +312,7 @@ class ThemeManager:
         theme_set: ThemeSet,
         apply_gtk4_override: bool = True,
         propagate_sandbox: bool = True,
+        force: bool = False,
     ) -> ApplyResult:
         """Validate and apply a set of themes to the GNOME desktop.
 
@@ -322,6 +323,7 @@ class ThemeManager:
             theme_set: Theme set to apply.
             apply_gtk4_override: If True, apply symlinks in ~/.config/gtk-4.0 for GTK themes.
             propagate_sandbox: If True, propagate GTK themes and icon packs to Flatpak and Snap.
+            force: If True, bypass ThemeValidationError and apply anyway with warnings.
 
         Returns:
             ApplyResult containing applied components and warnings.
@@ -332,10 +334,11 @@ class ThemeManager:
             GSettingsUnavailableError: If GSettings is unavailable.
         """
         logger.info(
-            "Theme apply requested: %s (gtk4_override=%s, propagate_sandbox=%s)",
+            "Theme apply requested: %s (gtk4_override=%s, propagate_sandbox=%s, force=%s)",
             theme_set,
             apply_gtk4_override,
             propagate_sandbox,
+            force,
         )
         client = self._ensure_gsettings()
         warnings: list[str] = []
@@ -353,9 +356,14 @@ class ThemeManager:
                 warn_msg = (
                     "; ".join(gtk_val.warnings) or "Theme structure is incomplete or invalid."
                 )
-                raise ThemeValidationError(
-                    f"GTK theme '{theme_set.gtk_theme}' is invalid: {warn_msg}"
-                )
+                if force:
+                    warnings.append(f"GTK theme '{theme_set.gtk_theme}' is incomplete: {warn_msg}")
+                else:
+                    raise ThemeValidationError(
+                        f"GTK theme '{theme_set.gtk_theme}' is invalid: {warn_msg}"
+                    )
+            elif gtk_val.warnings:
+                warnings.extend(gtk_val.warnings)
 
         if theme_set.icon_theme is not None:
             found_icon = self._scanner.find_theme(theme_set.icon_theme, ThemeType.ICON)
@@ -366,9 +374,16 @@ class ThemeManager:
             icon_val = self._validator.validate(found_icon.path, ThemeType.ICON)
             if not icon_val.valid:
                 warn_msg = "; ".join(icon_val.warnings) or "Icon pack is incomplete or invalid."
-                raise ThemeValidationError(
-                    f"Icon theme '{theme_set.icon_theme}' is invalid: {warn_msg}"
-                )
+                if force:
+                    warnings.append(
+                        f"Icon theme '{theme_set.icon_theme}' is incomplete: {warn_msg}"
+                    )
+                else:
+                    raise ThemeValidationError(
+                        f"Icon theme '{theme_set.icon_theme}' is invalid: {warn_msg}"
+                    )
+            elif icon_val.warnings:
+                warnings.extend(icon_val.warnings)
 
         if theme_set.cursor_theme is not None:
             found_cursor = self._scanner.find_theme(theme_set.cursor_theme, ThemeType.CURSOR)
@@ -381,9 +396,16 @@ class ThemeManager:
                 warn_msg = (
                     "; ".join(cursor_val.warnings) or "Cursor theme is incomplete or invalid."
                 )
-                raise ThemeValidationError(
-                    f"Cursor theme '{theme_set.cursor_theme}' is invalid: {warn_msg}"
-                )
+                if force:
+                    warnings.append(
+                        f"Cursor theme '{theme_set.cursor_theme}' is incomplete: {warn_msg}"
+                    )
+                else:
+                    raise ThemeValidationError(
+                        f"Cursor theme '{theme_set.cursor_theme}' is invalid: {warn_msg}"
+                    )
+            elif cursor_val.warnings:
+                warnings.extend(cursor_val.warnings)
 
         found_shell: Theme | None = None
         if theme_set.shell_theme is not None:
@@ -395,9 +417,16 @@ class ThemeManager:
             shell_val = self._validator.validate(found_shell.path, ThemeType.SHELL)
             if not shell_val.valid:
                 warn_msg = "; ".join(shell_val.warnings) or "Shell theme is incomplete or invalid."
-                raise ThemeValidationError(
-                    f"GNOME Shell theme '{theme_set.shell_theme}' is invalid: {warn_msg}"
-                )
+                if force:
+                    warnings.append(
+                        f"GNOME Shell theme '{theme_set.shell_theme}' is incomplete: {warn_msg}"
+                    )
+                else:
+                    raise ThemeValidationError(
+                        f"GNOME Shell theme '{theme_set.shell_theme}' is invalid: {warn_msg}"
+                    )
+            elif shell_val.warnings:
+                warnings.extend(shell_val.warnings)
 
         # 2. Color scheme validation
         if (
@@ -467,6 +496,7 @@ class ThemeManager:
         color_scheme: str | None = None,
         apply_gtk4_override: bool = True,
         propagate_sandbox: bool = True,
+        force: bool = False,
     ) -> ApplyResult:
         """Apply a unified global theme (matching name across GTK and Shell).
 
@@ -475,6 +505,7 @@ class ThemeManager:
             color_scheme: Optional color scheme ('default', 'prefer-dark', 'prefer-light').
             apply_gtk4_override: If True, apply GTK4 override when available.
             propagate_sandbox: If True, propagate themes to Flatpak and Snap apps.
+            force: If True, bypass ThemeValidationError and apply anyway.
 
         Returns:
             ApplyResult containing details of applied themes.
@@ -500,6 +531,7 @@ class ThemeManager:
             theme_set,
             apply_gtk4_override=apply_gtk4_override,
             propagate_sandbox=propagate_sandbox,
+            force=force,
         )
 
     def apply_component(
@@ -508,6 +540,7 @@ class ThemeManager:
         theme_name: str,
         apply_gtk4_override: bool = True,
         propagate_sandbox: bool = True,
+        force: bool = False,
     ) -> ApplyResult:
         """Apply a single theme component (GTK, icons, cursors, shell).
 
@@ -516,6 +549,7 @@ class ThemeManager:
             theme_name: Theme name to apply.
             apply_gtk4_override: If True, apply GTK4 override for GTK themes.
             propagate_sandbox: If True, propagate GTK themes and icon packs to Flatpak and Snap.
+            force: If True, bypass ThemeValidationError and apply anyway.
 
         Returns:
             ApplyResult with application outcome.
@@ -545,6 +579,7 @@ class ThemeManager:
             theme_set,
             apply_gtk4_override=apply_gtk4_override,
             propagate_sandbox=propagate_sandbox,
+            force=force,
         )
 
     def apply_preset(

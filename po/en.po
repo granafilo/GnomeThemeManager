@@ -1768,3 +1768,33 @@ msgstr "Missing index.theme file for icon pack."
 
 msgid "Missing gnome-shell/gnome-shell.css stylesheet."
 msgstr "Missing gnome-shell/gnome-shell.css stylesheet."
+
+msgid "Bypass confirmation prompt when applying incomplete or invalid themes"
+msgstr "Bypass confirmation prompt when applying incomplete or invalid themes"
+
+msgid "GTK theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "GTK theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "Icon theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "Icon theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "Cursor theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "Cursor theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "\nOne or more selected themes have structural issues. Apply anyway? [y/N]: "
+msgstr "\nOne or more selected themes have structural issues. Apply anyway? [y/N]: "
+
+msgid "Incomplete Theme Warning"
+msgstr "Incomplete Theme Warning"
+
+msgid "has structural issues or missing files:"
+msgstr "has structural issues or missing files:"
+
+msgid "Applying it might cause unexpected graphical glitches. Do you want to apply anyway?"
+msgstr "Applying it might cause unexpected graphical glitches. Do you want to apply anyway?"
+
+msgid "Apply anyway"
+msgstr "Apply anyway"

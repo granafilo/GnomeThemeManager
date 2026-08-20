@@ -285,7 +285,9 @@ class ThemesPage:
                 presentation_items: list[ThemeItemPresentation] = []
                 for t in themes_list:
                     val_res = self.manager.validator.validate(t.path, t.theme_type)
-                    warn_str = "; ".join(_(w) for w in val_res.warnings) if val_res.warnings else None
+                    warn_str = (
+                        "; ".join(_(w) for w in val_res.warnings) if val_res.warnings else None
+                    )
                     presentation_items.append(
                         build_theme_presentation(
                             t,
@@ -573,12 +575,20 @@ class ThemesPage:
             if found_theme:
                 val_res = self.manager.validator.validate(found_theme.path, item.theme_type)
                 if not val_res.valid:
-                    err_title = _("Cannot Apply Incomplete Theme")
+                    err_title = _("Incomplete Theme Warning")
                     err_body = (
-                        f"{_('The theme')} «{item.name}» {_('cannot be applied because its structure is incomplete or invalid.')}\n\n"
+                        f"{_('The theme')} «{item.name}» {_('has structural issues or missing files:')}\n\n"
                         + "\n".join(f"• {w}" for w in val_res.warnings)
+                        + f"\n\n{_('Applying it might cause unexpected graphical glitches. Do you want to apply anyway?')}"
                     )
-                    self._show_invalid_theme_dialog(err_title, err_body, win, on_complete)
+                    self._show_invalid_theme_dialog(
+                        err_title,
+                        err_body,
+                        win,
+                        item=item,
+                        on_complete=on_complete,
+                        sync=sync,
+                    )
                     return
 
         needs_extension_check = item.theme_type == ThemeType.SHELL
@@ -827,18 +837,25 @@ class ThemesPage:
         title: str,
         body: str,
         win: Any,
+        item: ThemeItemPresentation | None = None,
         on_complete: Callable[[ApplyResult | None, Exception | None], None] | None = None,
+        sync: bool = False,
     ) -> None:
-        """Display an alert dialog informing the user that the theme cannot be applied due to missing components."""
+        """Display a warning confirmation dialog offering 'Apply anyway' / 'Cancel' for invalid/incomplete themes."""
         if hasattr(Adw, "AlertDialog"):
             dialog = Adw.AlertDialog.new(heading=title, body=body)
-            dialog.add_response("ok", _("OK"))
-            dialog.set_default_response("ok")
-            dialog.set_close_response("ok")
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("apply_anyway", _("Apply anyway"))
+            dialog.set_response_appearance("apply_anyway", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("cancel")
+            dialog.set_close_response("cancel")
 
-            def on_dialog_response(_d: Any, _resp: Any) -> None:
-                if on_complete:
-                    on_complete(None, GnomeThemeManagerError(body))
+            def on_dialog_response(_d: Any, resp_param: Any) -> None:
+                resp = str(resp_param)
+                if resp == "apply_anyway" and item is not None:
+                    self.apply_theme(item, on_complete=on_complete, sync=sync, force=True)
+                elif on_complete:
+                    on_complete(None, None)
 
             dialog.connect("response", on_dialog_response)
             dialog.present(win if isinstance(win, Gtk.Widget) else None)
@@ -848,26 +865,31 @@ class ThemesPage:
                 title,
                 body,
             )
-            dialog.add_response("ok", _("OK"))
-            dialog.set_default_response("ok")
-            dialog.set_close_response("ok")
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("apply_anyway", _("Apply anyway"))
+            dialog.set_response_appearance("apply_anyway", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("cancel")
+            dialog.set_close_response("cancel")
 
-            def on_msg_response(_d: Any, _resp: str) -> None:
-                if on_complete:
-                    on_complete(None, GnomeThemeManagerError(body))
+            def on_msg_response(_d: Any, resp_id: str) -> None:
+                if resp_id == "apply_anyway" and item is not None:
+                    self.apply_theme(item, on_complete=on_complete, sync=sync, force=True)
+                elif on_complete:
+                    on_complete(None, None)
 
             dialog.connect("response", on_msg_response)
             dialog.present()
         else:
             self._show_toast(f"{title}: {body}")
             if on_complete:
-                on_complete(None, GnomeThemeManagerError(body))
+                on_complete(None, None)
 
     def apply_theme(
         self,
         item: ThemeItemPresentation,
         on_complete: Callable[[ApplyResult | None, Exception | None], None] | None = None,
         sync: bool = False,
+        force: bool = False,
     ) -> None:
         """Apply theme component through ThemeManager facade."""
         if self._is_applying:
@@ -887,12 +909,16 @@ class ThemesPage:
                 if self.manager is None:
                     raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
-                result = self.manager.apply_component(
-                    component=item.theme_type,
-                    theme_name=item.name,
-                    apply_gtk4_override=True,
-                    propagate_sandbox=True,
-                )
+                kwargs: dict[str, Any] = {
+                    "component": item.theme_type,
+                    "theme_name": item.name,
+                    "apply_gtk4_override": True,
+                    "propagate_sandbox": True,
+                }
+                if force:
+                    kwargs["force"] = True
+
+                result = self.manager.apply_component(**kwargs)
                 return result, None
             except Exception as err:
                 return None, err

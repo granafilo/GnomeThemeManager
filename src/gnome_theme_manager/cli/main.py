@@ -11,6 +11,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from gnome_theme_manager import _
 
@@ -175,6 +176,19 @@ def _print_apply_result(result: ApplyResult, no_gtk4_override: bool = False) -> 
     print()
 
 
+def _check_theme_component_validity(
+    manager: ThemeManager, name: str, theme_type: ThemeType
+) -> list[str]:
+    """Check if theme component exists and collect validation warnings if invalid."""
+    found = manager.find_theme(name, theme_type)
+    if not found or not hasattr(found, "path"):
+        return []
+    val_res = manager.validate_theme(found.path, theme_type)
+    if not val_res.valid:
+        return val_res.warnings or [_("Theme structure is incomplete or invalid.")]
+    return []
+
+
 def handle_apply_command(
     manager: ThemeManager,
     gtk: str | None,
@@ -185,6 +199,7 @@ def handle_apply_command(
     no_gtk4_override: bool = False,
     theme: str | None = None,
     no_sandbox: bool = False,
+    assume_yes: bool = False,
 ) -> int:
     """Handle `apply` command validating theme presence and applying them.
 
@@ -198,6 +213,7 @@ def handle_apply_command(
         no_gtk4_override: If True, do not apply symlink override in ~/.config/gtk-4.0.
         theme: Unified theme name for GTK and Shell (optional).
         no_sandbox: If True, do not propagate to Flatpak/Snap.
+        assume_yes: If True, bypass interactive confirmation prompt for invalid themes.
     """
     if not any([gtk, icon, cursor, shell, color_scheme, theme]):
         print(
@@ -225,6 +241,57 @@ def handle_apply_command(
         if has_shell:
             shell = theme
 
+    # Pre-apply corruption detection and warnings (Task 1.3)
+    corruption_warnings: list[str] = []
+    if gtk:
+        gtk_warns = _check_theme_component_validity(manager, gtk, ThemeType.GTK)
+        if gtk_warns:
+            corruption_warnings.append(
+                _("GTK theme '{name}' appears incomplete or invalid: {reasons}").format(
+                    name=gtk, reasons="; ".join(gtk_warns)
+                )
+            )
+    if icon:
+        icon_warns = _check_theme_component_validity(manager, icon, ThemeType.ICON)
+        if icon_warns:
+            corruption_warnings.append(
+                _("Icon theme '{name}' appears incomplete or invalid: {reasons}").format(
+                    name=icon, reasons="; ".join(icon_warns)
+                )
+            )
+    if cursor:
+        cursor_warns = _check_theme_component_validity(manager, cursor, ThemeType.CURSOR)
+        if cursor_warns:
+            corruption_warnings.append(
+                _("Cursor theme '{name}' appears incomplete or invalid: {reasons}").format(
+                    name=cursor, reasons="; ".join(cursor_warns)
+                )
+            )
+    if shell:
+        shell_warns = _check_theme_component_validity(manager, shell, ThemeType.SHELL)
+        if shell_warns:
+            corruption_warnings.append(
+                _("GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}").format(
+                    name=shell, reasons="; ".join(shell_warns)
+                )
+            )
+
+    if corruption_warnings:
+        for warn in corruption_warnings:
+            print(f"\n{_('[WARNING]')} {warn}")
+
+        if not assume_yes:
+            confirm = (
+                input(
+                    _("\nOne or more selected themes have structural issues. Apply anyway? [y/N]: ")
+                )
+                .strip()
+                .lower()
+            )
+            if confirm not in ("y", "yes", "s", "si"):
+                print(_("\nOperation cancelled by user.\n"))
+                return 0
+
     target_set = ThemeSet(
         gtk_theme=gtk,
         icon_theme=icon,
@@ -233,11 +300,14 @@ def handle_apply_command(
         shell_theme=shell,
     )
 
-    result = manager.apply_themes(
-        target_set,
-        apply_gtk4_override=not no_gtk4_override,
-        propagate_sandbox=not no_sandbox,
-    )
+    apply_kwargs: dict[str, Any] = {
+        "apply_gtk4_override": not no_gtk4_override,
+        "propagate_sandbox": not no_sandbox,
+    }
+    if corruption_warnings or assume_yes:
+        apply_kwargs["force"] = True
+
+    result = manager.apply_themes(target_set, **apply_kwargs)
     _print_apply_result(result, no_gtk4_override=no_gtk4_override)
     return 0
 
@@ -449,6 +519,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 no_gtk4_override=args.no_gtk4_override,
                 theme=args.theme,
                 no_sandbox=getattr(args, "no_sandbox", False),
+                assume_yes=getattr(args, "yes", False),
             )
         elif args.command == "install":
             target_dir = "legacy" if getattr(args, "legacy", False) else "xdg"
