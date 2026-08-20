@@ -160,15 +160,22 @@ def compile_translations() -> int:
             cmd = [msgfmt_bin, "-o", str(mo_file), str(po_file)]
             try:
                 subprocess.run(cmd, check=True, capture_output=True, text=True)
-                print(f"\033[0;32m✓ Compiled (msgfmt):\033[0m {po_file.relative_to(ROOT_DIR)} -> {mo_file.relative_to(ROOT_DIR)}")
+                print(
+                    f"\033[0;32m✓ Compiled (msgfmt):\033[0m {po_file.relative_to(ROOT_DIR)} -> {mo_file.relative_to(ROOT_DIR)}"
+                )
                 success_count += 1
             except subprocess.CalledProcessError as err:
-                print(f"\033[0;31m✗ Failed to compile {po_file}:\033[0m\n{err.stderr}", file=sys.stderr)
+                print(
+                    f"\033[0;31m✗ Failed to compile {po_file}:\033[0m\n{err.stderr}",
+                    file=sys.stderr,
+                )
                 return 1
         else:
             try:
                 compile_with_python(po_file, mo_file)
-                print(f"\033[0;32m✓ Compiled (pure-python):\033[0m {po_file.relative_to(ROOT_DIR)} -> {mo_file.relative_to(ROOT_DIR)}")
+                print(
+                    f"\033[0;32m✓ Compiled (pure-python):\033[0m {po_file.relative_to(ROOT_DIR)} -> {mo_file.relative_to(ROOT_DIR)}"
+                )
                 success_count += 1
             except Exception as err:
                 print(f"\033[0;31m✗ Failed to compile {po_file}:\033[0m\n{err}", file=sys.stderr)

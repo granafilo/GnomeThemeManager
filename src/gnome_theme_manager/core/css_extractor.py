@@ -201,22 +201,17 @@ def extract_theme_colors(theme_dir_or_file: Path) -> ExtractedColors:
                     or raw_colors.get("accent_bg_color")
                     or raw_colors.get("accent_color")
                 )
-                theme_selected_fg = (
-                    raw_colors.get("theme_selected_fg_color")
-                    or raw_colors.get("accent_fg_color")
+                theme_selected_fg = raw_colors.get("theme_selected_fg_color") or raw_colors.get(
+                    "accent_fg_color"
                 )
-                accent = (
-                    raw_colors.get("accent_color")
-                    or raw_colors.get("theme_selected_bg_color")
-                )
+                accent = raw_colors.get("accent_color") or raw_colors.get("theme_selected_bg_color")
                 accent_bg = (
                     raw_colors.get("accent_bg_color")
                     or raw_colors.get("accent_color")
                     or raw_colors.get("theme_selected_bg_color")
                 )
-                accent_fg = (
-                    raw_colors.get("accent_fg_color")
-                    or raw_colors.get("theme_selected_fg_color")
+                accent_fg = raw_colors.get("accent_fg_color") or raw_colors.get(
+                    "theme_selected_fg_color"
                 )
 
                 return ExtractedColors(

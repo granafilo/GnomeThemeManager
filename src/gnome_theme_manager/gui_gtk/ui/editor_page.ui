@@ -158,24 +158,45 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="save_as_global_theme_button">
-                            <property name="label" translatable="yes">Save as Global Theme</property>
+                            <property name="tooltip-text" translatable="yes">Save current editor mix as a Global Theme</property>
                             <style>
                               <class name="suggested-action"/>
                             </style>
-                            <child type="prefix">
-                              <object class="GtkImage">
-                                <property name="icon-name">document-save-symbolic</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">document-save-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Save as Global Theme</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
                         </child>
                         <child>
                           <object class="GtkButton" id="preview_button">
-                            <property name="label" translatable="yes">Preview</property>
                             <property name="tooltip-text" translatable="yes">Live test theme components and colors with safety rollback</property>
-                            <child type="prefix">
-                              <object class="GtkImage">
-                                <property name="icon-name">camera-photo-symbolic</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage" id="preview_button_icon">
+                                    <property name="icon-name">camera-photo-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="preview_button_label">
+                                    <property name="label" translatable="yes">Preview</property>
+                                  </object>
+                                </child>
                               </object>
                             </child>
                           </object>
@@ -246,38 +267,30 @@
                       </object>
                     </child>
 
-                    <!-- Section 2: Color Customization -->
+                    <!-- Section 2: Adaptive Wallpaper Colors -->
                     <child>
-                      <object class="AdwPreferencesGroup" id="color_customization_group">
-                        <property name="title" translatable="yes">Color Customization</property>
-                        <property name="description" translatable="yes">Fine-tune foreground, background, and accent colors, or extract adaptive palette from current wallpaper</property>
+                      <object class="AdwPreferencesGroup" id="wallpaper_customization_group">
+                        <property name="title" translatable="yes">Wallpaper Colors</property>
+                        <property name="description" translatable="yes">Extract dominant adaptive colors from desktop wallpaper and apply them globally to GTK and GNOME Shell</property>
                         <property name="header-suffix">
-                          <object class="GtkBox">
-                            <property name="orientation">horizontal</property>
-                            <property name="spacing">6</property>
+                          <object class="GtkButton" id="wallpaper_colors_button">
+                            <property name="tooltip-text" translatable="yes">Extract dominant adaptive color palette from current desktop wallpaper</property>
+                            <style>
+                              <class name="suggested-action"/>
+                              <class name="flat"/>
+                            </style>
                             <child>
-                              <object class="GtkButton" id="wallpaper_colors_button">
-                                <property name="label" translatable="yes">From Wallpaper</property>
-                                <property name="tooltip-text" translatable="yes">Extract dominant adaptive color palette from current desktop wallpaper</property>
-                                <style>
-                                  <class name="flat"/>
-                                </style>
-                                <child type="prefix">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">preferences-desktop-wallpaper-symbolic</property>
                                   </object>
                                 </child>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="reset_colors_button">
-                                <property name="label" translatable="yes">Reset Colors</property>
-                                <style>
-                                  <class name="flat"/>
-                                </style>
-                                <child type="prefix">
-                                  <object class="GtkImage">
-                                    <property name="icon-name">edit-undo-symbolic</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Extract from Wallpaper</property>
                                   </object>
                                 </child>
                               </object>
@@ -289,7 +302,7 @@
                         <child>
                           <object class="AdwActionRow" id="row_wallpaper_palette">
                             <property name="title" translatable="yes">Adaptive Wallpaper Palette</property>
-                            <property name="subtitle" translatable="yes">Click a swatch to apply as Accent color</property>
+                            <property name="subtitle" translatable="yes">Click a swatch to apply as Accent color for both GTK and Shell</property>
                             <child type="suffix">
                               <object class="GtkBox" id="wallpaper_palette_container">
                                 <property name="orientation">horizontal</property>
@@ -299,6 +312,119 @@
                             </child>
                           </object>
                         </child>
+                      </object>
+                    </child>
+
+                    <!-- Section 3: GNOME Shell Color Customization -->
+                    <child>
+                      <object class="AdwPreferencesGroup" id="shell_color_customization_group">
+                        <property name="title" translatable="yes">GNOME Shell Colors</property>
+                        <property name="description" translatable="yes">Fine-tune panel, text, overview, and accent colors for GNOME Shell (User Themes extension required)</property>
+                        <property name="header-suffix">
+                          <object class="GtkButton" id="reset_shell_colors_button">
+                            <property name="tooltip-text" translatable="yes">Restore GNOME Shell colors to original theme defaults</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">edit-undo-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Reset Shell Colors</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+
+                        <child>
+                          <object class="AdwActionRow" id="row_shell_panel_bg">
+                            <property name="title" translatable="yes">Panel Background</property>
+                            <property name="subtitle" translatable="yes">#panel { background-color: ... }</property>
+                            <child type="suffix">
+                              <object class="GtkBox" id="shell_panel_bg_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwActionRow" id="row_shell_panel_fg">
+                            <property name="title" translatable="yes">Panel Text and Icons</property>
+                            <property name="subtitle" translatable="yes">#panel, .panel-button { color: ... }</property>
+                            <child type="suffix">
+                              <object class="GtkBox" id="shell_panel_fg_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwActionRow" id="row_shell_overview_bg">
+                            <property name="title" translatable="yes">Overview Background</property>
+                            <property name="subtitle" translatable="yes">.overview { background-color: ... }</property>
+                            <child type="suffix">
+                              <object class="GtkBox" id="shell_overview_bg_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <child>
+                          <object class="AdwActionRow" id="row_shell_accent">
+                            <property name="title" translatable="yes">Shell Accent / Selection</property>
+                            <property name="subtitle" translatable="yes">.popup-menu-item:selected { background-color: ... }</property>
+                            <child type="suffix">
+                              <object class="GtkBox" id="shell_accent_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                      </object>
+                    </child>
+
+                    <!-- Section 4: GTK Theme Color Customization -->
+                    <child>
+                      <object class="AdwPreferencesGroup" id="color_customization_group">
+                        <property name="title" translatable="yes">GTK Theme Colors</property>
+                        <property name="description" translatable="yes">Fine-tune foreground, background, and accent colors for GTK applications</property>
+                        <property name="header-suffix">
+                          <object class="GtkButton" id="reset_colors_button">
+                            <property name="tooltip-text" translatable="yes">Restore GTK colors to original theme defaults</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">edit-undo-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Reset GTK Colors</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
 
                         <child>
                           <object class="AdwActionRow" id="row_fg_color">
@@ -351,7 +477,7 @@
                       </object>
                     </child>
 
-                    <!-- Section 3: Draft Settings -->
+                    <!-- Section 5: Draft Settings -->
                     <child>
                       <object class="AdwPreferencesGroup" id="draft_settings_group">
                         <property name="title" translatable="yes">Draft Settings</property>

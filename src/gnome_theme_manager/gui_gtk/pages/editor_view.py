@@ -24,6 +24,7 @@ from gi.repository import Adw, GLib, Gtk
 from ...core.css_extractor import ExtractedColors, extract_theme_colors
 from ...core.editor_draft import EditorDraft
 from ...core.models import Theme, ThemeSet, ThemeType
+from ...core.shell_editor import ShellExtractedColors, extract_shell_colors
 from ...core.theme_editor import ThemeComposition
 from ..widgets.color_picker import ColorPickerButton
 
@@ -66,6 +67,10 @@ class ThemeEditorPage:
         self.theme_name_entry: Gtk.Entry = self.builder.get_object("theme_name_entry")
         self.save_button: Gtk.Button = self.builder.get_object("save_as_global_theme_button")
         self.preview_button: Gtk.Button = self.builder.get_object("preview_button")
+        self.preview_button_label: Gtk.Label | None = self.builder.get_object(
+            "preview_button_label"
+        )
+        self.preview_button_icon: Gtk.Image | None = self.builder.get_object("preview_button_icon")
         self.preview_banner: Adw.Banner | None = self.builder.get_object("preview_banner")
         if self.preview_banner:
             self.preview_banner.connect("button-clicked", self._on_stop_preview_clicked)
@@ -83,8 +88,12 @@ class ThemeEditorPage:
         self.color_scheme_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_color_scheme")
 
         # Discard draft and auto-save controls
-        self.discard_draft_button: Gtk.Button | None = self.builder.get_object("discard_draft_button")
-        self.auto_save_draft_switch: Gtk.Switch | None = self.builder.get_object("auto_save_draft_switch")
+        self.discard_draft_button: Gtk.Button | None = self.builder.get_object(
+            "discard_draft_button"
+        )
+        self.auto_save_draft_switch: Gtk.Switch | None = self.builder.get_object(
+            "auto_save_draft_switch"
+        )
         if self.auto_save_draft_switch and hasattr(self.manager, "editor_drafts"):
             self.auto_save_draft_switch.set_active(self.manager.editor_drafts.auto_save_enabled)
 
@@ -97,7 +106,7 @@ class ThemeEditorPage:
             "wallpaper_palette_container"
         )
 
-        # Containers for ColorPickerButtons
+        # GTK Containers for ColorPickerButtons
         self.fg_color_container: Gtk.Box = self.builder.get_object("fg_color_container")
         self.bg_color_container: Gtk.Box = self.builder.get_object("bg_color_container")
         self.accent_color_container: Gtk.Box = self.builder.get_object("accent_color_container")
@@ -105,7 +114,7 @@ class ThemeEditorPage:
             "accent_fg_color_container"
         )
 
-        # Instantiate ColorPickerButtons
+        # Instantiate GTK ColorPickerButtons
         self.fg_color_button = ColorPickerButton(_("Foreground Color"), "#ffffff")
         self.bg_color_button = ColorPickerButton(_("Background Color"), "#242424")
         self.accent_color_button = ColorPickerButton(_("Accent Color"), "#3584e4")
@@ -115,6 +124,28 @@ class ThemeEditorPage:
         self.bg_color_container.append(self.bg_color_button)
         self.accent_color_container.append(self.accent_color_button)
         self.accent_fg_color_container.append(self.accent_fg_color_button)
+
+        # Shell Containers for ColorPickerButtons
+        self.reset_shell_colors_button: Gtk.Button = self.builder.get_object(
+            "reset_shell_colors_button"
+        )
+        self.shell_panel_bg_container: Gtk.Box = self.builder.get_object("shell_panel_bg_container")
+        self.shell_panel_fg_container: Gtk.Box = self.builder.get_object("shell_panel_fg_container")
+        self.shell_overview_bg_container: Gtk.Box = self.builder.get_object(
+            "shell_overview_bg_container"
+        )
+        self.shell_accent_container: Gtk.Box = self.builder.get_object("shell_accent_container")
+
+        # Instantiate Shell ColorPickerButtons
+        self.shell_panel_bg_button = ColorPickerButton(_("Panel Background"), "#1e1e2e")
+        self.shell_panel_fg_button = ColorPickerButton(_("Panel Text"), "#ffffff")
+        self.shell_overview_bg_button = ColorPickerButton(_("Overview Background"), "#11111b")
+        self.shell_accent_button = ColorPickerButton(_("Shell Accent"), "#3584e4")
+
+        self.shell_panel_bg_container.append(self.shell_panel_bg_button)
+        self.shell_panel_fg_container.append(self.shell_panel_fg_button)
+        self.shell_overview_bg_container.append(self.shell_overview_bg_button)
+        self.shell_accent_container.append(self.shell_accent_button)
 
         # Models for dropdowns
         self._gtk_model = Gtk.StringList()
@@ -134,6 +165,7 @@ class ThemeEditorPage:
             self._color_scheme_model.append(cs)
 
         self._is_restoring_draft = False
+        self._extracted_shell_colors: ShellExtractedColors | None = None
 
         # Connect event handlers
         if self.theme_name_entry:
@@ -148,24 +180,38 @@ class ThemeEditorPage:
             self.auto_save_draft_switch.connect("state-set", self._on_auto_save_switch_toggled)
         if self.reset_colors_button:
             self.reset_colors_button.connect("clicked", self._on_reset_colors_clicked)
+        if self.reset_shell_colors_button:
+            self.reset_shell_colors_button.connect("clicked", self._on_reset_shell_colors_clicked)
         if self.wallpaper_colors_button:
-            self.wallpaper_colors_button.connect("clicked", self._on_extract_wallpaper_colors_clicked)
-
-        self.gtk_dropdown.connect("notify::selected-item", self._on_gtk_theme_changed)
-        self.shell_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
-        self.icon_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
-        self.cursor_dropdown.connect("notify::selected-item", self._on_component_changed_while_preview)
-        self.color_scheme_dropdown.connect(
-            "notify::selected-item", self._on_component_changed_while_preview
-        )
+            self.wallpaper_colors_button.connect(
+                "clicked", self._on_extract_wallpaper_colors_clicked
+            )
 
         self.fg_color_button.connect("color-changed", self._on_color_value_changed)
         self.bg_color_button.connect("color-changed", self._on_color_value_changed)
         self.accent_color_button.connect("color-changed", self._on_color_value_changed)
         self.accent_fg_color_button.connect("color-changed", self._on_color_value_changed)
 
+        self.shell_panel_bg_button.connect("color-changed", self._on_shell_color_value_changed)
+        self.shell_panel_fg_button.connect("color-changed", self._on_shell_color_value_changed)
+        self.shell_overview_bg_button.connect("color-changed", self._on_shell_color_value_changed)
+        self.shell_accent_button.connect("color-changed", self._on_shell_color_value_changed)
+
+        self.gtk_dropdown.connect("notify::selected-item", self._on_gtk_theme_changed)
+        self.shell_dropdown.connect("notify::selected-item", self._on_shell_theme_changed)
+        self.icon_dropdown.connect(
+            "notify::selected-item", self._on_component_changed_while_preview
+        )
+        self.cursor_dropdown.connect(
+            "notify::selected-item", self._on_component_changed_while_preview
+        )
+        self.color_scheme_dropdown.connect(
+            "notify::selected-item", self._on_component_changed_while_preview
+        )
+
         self._extracted_colors: ExtractedColors | None = None
         self._installed_gtk_themes: dict[str, Theme] = {}
+        self._installed_shell_themes: dict[str, Theme] = {}
         self._is_loading: bool = False
         self._is_loaded: bool = False
 
@@ -274,6 +320,7 @@ class ThemeEditorPage:
     ) -> None:
         """Apply fetched theme data to GTK widgets on the main GTK thread."""
         self._installed_gtk_themes = {t.name: t for t in gtk_themes}
+        self._installed_shell_themes = {t.name: t for t in shell_themes}
 
         gtk_names = sorted(t.name for t in gtk_themes)
         shell_names = sorted(t.name for t in shell_themes)
@@ -288,9 +335,7 @@ class ThemeEditorPage:
         )
         self.shell_dropdown.set_selected(shell_idx)
 
-        icon_idx = self._populate_string_list(
-            self._icon_model, icon_names, current_set.icon_theme
-        )
+        icon_idx = self._populate_string_list(self._icon_model, icon_names, current_set.icon_theme)
         self.icon_dropdown.set_selected(icon_idx)
 
         cursor_idx = self._populate_string_list(
@@ -303,6 +348,7 @@ class ThemeEditorPage:
         self.color_scheme_dropdown.set_selected(cs_idx)
 
         self._update_colors_from_selected_gtk()
+        self._update_colors_from_selected_shell()
         self._check_for_saved_draft()
 
     def _check_for_saved_draft(self) -> None:
@@ -458,9 +504,7 @@ class ThemeEditorPage:
             self._extracted_colors = extracted
             self.fg_color_button.set_color_hex(extracted.theme_fg_color or "#ffffff")
             self.bg_color_button.set_color_hex(extracted.theme_bg_color or "#242424")
-            self.accent_color_button.set_color_hex(
-                extracted.theme_selected_bg_color or "#3584e4"
-            )
+            self.accent_color_button.set_color_hex(extracted.theme_selected_bg_color or "#3584e4")
             self.accent_fg_color_button.set_color_hex(
                 extracted.theme_selected_fg_color or "#ffffff"
             )
@@ -476,6 +520,51 @@ class ThemeEditorPage:
             self._update_colors_from_selected_gtk()
             self._update_live_preview_if_active()
             self._on_user_edited()
+
+    def _update_colors_from_selected_shell(self) -> None:
+        """Extract and populate colors from selected GNOME Shell theme."""
+        shell_name = self._get_selected_string(self.shell_dropdown)
+        if not shell_name:
+            return
+
+        theme = self._installed_shell_themes.get(shell_name)
+        theme_path = theme.path if theme else None
+
+        if theme_path and theme_path.is_dir():
+            extracted = extract_shell_colors(theme_path)
+            self._extracted_shell_colors = extracted
+            if extracted.panel_bg:
+                self.shell_panel_bg_button.set_color_hex(extracted.panel_bg)
+            if extracted.panel_fg:
+                self.shell_panel_fg_button.set_color_hex(extracted.panel_fg)
+            if extracted.overview_bg:
+                self.shell_overview_bg_button.set_color_hex(extracted.overview_bg)
+            if extracted.accent_color:
+                self.shell_accent_button.set_color_hex(extracted.accent_color)
+        else:
+            self._extracted_shell_colors = None
+            self.shell_panel_bg_button.set_color_hex("#1e1e2e")
+            self.shell_panel_fg_button.set_color_hex("#ffffff")
+            self.shell_overview_bg_button.set_color_hex("#11111b")
+            self.shell_accent_button.set_color_hex("#3584e4")
+
+    def _on_shell_theme_changed(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
+        """Handle GNOME Shell theme selection change by re-extracting shell colors."""
+        if not self._is_restoring_draft:
+            self._update_colors_from_selected_shell()
+            self._update_live_preview_if_active()
+            self._on_user_edited()
+
+    def _on_shell_color_value_changed(self, _picker: Any, _color_hex: str) -> None:
+        """Handle user changing GNOME shell colors with live preview update."""
+        self._update_live_preview_if_active()
+        self._on_user_edited()
+
+    def _on_reset_shell_colors_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Reset Shell colors to theme defaults or standard fallback and refresh preview."""
+        self._update_colors_from_selected_shell()
+        self._update_live_preview_if_active()
+        self._on_user_edited()
 
     def _on_component_changed_while_preview(self, _dropdown: Gtk.DropDown, _param: Any) -> None:
         """Update live preview dynamically when any component dropdown selection changes."""
@@ -498,7 +587,9 @@ class ThemeEditorPage:
                     theme = self._installed_gtk_themes.get(effective_gtk) if effective_gtk else None
                     theme_path = theme.path if theme else None
 
-                shell_name = self._get_selected_string(self.shell_dropdown)
+                fork_shell, _shell_path = self._get_or_create_shell_fork_if_needed(name)
+                shell_name = fork_shell or self._get_selected_string(self.shell_dropdown)
+
                 icon_name = self._get_selected_string(self.icon_dropdown)
                 cursor_name = self._get_selected_string(self.cursor_dropdown)
                 color_scheme = self._get_selected_string(self.color_scheme_dropdown)
@@ -529,9 +620,7 @@ class ThemeEditorPage:
             self._extracted_colors = extracted
             self.fg_color_button.set_color_hex(extracted.theme_fg_color or "#ffffff")
             self.bg_color_button.set_color_hex(extracted.theme_bg_color or "#242424")
-            self.accent_color_button.set_color_hex(
-                extracted.theme_selected_bg_color or "#3584e4"
-            )
+            self.accent_color_button.set_color_hex(extracted.theme_selected_bg_color or "#3584e4")
             self.accent_fg_color_button.set_color_hex(
                 extracted.theme_selected_fg_color or "#ffffff"
             )
@@ -546,20 +635,22 @@ class ThemeEditorPage:
         self._on_user_edited()
 
     def _on_extract_wallpaper_colors_clicked(self, _btn: Gtk.Button | None) -> None:
-        """Extract dominant color palette from desktop wallpaper and populate swatches."""
+        """Extract dominant color palette from desktop wallpaper and apply globally to both GTK and Shell."""
         if not hasattr(self.manager, "get_wallpaper_palette"):
             return
 
         palette = self.manager.get_wallpaper_palette(k=5)
         self._populate_wallpaper_palette_swatches(palette)
         if palette:
-            # Auto-apply primary adaptive color as accent
-            self.accent_color_button.set_color_hex(palette[0])
+            primary_accent = palette[0]
+            # Apply adaptive accent color globally to both GTK and Shell
+            self.accent_color_button.set_color_hex(primary_accent)
+            self.shell_accent_button.set_color_hex(primary_accent)
             self._update_live_preview_if_active()
             self._on_user_edited()
             if self.on_notify_message:
                 self.on_notify_message(
-                    _("Adaptive palette extracted from current wallpaper."), False
+                    _("Adaptive palette extracted from wallpaper applied to GTK and Shell."), False
                 )
 
     def _populate_wallpaper_palette_swatches(self, palette: list[str]) -> None:
@@ -572,32 +663,39 @@ class ThemeEditorPage:
             self.wallpaper_palette_container.remove(child)
 
         for color_hex in palette:
-            btn = Gtk.Button()
-            btn.set_tooltip_text(f"{color_hex} - " + _("Click to set as Accent Color"))
-            btn.add_css_class("flat")
-
-            swatch = Gtk.Box()
-            swatch.set_size_request(24, 24)
-            swatch.add_css_class("card")
-
-            provider = Gtk.CssProvider()
-            provider.load_from_data(
-                f"box {{ background-color: {color_hex}; border-radius: 12px; border: 1.5px solid rgba(255,255,255,0.4); min-width: 24px; min-height: 24px; }}".encode()
+            swatch_btn = Gtk.Button()
+            swatch_btn.set_tooltip_text(
+                _("Click to set {color} as Accent for GTK and GNOME Shell").format(color=color_hex)
             )
-            swatch.get_style_context().add_provider(
-                provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
+            swatch_btn.add_css_class("flat")
+            swatch_btn.set_valign(Gtk.Align.CENTER)
+
+            swatch_box = Gtk.Box()
+            swatch_box.set_size_request(24, 24)
+            swatch_box.add_css_class("card")
+            swatch_provider = Gtk.CssProvider()
+            css_data = f"box {{ background-color: {color_hex}; border-radius: 9999px; min-width: 24px; min-height: 24px; border: 2px solid rgba(255,255,255,0.3); }}"
+            try:
+                swatch_provider.load_from_data(css_data.encode("utf-8"))
+            except Exception:
+                pass
+            swatch_box.get_style_context().add_provider(
+                swatch_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
             )
+            swatch_btn.set_child(swatch_box)
 
-            btn.set_child(swatch)
+            # Apply swatch to both GTK and Shell accent
+            def _make_callback(c: str) -> Any:
+                def _on_swatch_clicked(_b: Gtk.Button) -> None:
+                    self.accent_color_button.set_color_hex(c)
+                    self.shell_accent_button.set_color_hex(c)
+                    self._update_live_preview_if_active()
+                    self._on_user_edited()
 
-            # Click handler to apply this color as accent
-            def _apply_swatch(_b: Gtk.Button, c: str = color_hex) -> None:
-                self.accent_color_button.set_color_hex(c)
-                self._update_live_preview_if_active()
-                self._on_user_edited()
+                return _on_swatch_clicked
 
-            btn.connect("clicked", _apply_swatch)
-            self.wallpaper_palette_container.append(btn)
+            swatch_btn.connect("clicked", _make_callback(color_hex))
+            self.wallpaper_palette_container.append(swatch_btn)
 
     def _get_current_colors(self) -> dict[str, str]:
         """Return dict of currently chosen colors from picker buttons."""
@@ -620,8 +718,7 @@ class ThemeEditorPage:
         customized: dict[str, str] = {}
         if (
             not self._extracted_colors.theme_fg_color
-            or current["theme_fg_color"].lower()
-            != self._extracted_colors.theme_fg_color.lower()
+            or current["theme_fg_color"].lower() != self._extracted_colors.theme_fg_color.lower()
         ):
             customized["theme_fg_color"] = current["theme_fg_color"]
             customized["window_fg_color"] = current["theme_fg_color"]
@@ -630,8 +727,7 @@ class ThemeEditorPage:
 
         if (
             not self._extracted_colors.theme_bg_color
-            or current["theme_bg_color"].lower()
-            != self._extracted_colors.theme_bg_color.lower()
+            or current["theme_bg_color"].lower() != self._extracted_colors.theme_bg_color.lower()
         ):
             customized["theme_bg_color"] = current["theme_bg_color"]
             customized["window_bg_color"] = current["theme_bg_color"]
@@ -657,12 +753,54 @@ class ThemeEditorPage:
 
         return customized
 
+    def _get_current_shell_colors(self) -> dict[str, str]:
+        """Return current shell colors from UI buttons."""
+        return {
+            "panel_bg": self.shell_panel_bg_button.get_color_hex(),
+            "panel_fg": self.shell_panel_fg_button.get_color_hex(),
+            "overview_bg": self.shell_overview_bg_button.get_color_hex(),
+            "accent_color": self.shell_accent_button.get_color_hex(),
+        }
+
+    def _get_customized_shell_colors(self) -> dict[str, str]:
+        """Return shell colors that the user actually modified."""
+        current = self._get_current_shell_colors()
+        if not self._extracted_shell_colors or self._extracted_shell_colors.is_empty():
+            return current
+
+        customized: dict[str, str] = {}
+        if (
+            not self._extracted_shell_colors.panel_bg
+            or current["panel_bg"].lower() != self._extracted_shell_colors.panel_bg.lower()
+        ):
+            customized["panel_bg"] = current["panel_bg"]
+
+        if (
+            not self._extracted_shell_colors.panel_fg
+            or current["panel_fg"].lower() != self._extracted_shell_colors.panel_fg.lower()
+        ):
+            customized["panel_fg"] = current["panel_fg"]
+
+        if (
+            not self._extracted_shell_colors.overview_bg
+            or current["overview_bg"].lower() != self._extracted_shell_colors.overview_bg.lower()
+        ):
+            customized["overview_bg"] = current["overview_bg"]
+
+        if (
+            not self._extracted_shell_colors.accent_color
+            or current["accent_color"].lower() != self._extracted_shell_colors.accent_color.lower()
+        ):
+            customized["accent_color"] = current["accent_color"]
+
+        return customized
+
     def _are_colors_customized(self) -> bool:
         """Check if any color differs from extracted base theme values."""
         return bool(self._get_customized_colors())
 
     def _get_or_create_fork_if_needed(self, custom_name: str) -> tuple[str | None, Path | None]:
-        """Create a persistent theme fork if colors were customized.
+        """Create a persistent GTK theme fork if colors were customized.
 
         Returns:
             Tuple of (effective_gtk_name, effective_theme_path).
@@ -688,13 +826,49 @@ class ThemeEditorPage:
         )
         return fork.fork_name, fork.fork_path
 
+    def _get_or_create_shell_fork_if_needed(
+        self, custom_name: str
+    ) -> tuple[str | None, Path | None]:
+        """Create a persistent GNOME Shell theme fork if shell colors were customized.
+
+        Returns:
+            Tuple of (effective_shell_name, effective_shell_path).
+        """
+        base_shell_name = self._get_selected_string(self.shell_dropdown)
+        if not base_shell_name:
+            return None, None
+
+        base_theme = self._installed_shell_themes.get(base_shell_name)
+        base_path = base_theme.path if base_theme else None
+
+        colors = self._get_customized_shell_colors()
+        if (
+            not colors
+            or not base_path
+            or not base_path.is_dir()
+            or not hasattr(self.manager, "shell_forks")
+        ):
+            return base_shell_name, base_path
+
+        fork_name = f"{custom_name}"
+        fork = self.manager.shell_forks.create_shell_fork(
+            base_theme_name=base_shell_name,
+            base_theme_path=base_path,
+            custom_name=fork_name,
+            colors=colors,
+            overwrite=True,
+        )
+        return fork.fork_name, fork.fork_path
+
     def _get_current_composition(self) -> ThemeComposition:
         """Build ThemeComposition from current UI widget selections."""
         name = self.theme_name_entry.get_text().strip() or _("Custom Mix")
         fork_gtk, _fork_path = self._get_or_create_fork_if_needed(name)
         gtk_name = fork_gtk or self._get_selected_string(self.gtk_dropdown)
 
-        shell_name = self._get_selected_string(self.shell_dropdown)
+        fork_shell, _fork_shell_path = self._get_or_create_shell_fork_if_needed(name)
+        shell_name = fork_shell or self._get_selected_string(self.shell_dropdown)
+
         icon_name = self._get_selected_string(self.icon_dropdown)
         cursor_name = self._get_selected_string(self.cursor_dropdown)
         color_scheme = self._get_selected_string(self.color_scheme_dropdown)
@@ -745,7 +919,9 @@ class ThemeEditorPage:
                 theme = self._installed_gtk_themes.get(effective_gtk) if effective_gtk else None
                 theme_path = theme.path if theme else None
 
-            shell_name = self._get_selected_string(self.shell_dropdown)
+            fork_shell, _shell_path = self._get_or_create_shell_fork_if_needed(name)
+            shell_name = fork_shell or self._get_selected_string(self.shell_dropdown)
+
             icon_name = self._get_selected_string(self.icon_dropdown)
             cursor_name = self._get_selected_string(self.cursor_dropdown)
             color_scheme = self._get_selected_string(self.color_scheme_dropdown)
@@ -767,7 +943,10 @@ class ThemeEditorPage:
                 if self.preview_banner:
                     self.preview_banner.set_revealed(True)
                 if self.preview_button:
-                    self.preview_button.set_label(_("Stop Preview"))
+                    if self.preview_button_label:
+                        self.preview_button_label.set_label(_("Stop Preview"))
+                    else:
+                        self.preview_button.set_label(_("Stop Preview"))
                     self.preview_button.add_css_class("destructive-action")
 
                 msg = _("Preview started for '{name}'. Dismiss or commit to finalize.").format(
@@ -787,7 +966,10 @@ class ThemeEditorPage:
             if self.preview_banner:
                 self.preview_banner.set_revealed(False)
             if self.preview_button:
-                self.preview_button.set_label(_("Preview"))
+                if self.preview_button_label:
+                    self.preview_button_label.set_label(_("Preview"))
+                else:
+                    self.preview_button.set_label(_("Preview"))
                 self.preview_button.remove_css_class("destructive-action")
             if self.on_notify_message:
                 self.on_notify_message(_("Live preview reverted to previous system themes."), False)

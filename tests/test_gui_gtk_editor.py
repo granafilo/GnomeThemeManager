@@ -34,17 +34,42 @@ def test_theme_editor_dropdown_population(mock_theme_manager: MagicMock) -> None
 
     mock_theme_manager.list_themes.side_effect = lambda t: {
         ThemeType.GTK: [
-            Theme(name="Yaru", theme_type=ThemeType.GTK, path=Path("/usr/share/themes/Yaru"), is_user_level=False),
-            Theme(name="Nordic", theme_type=ThemeType.GTK, path=Path("/home/u/.themes/Nordic"), is_user_level=True),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.GTK,
+                path=Path("/usr/share/themes/Yaru"),
+                is_user_level=False,
+            ),
+            Theme(
+                name="Nordic",
+                theme_type=ThemeType.GTK,
+                path=Path("/home/u/.themes/Nordic"),
+                is_user_level=True,
+            ),
         ],
         ThemeType.SHELL: [
-            Theme(name="Yaru", theme_type=ThemeType.SHELL, path=Path("/usr/share/themes/Yaru"), is_user_level=False),
+            Theme(
+                name="Yaru",
+                theme_type=ThemeType.SHELL,
+                path=Path("/usr/share/themes/Yaru"),
+                is_user_level=False,
+            ),
         ],
         ThemeType.ICON: [
-            Theme(name="Papirus", theme_type=ThemeType.ICON, path=Path("/usr/share/icons/Papirus"), is_user_level=False),
+            Theme(
+                name="Papirus",
+                theme_type=ThemeType.ICON,
+                path=Path("/usr/share/icons/Papirus"),
+                is_user_level=False,
+            ),
         ],
         ThemeType.CURSOR: [
-            Theme(name="Bibata", theme_type=ThemeType.CURSOR, path=Path("/usr/share/icons/Bibata"), is_user_level=False),
+            Theme(
+                name="Bibata",
+                theme_type=ThemeType.CURSOR,
+                path=Path("/usr/share/icons/Bibata"),
+                is_user_level=False,
+            ),
         ],
     }.get(t, [])
 
@@ -153,4 +178,3 @@ def test_theme_editor_draft_auto_save_and_prompt(mock_theme_manager: MagicMock) 
     page._on_resume_draft_clicked(None)
     assert page.theme_name_entry.get_text() == "Unfinished Masterpiece"
     assert page.draft_banner_box.get_visible() is False
-

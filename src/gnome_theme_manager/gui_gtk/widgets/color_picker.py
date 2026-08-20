@@ -12,6 +12,8 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Gdk, GObject, Gtk
 
+from gnome_theme_manager import _
+
 logger = logging.getLogger("gnome_theme_manager.gui_gtk.widgets.color_picker")
 
 
@@ -55,25 +57,39 @@ class ColorPickerButton(Gtk.Box):
         self.entry.connect("changed", self._on_entry_changed)
         self.append(self.entry)
 
-        # 2. Clickable Swatch Button (opens Gtk.ColorDialog)
+        # 2. Clickable Swatch & Pick Button (opens Gtk.ColorDialog)
         self.button = Gtk.Button()
         self.button.set_tooltip_text(title)
         self.button.add_css_class("flat")
 
+        btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.swatch = Gtk.Box()
-        self.swatch.set_size_request(26, 26)
+        self.swatch.set_size_request(22, 22)
         self.swatch.add_css_class("card")
+        self.swatch.set_valign(Gtk.Align.CENTER)
         self._swatch_provider = Gtk.CssProvider()
-        self.swatch.get_style_context().add_provider(
-            self._swatch_provider, Gtk.STYLE_PROVIDER_PRIORITY_USER
-        )
+        display = Gdk.Display.get_default() or Gdk.DisplayManager.get().get_default_display()
+        if display:
+            Gtk.StyleContext.add_provider_for_display(
+                display,
+                self._swatch_provider,
+                Gtk.STYLE_PROVIDER_PRIORITY_USER,
+            )
+        btn_content.append(self.swatch)
 
-        self.button.set_child(self.swatch)
+        self.btn_label = Gtk.Label(label=_("Pick"))
+        self.btn_label.add_css_class("caption")
+        btn_content.append(self.btn_label)
+
+        self.button.set_child(btn_content)
         self.append(self.button)
 
         self.dialog = Gtk.ColorDialog.new()
         self.dialog.set_title(title)
         self.dialog.set_with_alpha(False)
+
+        self._widget_id = f"picker_{id(self)}"
+        self.swatch.add_css_class(self._widget_id)
 
         self.button.connect("clicked", self._on_button_clicked)
         self.set_color_hex(default_hex)
@@ -101,9 +117,12 @@ class ColorPickerButton(Gtk.Box):
             finally:
                 self._updating_entry = False
 
-        css = f"box {{ background-color: {cleaned}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
+        css = f".{self._widget_id} {{ background-color: {cleaned}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
         try:
-            self._swatch_provider.load_from_data(css.encode("utf-8"))
+            if hasattr(self._swatch_provider, "load_from_string"):
+                self._swatch_provider.load_from_string(css)
+            else:
+                self._swatch_provider.load_from_data(css.encode("utf-8"))
         except Exception:
             pass
 
@@ -122,9 +141,12 @@ class ColorPickerButton(Gtk.Box):
         # Validate hex pattern
         if re.match(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", text):
             self._current_hex = text
-            css = f"box {{ background-color: {text}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
+            css = f".{self._widget_id} {{ background-color: {text}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
             try:
-                self._swatch_provider.load_from_data(css.encode("utf-8"))
+                if hasattr(self._swatch_provider, "load_from_string"):
+                    self._swatch_provider.load_from_string(css)
+                else:
+                    self._swatch_provider.load_from_data(css.encode("utf-8"))
             except Exception:
                 pass
             self.emit("color-changed", text)

@@ -91,26 +91,38 @@ def _inject_colors_in_css(css_content: str, colors: dict[str, str]) -> str:
         color_map["theme_selected_fg_color"] = accent_fg
         color_map["accent_fg_color"] = accent_fg
 
-    # 1. Update existing @define-color or prepend new @define-color
+    # 1. Update existing @define-color definitions
     for name, value in color_map.items():
         pattern = re.compile(rf"@define-color\s+{re.escape(name)}\s+[^;]+;", re.MULTILINE)
         new_def = f"@define-color {name} {value};"
 
         if pattern.search(updated_css):
             updated_css = pattern.sub(new_def, updated_css)
-        else:
-            updated_css = f"{new_def}\n{updated_css}"
 
-    return updated_css
+    # 2. Append explicit @define-color overrides at the end of the stylesheet
+    # so that CSS cascading and @import statements do not overwrite user custom colors
+    override_lines: list[str] = [
+        "",
+        "/* GTM-GTK-OVERRIDE-START */",
+    ]
+    for name, value in color_map.items():
+        override_lines.append(f"@define-color {name} {value};")
+    override_lines.append("/* GTM-GTK-OVERRIDE-END */\n")
+
+    marker_pattern = re.compile(
+        r"/\* GTM-GTK-OVERRIDE-START \*/.*?/\* GTM-GTK-OVERRIDE-END \*/\n?",
+        re.DOTALL,
+    )
+    cleaned_css = marker_pattern.sub("", updated_css).rstrip()
+
+    return f"{cleaned_css}\n" + "\n".join(override_lines)
 
 
 def _update_index_theme_label(index_path: Path, new_name: str) -> None:
     """Update or create index.theme setting Name={new_name} (edited)."""
     label = f"{new_name} (edited)"
     if not index_path.is_file():
-        content = (
-            f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={label}\nComment=Customized Theme Fork\n"
-        )
+        content = f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={label}\nComment=Customized Theme Fork\n"
         index_path.write_text(content, encoding="utf-8")
         return
 
@@ -154,7 +166,9 @@ class ThemeForkManager:
             self._user_themes_dir = legacy_themes if legacy_themes in user_dirs else user_dirs[0]
 
         self._state_file = (
-            Path(state_file).expanduser() if state_file is not None else THEME_FORKS_FILE.expanduser()
+            Path(state_file).expanduser()
+            if state_file is not None
+            else THEME_FORKS_FILE.expanduser()
         )
 
     def _sanitize_fork_name(self, name: str) -> str:

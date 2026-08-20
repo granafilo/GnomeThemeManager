@@ -41,7 +41,8 @@ def test_editor_draft_serialization() -> None:
 def test_editor_draft_manager_save_and_load(tmp_path: Path) -> None:
     """Test EditorDraftManager saves and reads from specified json file."""
     draft_file = tmp_path / "state" / "editor_draft.json"
-    manager = EditorDraftManager(draft_file=draft_file)
+    settings_file = tmp_path / "state" / "editor_settings.json"
+    manager = EditorDraftManager(draft_file=draft_file, settings_file=settings_file)
 
     assert not manager.has_draft()
     assert manager.load_draft() is None
@@ -66,7 +67,8 @@ def test_editor_draft_manager_save_and_load(tmp_path: Path) -> None:
 def test_editor_draft_manager_clear(tmp_path: Path) -> None:
     """Test EditorDraftManager clear_draft removes file."""
     draft_file = tmp_path / "editor_draft.json"
-    manager = EditorDraftManager(draft_file=draft_file)
+    settings_file = tmp_path / "editor_settings.json"
+    manager = EditorDraftManager(draft_file=draft_file, settings_file=settings_file)
 
     draft = EditorDraft(theme_name="To Delete")
     manager.save_draft(draft)
@@ -80,9 +82,10 @@ def test_editor_draft_manager_clear(tmp_path: Path) -> None:
 def test_editor_draft_manager_corrupted_file(tmp_path: Path) -> None:
     """Test EditorDraftManager handles corrupted JSON gracefully."""
     draft_file = tmp_path / "editor_draft.json"
+    settings_file = tmp_path / "editor_settings.json"
     draft_file.write_text("invalid json {{{", encoding="utf-8")
 
-    manager = EditorDraftManager(draft_file=draft_file)
+    manager = EditorDraftManager(draft_file=draft_file, settings_file=settings_file)
     assert not manager.has_draft()
     assert manager.load_draft() is None
 

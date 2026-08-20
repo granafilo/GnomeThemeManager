@@ -2003,4 +2003,63 @@ msgstr "Salvataggio automatico della bozza disattivato."
 msgid "Draft auto-save enabled."
 msgstr "Salvataggio automatico della bozza attivato."
 
+msgid "GNOME Shell Colors"
+msgstr "Colori GNOME Shell"
+
+msgid "Fine-tune panel, text, overview, and accent colors for GNOME Shell (User Themes extension required)"
+msgstr "Personalizza i colori del pannello, testo, overview e selezione per GNOME Shell (richiede estensione User Themes)"
+
+msgid "Reset Shell Colors"
+msgstr "Reimposta Colori Shell"
+
+msgid "Panel Background"
+msgstr "Sfondo Pannello"
+
+msgid "Panel Text & Icons"
+msgstr "Testo e Icone Pannello"
+
+msgid "Overview Background"
+msgstr "Sfondo Panoramica (Overview)"
+
+msgid "Shell Accent / Selection"
+msgstr "Accento / Selezione Shell"
+
+msgid "Pick"
+msgstr "Scegli"
+
+msgid "Click to set {color} as Accent for GTK and GNOME Shell"
+msgstr "Clicca per impostare {color} come colore di accento per GTK e GNOME Shell"
+
+msgid "Adaptive palette extracted from wallpaper applied to GTK and Shell."
+msgstr "Palette adattiva estratta dal wallpaper applicata sia a GTK che a GNOME Shell."
+
+msgid "Wallpaper Colors"
+msgstr "Colori dallo Sfondo"
+
+msgid "Extract dominant adaptive colors from desktop wallpaper and apply them globally to GTK and GNOME Shell"
+msgstr "Estrae i colori dominanti dallo sfondo del desktop e li applica sia a GTK che a GNOME Shell"
+
+msgid "Extract from Wallpaper"
+msgstr "Estrai dallo Sfondo"
+
+msgid "Click a swatch to apply as Accent color for both GTK and Shell"
+msgstr "Clicca su un colore per impostarlo come accento sia per GTK che per la Shell"
+
+msgid "Restore GNOME Shell colors to original theme defaults"
+msgstr "Ripristina i colori di GNOME Shell ai valori originali del tema"
+
+msgid "GTK Theme Colors"
+msgstr "Colori del Tema GTK"
+
+msgid "Fine-tune foreground, background, and accent colors for GTK applications"
+msgstr "Personalizza i colori di testo, sfondo e accento per le applicazioni GTK"
+
+msgid "Reset GTK Colors"
+msgstr "Ripristina Colori GTK"
+
+msgid "Restore GTK colors to original theme defaults"
+msgstr "Ripristina i colori GTK ai valori originali del tema"
+
+
+
 

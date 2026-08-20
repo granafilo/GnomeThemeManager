@@ -112,9 +112,7 @@ class GSettingsClient:
             else None
         )
         uri = None
-        if color_scheme == "prefer-dark" and self._has_key(
-            self._bg_settings, "picture-uri-dark"
-        ):
+        if color_scheme == "prefer-dark" and self._has_key(self._bg_settings, "picture-uri-dark"):
             uri = self._bg_settings.get_string("picture-uri-dark")
 
         if not uri and self._has_key(self._bg_settings, "picture-uri"):

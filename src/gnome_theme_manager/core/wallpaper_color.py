@@ -40,7 +40,9 @@ def hex_to_rgb(hex_str: str) -> tuple[int, int, int]:
     return (int(cleaned[0:2], 16), int(cleaned[2:4], 16), int(cleaned[4:6], 16))
 
 
-def _sample_pixels_from_file(image_path: Path, max_samples: int = 2000) -> list[tuple[int, int, int]]:
+def _sample_pixels_from_file(
+    image_path: Path, max_samples: int = 2000
+) -> list[tuple[int, int, int]]:
     """Sample RGB pixels from an image file using GdkPixbuf (if available) or basic byte parsing."""
     try:
         import gi  # type: ignore[import-untyped]
@@ -95,7 +97,9 @@ def _sample_pixels_from_file(image_path: Path, max_samples: int = 2000) -> list[
     return []
 
 
-def _kmeans(pixels: list[tuple[int, int, int]], k: int = 5, max_iters: int = 10) -> list[tuple[int, int, int]]:
+def _kmeans(
+    pixels: list[tuple[int, int, int]], k: int = 5, max_iters: int = 10
+) -> list[tuple[int, int, int]]:
     """Simple, deterministic k-means clustering in RGB color space."""
     if not pixels:
         return []
@@ -104,7 +108,9 @@ def _kmeans(pixels: list[tuple[int, int, int]], k: int = 5, max_iters: int = 10)
 
     # Deterministic seed for reproducible palettes
     random.seed(42)
-    centroids: list[list[float]] = [[float(c[0]), float(c[1]), float(c[2])] for c in random.sample(pixels, k)]
+    centroids: list[list[float]] = [
+        [float(c[0]), float(c[1]), float(c[2])] for c in random.sample(pixels, k)
+    ]
 
     for _ in range(max_iters):
         clusters: list[list[tuple[int, int, int]]] = [[] for _ in range(k)]

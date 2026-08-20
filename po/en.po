@@ -2003,4 +2003,63 @@ msgstr "Draft auto-save disabled."
 msgid "Draft auto-save enabled."
 msgstr "Draft auto-save enabled."
 
+msgid "GNOME Shell Colors"
+msgstr "GNOME Shell Colors"
+
+msgid "Fine-tune panel, text, overview, and accent colors for GNOME Shell (User Themes extension required)"
+msgstr "Fine-tune panel, text, overview, and accent colors for GNOME Shell (User Themes extension required)"
+
+msgid "Reset Shell Colors"
+msgstr "Reset Shell Colors"
+
+msgid "Panel Background"
+msgstr "Panel Background"
+
+msgid "Panel Text & Icons"
+msgstr "Panel Text & Icons"
+
+msgid "Overview Background"
+msgstr "Overview Background"
+
+msgid "Shell Accent / Selection"
+msgstr "Shell Accent / Selection"
+
+msgid "Pick"
+msgstr "Pick"
+
+msgid "Click to set {color} as Accent for GTK and GNOME Shell"
+msgstr "Click to set {color} as Accent for GTK and GNOME Shell"
+
+msgid "Adaptive palette extracted from wallpaper applied to GTK and Shell."
+msgstr "Adaptive palette extracted from wallpaper applied to GTK and Shell."
+
+msgid "Wallpaper Colors"
+msgstr "Wallpaper Colors"
+
+msgid "Extract dominant adaptive colors from desktop wallpaper and apply them globally to GTK and GNOME Shell"
+msgstr "Extract dominant adaptive colors from desktop wallpaper and apply them globally to GTK and GNOME Shell"
+
+msgid "Extract from Wallpaper"
+msgstr "Extract from Wallpaper"
+
+msgid "Click a swatch to apply as Accent color for both GTK and Shell"
+msgstr "Click a swatch to apply as Accent color for both GTK and Shell"
+
+msgid "Restore GNOME Shell colors to original theme defaults"
+msgstr "Restore GNOME Shell colors to original theme defaults"
+
+msgid "GTK Theme Colors"
+msgstr "GTK Theme Colors"
+
+msgid "Fine-tune foreground, background, and accent colors for GTK applications"
+msgstr "Fine-tune foreground, background, and accent colors for GTK applications"
+
+msgid "Reset GTK Colors"
+msgstr "Reset GTK Colors"
+
+msgid "Restore GTK colors to original theme defaults"
+msgstr "Restore GTK colors to original theme defaults"
+
+
+
 

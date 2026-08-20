@@ -51,6 +51,14 @@ from .models import (
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
+from .shell_editor import (
+    ShellColorExtractor,
+    ShellExtractedColors,
+    ShellThemeFork,
+    ShellThemeForkManager,
+    extract_shell_colors,
+    generate_shell_css_override,
+)
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import (
     ThemeFork,
@@ -97,6 +105,10 @@ __all__ = [
     "PropagationResult",
     "SandboxBridge",
     "SandboxStatus",
+    "ShellColorExtractor",
+    "ShellExtractedColors",
+    "ShellThemeFork",
+    "ShellThemeForkManager",
     "SystemStatus",
     "Theme",
     "ThemeComposition",
@@ -116,8 +128,10 @@ __all__ = [
     "create_theme_fork",
     "detect_theme_types",
     "extract_dominant_colors_from_image",
+    "extract_shell_colors",
     "extract_theme_colors",
     "extract_wallpaper_palette",
+    "generate_shell_css_override",
     "inspect_extracted_tree",
     "parse_css_define_colors",
     "revert_theme_fork",

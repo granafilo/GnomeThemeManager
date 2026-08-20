@@ -35,6 +35,7 @@ from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
+from .shell_editor import ShellThemeForkManager
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
@@ -112,6 +113,7 @@ class ThemeManager:
             global_theme_manager=self._global_themes,
         )
         self._theme_forks = theme_forks or ThemeForkManager()
+        self._shell_forks = ShellThemeForkManager()
         self._editor_drafts = editor_drafts or EditorDraftManager()
         self._wallpaper_colors = WallpaperColorExtractor(gsettings=self._gsettings)
 
@@ -133,6 +135,11 @@ class ThemeManager:
     def theme_forks(self) -> ThemeForkManager:
         """Return theme fork manager."""
         return self._theme_forks
+
+    @property
+    def shell_forks(self) -> ShellThemeForkManager:
+        """Return shell theme fork manager."""
+        return self._shell_forks
 
     def _get_current_themes_safe(self) -> ThemeSet:
         """Helper to get current themes safely without raising exceptions."""

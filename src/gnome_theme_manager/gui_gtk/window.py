@@ -378,7 +378,11 @@ class MainWindow(Adw.ApplicationWindow):
             and not self.global_themes_page.is_loading
         ):
             self.global_themes_page.refresh()
-        elif page_id == "editor" and not self.editor_page.is_loaded and not self.editor_page.is_loading:
+        elif (
+            page_id == "editor"
+            and not self.editor_page.is_loaded
+            and not self.editor_page.is_loading
+        ):
             self.editor_page.refresh()
         elif (
             page_id == "sandbox"
