@@ -488,3 +488,40 @@ def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
         assert (legacy_icons / "LegacyIcons" / "16x16" / "icon.png").exists()
         assert not (user_themes / "LegacyGTK").exists()
         assert not (user_icons / "LegacyIcons").exists()
+
+
+def test_installer_ensure_user_directories(tmp_path: Path) -> None:
+    """Verifica che ensure_user_directories crei ~/.themes, ~/.local/share/themes, ~/.icons, ~/.local/share/icons."""
+    mock_home = tmp_path / "home" / "user"
+    user_themes = mock_home / ".local" / "share" / "themes"
+    legacy_themes = mock_home / ".themes"
+    user_icons = mock_home / ".local" / "share" / "icons"
+    legacy_icons = mock_home / ".icons"
+
+    assert not user_themes.exists()
+    assert not legacy_themes.exists()
+    assert not user_icons.exists()
+    assert not legacy_icons.exists()
+
+    installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(
+            "gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes]
+        )
+        mp.setattr("gnome_theme_manager.core.installer.USER_ICONS_DIRS", [user_icons, legacy_icons])
+        mp.setattr(
+            "gnome_theme_manager.core.constants.USER_THEMES_DIRS", [user_themes, legacy_themes]
+        )
+        mp.setattr("gnome_theme_manager.core.constants.USER_ICONS_DIRS", [user_icons, legacy_icons])
+
+        created = installer.ensure_user_directories()
+        assert len(created) == 4
+        assert user_themes.is_dir()
+        assert legacy_themes.is_dir()
+        assert user_icons.is_dir()
+        assert legacy_icons.is_dir()
+
+        # Invocazione idempotente
+        created_again = installer.ensure_user_directories()
+        assert len(created_again) == 4

@@ -46,60 +46,113 @@ Solo PyGObject + `requests` (da Fase 3). Nessuna altra senza approvazione esplic
 Ogni fase su branch dedicata derivata da `main`: `feature/phase-{N}-{slug}`.
 Chore standalone: `chore/{slug}` (es. `chore/english-first`).
 
-### 1.2 Granularità dei commit (1 task = 1 commit)
+### 1.2 Granularità dei commit (1 task = 1 commit completo)
 
-Ogni TASK completato e testato produce ESATTAMENTE un commit. Ogni fase produce in aggiunta un commit finale di chiusura.
+Protocollo per-task:
+0. L'agent stampa UNA riga GUI CHECK nel formato esatto:
+    `GUI CHECK: [comportamento implementato] -> [come verificarlo tramite GUI]`
+    Esempio: `GUI CHECK: preview icon pack -> apri la tab "Icon Packs": ogni
+    pack mostra una griglia di icone standard renderizzate col pack, senza
+    cambiare il tema di sistema.`
+    Per task senza superficie GUI: `GUI CHECK: n/a - [motivo]` + comando
+    alternativo di verifica (es. comando CLI).
+1. L'agent stampa il comando di commit del task...
+
+Ogni TASK produce ESATTAMENTE un commit, contenente TUTTO il lavoro del task:
+implementazione iniziale + tutte le modifiche richieste dall'utente finché il
+task non è approvato.
 
 Regole:
-- 1 task = 1 commit. Mai accumulare task multipli nello stesso commit.
-- Il commit di task contiene SOLO i file di codice + test del task (mai docs, mai i18n).
+- Le iterazioni/modifiche su un task APERTO (non ancora approvato) NON creano
+  nuovi commit: aggiornano lo stesso commit.
+- Il messaggio deve essere COMPLETO: header conventional + corpo che descrive
+  l'INTERA integrazione del task (cosa introduce nel progetto). Mai messaggi
+  tipo "update/fix del task precedente".
+- Se esiste già un commit locale per il task: `git commit --amend` con
+  messaggio completo riscritto.
+- Se già pushato sulla branch feature: amend + `git push --force-with-lease`
+  (MAI su main).
+- Il commit di task contiene SOLO codice + test + po del task.
 - Il commit di chiusura fase contiene SOLO gli esiti degli step A–C.
-- Il coding agent NON esegue mai commit: stampa il comando, l'utente lo esegue.
-- Il comando di commit per-task usa `git add` ESPLICITO sui soli file del task (mai `git add -A`).
+- L'agent NON esegue mai commit: stampa il comando, l'utente lo esegue.
+- `git add` esplicito sui soli file del task (mai `git add -A`).
 
-Formato messaggi (Conventional Commits + riferimento task):
-- `feat(core): task 1.2 — theme validator per index.theme`
-- `fix(gui): task 0.1 — gtk4 override status all'avvio`
-- `test(core): task 1.2 — unit test parser index.theme`
-- `chore: phase {N} completion — docs, tests integrity, i18n verification`
+Formato messaggio (header + corpo completo):
 
-Protocollo per-task (dopo test verdi e review utente del diff):
-1. Il coding agent stampa il comando di commit del task (add esplicito + messaggio).
-2. L'utente esegue il commit.
-3. Si passa al task successivo.
+```
+feat(gui): task 1.1 — unified Global Themes view
 
-### 1.3 Protocollo di testing OBBLIGATORIO a fine fase
-
-```bash
-pytest tests/ -v --cov=src/gnome_theme_manager --cov-fail-under=80
-python -m gnome_theme_manager --help
-python -m gnome_theme_manager list --all
-python -m gnome_theme_manager current
-python -m gnome_theme_manager.gui_gtk &   # nessun traceback entro 10s
+Introduce a single Global Themes page replacing the presets sidebar:
+- unified data model (origin: bundled/user)
+- ordering: user themes on top (newest first), 3 bundled at bottom
+- seed bundled themes on first launch
+- i18n: new strings added to po/en.po and po/it.po
 ```
 
-Coverage minima `core/`: 80%.
+### 1.3 Protocollo di testing (fine fase + durante task)
+
+**Comandi canonici di progetto** (definiti nel PLAYBOOK sez. 8, popolati dopo P20):
+
+| Variabile        | Significato                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `TEST_SUITE`     | pytest con coverage ( pytest -v )                            |
+| `LINT_CMD`       | ruff (ruff check src tests)                                  |
+| `TYPE_CHECK_CMD` | mypy (mypy --strict src)                                     |
+| `GUI_LAUNCH_CMD` | comando di avvio GUI (PYTHONPATH=src python3 -m gnome_theme_manager gui) |
+
+**Durante ogni task** (al cambio verde):
+
+```bash
+$TEST_SUITE
+$LINT_CMD
+$TYPE_CHECK_CMD
+```
+
+**A fine fase** (prima del protocollo §1.4):
+
+- Eseguire i 3 comandi canonici
+- Lanciare la GUI con `$GUI_LAUNCH_CMD` e verificare assenza di traceback entro 10s
+- Coverage minima `core/`: 80%
+
+**Regola anti-overhead**: l'agent NON esegue comandi esplorativi prima di quelli canonici.
+Se un comando canonico fallisce, l'agent chiede:
+
+1. Output completo dell'errore
+2. (Opzionale) comandi più specifici suggeriti dal framework (es. `pytest tests/test_x.py::test_y`)
+
+Non indaga mai in autonomia su test/lint prima di chiedere.
 
 ### 1.4 Protocollo di chiusura fase (POST-CONFERMA — OBBLIGATORIO)
 
 L'agent NON procede alla fase successiva senza conferma esplicita dell'utente.
 Dopo la conferma, eseguire in ordine:
 
-**Step A — Documentazione**: aggiornare `docs/ROADMAP.md` (feature → ✅ con data), `README.md` (sezione Feature), docs tecniche API nuove, changelog.
+**Step A — Documentazione**: 
+
+- aggiornare `docs/ROADMAP.md` (feature → ✅ con data)
+-  `README.md` (sezione Feature)
+-  docs tecniche API nuove
+-  changelog.
+
+- Aggiornare `docs/FEATURE_GUIDE.md`: una riga per ogni nuovo task shipped (✅ quando mergiato)
 
 **Step B — Integrità test + pulizia**: pytest completo senza skip ingiustificati; pylint/ruff zero warning unused; `git status --short` pulito (artefatti rimossi o in .gitignore); nessun test dipendente da stato locale.
 
 **Step C — Traduzioni**: estrazione stringhe aggiornata; `po/en.po` e `po/it.po` sincronizzati, nessun fuzzy; `msgfmt` senza warning; nessuna stringa UI hardcodata; encoding UTF-8 verificato.
 
 **Step D — Version bump**
-1. Determinare la nuova versione dal mapping §2.7 (fase → minor; chore → patch).
+
+1. Nuova versione dal mapping §2.7.
 2. Aggiornare l'unica fonte: `__version__` in `src/gnome_theme_manager/__init__.py`.
-3. Propagare dove non derivabile: nuova entry CHANGELOG con versione + data;
-   entry release in metainfo/.desktop se presenti.
-4. Verifica consistenza:
-   - `grep -rIn "<vecchia versione>" . --exclude-dir=.git` → zero hit
-   - `python -m gnome_theme_manager --version` → stampa la nuova
-5. Il bump rientra nel commit finale di chiusura.
+3. Aggiornare la **version surface** (tutti i marker "versione corrente"):
+   - `CHANGELOG.md`: entry in cima `## [X.Y.Z] - YYYY-MM-DD`
+   - `README.md`: riga standard `**Current release:** vX.Y.Z` + tutte le reference alla versione corrente
+   - metainfo `.xml` / `.desktop` (se presenti): ultima `<release version="X.Y.Z"/>`
+   - `docs/ROADMAP.md`: riga "current version" se presente
+   - (`docs/FEATURE_GUIDE.md` NON va toccata: contiene versioni storiche)
+4. Eseguire in locale: `python3 scripts/check_version_coherence.py` → deve passare.
+5. Regola grep: nessun marker "corrente" con la vecchia versione.
+6. Il bump rientra nel commit finale di chiusura.
 
 **Step E — Comando di commit finale**: stampare (NON eseguire):
 
@@ -111,15 +164,70 @@ git add -A && git commit -m "chore: phase {N} completion — v{X.Y.Z} — docs, 
 > Questo commit contiene esclusivamente gli esiti degli step A–D.
 > Il tag `v{X.Y.Z}` viene creato dall'utente dopo il merge.
 
+**Step F — PR summary**
+Dopo lo step E, stampare un PR summary pronto da incollare (titolo + body),
+costruito dal `git log` della branch e dalle righe GUI CHECK della fase:
+
+```
+## Summary — Phase {N}: <nome> (v{X.Y.Z})
+
+<2-3 righe: cosa introduce la fase nel complesso>
+
+## Tasks
+- [x] {N}.1 <nome> — una riga su cosa introduce
+- [x] {N}.2 <nome> — ...
+- [x] <eventuali commit chore della fase (i18n backfill, docs deps...)>
+
+## Manual verification (GUI CHECK)
+- <comportamento> -> <verifica GUI>
+- ...
+
+## Tests & quality
+- pytest verde, coverage core >= 80% · ruff/mypy puliti
+- i18n en/it sincronizzati, msgfmt ok · versione allineata a v{X.Y.Z}
+
+## Breaking changes / note
+- <se presenti, altrimenti "none">
+
+## Post-merge
+- tag v{X.Y.Z}
+```
+
+L'utente lo incolla in `gh pr create --body`. Non eseguire la PR: spetta all'utente.
+
 ### 1.5 Gestione modifiche post-conferma
 Se l'utente richiede modifiche dopo la chiusura, il ciclo riprende dalla feature modificata e gli step A–D vanno rieseguiti integralmente.
 Le modifiche post-conferma seguono la stessa policy: 1 commit dedicato per la fix (codice + test), poi riesecuzione A–D con commit finale separato.
+
+- Modifiche su task APERTO (non approvato) = stesso commit (amend), messaggio
+  completo riscritto.
+- Modifiche su task GIÀ approvato/committato = commit di fix separato +
+  riesecuzione step A–D.
 
 ### 1.6 Blocco su ambiguità
 In caso di ambiguità non risolvibile dal documento: fermarsi e chiedere. Mai decisioni unilaterali su feature/specifiche.
 
 ### 1.7 Skills on-demand
 In `docs/skills/` esistono playbook specialistici invocati dall'utente: `review.md`, `debug_gtk.md`, `test_strategy.md`, `refactor.md`, `security_review.md`, `error_triage.md`. Quando l'utente li invoca, seguirli alla lettera.
+
+### 1.8 Condizioni di STOP (non negoziabili)
+
+Il coding agent DEVE fermarsi immediatamente se:
+- `$TEST_SUITE` fallisce (anche un solo test rosso)
+- `$LINT_CMD` fallisce
+- `$TYPE_CHECK_CMD` fallisce
+- `$GUI_LAUNCH_CMD` crasha o produce traceback
+
+In caso di STOP:
+
+1. NON aprire branch, NON creare commit, NON toccare task successivi
+2. Diagnosticare il fallimento (skill `error_triage` se utile)
+3. Proporre fix minimo e applicarlo
+4. Riportare $TEST_SUITE e $LINT_CMD al verde PRIMA di riprendere
+5. Un task è completato (e committibile) SOLO con test verdi
+
+"Fixa senza attendere conferma" significa: fixa in autonomia il fallimento,
+NON: salta il fallimento e procedi.
 
 ---
 
@@ -165,6 +273,17 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 - La versione si aggiorna SOLO durante la chiusura fase (step D), mai durante i task
 - Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
 
+### 2.8 i18n follows the feature
+Ogni task che introduce stringhe user-visible (GUI, CLI, dialoghi) DEVE,
+nello STESSO commit del task:
+1. Wrappare le stringhe in gettext (`_()`)
+2. Aggiungere i msgid a `po/en.po` (lingua sorgente)
+3. Aggiungere le traduzioni IT a `po/it.po` (nessun untranslated/fuzzy)
+
+Lo step C della chiusura fase è SOLO verifica finale di consistenza,
+non il momento in cui si traduce.
+I test che asseriscono su stringhe usano i msgid, mai le traduzioni.
+
 ---
 
 ## 3. Fasi di implementazione
@@ -187,10 +306,10 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 **Branch:** `chore/english-first`
 **Commit:** singolo commit chore (policy §1.2)
 
-- [ ] C.1 Tradurre README.md, docs/ROADMAP.md, docs pubbliche, CHANGELOG
-- [ ] C.2 Codice: commenti, docstring, log, output CLI, stringhe errore → EN; stringhe hardcoded → gettext con msgid EN
-- [ ] C.3 i18n: setup gettext se mancante (source EN); `po/en.po` allineato; `po/it.po` completo e non fuzzy
-- [ ] C.4 .desktop / metainfo / AppStream → EN
+- [x] C.1 Tradurre README.md, docs/ROADMAP.md, docs pubbliche, CHANGELOG
+- [x] C.2 Codice: commenti, docstring, log, output CLI, stringhe errore → EN; stringhe hardcoded → gettext con msgid EN
+- [x] C.3 i18n: setup gettext se mancante (source EN); `po/en.po` allineato; `po/it.po` completo e non fuzzy
+- [x] C.4 .desktop / metainfo / AppStream → EN
 
 **EXCLUDE (restano IT):** PLAYBOOK.md, MASTER_PLAN.md, ARCHITECTURE.md, .agents/rules/*, docs/skills/*
 
@@ -203,45 +322,32 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 **Branch:** `chore/version-single-source`
 **Commit:** singolo commit `chore: version single source of truth`
 
-- [ ] V.1 `__version__` in `__init__.py` unica fonte; `pyproject.toml` dynamic version
-- [ ] V.2 CLI `--version` e GUI About leggono `__version__` a runtime
-- [ ] V.3 Metainfo/.desktop: entry release aggiornabile dallo step D (manuale o script)
-- [ ] V.4 Test: `test_version_consistency` (pyproject risolve == `__version__`; CLI --version coerente)
+- [x] V.1 `__version__` in `__init__.py` unica fonte; `pyproject.toml` dynamic version
+- [x] V.2 CLI `--version` e GUI About leggono `__version__` a runtime
+- [x] V.3 Metainfo/.desktop: entry release aggiornabile dallo step D (manuale o script)
+- [x] V.4 Test: `test_version_consistency` (pyproject risolve == `__version__`; CLI --version coerente)
 
 **Acceptance:** la versione esiste in un solo punto scrivibile; tutto il resto deriva.
 
 ---
 
-### 🔷 FASE 1 — Global Themes & Validazione (v1.1)
+### 🔷 FASE 1 — Global Themes & Validazione (v1.1) — ✅ COMPLETATA (agosto 2026)
 
 **Branch:** `feature/phase-1-global-themes`
 
-#### Task 1.1 — Global Themes (composizione preset + UI)
-- Moduli: `core/global_themes.py` (nuovo), `gui_gtk/views/global_themes_view.py`
-- Global Theme = preset bundled/utente come card con thumbnail + "Apply"
-- Bundling iniziale: 3–5 global theme in `data/global_themes/`
+- [x] 1.1 Global Themes: view unica unificata (sostituisce i preset)
+- [x] 1.2 ThemeValidator
+- [x] 1.3 Corruption detection + warning pre-apply
+- [x] 1.4 Preview visuale icon pack
+- [x] 1.5 Preview in-app sicura (sandbox GTK4) + rollback automatico
+- [x] 1.6 Creazione cartelle utente
+- [x] 1.7 Installazione assistita da cartella/archivio con validazione pre-install
 
-#### Task 1.2 — ThemeValidator
-- Modulo: `core/theme_validator.py` (nuovo)
-- Parse `index.theme` (configparser); verifica `[Desktop Entry]`, `Name`, `Type=X-GNOME-Metatheme`; dir `gtk-3.0/` o `gtk-4.0/`; `cursors/` per cursori; per icone `index.theme` + ≥5 icone standard
-- Restituisce `ThemeValidationResult { valid, warnings, missing_files }`
+**Acceptance Fase 1:** ✅ global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma. 
 
-#### Task 1.3 — Corruption detection + warning pre-apply
-- CLI: warning + conferma interattiva (`-y` salta); GUI: `Adw.MessageDialog` "Applica comunque / Annulla"
-
-#### Task 1.4 — Preview visuale icon pack
-- `gui_gtk/widgets/icon_pack_preview.py`: griglia icone app GNOME standard via `Gtk.IconTheme` temporaneo (senza cambiare tema di sistema)
-
-#### Task 1.5 — Preview in-app sicura (sandbox GTK4)
-- `core/sandbox_theme.py`: `Gtk.CssProvider` locale sul root widget; "Revert" < 100 ms; tema di sistema invariato
-
-#### Task 1.6 — Creazione cartelle utente
-- `Installer.ensure_user_directories()`: `~/.themes`, `~/.local/share/themes`, `~/.icons`, `~/.local/share/icons`; chiamato all'avvio GUI e prima di ogni install
-
-#### Task 1.7 — Installazione assistita da cartella
-- `Gtk.FileDialog`; accetta directory o archivi `.tar.gz/.tar.xz/.zip`; validazione pre-install
-
-**Acceptance Fase 1:** global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma
+- [x] Esiste UNA sola pagina Global Themes; nessuna pagina/sidebar preset residua
+- [x] Ordinamento corretto: user in cima (recenti prima), 3 bundled in fondo
+- [x] Ogni stringa nuova della view è in po/en.po e po/it.po nello stesso commit
 
 ---
 
@@ -251,6 +357,9 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 #### Task 2.1 — Theme Mixer
 - `core/theme_editor.py`: `ThemeComposition(gtk3, gtk4, shell, icon, cursor, custom_name)` → Global Theme utente con `user_composed: true`
+
+Il Theme Mixer salva le composizioni come Global Theme con `origin: "user"`:
+appaiono in cima alla lista della view unica (regola Task 1.1).
 
 #### Task 2.2 — CSS Color Extractor
 - `core/css_extractor.py`: parse `gtk-4.0/gtk.css` / `gtk-3.0/gtk-main.css`; estrae `@define-color` (theme_fg_color, theme_bg_color, theme_selected_bg_color, theme_selected_fg_color, wm_* opzionali)

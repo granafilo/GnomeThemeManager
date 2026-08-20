@@ -11,6 +11,7 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from .constants import PRESETS_DIR
 from .models import ThemeSet
@@ -81,13 +82,16 @@ class PresetManager:
 
         return cleaned
 
-    def _read_presets_file(self) -> dict:
+    def _read_presets_file(self) -> dict[str, Any]:
         """Read presets.json file and return dictionary."""
         if not self.presets_file.is_file():
             return {"presets": []}
         try:
             content = self.presets_file.read_text(encoding="utf-8")
-            return json.loads(content)
+            data: Any = json.loads(content)
+            if isinstance(data, dict):
+                return data
+            return {"presets": []}
         except json.JSONDecodeError as err:
             logger.error("Corrupted or unreadable presets.json file: %s", err)
             raise ValueError(f"Corrupted or unreadable presets.json file: {err}") from err
@@ -95,7 +99,7 @@ class PresetManager:
             logger.error("Error reading presets.json: %s", err)
             return {"presets": []}
 
-    def _write_presets_file(self, data: dict) -> None:
+    def _write_presets_file(self, data: dict[str, Any]) -> None:
         """Write dictionary to presets.json."""
         self.presets_dir.mkdir(parents=True, exist_ok=True)
         self.presets_file.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")

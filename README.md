@@ -10,7 +10,9 @@
 
 ## Project Status
 
-Version 1.0.0 is a public testing release.
+**Current release:** v1.1.0
+
+Version 1.1.0 is a public testing release.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -42,19 +44,23 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.0.0 (PEP 440: 1.0.0)
+Current package version: 1.1.0 (PEP 440: 1.1.0)
 
 ## Features
 
-- Read active theme status via `current`
-- List installed themes by type via `list`
-- Apply GTK, icon, cursor, and shell themes via `apply`
-- Install themes from archives via `install`
-- Uninstall user-installed themes via `uninstall`
-- Manage theme presets via `preset list`, `save`, `apply`, `delete`
-- Check Snap/Flatpak sandbox integration via `sandbox-status`
-- Propagate themes to sandbox runtimes (optional)
-- GTK4 / Libadwaita theme override in `~/.config/gtk-4.0` when applicable
+- **Status & Discovery**: Read active theme status via `current` and list installed themes by category (`list`).
+- **Selective & Global Apply**: Apply individual components (GTK, icon, cursor, shell) or unified **Global Themes** in 1 click.
+- **Theme Previews**:
+  - Live system theme preview with instant in-app hot-reload and safe auto-rollback on exit/cancel.
+  - Icon pack visual preview grid rendering real GNOME app icons without altering system configuration.
+- **Theme Validation & Corruption Detection**: Automatic structural integrity checks against `index.theme` and stylesheets with pre-apply warning dialogs.
+- **Assisted Installation & Management**:
+  - Assisted installer with native `Gtk.FileDialog` supporting directories and `.tar.gz`/`.tar.xz`/`.zip` archives with pre-install validation.
+  - Automatic user directory creation (`~/.themes`, `~/.icons`, `~/.local/share/themes`, `~/.local/share/icons`).
+  - Safe uninstallation of user themes via CLI and GUI.
+- **System Integration**:
+  - GTK4 / Libadwaita theme override management in `~/.config/gtk-4.0` with atomic backups and rollback.
+  - Snap and Flatpak sandbox propagation and environment diagnostics (`sandbox-status`).
 
 ## Prerequisites
 
@@ -70,19 +76,37 @@ To ensure proper execution of the application and desktop launcher:
 
 ## Requirements
 
-- Python >= 3.10
-- Linux with a GNOME desktop environment
-- `gsettings` available on the system
+### Runtime Requirements
 
-Python dependencies:
-- PyGObject >= 3.42.0
+- **Operating System**: Linux with GNOME Desktop environment (Target: GNOME 42+, tested and verified on GNOME 46 / Ubuntu 24.04 LTS)
+- **Python**: `>= 3.10`
+- **System Utilities**:
+  - `gsettings` (provided by `libglib2.0-bin` / GLib)
+  - `gettext` (`gettext` / `libglib2.0-bin` for locale translations)
+- **GNOME GObject Introspection Libraries**:
+  - `PyGObject` (`python3-gi` >= 3.42.0)
+  - `PyGObject Cairo` (`python3-gi-cairo`)
+  - `GTK 4` GObject Introspection (`gir1.2-gtk-4.0`)
+  - `Libadwaita 1` GObject Introspection (`gir1.2-adw-1`)
 
-GTK4/Libadwaita system packages (Ubuntu/Debian):
+#### Ubuntu 24.04 LTS / Debian One-Liner (Runtime)
 
 ```bash
-sudo apt update
-sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
+sudo apt update && sudo apt install -y python3 python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libglib2.0-bin gettext
 ```
+
+### Development & Testing Dependencies (Dev-only)
+
+For running the test suite, linting, and static type checking:
+- `pytest` (`>= 7.0`)
+- `ruff` (`>= 0.3.0`)
+- `mypy` (`>= 1.8.0`)
+
+Install dev dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
 
 ## Installation
 
@@ -91,9 +115,18 @@ sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 Download the latest `.AppImage` executable from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) and launch it:
 
 ```bash
-chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
-./GNOMEThemeManager-1.0.0-x86_64.AppImage
+chmod +x GNOMEThemeManager-1.1.0-x86_64.AppImage
+./GNOMEThemeManager-1.1.0-x86_64.AppImage
 ```
+
+> [!NOTE]
+> **FUSE Requirement for AppImage**: Like most AppImage packages on Linux, running the AppImage requires `libfuse` to mount the executable.
+> - **Ubuntu 24.04 LTS / Debian 13+**: `sudo apt install -y libfuse2t64`
+> - **Ubuntu 22.04 LTS / Debian 12**: `sudo apt install -y libfuse2`
+> - **Fedora**: `sudo dnf install -y fuse-libs`
+> - **Arch Linux**: `sudo pacman -S fuse2`
+>
+> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.1.0-x86_64.AppImage --appimage-extract-and-run`
 
 For detailed instructions and prerequisites, see **[INSTALL.md](INSTALL.md)**.
 

@@ -157,6 +157,17 @@
                           </object>
                         </child>
                         <child>
+                          <object class="AdwActionRow" id="validation_status_row">
+                            <property name="title" translatable="yes">Validation Status</property>
+                            <property name="subtitle" translatable="yes">Valid</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="validation_status_icon">
+                                <property name="icon-name">emblem-ok-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="AdwActionRow" id="target_dir_row">
                             <property name="title" translatable="yes">Install into legacy path ~/.themes and ~/.icons</property>
                             <property name="subtitle" translatable="yes">If disabled, uses XDG standard (~/.local/share/themes)</property>

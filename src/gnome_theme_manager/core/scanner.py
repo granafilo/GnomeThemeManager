@@ -298,20 +298,36 @@ class ThemeScanner:
             is_icon = self._is_icon_theme(entry)
             is_shell = self._is_shell_theme(entry)
 
+            gtk_incomplete = False
+            if not is_gtk and index_file.is_file():
+                try:
+                    content = index_file.read_text(encoding="utf-8", errors="ignore")
+                    if (
+                        "GtkTheme" in content
+                        or "[X-GNOME-Metatheme]" in content
+                        or (entry / "gtk-2.0").is_dir()
+                    ):
+                        gtk_incomplete = True
+                except OSError:
+                    pass
+
             # If index.theme is present but type heuristics fail, treat as GTK with invalid=True
-            if not (is_gtk or is_cursor or is_icon or is_shell) and index_file.is_file():
+            if (
+                not (is_gtk or is_cursor or is_icon or is_shell or gtk_incomplete)
+                and index_file.is_file()
+            ):
                 invalid = True
                 is_gtk = True  # Fallback classification
 
             # Register found themes
-            if is_gtk:
+            if is_gtk or gtk_incomplete:
                 found_themes.append(
                     Theme(
                         name=entry.name,
                         theme_type=ThemeType.GTK,
                         path=entry,
                         is_user_level=is_user_level,
-                        invalid=invalid,
+                        invalid=invalid or gtk_incomplete,
                         inheritance_chain=inheritance_chain,
                     )
                 )
@@ -351,32 +367,15 @@ class ThemeScanner:
 
         return found_themes
 
-    # -------------------------------------------------------------------------
-    # Theme Recognition Heuristics
-    # -------------------------------------------------------------------------
-
     @staticmethod
     def _is_gtk_theme(path: Path) -> bool:
         """Check if directory contains a valid GTK theme."""
-        gtk_subdirs = ["gtk-4.0", "gtk-3.0", "gtk-3.20", "gtk-2.0"]
+        gtk_subdirs = ["gtk-4.0", "gtk-3.0", "gtk-3.20"]
         for subdir in gtk_subdirs:
             if (path / subdir).is_dir():
                 return True
 
-        index_file = path / "index.theme"
-        if index_file.is_file():
-            try:
-                content = index_file.read_text(encoding="utf-8", errors="ignore")
-                if (
-                    "GtkTheme" in content
-                    or "[Desktop Entry]" in content
-                    or "[X-GNOME-Metatheme]" in content
-                ):
-                    return True
-            except OSError:
-                pass
-
-        return False
+        return (path / "gtk.css").is_file()
 
     @staticmethod
     def _is_shell_theme(path: Path) -> bool:
@@ -410,11 +409,12 @@ class ThemeScanner:
     def _is_icon_theme(path: Path) -> bool:
         """Check if directory contains a valid icon pack."""
         index_file = path / "index.theme"
+        has_icon_dirs_in_index = False
         if index_file.is_file():
             try:
                 content = index_file.read_text(encoding="utf-8", errors="ignore")
-                if "[Icon Theme]" in content or "Directories=" in content:
-                    return True
+                if "Directories=" in content:
+                    has_icon_dirs_in_index = True
             except OSError:
                 pass
 
@@ -431,8 +431,7 @@ class ThemeScanner:
             "256x256",
             "512x512",
         ]
-        for subdir in icon_subdirs:
-            if (path / subdir).is_dir():
-                return True
+        has_icon_subdirs = any((path / subdir).is_dir() for subdir in icon_subdirs)
 
-        return False
+        # An icon theme MUST have either Directories= specified or actual icon subdirectories
+        return has_icon_dirs_in_index or has_icon_subdirs

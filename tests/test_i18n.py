@@ -36,6 +36,9 @@ def test_translation_loading_it():
         trans.gettext("Show currently applied themes on GNOME desktop")
         == "Mostra i temi attualmente applicati sul desktop GNOME"
     )
+    assert trans.gettext("Global Themes") == "Temi Globali"
+    assert trans.gettext("Save Current Configuration") == "Salva configurazione attuale"
+    assert trans.gettext("Delete Global Theme") == "Elimina Global Theme"
 
 
 def test_translation_loading_en():
@@ -51,6 +54,9 @@ def test_translation_loading_en():
         trans.gettext("Show currently applied themes on GNOME desktop")
         == "Show currently applied themes on GNOME desktop"
     )
+    assert trans.gettext("Global Themes") == "Global Themes"
+    assert trans.gettext("Save Current Configuration") == "Save Current Configuration"
+    assert trans.gettext("Delete Global Theme") == "Delete Global Theme"
 
 
 def test_translation_fallback():
@@ -80,6 +86,7 @@ def test_gtk_builder_uses_translation_domain():
         "src/gnome_theme_manager/gui_gtk/pages/installer.py",
         "src/gnome_theme_manager/gui_gtk/pages/status.py",
         "src/gnome_theme_manager/gui_gtk/pages/themes.py",
+        "src/gnome_theme_manager/gui_gtk/pages/global_themes.py",
     ]:
         source = (ROOT_DIR / relative_path).read_text(encoding="utf-8")
         assert 'set_translation_domain("gnomethememanager")' in source

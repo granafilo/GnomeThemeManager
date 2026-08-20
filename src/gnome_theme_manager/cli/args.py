@@ -113,6 +113,12 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=_("Do not propagate theme to Snap/Flatpak apps"),
     )
+    apply_parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help=_("Bypass confirmation prompt when applying incomplete or invalid themes"),
+    )
 
     # Subcommand: install
     install_parser = subparsers.add_parser(

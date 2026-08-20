@@ -88,6 +88,14 @@ def mock_sandbox() -> MagicMock:
 
 
 @pytest.fixture
+def mock_validator() -> MagicMock:
+    """Mock per ThemeValidator."""
+    validator = MagicMock()
+    validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
+    return validator
+
+
+@pytest.fixture
 def manager(
     mock_scanner: MagicMock,
     mock_gsettings: MagicMock,
@@ -95,6 +103,7 @@ def manager(
     mock_installer: MagicMock,
     mock_presets: MagicMock,
     mock_sandbox: MagicMock,
+    mock_validator: MagicMock,
 ) -> ThemeManager:
     """Istanza di ThemeManager con componenti iniettati (mock)."""
     return ThemeManager(
@@ -104,6 +113,7 @@ def manager(
         installer=mock_installer,
         presets=mock_presets,
         sandbox_bridge=mock_sandbox,
+        validator=mock_validator,
     )
 
 
@@ -256,9 +266,11 @@ def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> Non
     gtk4_a.mkdir(parents=True)
     (gtk4_a / "gtk.css").write_text("/* theme A css */")
 
-    # Tema B senza GTK4 o GTK3
+    # Tema B valido come GTK generico ma senza sottocartelle gtk-4.0 o gtk-3.0 per override
     theme_b_dir = user_themes / "ThemeWithoutGTK4"
     theme_b_dir.mkdir(parents=True)
+    (theme_b_dir / "gtk.css").write_text("/* theme B root gtk css */")
+    (theme_b_dir / "index.theme").write_text("[Desktop Entry]\nName=ThemeWithoutGTK4\n")
 
     theme_a = Theme("ThemeWithGTK4", ThemeType.GTK, theme_a_dir, True)
     theme_b = Theme("ThemeWithoutGTK4", ThemeType.GTK, theme_b_dir, True)
@@ -271,11 +283,14 @@ def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> Non
 
     mock_gsettings = MagicMock()
     linker = GTK4ThemeLinker(config_dir=config_dir)
+    mock_val = MagicMock()
+    mock_val.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
 
     mgr = ThemeManager(
         scanner=mock_scanner,
         gsettings=mock_gsettings,
         gtk4_linker=linker,
+        validator=mock_val,
     )
 
     # 1. Applica Tema A -> override attivo
@@ -588,3 +603,30 @@ def test_manager_propagate_sandbox_with_active_themes(
     mock_sandbox.propagate_all.assert_called_once_with(
         gtk_theme="ActiveGTK", icon_theme="ActiveIcons"
     )
+
+
+def test_manager_apply_themes_invalid_structure_raises(
+    manager: ThemeManager,
+    mock_scanner: MagicMock,
+    mock_validator: MagicMock,
+) -> None:
+    """Verifica che applicare un tema con struttura non valida sollevi ThemeValidationError."""
+    from gnome_theme_manager.core.errors import ThemeValidationError
+
+    mock_scanner.find_theme.return_value = Theme(
+        name="BrokenTheme",
+        theme_type=ThemeType.GTK,
+        path=Path("/usr/share/themes/BrokenTheme"),
+        is_user_level=False,
+    )
+    mock_validator.validate.return_value = MagicMock(
+        valid=False,
+        warnings=["No modern GTK stylesheet (gtk-3.0 or gtk-4.0) detected."],
+        missing_files=["gtk-3.0/gtk.css or gtk-4.0/gtk.css"],
+    )
+
+    with pytest.raises(ThemeValidationError) as exc_info:
+        manager.apply_themes(ThemeSet(gtk_theme="BrokenTheme"))
+
+    assert "invalid" in str(exc_info.value).lower()
+    assert "gtk" in str(exc_info.value).lower()

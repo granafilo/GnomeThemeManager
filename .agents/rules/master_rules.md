@@ -16,6 +16,16 @@ trigger: always_on
 6. NEVER store app state in `~/.config/` — use `~/.local/state/gnome-theme-manager/`.
 7. Target: Ubuntu 24.04 + GNOME 46. Test commands must work on this stack.
 
+## i18n Rule (hard rule)
+- New user-visible strings => gettext `_()` + po/en.po + po/it.po updated
+  in the SAME commit as the feature. Never defer translations to phase close.
+
+## STOP Conditions (hard rule)
+- Any failure in $TEST_SUITE, $LINT_CMD, $TYPE_CHECK_CMD, or a crash in
+  $GUI_LAUNCH_CMD = HARD STOP. No new branches, no new commits, no next tasks.
+- A task is committable ONLY when all four canonical commands are green.
+- "Fix without confirmation" = fix the failure autonomously, never skip it.
+
 ## Testing Requirements
 
 - pytest coverage ≥ 80% on `core/`
@@ -29,13 +39,22 @@ trigger: always_on
 - Constants: UPPER_SNAKE_CASE
 - Branches: feature/phase-N-slug
 
+## GUI CHECK Rule (hard rule)
+- At the end of EVERY implementation step, print exactly one line:
+  GUI CHECK: [implemented behavior] -> [how to verify it via GUI]
+- No GUI surface => "GUI CHECK: n/a - [reason]" + alternative verify command.
+
 ## Commit Policy
 
-- 1 task completed + tested = exactly 1 commit (code + tests ONLY)
+- 1 task = exactly 1 commit containing ALL iterations of that task
+- Message must be COMPLETE: header + body describing the whole integration;
+  never "update/fix previous task state"
+- Changes on an open task => amend the same commit, rewrite full message
+- If already pushed to feature branch => amend + force-with-lease (never main)
 - Phase closure commit contains ONLY docs/i18n/verification changes
 - NEVER execute commits yourself: print the command, the user executes it
-- Per-task commits use explicit `git add <files>`, never `git add -A`
-- Message format: feat(scope): task X.Y — description
+- Per-task commits use explicit git add, never git add -A
+- After phase-close confirmation, ALWAYS print a paste-ready PR summary (step F).
 
 ## Current Phase Reference
 

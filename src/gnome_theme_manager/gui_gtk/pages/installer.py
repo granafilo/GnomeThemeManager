@@ -7,6 +7,7 @@ of themes from local folders or compressed archives (.zip, .tar.gz, .tar.xz, .ta
 """
 
 import logging
+import tempfile
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -25,6 +26,7 @@ from ...core.errors import (
     ArchiveExtractionError,
     ThemeValidationError,
 )
+from ...core.installer import inspect_extracted_tree, safe_extract
 from ...core.models import ApplyResult, Theme, ThemeSet, ThemeType
 
 if TYPE_CHECKING:
@@ -90,6 +92,8 @@ class InstallerPage:
         self.detected_components_row: Adw.ActionRow = self.builder.get_object(
             "detected_components_row"
         )
+        self.validation_status_row: Adw.ActionRow = self.builder.get_object("validation_status_row")
+        self.validation_status_icon: Gtk.Image = self.builder.get_object("validation_status_icon")
         self.target_dir_switch: Gtk.Switch = self.builder.get_object("target_dir_switch")
         self.change_source_button: Gtk.Button = self.builder.get_object("change_source_button")
         self.install_button: Gtk.Button = self.builder.get_object("install_button")
@@ -323,23 +327,60 @@ class InstallerPage:
         self._set_state("analyzing")
         self._set_controls_sensitive(False)
 
-        def worker_inspect() -> tuple[list[tuple[str, ThemeType]] | None, Exception | None]:
+        def worker_inspect() -> tuple[
+            list[tuple[str, ThemeType]] | None, list[str], Exception | None
+        ]:
             try:
                 if self.manager is None:
-                    return [], None
+                    return [], [], None
+
+                # Inspect source components and inspect validation
                 results = self.manager.inspect_theme_source(source_path)
-                return results, None
+
+                validation_warnings: list[str] = []
+                if hasattr(self.manager, "validator") and self.manager.validator is not None:
+                    if source_path.is_dir():
+                        for name, t_type in results:
+                            val_res = self.manager.validator.validate(source_path, t_type)
+                            if not val_res.valid:
+                                validation_warnings.extend(
+                                    val_res.warnings or [f"Invalid {t_type.value} structure"]
+                                )
+                            elif val_res.warnings:
+                                validation_warnings.extend(val_res.warnings)
+                    else:
+                        # For archive, extract into temp directory to validate actual structure
+                        try:
+                            with tempfile.TemporaryDirectory() as tmp_str:
+                                tmp_p = Path(tmp_str)
+                                safe_extract(source_path, tmp_p)
+                                targets = inspect_extracted_tree(
+                                    tmp_p, fallback_name=source_path.stem
+                                )
+                                for t_name, t_dir, t_type in targets:
+                                    val_res = self.manager.validator.validate(t_dir, t_type)
+                                    if not val_res.valid:
+                                        validation_warnings.extend(
+                                            val_res.warnings
+                                            or [f"Invalid {t_type.value} structure"]
+                                        )
+                                    elif val_res.warnings:
+                                        validation_warnings.extend(val_res.warnings)
+                        except Exception as ex:
+                            logger.debug("Archive pre-validation note: %s", ex)
+
+                return results, validation_warnings, None
             except Exception as err:
-                return None, err
+                return None, [], err
 
         def on_inspect_completed(
-            result: tuple[list[tuple[str, ThemeType]] | None, Exception | None],
+            result: tuple[list[tuple[str, ThemeType]] | None, list[str], Exception | None],
         ) -> bool:
             if current_gen != self._analysis_generation:
                 return GLib.SOURCE_REMOVE
 
             self._is_analyzing = False
-            items, error = result
+            items, val_warnings, error = result
 
             if error is not None:
                 logger.error("Error analyzing source '%s': %s", source_path, error)
@@ -381,6 +422,22 @@ class InstallerPage:
             )
             self.detected_theme_name_row.set_subtitle(theme_name)
             self.detected_components_row.set_subtitle(format_components_label(components))
+
+            if self.validation_status_row is not None:
+                if val_warnings:
+                    first_warn = val_warnings[0]
+                    more = (
+                        f" (+{len(val_warnings) - 1} {_('more')})" if len(val_warnings) > 1 else ""
+                    )
+                    self.validation_status_row.set_subtitle(f"{first_warn}{more}")
+                    if self.validation_status_icon is not None:
+                        self.validation_status_icon.set_from_icon_name("dialog-warning-symbolic")
+                else:
+                    self.validation_status_row.set_subtitle(
+                        _("Valid (all structure checks passed)")
+                    )
+                    if self.validation_status_icon is not None:
+                        self.validation_status_icon.set_from_icon_name("emblem-ok-symbolic")
 
             self._set_state("ready")
             self._set_controls_sensitive(True)

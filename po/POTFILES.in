@@ -4,14 +4,15 @@ src/gnome_theme_manager/gui_gtk/__init__.py
 src/gnome_theme_manager/gui_gtk/app.py
 src/gnome_theme_manager/gui_gtk/window.py
 src/gnome_theme_manager/gui_gtk/pages/__init__.py
+src/gnome_theme_manager/gui_gtk/pages/global_themes.py
 src/gnome_theme_manager/gui_gtk/pages/installer.py
-src/gnome_theme_manager/gui_gtk/pages/presets.py
 src/gnome_theme_manager/gui_gtk/pages/sandbox.py
 src/gnome_theme_manager/gui_gtk/pages/status.py
 src/gnome_theme_manager/gui_gtk/pages/themes.py
+src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui
 src/gnome_theme_manager/gui_gtk/ui/installer_page.ui
-src/gnome_theme_manager/gui_gtk/ui/presets_page.ui
 src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
 src/gnome_theme_manager/gui_gtk/ui/status_page.ui
 src/gnome_theme_manager/gui_gtk/ui/themes_page.ui
 src/gnome_theme_manager/gui_gtk/ui/window.ui
+

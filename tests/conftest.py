@@ -132,5 +132,6 @@ def mock_theme_manager() -> MagicMock:
                 res_kwargs["gtk4_override_applied"] = val.gtk4_override_applied
         return ApplyResult(**res_kwargs)
 
+    mgr.validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
     mgr.apply_component.side_effect = mock_apply_component
     return mgr

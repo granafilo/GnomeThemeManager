@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gnome-theme-manager"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Manager modulare in Python per temi GTK, icone e cursori su ambiente desktop GNOME."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,6 +40,9 @@ gnome-theme-manager = "gnome_theme_manager.cli.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "gnome_theme_manager.__version__"}
 
 [tool.setuptools.package-data]
 "gnome_theme_manager" = ["locale/**/*", "locale/*/LC_MESSAGES/*.mo"]

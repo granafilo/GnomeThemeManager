@@ -323,11 +323,15 @@ def test_apply_themes_with_sandbox_propagation() -> None:
         warnings=[],
     )
 
+    mock_validator = MagicMock()
+    mock_validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
+
     manager = ThemeManager(
         scanner=mock_scanner,
         gsettings=mock_gsettings,
         gtk4_linker=mock_linker,
         sandbox_bridge=mock_sandbox,
+        validator=mock_validator,
     )
 
     res: ApplyResult = manager.apply_themes(ThemeSet(gtk_theme="Nordic"), propagate_sandbox=True)
@@ -349,11 +353,14 @@ def test_apply_themes_no_sandbox_flag() -> None:
     mock_gsettings = MagicMock()
     mock_gsettings.is_shell_theme_supported = True
     mock_sandbox = MagicMock()
+    mock_validator = MagicMock()
+    mock_validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
 
     manager = ThemeManager(
         scanner=mock_scanner,
         gsettings=mock_gsettings,
         sandbox_bridge=mock_sandbox,
+        validator=mock_validator,
     )
 
     res: ApplyResult = manager.apply_themes(ThemeSet(gtk_theme="Nordic"), propagate_sandbox=False)

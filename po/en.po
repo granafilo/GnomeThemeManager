@@ -1564,3 +1564,262 @@ msgstr "❌ Not available"
 msgid "❌ Not installed"
 msgstr "❌ Not installed"
 
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:101
+msgid "Bundled Theme"
+msgstr "Bundled Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:96
+msgid "User Created"
+msgstr "User Created"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:105
+msgid "by"
+msgstr "by"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:118
+msgid "Delete this Global Theme"
+msgstr "Delete this Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:124
+msgid "Apply"
+msgstr "Apply"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:169
+msgid "Global Themes"
+msgstr "Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:316
+msgid "Global Theme applied successfully"
+msgstr "Global Theme applied successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:326
+msgid "Failed to apply global theme"
+msgstr "Failed to apply global theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:343
+msgid "Save Current Configuration"
+msgstr "Save Current Configuration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:343
+msgid "Enter a name for your new Global Theme:"
+msgstr "Enter a name for your new Global Theme:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:372
+msgid "Global Theme saved successfully"
+msgstr "Global Theme saved successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:378
+msgid "Failed to save global theme"
+msgstr "Failed to save global theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:392
+msgid "Delete Global Theme"
+msgstr "Delete Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:392
+msgid "Are you sure you want to delete"
+msgstr "Are you sure you want to delete"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:421
+msgid "Global Theme deleted successfully"
+msgstr "Global Theme deleted successfully"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:427
+msgid "Failed to delete global theme"
+msgstr "Failed to delete global theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:22
+msgid "Loading Global Themes..."
+msgstr "Loading Global Themes..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:23
+msgid "Discovering bundled and user themes."
+msgstr "Discovering bundled and user themes."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:78
+msgid "1-click full desktop themes combining GTK, icons, cursors, GNOME Shell, and color preferences."
+msgstr "1-click full desktop themes combining GTK, icons, cursors, GNOME Shell, and color preferences."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:92
+msgid "Save current configuration"
+msgstr "Save current configuration"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:106
+msgid "Reload themes list from disk"
+msgstr "Reload themes list from disk"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:120
+msgid "Search global themes..."
+msgstr "Search global themes..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:156
+msgid "No Global Themes Found"
+msgstr "No Global Themes Found"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:157
+msgid "No global themes match your search query."
+msgstr "No global themes match your search query."
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:172
+msgid "Failed to load Global Themes"
+msgstr "Failed to load Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:173
+msgid "An error occurred while reading theme definitions."
+msgstr "An error occurred while reading theme definitions."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:525
+msgid "Cannot Apply Incomplete Theme"
+msgstr "Cannot Apply Incomplete Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:527
+msgid "The theme"
+msgstr "The theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:527
+msgid "cannot be applied because its structure is incomplete or invalid."
+msgstr "cannot be applied because its structure is incomplete or invalid."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:778
+msgid "OK"
+msgstr "OK"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:498
+msgid "Missing required stylesheet or files in folder."
+msgstr "Missing required stylesheet or files in folder."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:512
+msgid "Incomplete"
+msgstr "Incomplete"
+
+
+
+msgid "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
+msgstr "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
+
+msgid "Install into legacy paths ~/.themes and ~/.icons instead of XDG standard (~/.local/share/themes)"
+msgstr "Install into legacy paths ~/.themes and ~/.icons instead of XDG standard (~/.local/share/themes)"
+
+msgid "\nNo theme found for type '{theme_type}' (user_only={user_only}).\n"
+msgstr "\nNo theme found for type '{theme_type}' (user_only={user_only}).\n"
+
+msgid "  - Snap Propagation:             ✓ Compatibility verified with gtk-common-themes"
+msgstr "  - Snap Propagation:             ✓ Compatibility verified with gtk-common-themes"
+
+msgid "Error: Specify at least one option to apply (--gtk, --theme, --icon, --cursor, --shell or --color-scheme)."
+msgstr "Error: Specify at least one option to apply (--gtk, --theme, --icon, --cursor, --shell or --color-scheme)."
+
+msgid "Theme '{theme}' was not found as GTK or GNOME Shell on the system."
+msgstr "Theme '{theme}' was not found as GTK or GNOME Shell on the system."
+
+msgid "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\nInstall required dependencies with:\n    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
+msgstr "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\nInstall required dependencies with:\n    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
+
+msgid "Shell"
+msgstr "Shell"
+
+msgid "Mode"
+msgstr "Mode"
+
+msgid "e.g. My Custom Desktop"
+msgstr "e.g. My Custom Desktop"
+
+msgid "GSettings is not available on this system. Ensure you are running in a GNOME environment and PyGObject (Gio) is installed."
+msgstr "GSettings is not available on this system. Ensure you are running in a GNOME environment and PyGObject (Gio) is installed."
+
+msgid "The 'User Themes' extension is required to apply custom themes to GNOME Shell. Do you want to enable it now?"
+msgstr "The 'User Themes' extension is required to apply custom themes to GNOME Shell. Do you want to enable it now?"
+
+msgid "Shell not applied: 'User Themes' extension inactive or unsupported."
+msgstr "Shell not applied: 'User Themes' extension inactive or unsupported."
+
+msgid "You may need to switch windows or restart some applications."
+msgstr "You may need to switch windows or restart some applications."
+
+msgid "The new cursor might not appear immediately across all windows.\nSwitch windows or restart applications to see the change."
+msgstr "The new cursor might not appear immediately across all windows.\nSwitch windows or restart applications to see the change."
+
+msgid "This operation configures filesystem overrides for Flatpak and verifies compatibility of active themes with Snap.\n\nNot all sandboxed applications or themes can be updated automatically."
+msgstr "This operation configures filesystem overrides for Flatpak and verifies compatibility of active themes with Snap.\n\nNot all sandboxed applications or themes can be updated automatically."
+
+msgid "No supported themes (GTK, Shell, Icons, Cursors) detected in source."
+msgstr "No supported themes (GTK, Shell, Icons, Cursors) detected in source."
+
+msgid "Legacy GTK 2 theme only (gtk-2.0). Missing modern GTK 3.0 or GTK 4.0 stylesheets."
+msgstr "Legacy GTK 2 theme only (gtk-2.0). Missing modern GTK 3.0 or GTK 4.0 stylesheets."
+
+msgid "Missing index.theme metadata file."
+msgstr "Missing index.theme metadata file."
+
+msgid "No modern GTK stylesheet (gtk-3.0 or gtk-4.0) detected."
+msgstr "No modern GTK stylesheet (gtk-3.0 or gtk-4.0) detected."
+
+msgid "Missing index.theme configuration file."
+msgstr "Missing index.theme configuration file."
+
+msgid "Missing 'cursors' directory."
+msgstr "Missing 'cursors' directory."
+
+msgid "Cursor directory contains no cursor files."
+msgstr "Cursor directory contains no cursor files."
+
+msgid "Missing index.theme file for icon pack."
+msgstr "Missing index.theme file for icon pack."
+
+msgid "Missing gnome-shell/gnome-shell.css stylesheet."
+msgstr "Missing gnome-shell/gnome-shell.css stylesheet."
+
+msgid "Bypass confirmation prompt when applying incomplete or invalid themes"
+msgstr "Bypass confirmation prompt when applying incomplete or invalid themes"
+
+msgid "GTK theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "GTK theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "Icon theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "Icon theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "Cursor theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "Cursor theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr "GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}"
+
+msgid "\nOne or more selected themes have structural issues. Apply anyway? [y/N]: "
+msgstr "\nOne or more selected themes have structural issues. Apply anyway? [y/N]: "
+
+msgid "Incomplete Theme Warning"
+msgstr "Incomplete Theme Warning"
+
+msgid "has structural issues or missing files:"
+msgstr "has structural issues or missing files:"
+
+msgid "Applying it might cause unexpected graphical glitches. Do you want to apply anyway?"
+msgstr "Applying it might cause unexpected graphical glitches. Do you want to apply anyway?"
+
+msgid "Apply anyway"
+msgstr "Apply anyway"
+
+msgid "Theme structure is incomplete or invalid."
+msgstr "Theme structure is incomplete or invalid."
+
+msgid "👁️ Live Preview in App"
+msgstr "👁️ Live Preview in App"
+
+msgid "↩️ Revert Live Preview"
+msgstr "↩️ Revert Live Preview"
+
+msgid "👁️ Preview on Desktop"
+msgstr "👁️ Preview on Desktop"
+
+msgid "↩️ Revert Preview"
+msgstr "↩️ Revert Preview"
+
+msgid "Validation Status"
+msgstr "Validation Status"
+
+msgid "Valid (all structure checks passed)"
+msgstr "Valid (all structure checks passed)"
+
+msgid "more"
+msgstr "more"
+

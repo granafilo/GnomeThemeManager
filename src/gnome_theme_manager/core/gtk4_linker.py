@@ -235,7 +235,13 @@ class GTK4ThemeLinker:
         if gtk4_source.is_dir() and (gtk4_source / "gtk.css").exists():
             source_dir = gtk4_source
         elif gtk3_source.is_dir() and (gtk3_source / "gtk.css").exists():
-            source_dir = gtk3_source
+            # Ensure GTK3 css is not an obsolete Adwaita stub that fails on GTK4
+            try:
+                css_content = (gtk3_source / "gtk.css").read_text(encoding="utf-8", errors="ignore")
+                if "org/gtk/libgtk/theme/Adwaita" not in css_content:
+                    source_dir = gtk3_source
+            except Exception:
+                pass
 
         if source_dir is None:
             self.remove_override()

@@ -5,8 +5,6 @@
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
   <object class="AdwToastOverlay" id="toast_overlay">
-    <property name="width-request">760</property>
-    <property name="height-request">520</property>
     <property name="child">
       <object class="AdwNavigationSplitView" id="split_view">
         <property name="min-sidebar-width">200</property>
@@ -164,7 +162,7 @@
                           </object>
                         </child>
                         <child>
-                          <object class="GtkListBoxRow" id="row_presets">
+                          <object class="GtkListBoxRow" id="row_global_themes">
                             <property name="child">
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
@@ -175,12 +173,12 @@
                                 <property name="margin-bottom">8</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">document-save-as-symbolic</property>
+                                    <property name="icon-name">starred-symbolic</property>
                                   </object>
                                 </child>
                                 <child>
                                   <object class="GtkLabel">
-                                    <property name="label" translatable="yes">Profiles and Presets</property>
+                                    <property name="label" translatable="yes">Global Themes</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
                                   </object>

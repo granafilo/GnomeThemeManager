@@ -11,6 +11,7 @@ This module encapsulates all read and write calls to:
 
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from .constants import (
     GSETTINGS_KEY_COLOR_SCHEME,
@@ -27,10 +28,10 @@ from .models import ThemeSet
 
 # Protected PyGObject import
 try:
-    import gi
+    import gi  # type: ignore[import-untyped]
 
     gi.require_version("Gio", "2.0")
-    from gi.repository import Gio
+    from gi.repository import Gio  # type: ignore[import-untyped]
 
     _GIO_AVAILABLE = True
 except (ImportError, ValueError, AttributeError):
@@ -77,7 +78,7 @@ class GSettingsClient:
             )
 
         # 2. Initialize primary interface schema (mandatory)
-        self._settings = self._get_settings_for_schema(schema_name)
+        self._settings: Any = self._get_settings_for_schema(schema_name)
         if self._settings is None:
             raise GSettingsUnavailableError(
                 f"GSettings schema '{schema_name}' is not installed on this system. "
@@ -85,7 +86,7 @@ class GSettingsClient:
             )
 
         # 3. Initialize Shell User-Theme schema (searches system and user extension paths)
-        self._shell_settings = self._get_settings_for_schema(shell_schema_name)
+        self._shell_settings: Any = self._get_settings_for_schema(shell_schema_name)
 
     @property
     def is_shell_theme_supported(self) -> bool:
@@ -96,7 +97,7 @@ class GSettingsClient:
     # Dynamic Schema Resolution (Including User Extensions)
     # -------------------------------------------------------------------------
 
-    def _get_settings_for_schema(self, target_schema: str) -> object | None:
+    def _get_settings_for_schema(self, target_schema: str) -> Any:
         """Find and instantiate a Gio.Settings object for a schema.
 
         Checks global system locations first ($XDG_DATA_DIRS/glib-2.0/schemas).
@@ -252,15 +253,15 @@ class GSettingsClient:
     # -------------------------------------------------------------------------
 
     @staticmethod
-    def _has_key(settings_obj: object | None, key: str) -> bool:
+    def _has_key(settings_obj: Any | None, key: str) -> bool:
         """Safely check if a key is supported by the current schema."""
         if settings_obj is None:
             return False
         try:
             if hasattr(settings_obj, "list_keys"):
-                return key in settings_obj.list_keys()
+                return bool(key in settings_obj.list_keys())
             if hasattr(settings_obj, "keys"):
-                return key in settings_obj
+                return bool(key in settings_obj)
         except Exception:
             pass
         return False
