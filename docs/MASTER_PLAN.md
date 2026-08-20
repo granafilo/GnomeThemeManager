@@ -353,30 +353,19 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 ---
 
-### 🔷 FASE 2 — Theme Editor (v1.2)
+### 🔷 FASE 2 — Theme Editor (v1.2) — ✅ COMPLETATA (agosto 2026)
 
 **Branch:** `feature/phase-2-theme-editor`
 
-#### Task 2.1 — Theme Mixer
-- `core/theme_editor.py`: `ThemeComposition(gtk3, gtk4, shell, icon, cursor, custom_name)` → Global Theme utente con `user_composed: true`
+- [x] 2.1 Theme Mixer (`core/theme_editor.py`: `ThemeComposition` → Global Theme utente)
+- [x] 2.2 CSS Color Extractor (`core/css_extractor.py`: estrazione token colore e `@define-color`)
+- [x] 2.3 Theme Editor UI (`gui_gtk/pages/editor_view.py` + `color_picker.py`: Mixer + selettori colore + preview)
+- [x] 2.4 Override colori persistente (`core/theme_forks.py`: fork GTK4 in `~/.themes/{name}-gtk4`)
+- [x] 2.5 Bozze persistenti (`core/editor_draft.py`: auto-save configurabile e resume draft)
+- [x] 2.6 Adaptive Color dal wallpaper (`core/wallpaper_color.py`: k-means palette e applicazione globale GTK+Shell)
+- [x] 2.7 Shell Theme Editor (`core/shell_editor.py`: fork Shell con override CSS marker engine)
 
-Il Theme Mixer salva le composizioni come Global Theme con `origin: "user"`:
-appaiono in cima alla lista della view unica (regola Task 1.1).
-
-#### Task 2.2 — CSS Color Extractor
-- `core/css_extractor.py`: parse `gtk-4.0/gtk.css` / `gtk-3.0/gtk-main.css`; estrae `@define-color` (theme_fg_color, theme_bg_color, theme_selected_bg_color, theme_selected_fg_color, wm_* opzionali)
-
-#### Task 2.3 — Theme Editor UI
-- `gui_gtk/views/editor_view.py` + `color_picker.py`: 5 dropdown componenti, 4 ColorDialogButton (fg/bg/accent/accent_fg), Anteprima (Task 1.5), "Salva come Global Theme", "Reset colori"
-
-#### Task 2.4 — Override colori persistente (fork tema)
-- Copia tema in `~/.themes/{custom_name}-gtk4/`; modifica solo `@define-color`; metadata in `theme_forks.json`; etichetta `(edited)`; fork reversibile
-
-#### Task 2.5 — Bozze persistenti
-- `editor_draft.json` salvato ad ogni modifica; prompt "Riprendi bozza?" al riavvio
-
-#### Task 2.6 — Stretch goal: Adaptive Colour dal wallpaper
-- Palette dominante (k-means k=5) dal wallpaper corrente → proposte nei picker. Se troppo complesso: saltare e documentare come TODO
+**Acceptance Fase 2:** ✅ mixer 5 componenti funzionante · estrazione colori GTK/Shell accurata · anteprima live con auto-revert · fork GTK4 e Shell persistenti senza corrompere i temi base · recupero bozze affidabile · palette wallpaper sincronizzata · coverage ≥80% · protocollo §1.4 post-conferma.
 
 #### Task 2.7 — Shell Theme Editor (editing anche per GNOME Shell)
 - Moduli: `core/shell_editor.py` (nuovo); UI: sezione "Shell" in
@@ -408,18 +397,15 @@ appaiono in cima alla lista della view unica (regola Task 1.1).
 
 **Acceptance Fase 2:**
 
-- [ ] mix 5 temi salvabile 
-
-- [ ] colori modificabili con fork funzionante e reversibile
-
-- [ ] bozze persistenti
-- [ ] coverage ≥80% 
-- [ ] protocollo §1.4
-
-- [ ] Tema shell editabile (4 colori chiave)
-- [ ] fork reversibile; 
-- [ ] override idempotente su edit ripetuti
-- [ ] apply con auto-revert 15s funzionante
+- [x] mix 5 temi salvabile 
+- [x] colori modificabili con fork funzionante e reversibile
+- [x] bozze persistenti
+- [x] coverage ≥80% 
+- [x] protocollo §1.4
+- [x] Tema shell editabile (4 colori chiave)
+- [x] fork reversibile; 
+- [x] override idempotente su edit ripetuti
+- [x] apply con auto-revert 15s funzionante
 
 ---
 

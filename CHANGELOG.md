@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2.0] - 2026-08-20
+
+### Added
+- **Theme Mixer (2.1)**: Combine GTK3, GTK4, GNOME Shell, Icons, Cursors, and Color Scheme into custom user-composed Global Themes.
+- **CSS Color Extractor (2.2)**: Automated extraction of GTK3/GTK4 color variables and theme tokens from stylesheets.
+- **Theme Editor UI (2.3)**: Native GTK4/Libadwaita editor page with component dropdowns, persistent draft banner, and color controls.
+- **Persistent GTK Color Forks (2.4)**: Non-destructive theme duplication in `~/.themes/{name}-gtk4` with `@define-color` style overrides.
+- **Persistent Drafts & Auto-save (2.5)**: Session draft persistence with restart prompt, draft discard controls, and configurable auto-save settings.
+- **Adaptive Wallpaper Palette (2.6)**: K-means color extraction (k=5) from active desktop wallpaper with global GTK and Shell accent application.
+- **GNOME Shell Theme Editor (2.7)**: Color customization and fork generator for GNOME Shell (panel background, text, overview, and accent).
+
 ## [1.1.0] - 2026-08-20
 
 ### Added
