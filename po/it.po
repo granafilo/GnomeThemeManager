@@ -1823,3 +1823,118 @@ msgstr "Valido (tutti i controlli superati)"
 msgid "more"
 msgstr "altri"
 
+msgid "Theme Editor"
+msgstr "Editor Temi"
+
+msgid "Theme Editor & Mixer"
+msgstr "Editor & Mixer Temi"
+
+msgid "Loading Theme Editor..."
+msgstr "Caricamento Editor Temi..."
+
+msgid "Discovering installed components and extracting colors."
+msgstr "Ricerca componenti installati ed estrazione colori in corso."
+
+msgid "Mix installed components, customize GTK colors, preview live, and save as a custom Global Theme."
+msgstr "Combina componenti installati, personalizza i colori GTK, prova l'anteprima e salva come Tema Globale personalizzato."
+
+msgid "Custom Theme Name..."
+msgstr "Nome tema personalizzato..."
+
+msgid "Save as Global Theme"
+msgstr "Salva come Tema Globale"
+
+msgid "Live test theme components and colors with safety rollback"
+msgstr "Testa i componenti e i colori con ripristino sicuro di sicurezza"
+
+msgid "Component Mixer"
+msgstr "Mixer Componenti"
+
+msgid "Select individual components from installed desktop themes"
+msgstr "Seleziona singoli componenti dai temi desktop installati"
+
+msgid "GTK Theme (Applications)"
+msgstr "Tema GTK (Applicazioni)"
+
+msgid "Controls window background, widgets, and GTK3/GTK4 styling"
+msgstr "Controlla lo sfondo delle finestre, i widget e lo stile GTK3/GTK4"
+
+msgid "GNOME Shell Theme"
+msgstr "Tema GNOME Shell"
+
+msgid "Controls panel, dash, notification popups, and lockscreen"
+msgstr "Controlla pannello, dock, notifiche e schermata di blocco"
+
+msgid "Icon Pack"
+msgstr "Pacchetto Icone"
+
+msgid "Application icons, folder icons, and file type symbols"
+msgstr "Icone applicazioni, cartelle e simboli dei file"
+
+msgid "Cursor Theme"
+msgstr "Tema Cursore"
+
+msgid "Mouse pointer and interaction animations"
+msgstr "Puntatore del mouse e animazioni"
+
+msgid "Color Scheme Preference"
+msgstr "Preferenza Schema Colori"
+
+msgid "System dark/light mode preference"
+msgstr "Preferenza modalità scura/chiara di sistema"
+
+msgid "Color Customization"
+msgstr "Personalizzazione Colori"
+
+msgid "Fine-tune foreground, background, and accent colors extracted from selected GTK theme"
+msgstr "Modifica i colori di primo piano, sfondo e accento estratti dal tema GTK selezionato"
+
+msgid "Reset Colors"
+msgstr "Ripristina Colori"
+
+msgid "Foreground / Text Color"
+msgstr "Colore Testo / Primo Piano"
+
+msgid "@define-color theme_fg_color"
+msgstr "@define-color theme_fg_color"
+
+msgid "Background / Window Color"
+msgstr "Colore Sfondo / Finestra"
+
+msgid "@define-color theme_bg_color"
+msgstr "@define-color theme_bg_color"
+
+msgid "Accent / Selection Color"
+msgstr "Colore Accento / Selezione"
+
+msgid "@define-color theme_selected_bg_color"
+msgstr "@define-color theme_selected_bg_color"
+
+msgid "Accent Text Color"
+msgstr "Colore Testo Accento"
+
+msgid "@define-color theme_selected_fg_color"
+msgstr "@define-color theme_selected_fg_color"
+
+msgid "Foreground Color"
+msgstr "Colore Primo Piano"
+
+msgid "Background Color"
+msgstr "Colore Sfondo"
+
+msgid "Accent Color"
+msgstr "Colore Accento"
+
+msgid "Custom Mix"
+msgstr "Mix Personalizzato"
+
+msgid "Composed in Theme Editor"
+msgstr "Composto nell'Editor Temi"
+
+msgid "Global Theme '{name}' saved successfully."
+msgstr "Tema Globale '{name}' salvato con successo."
+
+msgid "Preview started for '{name}'. Dismiss or commit to finalize."
+msgstr "Anteprima avviata per '{name}'. Chiudi o conferma per finalizzare."
+
+

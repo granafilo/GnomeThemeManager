@@ -2,6 +2,7 @@
 
 """Package contenente i controller delle pagine modulari della GUI GTK4/Libadwaita (Fase 5.2)."""
 
+from .editor_view import ThemeEditorPage
 from .global_themes import GlobalThemesPage
 from .installer import InstallerPage
 from .sandbox import SandboxPage
@@ -13,5 +14,6 @@ __all__ = [
     "InstallerPage",
     "SandboxPage",
     "StatusPage",
+    "ThemeEditorPage",
     "ThemesPage",
 ]
