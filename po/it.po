@@ -1813,3 +1813,13 @@ msgstr "👁️ Anteprima sul desktop"
 
 msgid "↩️ Revert Preview"
 msgstr "↩️ Ripristina anteprima"
+
+msgid "Validation Status"
+msgstr "Stato di validazione"
+
+msgid "Valid (all structure checks passed)"
+msgstr "Valido (tutti i controlli superati)"
+
+msgid "more"
+msgstr "altri"
+

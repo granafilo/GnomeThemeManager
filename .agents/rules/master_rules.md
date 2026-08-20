@@ -39,13 +39,21 @@ trigger: always_on
 - Constants: UPPER_SNAKE_CASE
 - Branches: feature/phase-N-slug
 
+## GUI CHECK Rule (hard rule)
+- At the end of EVERY implementation step, print exactly one line:
+  GUI CHECK: [implemented behavior] -> [how to verify it via GUI]
+- No GUI surface => "GUI CHECK: n/a - [reason]" + alternative verify command.
+
 ## Commit Policy
 
-- 1 task completed + tested = exactly 1 commit (code + tests ONLY)
+- 1 task = exactly 1 commit containing ALL iterations of that task
+- Message must be COMPLETE: header + body describing the whole integration;
+  never "update/fix previous task state"
+- Changes on an open task => amend the same commit, rewrite full message
+- If already pushed to feature branch => amend + force-with-lease (never main)
 - Phase closure commit contains ONLY docs/i18n/verification changes
 - NEVER execute commits yourself: print the command, the user executes it
-- Per-task commits use explicit `git add <files>`, never `git add -A`
-- Message format: feat(scope): task X.Y — description
+- Per-task commits use explicit git add, never git add -A
 
 ## Current Phase Reference
 

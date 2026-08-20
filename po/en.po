@@ -1813,3 +1813,13 @@ msgstr "👁️ Preview on Desktop"
 
 msgid "↩️ Revert Preview"
 msgstr "↩️ Revert Preview"
+
+msgid "Validation Status"
+msgstr "Validation Status"
+
+msgid "Valid (all structure checks passed)"
+msgstr "Valid (all structure checks passed)"
+
+msgid "more"
+msgstr "more"
+

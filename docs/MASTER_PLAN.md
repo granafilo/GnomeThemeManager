@@ -46,27 +46,48 @@ Solo PyGObject + `requests` (da Fase 3). Nessuna altra senza approvazione esplic
 Ogni fase su branch dedicata derivata da `main`: `feature/phase-{N}-{slug}`.
 Chore standalone: `chore/{slug}` (es. `chore/english-first`).
 
-### 1.2 Granularità dei commit (1 task = 1 commit)
+### 1.2 Granularità dei commit (1 task = 1 commit completo)
 
-Ogni TASK completato e testato produce ESATTAMENTE un commit. Ogni fase produce in aggiunta un commit finale di chiusura.
+Protocollo per-task:
+0. L'agent stampa UNA riga GUI CHECK nel formato esatto:
+    `GUI CHECK: [comportamento implementato] -> [come verificarlo tramite GUI]`
+    Esempio: `GUI CHECK: preview icon pack -> apri la tab "Icon Packs": ogni
+    pack mostra una griglia di icone standard renderizzate col pack, senza
+    cambiare il tema di sistema.`
+    Per task senza superficie GUI: `GUI CHECK: n/a - [motivo]` + comando
+    alternativo di verifica (es. comando CLI).
+1. L'agent stampa il comando di commit del task...
+
+Ogni TASK produce ESATTAMENTE un commit, contenente TUTTO il lavoro del task:
+implementazione iniziale + tutte le modifiche richieste dall'utente finché il
+task non è approvato.
 
 Regole:
-- 1 task = 1 commit. Mai accumulare task multipli nello stesso commit.
-- Il commit di task contiene SOLO i file di codice + test del task (mai docs, mai i18n).
+- Le iterazioni/modifiche su un task APERTO (non ancora approvato) NON creano
+  nuovi commit: aggiornano lo stesso commit.
+- Il messaggio deve essere COMPLETO: header conventional + corpo che descrive
+  l'INTERA integrazione del task (cosa introduce nel progetto). Mai messaggi
+  tipo "update/fix del task precedente".
+- Se esiste già un commit locale per il task: `git commit --amend` con
+  messaggio completo riscritto.
+- Se già pushato sulla branch feature: amend + `git push --force-with-lease`
+  (MAI su main).
+- Il commit di task contiene SOLO codice + test + po del task.
 - Il commit di chiusura fase contiene SOLO gli esiti degli step A–C.
-- Il coding agent NON esegue mai commit: stampa il comando, l'utente lo esegue.
-- Il comando di commit per-task usa `git add` ESPLICITO sui soli file del task (mai `git add -A`).
+- L'agent NON esegue mai commit: stampa il comando, l'utente lo esegue.
+- `git add` esplicito sui soli file del task (mai `git add -A`).
 
-Formato messaggi (Conventional Commits + riferimento task):
-- `feat(core): task 1.2 — theme validator per index.theme`
-- `fix(gui): task 0.1 — gtk4 override status all'avvio`
-- `test(core): task 1.2 — unit test parser index.theme`
-- `chore: phase {N} completion — docs, tests integrity, i18n verification`
+Formato messaggio (header + corpo completo):
 
-Protocollo per-task (dopo test verdi e review utente del diff):
-1. Il coding agent stampa il comando di commit del task (add esplicito + messaggio).
-2. L'utente esegue il commit.
-3. Si passa al task successivo.
+```
+feat(gui): task 1.1 — unified Global Themes view
+
+Introduce a single Global Themes page replacing the presets sidebar:
+- unified data model (origin: bundled/user)
+- ordering: user themes on top (newest first), 3 bundled at bottom
+- seed bundled themes on first launch
+- i18n: new strings added to po/en.po and po/it.po
+```
 
 ### 1.3 Protocollo di testing (fine fase + durante task)
 
@@ -142,6 +163,11 @@ git add -A && git commit -m "chore: phase {N} completion — v{X.Y.Z} — docs, 
 ### 1.5 Gestione modifiche post-conferma
 Se l'utente richiede modifiche dopo la chiusura, il ciclo riprende dalla feature modificata e gli step A–D vanno rieseguiti integralmente.
 Le modifiche post-conferma seguono la stessa policy: 1 commit dedicato per la fix (codice + test), poi riesecuzione A–D con commit finale separato.
+
+- Modifiche su task APERTO (non approvato) = stesso commit (amend), messaggio
+  completo riscritto.
+- Modifiche su task GIÀ approvato/committato = commit di fix separato +
+  riesecuzione step A–D.
 
 ### 1.6 Blocco su ambiguità
 In caso di ambiguità non risolvibile dal documento: fermarsi e chiedere. Mai decisioni unilaterali su feature/specifiche.

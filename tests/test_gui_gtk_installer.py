@@ -375,3 +375,56 @@ def test_installer_page_window_wiring(mock_theme_manager: MagicMock) -> None:
         win.installer_page.on_theme_applied()
         mock_themes_refresh.assert_called_once()
         mock_status_refresh.assert_called_once()
+
+
+def test_installer_page_file_dialog_invocation(mock_theme_manager: MagicMock) -> None:
+    """Verifica che la selezione cartella o archivio utilizzi Gtk.FileDialog con filtri corretti."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    page = InstallerPage(manager=mock_theme_manager)
+
+    with patch("gi.repository.Gtk.FileDialog.new") as mock_file_dialog_new:
+        mock_dialog = MagicMock()
+        mock_file_dialog_new.return_value = mock_dialog
+
+        # 1. Apertura dialogo cartelle
+        page._open_folder_dialog()
+        mock_dialog.set_title.assert_called_with("Select theme folder")
+        mock_dialog.select_folder.assert_called_once()
+
+        mock_dialog.reset_mock()
+
+        # 2. Apertura dialogo archivi
+        page._open_archive_dialog()
+        mock_dialog.set_title.assert_called_with("Select theme archive")
+        mock_dialog.set_filters.assert_called_once()
+        mock_dialog.open.assert_called_once()
+
+
+def test_installer_page_pre_install_validation(mock_theme_manager: MagicMock, tmp_path: Path) -> None:
+    """Verifica che durante l'ispezione venga eseguita la validazione pre-installazione dei componenti."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    mock_theme_manager.inspect_theme_source.return_value = [("IncompleteTheme", ThemeType.GTK)]
+    
+    # Mock ThemeValidator returning warnings/missing files
+    from gnome_theme_manager.core.theme_validator import ThemeValidationResult
+    mock_theme_manager.validator.validate.return_value = ThemeValidationResult(
+        valid=True,
+        warnings=["No dark theme variant found"],
+        missing_files=["gtk-4.0/gtk-dark.css"],
+    )
+
+    page = InstallerPage(manager=mock_theme_manager)
+    dummy_source = tmp_path / "IncompleteTheme"
+    dummy_source.mkdir()
+
+    page.select_source(dummy_source, sync=True)
+
+    assert page.widget.get_visible_child_name() == "ready"
+    assert page.detected_theme_name_row.get_subtitle() == "IncompleteTheme"
+    assert "No dark theme variant found" in page.validation_status_row.get_subtitle()
+    assert page.validation_status_icon.get_icon_name() == "dialog-warning-symbolic"
+    mock_theme_manager.validator.validate.assert_called()
