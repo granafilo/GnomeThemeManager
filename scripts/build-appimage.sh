@@ -61,6 +61,9 @@ echo -e "${GREEN}✓ Strumenti ok (appimagetool: ${APPIMAGETOOL_BIN})${NC}"
 # ------------------------------------------------------------------------------
 echo -e "\n${YELLOW}[2/6] Preparazione struttura directory AppDir...${NC}"
 
+# Compilazione delle traduzioni .po in .mo prima di copiare i sorgenti
+python3 "$ROOT_DIR/scripts/compile_translations.py"
+
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/usr/bin"
 mkdir -p "$APP_DIR/usr/lib/python3/site-packages"
