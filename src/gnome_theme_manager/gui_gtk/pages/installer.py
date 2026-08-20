@@ -92,12 +92,8 @@ class InstallerPage:
         self.detected_components_row: Adw.ActionRow = self.builder.get_object(
             "detected_components_row"
         )
-        self.validation_status_row: Adw.ActionRow = self.builder.get_object(
-            "validation_status_row"
-        )
-        self.validation_status_icon: Gtk.Image = self.builder.get_object(
-            "validation_status_icon"
-        )
+        self.validation_status_row: Adw.ActionRow = self.builder.get_object("validation_status_row")
+        self.validation_status_icon: Gtk.Image = self.builder.get_object("validation_status_icon")
         self.target_dir_switch: Gtk.Switch = self.builder.get_object("target_dir_switch")
         self.change_source_button: Gtk.Button = self.builder.get_object("change_source_button")
         self.install_button: Gtk.Button = self.builder.get_object("install_button")
@@ -331,7 +327,9 @@ class InstallerPage:
         self._set_state("analyzing")
         self._set_controls_sensitive(False)
 
-        def worker_inspect() -> tuple[list[tuple[str, ThemeType]] | None, list[str], Exception | None]:
+        def worker_inspect() -> tuple[
+            list[tuple[str, ThemeType]] | None, list[str], Exception | None
+        ]:
             try:
                 if self.manager is None:
                     return [], [], None
@@ -345,7 +343,9 @@ class InstallerPage:
                         for name, t_type in results:
                             val_res = self.manager.validator.validate(source_path, t_type)
                             if not val_res.valid:
-                                validation_warnings.extend(val_res.warnings or [f"Invalid {t_type.value} structure"])
+                                validation_warnings.extend(
+                                    val_res.warnings or [f"Invalid {t_type.value} structure"]
+                                )
                             elif val_res.warnings:
                                 validation_warnings.extend(val_res.warnings)
                     else:
@@ -354,11 +354,16 @@ class InstallerPage:
                             with tempfile.TemporaryDirectory() as tmp_str:
                                 tmp_p = Path(tmp_str)
                                 safe_extract(source_path, tmp_p)
-                                targets = inspect_extracted_tree(tmp_p, fallback_name=source_path.stem)
+                                targets = inspect_extracted_tree(
+                                    tmp_p, fallback_name=source_path.stem
+                                )
                                 for t_name, t_dir, t_type in targets:
                                     val_res = self.manager.validator.validate(t_dir, t_type)
                                     if not val_res.valid:
-                                        validation_warnings.extend(val_res.warnings or [f"Invalid {t_type.value} structure"])
+                                        validation_warnings.extend(
+                                            val_res.warnings
+                                            or [f"Invalid {t_type.value} structure"]
+                                        )
                                     elif val_res.warnings:
                                         validation_warnings.extend(val_res.warnings)
                         except Exception as ex:
@@ -421,12 +426,16 @@ class InstallerPage:
             if self.validation_status_row is not None:
                 if val_warnings:
                     first_warn = val_warnings[0]
-                    more = f" (+{len(val_warnings) - 1} {_('more')})" if len(val_warnings) > 1 else ""
+                    more = (
+                        f" (+{len(val_warnings) - 1} {_('more')})" if len(val_warnings) > 1 else ""
+                    )
                     self.validation_status_row.set_subtitle(f"{first_warn}{more}")
                     if self.validation_status_icon is not None:
                         self.validation_status_icon.set_from_icon_name("dialog-warning-symbolic")
                 else:
-                    self.validation_status_row.set_subtitle(_("Valid (all structure checks passed)"))
+                    self.validation_status_row.set_subtitle(
+                        _("Valid (all structure checks passed)")
+                    )
                     if self.validation_status_icon is not None:
                         self.validation_status_icon.set_from_icon_name("emblem-ok-symbolic")
 

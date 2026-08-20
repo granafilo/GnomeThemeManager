@@ -70,19 +70,37 @@ To ensure proper execution of the application and desktop launcher:
 
 ## Requirements
 
-- Python >= 3.10
-- Linux with a GNOME desktop environment
-- `gsettings` available on the system
+### Runtime Requirements
 
-Python dependencies:
-- PyGObject >= 3.42.0
+- **Operating System**: Linux with GNOME Desktop environment (Target: GNOME 42+, tested and verified on GNOME 46 / Ubuntu 24.04 LTS)
+- **Python**: `>= 3.10`
+- **System Utilities**:
+  - `gsettings` (provided by `libglib2.0-bin` / GLib)
+  - `gettext` (`gettext` / `libglib2.0-bin` for locale translations)
+- **GNOME GObject Introspection Libraries**:
+  - `PyGObject` (`python3-gi` >= 3.42.0)
+  - `PyGObject Cairo` (`python3-gi-cairo`)
+  - `GTK 4` GObject Introspection (`gir1.2-gtk-4.0`)
+  - `Libadwaita 1` GObject Introspection (`gir1.2-adw-1`)
 
-GTK4/Libadwaita system packages (Ubuntu/Debian):
+#### Ubuntu 24.04 LTS / Debian One-Liner (Runtime)
 
 ```bash
-sudo apt update
-sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
+sudo apt update && sudo apt install -y python3 python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 libglib2.0-bin gettext
 ```
+
+### Development & Testing Dependencies (Dev-only)
+
+For running the test suite, linting, and static type checking:
+- `pytest` (`>= 7.0`)
+- `ruff` (`>= 0.3.0`)
+- `mypy` (`>= 1.8.0`)
+
+Install dev dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
 
 ## Installation
 
@@ -94,6 +112,15 @@ Download the latest `.AppImage` executable from [GitHub Releases](https://github
 chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
 ./GNOMEThemeManager-1.0.0-x86_64.AppImage
 ```
+
+> [!NOTE]
+> **FUSE Requirement for AppImage**: Like most AppImage packages on Linux, running the AppImage requires `libfuse` to mount the executable.
+> - **Ubuntu 24.04 LTS / Debian 13+**: `sudo apt install -y libfuse2t64`
+> - **Ubuntu 22.04 LTS / Debian 12**: `sudo apt install -y libfuse2`
+> - **Fedora**: `sudo dnf install -y fuse-libs`
+> - **Arch Linux**: `sudo pacman -S fuse2`
+>
+> Alternatively, you can run the AppImage without FUSE using: `./GNOMEThemeManager-1.0.0-x86_64.AppImage --appimage-extract-and-run`
 
 For detailed instructions and prerequisites, see **[INSTALL.md](INSTALL.md)**.
 

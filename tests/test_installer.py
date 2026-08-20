@@ -509,15 +509,11 @@ def test_installer_ensure_user_directories(tmp_path: Path) -> None:
         mp.setattr(
             "gnome_theme_manager.core.installer.USER_THEMES_DIRS", [user_themes, legacy_themes]
         )
-        mp.setattr(
-            "gnome_theme_manager.core.installer.USER_ICONS_DIRS", [user_icons, legacy_icons]
-        )
+        mp.setattr("gnome_theme_manager.core.installer.USER_ICONS_DIRS", [user_icons, legacy_icons])
         mp.setattr(
             "gnome_theme_manager.core.constants.USER_THEMES_DIRS", [user_themes, legacy_themes]
         )
-        mp.setattr(
-            "gnome_theme_manager.core.constants.USER_ICONS_DIRS", [user_icons, legacy_icons]
-        )
+        mp.setattr("gnome_theme_manager.core.constants.USER_ICONS_DIRS", [user_icons, legacy_icons])
 
         created = installer.ensure_user_directories()
         assert len(created) == 4

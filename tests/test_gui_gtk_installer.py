@@ -402,15 +402,18 @@ def test_installer_page_file_dialog_invocation(mock_theme_manager: MagicMock) ->
         mock_dialog.open.assert_called_once()
 
 
-def test_installer_page_pre_install_validation(mock_theme_manager: MagicMock, tmp_path: Path) -> None:
+def test_installer_page_pre_install_validation(
+    mock_theme_manager: MagicMock, tmp_path: Path
+) -> None:
     """Verifica che durante l'ispezione venga eseguita la validazione pre-installazione dei componenti."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("IncompleteTheme", ThemeType.GTK)]
-    
+
     # Mock ThemeValidator returning warnings/missing files
     from gnome_theme_manager.core.theme_validator import ThemeValidationResult
+
     mock_theme_manager.validator.validate.return_value = ThemeValidationResult(
         valid=True,
         warnings=["No dark theme variant found"],
