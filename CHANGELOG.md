@@ -2,7 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/).
+## [1.1.0] - 2026-08-20
+
+### Added
+- **Global Themes (1.1)**: Unified view replacing presets, ordering user themes on top (newest first) and 3 bundled starter themes on bottom.
+- **Theme Validator (1.2)**: Structural and compliance validator for GTK, GNOME Shell, Icons, and Cursor themes.
+- **Corruption Detection & Warning (1.3)**: Warning modal dialog and confirmation before applying incomplete or broken themes.
+- **Icon Pack Preview (1.4)**: Real visual grid preview of standard GNOME app icons using temporary GtkIconTheme without altering system settings.
+- **System Theme Preview with Safe Rollback (1.5)**: Instant in-app live style hot-reload and desktop preview with auto-rollback on cancel or exit.
+- **Automatic User Directory Creation (1.6)**: Guaranteed automatic creation of `~/.themes`, `~/.local/share/themes`, `~/.icons`, and `~/.local/share/icons`.
+- **Assisted Theme Installer (1.7)**: Modern `Gtk.FileDialog` file and folder picker with pre-install validation feedback and conflict overwrite management.
 
 ## [0.9.0-beta3] - 2026-08-14
 

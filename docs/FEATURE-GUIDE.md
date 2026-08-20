@@ -47,23 +47,22 @@ No more mismatched versions between files, CLI and releases.
 
 ---
 
-## Phase 1 — Global Themes & Validation (v1.1)
+## Phase 1 — Global Themes & Validation (v1.1) ✅
 
 One-click complete looks, and the app protects you from broken themes.
 
-- **1.1** Global Themes: ONE page for everything — your saved looks on top (newest first), 3 starter looks at the bottom; apply with one click.
-
+- **1.1** Global Themes: ONE page for everything — your saved looks on top (newest first), 3 starter looks at the bottom; apply with one click. ✅
 - **1.2** Theme validator: the app checks that a theme package is complete
-  and standard-compliant before trusting it.
+  and standard-compliant before trusting it. ✅
 - **1.3** Corruption detection: if a theme is incomplete, you get a clear
-  warning *before* applying it, and you can cancel.
+  warning *before* applying it, and you can cancel. ✅
 - **1.4** Icon pack preview: see real app icons rendered with each icon pack
-  before applying it — no more guessing.
+  before applying it — no more guessing. ✅
 - **1.5** Safe in-app preview: try a GTK4 theme on the app's own window
-  without touching your system; instant revert.
-- **1.6** The app creates `~/.themes` and `~/.icons` for you if missing.
+  without touching your system; instant revert. ✅
+- **1.6** The app creates `~/.themes` and `~/.icons` for you if missing. ✅
 - **1.7** Assisted install: install a theme from a folder or an archive
-  (.tar.gz / .zip), validated before installation.
+  (.tar.gz / .zip), validated before installation. ✅
 
 ---
 

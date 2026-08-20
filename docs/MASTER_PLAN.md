@@ -296,53 +296,23 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 ---
 
-### 🔷 FASE 1 — Global Themes & Validazione (v1.1)
+### 🔷 FASE 1 — Global Themes & Validazione (v1.1) — ✅ COMPLETATA (agosto 2026)
 
 **Branch:** `feature/phase-1-global-themes`
 
-#### Task 1.1 — Global Themes: view unica unificata (sostituisce i preset)
-- **Modello dati unico**: Global Theme == preset in `presets.json`, con campo
-  `origin: "bundled" | "user"` e `created_at`
-- **Una sola pagina GUI** "Global Themes": la pagina separata dei preset e la
-  sidebar preset della Fase 0 vengono RIMOSSE e sostituite da questa view
-- **Ordinamento lista (regola fissa)**:
-  1. Global Themes `origin: user` in cima (più recenti prima)
-  2. I 3 bundled iniziali in fondo, ordine fisso
-- **Seed primo avvio**: se assenti, crea i 3 bundled in `presets.json`
-  (es. "Adwaita Classic", "Yaru Mix", "Nord Bundle") con `origin: bundled`
-- "Salva configurazione attuale" (ex preset save) e l'editor della Fase 2
-  creano Global Themes con `origin: user` → appaiono in cima
-- CLI: i sottocomandi `preset` restano come backend funzionante; documenti,
-  messaggi e UI usano solo il termine "Global Theme"
-- Moduli: `core/global_themes.py` (evolve `core/presets.py`, non duplica),
-  `gui_gtk/views/global_themes_view.py` (unica view)
+- [x] 1.1 Global Themes: view unica unificata (sostituisce i preset)
+- [x] 1.2 ThemeValidator
+- [x] 1.3 Corruption detection + warning pre-apply
+- [x] 1.4 Preview visuale icon pack
+- [x] 1.5 Preview in-app sicura (sandbox GTK4) + rollback automatico
+- [x] 1.6 Creazione cartelle utente
+- [x] 1.7 Installazione assistita da cartella/archivio con validazione pre-install
 
-#### Task 1.2 — ThemeValidator
-- Modulo: `core/theme_validator.py` (nuovo)
-- Parse `index.theme` (configparser); verifica `[Desktop Entry]`, `Name`, `Type=X-GNOME-Metatheme`; dir `gtk-3.0/` o `gtk-4.0/`; `cursors/` per cursori; per icone `index.theme` + ≥5 icone standard
-- Restituisce `ThemeValidationResult { valid, warnings, missing_files }`
+**Acceptance Fase 1:** ✅ global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma. 
 
-#### Task 1.3 — Corruption detection + warning pre-apply
-- CLI: warning + conferma interattiva (`-y` salta); GUI: `Adw.MessageDialog` "Applica comunque / Annulla"
-
-#### Task 1.4 — Preview visuale icon pack
-- `gui_gtk/widgets/icon_pack_preview.py`: griglia icone app GNOME standard via `Gtk.IconTheme` temporaneo (senza cambiare tema di sistema)
-
-#### Task 1.5 — Preview in-app sicura (sandbox GTK4)
-- `core/sandbox_theme.py`: `Gtk.CssProvider` locale sul root widget; "Revert" < 100 ms; tema di sistema invariato
-
-#### Task 1.6 — Creazione cartelle utente
-- `Installer.ensure_user_directories()`: `~/.themes`, `~/.local/share/themes`, `~/.icons`, `~/.local/share/icons`; chiamato all'avvio GUI e prima di ogni install
-
-#### Task 1.7 — Installazione assistita da cartella
-- `Gtk.FileDialog`; accetta directory o archivi `.tar.gz/.tar.xz/.zip`; validazione pre-install
-
-**Acceptance Fase 1:** global theme 1-click su 5 componenti · validator rileva temi incompleti · preview icone senza cambio sistema · preview in-app reversibile · install da archivio ok · coverage ≥80% · protocollo §1.4 post-conferma. 
-
-- [ ] Esiste UNA sola pagina Global Themes; nessuna pagina/sidebar preset residua
-
-- [ ] Ordinamento corretto: user in cima (recenti prima), 3 bundled in fondo
-- [ ] Ogni stringa nuova della view è in po/en.po e po/it.po nello stesso commit
+- [x] Esiste UNA sola pagina Global Themes; nessuna pagina/sidebar preset residua
+- [x] Ordinamento corretto: user in cima (recenti prima), 3 bundled in fondo
+- [x] Ogni stringa nuova della view è in po/en.po e po/it.po nello stesso commit
 
 ---
 

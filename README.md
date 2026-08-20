@@ -42,19 +42,23 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.0.0 (PEP 440: 1.0.0)
+Current package version: 1.1.0 (PEP 440: 1.1.0)
 
 ## Features
 
-- Read active theme status via `current`
-- List installed themes by type via `list`
-- Apply GTK, icon, cursor, and shell themes via `apply`
-- Install themes from archives via `install`
-- Uninstall user-installed themes via `uninstall`
-- Manage theme presets via `preset list`, `save`, `apply`, `delete`
-- Check Snap/Flatpak sandbox integration via `sandbox-status`
-- Propagate themes to sandbox runtimes (optional)
-- GTK4 / Libadwaita theme override in `~/.config/gtk-4.0` when applicable
+- **Status & Discovery**: Read active theme status via `current` and list installed themes by category (`list`).
+- **Selective & Global Apply**: Apply individual components (GTK, icon, cursor, shell) or unified **Global Themes** in 1 click.
+- **Theme Previews**:
+  - Live system theme preview with instant in-app hot-reload and safe auto-rollback on exit/cancel.
+  - Icon pack visual preview grid rendering real GNOME app icons without altering system configuration.
+- **Theme Validation & Corruption Detection**: Automatic structural integrity checks against `index.theme` and stylesheets with pre-apply warning dialogs.
+- **Assisted Installation & Management**:
+  - Assisted installer with native `Gtk.FileDialog` supporting directories and `.tar.gz`/`.tar.xz`/`.zip` archives with pre-install validation.
+  - Automatic user directory creation (`~/.themes`, `~/.icons`, `~/.local/share/themes`, `~/.local/share/icons`).
+  - Safe uninstallation of user themes via CLI and GUI.
+- **System Integration**:
+  - GTK4 / Libadwaita theme override management in `~/.config/gtk-4.0` with atomic backups and rollback.
+  - Snap and Flatpak sandbox propagation and environment diagnostics (`sandbox-status`).
 
 ## Prerequisites
 
