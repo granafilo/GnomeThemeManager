@@ -59,7 +59,7 @@ class MainWindow(Adw.ApplicationWindow):
         super().__init__(application=app, title=_("GNOME Theme Manager"))
 
         # Minimum sizing (required by Libadwaita) and initial default size
-        self.set_size_request(760, 520)
+        self.set_size_request(860, 520)
         self.set_default_size(1000, 700)
 
         self.manager = manager or ThemeManager()

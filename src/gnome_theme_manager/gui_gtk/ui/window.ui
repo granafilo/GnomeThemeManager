@@ -5,8 +5,6 @@
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
   <object class="AdwToastOverlay" id="toast_overlay">
-    <property name="width-request">760</property>
-    <property name="height-request">520</property>
     <property name="child">
       <object class="AdwNavigationSplitView" id="split_view">
         <property name="min-sidebar-width">200</property>

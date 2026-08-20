@@ -1798,3 +1798,18 @@ msgstr "L'applicazione potrebbe causare glitch grafici imprevisti. Vuoi applicar
 
 msgid "Apply anyway"
 msgstr "Applica comunque"
+
+msgid "Theme structure is incomplete or invalid."
+msgstr "La struttura del tema è incompleta o non valida."
+
+msgid "👁️ Live Preview in App"
+msgstr "👁️ Anteprima in tempo reale nell’app"
+
+msgid "↩️ Revert Live Preview"
+msgstr "↩️ Ripristina anteprima"
+
+msgid "👁️ Preview on Desktop"
+msgstr "👁️ Anteprima sul desktop"
+
+msgid "↩️ Revert Preview"
+msgstr "↩️ Ripristina anteprima"

@@ -667,7 +667,50 @@ class ThemesPage:
             cross_checkbox.set_halign(Gtk.Align.CENTER)
             extra_box.append(cross_checkbox)
 
+        # System-Wide Live Preview toggle (Task 1.5)
+        preview_active = False
+        if self.manager is not None:
+            btn_preview = Gtk.Button(label=_("👁️ Preview on Desktop"))
+            btn_preview.set_halign(Gtk.Align.CENTER)
+            btn_preview.set_margin_top(4)
+
+            def on_preview_clicked(_b: Gtk.Button) -> None:
+                nonlocal preview_active
+                if self.manager is None:
+                    return
+                if not preview_active:
+                    also_opposite = bool(cross_checkbox and cross_checkbox.get_active())
+                    success = self.manager.start_theme_preview(
+                        item.name, item.theme_type, also_apply_opposite=also_opposite
+                    )
+                    if success:
+                        preview_active = True
+                        btn_preview.set_label(_("↩️ Revert Preview"))
+                        btn_preview.add_css_class("suggested-action")
+                else:
+                    self.manager.cancel_theme_preview()
+                    preview_active = False
+                    btn_preview.set_label(_("👁️ Preview on Desktop"))
+                    btn_preview.remove_css_class("suggested-action")
+
+            def on_checkbox_toggled(_cb: Gtk.CheckButton) -> None:
+                nonlocal preview_active
+                if self.manager is None or not preview_active:
+                    return
+                # Dynamically update active preview with or without opposite component
+                self.manager.start_theme_preview(
+                    item.name, item.theme_type, also_apply_opposite=_cb.get_active()
+                )
+
+            btn_preview.connect("clicked", on_preview_clicked)
+            if cross_checkbox is not None:
+                cross_checkbox.connect("toggled", on_checkbox_toggled)
+            extra_box.append(btn_preview)
+
         def execute_confirmed_apply() -> None:
+            if self.manager is not None and self.manager.is_preview_active:
+                self.manager.commit_theme_preview()
+
             if cross_checkbox is not None and cross_checkbox.get_active():
                 opposite_type = (
                     ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
@@ -688,7 +731,7 @@ class ThemesPage:
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(extra_box)
             dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("apply", _("Apply"))
+            dialog.add_response("apply", _("Save"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -705,8 +748,11 @@ class ThemesPage:
 
                     if resp == "apply":
                         execute_confirmed_apply()
-                    elif on_complete:
-                        on_complete(None, None)
+                    else:
+                        if self.manager is not None:
+                            self.manager.cancel_theme_preview()
+                        if on_complete:
+                            on_complete(None, None)
                 finally:
                     self._confirm_dialog_open = False
 
@@ -723,7 +769,7 @@ class ThemesPage:
             if hasattr(dialog, "set_extra_child"):
                 dialog.set_extra_child(extra_box)
             dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("apply", _("Apply"))
+            dialog.add_response("apply", _("Save"))
             dialog.set_response_appearance("apply", Adw.ResponseAppearance.SUGGESTED)
             dialog.set_default_response("apply")
             dialog.set_close_response("cancel")
@@ -732,8 +778,11 @@ class ThemesPage:
                 try:
                     if response_id == "apply":
                         execute_confirmed_apply()
-                    elif on_complete:
-                        on_complete(None, None)
+                    else:
+                        if self.manager is not None:
+                            self.manager.cancel_theme_preview()
+                        if on_complete:
+                            on_complete(None, None)
                 finally:
                     self._confirm_dialog_open = False
 

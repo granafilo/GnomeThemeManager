@@ -30,6 +30,7 @@ class GnomeThemeApplication(Adw.Application):
         )
         self.manager = manager or ThemeManager()
         self.window: GnomeThemeWindow | None = None
+        self.connect("shutdown", self._on_shutdown)
 
     def do_activate(self) -> None:
         """Handle application activation signal.
@@ -39,3 +40,11 @@ class GnomeThemeApplication(Adw.Application):
         if self.window is None:
             self.window = GnomeThemeWindow(app=self, manager=self.manager)
         self.window.present()
+
+    def _on_shutdown(self, _app: "GnomeThemeApplication") -> None:
+        """Handle application shutdown signal.
+
+        Automatically roll back any active system theme preview.
+        """
+        if self.manager is not None and self.manager.is_preview_active:
+            self.manager.cancel_theme_preview()

@@ -32,6 +32,7 @@ from .models import (
 )
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
+from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
 from .theme_validator import ThemeValidationResult, ThemeValidator
 
@@ -78,6 +79,10 @@ class ThemeManager:
         self._sandbox = sandbox_bridge or SandboxBridge()
         self._extensions = extensions or ExtensionsManager()
         self._validator = validator or ThemeValidator()
+        self._theme_preview = SystemThemePreviewSession(
+            get_current_themes_fn=self._get_current_themes_safe,
+            apply_themes_fn=self.apply_themes,
+        )
 
         # Protected initialization of GSettingsClient
         if gsettings is not None:
@@ -100,6 +105,112 @@ class ThemeManager:
             return self.get_current_themes()
         except Exception:
             return ThemeSet()
+
+    @property
+    def theme_preview(self) -> SystemThemePreviewSession:
+        """Return associated system theme preview session manager."""
+        return self._theme_preview
+
+    @property
+    def is_preview_active(self) -> bool:
+        """Return True if a system theme preview is currently active."""
+        return self._theme_preview.is_preview_active
+
+    def start_theme_preview(
+        self,
+        theme_name: str,
+        component: ThemeType,
+        also_apply_opposite: bool = False,
+        apply_gtk4_override: bool = True,
+        propagate_sandbox: bool = True,
+    ) -> bool:
+        """Start a live system-wide preview of a theme component.
+
+        Args:
+            theme_name: Name of theme to preview.
+            component: Component category (GTK, ICON, CURSOR, SHELL).
+            also_apply_opposite: If True, also preview complementary GTK/Shell theme if available.
+            apply_gtk4_override: Whether to apply GTK4 override.
+            propagate_sandbox: Whether to propagate to Flatpak and Snap.
+
+        Returns:
+            True if preview started successfully, False otherwise.
+        """
+        found = self._scanner.find_theme(theme_name, component)
+        if not found:
+            raise ThemeNotFoundError(
+                f"Theme '{theme_name}' for component '{component}' was not found."
+            )
+
+        kwargs: dict[str, str | None] = {}
+        if component == ThemeType.GTK:
+            kwargs["gtk_theme"] = theme_name
+            if also_apply_opposite:
+                opposite_shell = self._scanner.find_theme(theme_name, ThemeType.SHELL)
+                if (
+                    opposite_shell
+                    and self._validator.validate(opposite_shell.path, ThemeType.SHELL).valid
+                ):
+                    kwargs["shell_theme"] = theme_name
+            elif self._theme_preview.is_preview_active and self._theme_preview.snapshot_themes:
+                kwargs["shell_theme"] = self._theme_preview.snapshot_themes.shell_theme
+        elif component == ThemeType.ICON:
+            kwargs["icon_theme"] = theme_name
+        elif component == ThemeType.CURSOR:
+            kwargs["cursor_theme"] = theme_name
+        elif component == ThemeType.SHELL:
+            kwargs["shell_theme"] = theme_name
+            if also_apply_opposite:
+                opposite_gtk = self._scanner.find_theme(theme_name, ThemeType.GTK)
+                if (
+                    opposite_gtk
+                    and self._validator.validate(opposite_gtk.path, ThemeType.GTK).valid
+                ):
+                    kwargs["gtk_theme"] = theme_name
+            elif self._theme_preview.is_preview_active and self._theme_preview.snapshot_themes:
+                kwargs["gtk_theme"] = self._theme_preview.snapshot_themes.gtk_theme
+
+        theme_set = ThemeSet(**kwargs)
+        gtk_theme_found = (
+            found
+            if component == ThemeType.GTK
+            else self._scanner.find_theme(theme_name, ThemeType.GTK)
+            if also_apply_opposite
+            else None
+        )
+        theme_path = gtk_theme_found.path if gtk_theme_found else None
+
+        return self._theme_preview.start_preview(
+            theme_set,
+            theme_path=theme_path,
+            apply_gtk4_override=apply_gtk4_override,
+            propagate_sandbox=propagate_sandbox,
+            force=True,
+        )
+
+    def commit_theme_preview(self) -> bool:
+        """Permanently commit the currently previewed theme to the system."""
+        return self._theme_preview.commit_preview()
+
+    def cancel_theme_preview(self) -> bool:
+        """Cancel the preview and roll back the system to the original theme state."""
+        orig_gtk_path: Path | None = None
+        if self._theme_preview.is_preview_active and self._theme_preview._snapshot_themes:
+            orig_gtk_name = self._theme_preview._snapshot_themes.gtk_theme
+            if orig_gtk_name:
+                found_orig = self._scanner.find_theme(orig_gtk_name, ThemeType.GTK)
+                if found_orig:
+                    orig_gtk_path = found_orig.path
+
+        return self._theme_preview.cancel_preview(snapshot_theme_path=orig_gtk_path)
+
+    def preview_gtk_theme(self, theme_name: str) -> bool:
+        """Compatibility alias for start_theme_preview with GTK."""
+        return self.start_theme_preview(theme_name, ThemeType.GTK)
+
+    def revert_gtk_theme_preview(self) -> bool:
+        """Compatibility alias for cancel_theme_preview."""
+        return self.cancel_theme_preview()
 
     @property
     def scanner(self) -> ThemeScanner:

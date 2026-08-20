@@ -1798,3 +1798,18 @@ msgstr "Applying it might cause unexpected graphical glitches. Do you want to ap
 
 msgid "Apply anyway"
 msgstr "Apply anyway"
+
+msgid "Theme structure is incomplete or invalid."
+msgstr "Theme structure is incomplete or invalid."
+
+msgid "👁️ Live Preview in App"
+msgstr "👁️ Live Preview in App"
+
+msgid "↩️ Revert Live Preview"
+msgstr "↩️ Revert Live Preview"
+
+msgid "👁️ Preview on Desktop"
+msgstr "👁️ Preview on Desktop"
+
+msgid "↩️ Revert Preview"
+msgstr "↩️ Revert Preview"
