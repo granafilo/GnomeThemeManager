@@ -145,3 +145,39 @@ def test_global_themes_page_save_and_delete(mock_theme_manager: MagicMock) -> No
     # Test delete
     page._do_delete_theme("user-custom", "Custom Preset")
     mock_theme_manager.delete_global_theme.assert_called_with("user-custom")
+
+
+def test_global_theme_card_icon_fallback(mock_theme_manager: MagicMock) -> None:
+    """Verify card renders with custom icon name/file when valid and falls back when missing."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gi.repository import Gtk
+
+    from gnome_theme_manager.gui_gtk.pages.global_themes import _GlobalThemeCard
+
+    # Custom icon override as system icon library name (e.g. 'starred-symbolic')
+    custom_named_theme = GlobalTheme(
+        id="t-named",
+        name="Named Icon Theme",
+        description="Icon name override test",
+        components=ThemeSet(gtk_theme="Adwaita"),
+        origin="user",
+        icon_override="starred-symbolic",
+    )
+    card_named = _GlobalThemeCard(theme=custom_named_theme, on_apply=lambda _: None)
+    assert card_named is not None
+    img = _GlobalThemeCard._build_card_icon(custom_named_theme)
+    assert img.get_icon_name() == "starred-symbolic"
+
+    # No override => must fall back to default symbolic icon
+    fallback_theme = GlobalTheme(
+        id="t-fallback",
+        name="Fallback Icon",
+        description="Fallback icon test",
+        components=ThemeSet(gtk_theme="Adwaita"),
+        origin="bundled",
+    )
+    icon = _GlobalThemeCard._build_card_icon(fallback_theme)
+    assert isinstance(icon, Gtk.Image)
+    assert icon.get_icon_name() == "starred-symbolic"

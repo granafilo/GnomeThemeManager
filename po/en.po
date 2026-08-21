@@ -1580,6 +1580,10 @@ msgstr "by"
 msgid "Delete this Global Theme"
 msgstr "Delete this Global Theme"
 
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:135
+msgid "Edit this Global Theme"
+msgstr "Edit this Global Theme"
+
 #: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:124
 msgid "Apply"
 msgstr "Apply"
@@ -2113,6 +2117,502 @@ msgstr "Automatically activate GNOME Shell User Themes extension when applying a
 
 msgid "User Themes extension enabled automatically."
 msgstr "User Themes extension enabled automatically."
+
+
+
+
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:80
+msgid "Select Theme Icon"
+msgstr "Select Theme Icon"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:98
+msgid "Search icons…"
+msgstr "Search icons…"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Themes & Styling"
+msgstr "Themes & Styling"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Symbols & Badges"
+msgstr "Symbols & Badges"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Devices & Tech"
+msgstr "Devices & Tech"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Creative & Tools"
+msgstr "Creative & Tools"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:173
+msgid "Select an icon from the library"
+msgstr "Select an icon from the library"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:183
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:221
+msgid "Default Icon"
+msgstr "Default Icon"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:196
+msgid "Reset to default icon"
+msgstr "Reset to default icon"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:244
+msgid "Custom Theme Icon"
+msgstr "Custom Theme Icon"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:245
+msgid "Optional icon selected from library to represent this Global Theme"
+msgstr "Optional icon selected from library to represent this Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:260
+msgid "Fonts"
+msgstr "Fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:5
+msgid "Select Font"
+msgstr "Select Font"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:29
+msgid "Desktop Typography"
+msgstr "Desktop Typography"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:30
+msgid "GNOME uses 3 distinct font categories for different parts of the system:"
+msgstr "GNOME uses 3 distinct font categories for different parts of the system:"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:33
+msgid "1. Interface Font (UI)"
+msgstr "1. Interface Font (UI)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:34
+msgid "Applied to application menus, window headers, buttons, labels, and dialog boxes."
+msgstr "Applied to application menus, window headers, buttons, labels, and dialog boxes."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:48
+msgid "2. Document Font (Reading)"
+msgstr "2. Document Font (Reading)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:49
+msgid "Applied inside document viewers (PDFs, eBooks, help pages) and reading applications."
+msgstr "Applied inside document viewers (PDFs, eBooks, help pages) and reading applications."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:63
+msgid "3. Monospace Font (Terminal and Code)"
+msgstr "3. Monospace Font (Terminal and Code)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:64
+msgid "Applied to GNOME Terminal, text editors, log viewers, and development consoles."
+msgstr "Applied to GNOME Terminal, text editors, log viewers, and development consoles."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:81
+msgid "Display Scaling"
+msgstr "Display Scaling"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:82
+msgid "Adjust the global text size multiplier across the entire desktop."
+msgstr "Adjust the global text size multiplier across the entire desktop."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:85
+msgid "Text Scaling Factor"
+msgstr "Text Scaling Factor"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:86
+msgid "Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)"
+msgstr "Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:121
+msgid "Reload Current"
+msgstr "Reload Current"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:122
+msgid "Discard changes and reload active fonts"
+msgstr "Discard changes and reload active fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:130
+msgid "Apply Fonts"
+msgstr "Apply Fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:131
+msgid "Apply the font configuration to the desktop"
+msgstr "Apply the font configuration to the desktop"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:166
+msgid "Font settings are unavailable."
+msgstr "Font settings are unavailable."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:93
+msgid "Cannot apply fonts: GSettings unavailable."
+msgstr "Cannot apply fonts: GSettings unavailable."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:97
+msgid "Failed to apply fonts."
+msgstr "Failed to apply fonts."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:101
+msgid "Font configuration applied."
+msgstr "Font configuration applied."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:104
+msgid "No font settings were changed."
+msgstr "No font settings were changed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:122
+msgid "Font settings are unavailable: {}"
+msgstr "Font settings are unavailable: {}"
+
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:290
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:44
+msgid "Terminal"
+msgstr "Terminal"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:48
+msgid "Terminal Colors"
+msgstr "Terminal Colors"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:49
+msgid "Configure background and text colors derived from the active theme."
+msgstr "Configure background and text colors derived from the active theme."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:52
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:60
+msgid "Background Color"
+msgstr "Background Color"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:53
+msgid "Terminal window background color"
+msgstr "Terminal window background color"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:67
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:61
+msgid "Text Color"
+msgstr "Text Color"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:68
+msgid "Standard terminal foreground text color"
+msgstr "Standard terminal foreground text color"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:83
+msgid "ANSI 16-Color Palette"
+msgstr "ANSI 16-Color Palette"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:84
+msgid "Standard and bright 16-color ANSI palette for terminal applications and command prompts."
+msgstr "Standard and bright 16-color ANSI palette for terminal applications and command prompts."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:99
+msgid "Derive"
+msgstr "Derive"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:100
+msgid "Regenerate palette based on the active GTK theme"
+msgstr "Regenerate palette based on the active GTK theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:107
+msgid "Export JSON"
+msgstr "Export JSON"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:108
+msgid "Save palette configuration to a JSON file"
+msgstr "Save palette configuration to a JSON file"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:115
+msgid "Apply to GNOME Terminal"
+msgstr "Apply to GNOME Terminal"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:116
+msgid "Apply palette directly to the active GNOME Terminal profile"
+msgstr "Apply palette directly to the active GNOME Terminal profile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:94
+msgid "Terminal palette applied to GNOME Terminal."
+msgstr "Terminal palette applied to GNOME Terminal."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:97
+msgid "Could not apply to GNOME Terminal profile (GSettings schema unavailable)."
+msgstr "Could not apply to GNOME Terminal profile (GSettings schema unavailable)."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:175
+msgid "Derived terminal palette from active theme."
+msgstr "Derived terminal palette from active theme."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:183
+msgid "Exported palette to {}"
+msgstr "Exported palette to {}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:186
+msgid "Failed to export palette."
+msgstr "Failed to export palette."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:90
+msgid "Select Terminal Font"
+msgstr "Select Terminal Font"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:126
+msgid "Terminal preferences applied to GNOME Terminal."
+msgstr "Terminal preferences applied to GNOME Terminal."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:58
+msgid "Colors"
+msgstr "Colors"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:59
+msgid "Configure foreground, background, and bold colors for the terminal profile."
+msgstr "Configure foreground, background, and bold colors for the terminal profile."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:85
+msgid "Transparent Background"
+msgstr "Transparent Background"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:86
+msgid "Enable transparent background for terminal windows"
+msgstr "Enable transparent background for terminal windows"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:91
+msgid "Transparency Level"
+msgstr "Transparency Level"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:92
+msgid "Percentage of background transparency (0% - 100%)"
+msgstr "Percentage of background transparency (0% - 100%)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:133
+msgid "Text and Cursor Preferences"
+msgstr "Text and Cursor Preferences"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:134
+msgid "Configure font, cursor shape, blinking, and audio bell."
+msgstr "Configure font, cursor shape, blinking, and audio bell."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:137
+msgid "Use System Monospace Font"
+msgstr "Use System Monospace Font"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:138
+msgid "Use the desktop default monospace font"
+msgstr "Use the desktop default monospace font"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:143
+msgid "Custom Font"
+msgstr "Custom Font"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:144
+msgid "Specific font for GNOME Terminal profile"
+msgstr "Specific font for GNOME Terminal profile"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:153
+msgid "Cursor Shape"
+msgstr "Cursor Shape"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:154
+msgid "Block, I-Beam, or Underline"
+msgstr "Block, I-Beam, or Underline"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:159
+msgid "Cursor Blinking"
+msgstr "Cursor Blinking"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:160
+msgid "Follow system default, enable, or disable"
+msgstr "Follow system default, enable, or disable"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:165
+msgid "Terminal Bell"
+msgstr "Terminal Bell"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:166
+msgid "Play system sound on terminal alert (bell)"
+msgstr "Play system sound on terminal alert (bell)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:137
+msgid "Block"
+msgstr "Block"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:137
+msgid "I-Beam"
+msgstr "I-Beam"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:137
+msgid "Underline"
+msgstr "Underline"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:141
+msgid "System Default"
+msgstr "System Default"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:141
+msgid "Enabled"
+msgstr "Enabled"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:141
+msgid "Disabled"
+msgstr "Disabled"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:179
+msgid "Standard Colors (0-7)"
+msgstr "Standard Colors (0-7)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:190
+msgid "Bright Colors (8-15)"
+msgstr "Bright Colors (8-15)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:57
+msgid "Profiles"
+msgstr "Profiles"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:58
+msgid "Manage, create, and switch GNOME Terminal profiles."
+msgstr "Manage, create, and switch GNOME Terminal profiles."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:61
+msgid "Active Profile"
+msgstr "Active Profile"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:62
+msgid "Select profile to customize"
+msgstr "Select profile to customize"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/color_picker.py:84
+msgid "Pick"
+msgstr "Pick"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:78
+msgid "Set Default"
+msgstr "Set Default"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:79
+msgid "Set this profile as the default GNOME Terminal profile"
+msgstr "Set this profile as the default GNOME Terminal profile"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:89
+msgid "Create a new GNOME Terminal profile"
+msgstr "Create a new GNOME Terminal profile"
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui:99
+msgid "Delete this inactive profile"
+msgstr "Delete this inactive profile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:228
+msgid "Profile set as default: {}"
+msgstr "Profile set as default: {}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:231
+msgid "Failed to set default profile."
+msgstr "Failed to set default profile."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:243
+msgid "Created profile: {}"
+msgstr "Created profile: {}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:245
+msgid "Failed to create profile."
+msgstr "Failed to create profile."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:248
+msgid "New Terminal Profile"
+msgstr "New Terminal Profile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:249
+msgid "Enter a name for the new profile:"
+msgstr "Enter a name for the new profile:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:250
+msgid "Custom Profile"
+msgstr "Custom Profile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:265
+msgid "Profile deleted: {}"
+msgstr "Profile deleted: {}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:267
+msgid "Failed to delete profile."
+msgstr "Failed to delete profile."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:270
+msgid "Delete Profile"
+msgstr "Delete Profile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:271
+msgid "Are you sure you want to delete profile '{}'?"
+msgstr "Are you sure you want to delete profile '{}'?"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:284
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:285
+msgid "Create"
+msgstr "Create"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:299
+msgid "Delete"
+msgstr "Delete"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:378
+msgid "Black"
+msgstr "Black"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:378
+msgid "Red"
+msgstr "Red"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:378
+msgid "Green"
+msgstr "Green"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:378
+msgid "Yellow"
+msgstr "Yellow"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:379
+msgid "Blue"
+msgstr "Blue"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:379
+msgid "Magenta"
+msgstr "Magenta"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:379
+msgid "Cyan"
+msgstr "Cyan"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:379
+msgid "White"
+msgstr "White"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:412
+msgid "Bright "
+msgstr "Bright "
+
+#: src/gnome_theme_manager/core/global_themes.py:330
+msgid "Current Setup"
+msgstr "Current Setup"
+
+#: src/gnome_theme_manager/core/global_themes.py:331
+msgid "Snapshot of active system themes and preferences."
+msgstr "Snapshot of active system themes and preferences."
+
+#: src/gnome_theme_manager/core/global_themes.py:412
+msgid "Dark Suite"
+msgstr "Dark Suite"
+
+#: src/gnome_theme_manager/core/global_themes.py:413
+msgid "Cohesive dark style using verified system themes."
+msgstr "Cohesive dark style using verified system themes."
+
+#: src/gnome_theme_manager/core/global_themes.py:448
+msgid "Light Suite"
+msgstr "Light Suite"
+
+#: src/gnome_theme_manager/core/global_themes.py:449
+msgid "Clean light desktop appearance using verified system themes."
+msgstr "Clean light desktop appearance using verified system themes."
+
+
+
+
 
 
 

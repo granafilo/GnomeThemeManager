@@ -42,37 +42,48 @@ class ColorPickerButton(Gtk.Box):
         "color-changed": (GObject.SignalFlags.RUN_FIRST, None, (str,)),
     }
 
-    def __init__(self, title: str, default_hex: str = "#3584e4") -> None:
-        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    def __init__(
+        self,
+        title: str,
+        default_hex: str = "#3584e4",
+        compact: bool = False,
+    ) -> None:
+        super().__init__(orientation=Gtk.Orientation.HORIZONTAL, spacing=6 if not compact else 2)
         self._current_hex = default_hex
         self._updating_entry = False
+        self.compact = compact
 
-        # 1. Direct editable HEX entry
-        self.entry = Gtk.Entry()
-        self.entry.set_max_length(9)
-        self.entry.set_width_chars(8)
-        self.entry.set_placeholder_text("#RRGGBB")
-        self.entry.add_css_class("numeric")
-        self.entry.set_text(default_hex)
-        self.entry.connect("changed", self._on_entry_changed)
-        self.append(self.entry)
+        # 1. Direct editable HEX entry (only in full mode)
+        if not compact:
+            self.entry = Gtk.Entry()
+            self.entry.set_max_length(9)
+            self.entry.set_width_chars(8)
+            self.entry.set_placeholder_text("#RRGGBB")
+            self.entry.add_css_class("numeric")
+            self.entry.set_text(default_hex)
+            self.entry.connect("changed", self._on_entry_changed)
+            self.append(self.entry)
+        else:
+            self.entry = None
 
         # 2. Clickable Swatch & Pick Button (opens Gtk.ColorDialog)
         self.button = Gtk.Button()
-        self.button.set_tooltip_text(title)
+        self.button.set_tooltip_text(f"{title} ({default_hex})")
         self.button.add_css_class("flat")
 
-        btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.swatch = Gtk.DrawingArea()
-        self.swatch.set_content_width(22)
-        self.swatch.set_content_height(22)
+        swatch_size = 28 if compact else 22
+        self.swatch.set_content_width(swatch_size)
+        self.swatch.set_content_height(swatch_size)
         self.swatch.set_valign(Gtk.Align.CENTER)
         self.swatch.set_draw_func(self._draw_swatch)
         btn_content.append(self.swatch)
 
-        self.btn_label = Gtk.Label(label=_("Pick"))
-        self.btn_label.add_css_class("caption")
-        btn_content.append(self.btn_label)
+        if not compact:
+            self.btn_label = Gtk.Label(label=_("Pick"))
+            self.btn_label.add_css_class("caption")
+            btn_content.append(self.btn_label)
 
         self.button.set_child(btn_content)
         self.append(self.button)
@@ -127,12 +138,15 @@ class ColorPickerButton(Gtk.Box):
             return
 
         self._current_hex = cleaned
-        if not self._updating_entry:
+        if self.entry is not None and not self._updating_entry:
             self._updating_entry = True
             try:
                 self.entry.set_text(cleaned)
             finally:
                 self._updating_entry = False
+
+        if hasattr(self, "button") and self.button is not None and self.compact:
+            self.button.set_tooltip_text(f"{self.dialog.get_title()} ({cleaned})")
 
         self.swatch.queue_draw()
 

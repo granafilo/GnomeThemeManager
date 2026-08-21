@@ -60,16 +60,51 @@ def _create_component_pill(label_text: str, value_text: str) -> Gtk.Box:
 class _GlobalThemeCard(Gtk.Box):
     """Card widget displaying an individual Global Theme."""
 
+    @staticmethod
+    def _build_card_icon(theme: GlobalTheme) -> Gtk.Image:
+        """Build the card thumbnail: custom override icon name/file if present, else fallback.
+
+        Falls back gracefully to a default symbolic icon if the custom icon
+        is missing or cannot be loaded.
+        """
+        image = Gtk.Image()
+        is_user = theme.origin == "user"
+        fallback_icon = "document-save-as-symbolic" if is_user else "starred-symbolic"
+
+        if not theme.icon_override:
+            image.set_from_icon_name(fallback_icon)
+            return image
+
+        override = theme.icon_override.strip()
+        try:
+            if Path(override).is_file():
+                image.set_from_file(override)
+                return image
+            # Treat as system icon theme name
+            image.set_from_icon_name(override)
+            return image
+        except Exception as err:
+            logger.warning(
+                "Failed to load custom icon '%s' for theme '%s': %s",
+                override,
+                theme.name,
+                err,
+            )
+            image.set_from_icon_name(fallback_icon)
+            return image
+
     def __init__(
         self,
         theme: GlobalTheme,
         on_apply: Callable[[str], None],
         on_delete: Callable[[str], None] | None = None,
+        on_edit: Callable[["GlobalTheme"], None] | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._theme = theme
         self._on_apply = on_apply
         self._on_delete = on_delete
+        self._on_edit = on_edit
 
         self.add_css_class("card")
         self.set_margin_top(4)
@@ -81,11 +116,10 @@ class _GlobalThemeCard(Gtk.Box):
         header_box.set_margin_end(16)
         header_box.set_margin_top(16)
 
-        # Icon/Thumbnail
         is_user = theme.origin == "user"
-        icon = Gtk.Image.new_from_icon_name(
-            "document-save-as-symbolic" if is_user else "starred-symbolic"
-        )
+
+        # Icon/Thumbnail (custom override with graceful fallback)
+        icon = self._build_card_icon(theme)
         icon.set_pixel_size(36)
         icon.set_valign(Gtk.Align.CENTER)
         header_box.append(icon)
@@ -94,7 +128,7 @@ class _GlobalThemeCard(Gtk.Box):
         title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         title_box.set_hexpand(True)
 
-        title_label = Gtk.Label(label=theme.name)
+        title_label = Gtk.Label(label=_(theme.name))
         title_label.set_xalign(0)
         title_label.add_css_class("title-3")
         title_box.append(title_label)
@@ -124,8 +158,17 @@ class _GlobalThemeCard(Gtk.Box):
             del_btn.set_icon_name("user-trash-symbolic")
             del_btn.set_tooltip_text(_("Delete this Global Theme"))
             del_btn.add_css_class("flat")
-            del_btn.connect("clicked", lambda _: self._on_delete(self._theme.id))  # type: ignore[misc]
+            del_btn.connect("clicked", lambda _: self._on_delete(self._theme.id))
             btn_box.append(del_btn)
+
+        # Edit button for user themes
+        if is_user and self._on_edit is not None:
+            edit_btn = Gtk.Button()
+            edit_btn.set_icon_name("document-edit-symbolic")
+            edit_btn.set_tooltip_text(_("Edit this Global Theme"))
+            edit_btn.add_css_class("flat")
+            edit_btn.connect("clicked", lambda _: self._on_edit(self._theme))
+            btn_box.append(edit_btn)
 
         # Apply Button
         self.apply_btn = Gtk.Button()
@@ -139,7 +182,7 @@ class _GlobalThemeCard(Gtk.Box):
 
         # Description if present
         if theme.description:
-            desc_label = Gtk.Label(label=theme.description)
+            desc_label = Gtk.Label(label=_(theme.description))
             desc_label.set_xalign(0)
             desc_label.set_wrap(True)
             desc_label.set_margin_start(16)
@@ -215,6 +258,7 @@ class GlobalThemesPage:
         self.on_loading_changed: Callable[[bool], None] | None = None
         self.on_theme_applied: Callable[[str, ApplyResult], None] | None = None
         self.on_notify_message: Callable[[str, bool], None] | None = None
+        self.on_edit_requested: Callable[[GlobalTheme], None] | None = None
 
         # Signals
         self.search_entry.connect("search-changed", self._on_search_changed)
@@ -316,6 +360,7 @@ class GlobalThemesPage:
                 theme=theme,
                 on_apply=self._apply_theme,
                 on_delete=self._on_delete_theme_requested,
+                on_edit=self._on_edit_theme_requested,
             )
             self.themes_container.append(card)
 
@@ -424,6 +469,11 @@ class GlobalThemesPage:
             msg = f"{_('Failed to save global theme')}: {err}"
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
+
+    def _on_edit_theme_requested(self, theme: GlobalTheme) -> None:
+        """Forward edit request for a user Global Theme to the editor page."""
+        if self.on_edit_requested:
+            self.on_edit_requested(theme)
 
     def _on_delete_theme_requested(self, theme_id: str) -> None:
         """Show delete confirmation dialog for user global theme."""

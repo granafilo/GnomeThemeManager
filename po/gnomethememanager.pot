@@ -9,72 +9,81 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/gnome_theme_manager/cli/main.py:89
+#: src/gnome_theme_manager/cli/main.py:90
 msgid "\n=== Sandbox Integration Status (Snap & Flatpak) ==="
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:344
+#: src/gnome_theme_manager/cli/main.py:412
 msgid "\nAvailable saved presets:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:67
+#: src/gnome_theme_manager/cli/main.py:68
 msgid "\nCurrently active GNOME themes:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:340
+#: src/gnome_theme_manager/cli/main.py:408
 msgid "\nNo presets saved.\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:316
-#: src/gnome_theme_manager/cli/main.py:381
+#: src/gnome_theme_manager/cli/main.py:122
+msgid "\nNo theme found for type '{theme_type}' (user_only={user_only}).\n"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:286
+msgid "\nOne or more selected themes have structural issues. Apply anyway? [y/N]: "
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:292
+#: src/gnome_theme_manager/cli/main.py:384
+#: src/gnome_theme_manager/cli/main.py:449
 msgid "\nOperation cancelled by user.\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:346
+#: src/gnome_theme_manager/cli/main.py:414
 msgid "\nTotal presets: {count}\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:140
+#: src/gnome_theme_manager/cli/main.py:141
 msgid "\nTotal themes found: {count}\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:146
+#: src/gnome_theme_manager/cli/main.py:147
 msgid "\n✓ Changes applied successfully:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:280
+#: src/gnome_theme_manager/cli/main.py:348
 msgid "\n✓ Installation completed successfully ({count} theme(s) installed):"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:365
+#: src/gnome_theme_manager/cli/main.py:433
 msgid "\n✓ Preset '{name}' applied successfully:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:385
+#: src/gnome_theme_manager/cli/main.py:453
 msgid "\n✓ Preset '{name}' deleted successfully.\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:352
+#: src/gnome_theme_manager/cli/main.py:420
 msgid "\n✓ Preset '{name}' saved successfully in:\n  {path}\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:321
+#: src/gnome_theme_manager/cli/main.py:389
 msgid "\n✓ Theme '{name}' ({type}) uninstalled successfully.\n"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:150
+#: src/gnome_theme_manager/cli/main.py:151
 msgid "    └─ GTK4/Libadwaita override applied in ~/.config/gtk-4.0"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:152
+#: src/gnome_theme_manager/cli/main.py:153
 msgid "    └─ No GTK4 file found in theme (applied to GTK2/GTK3 only)"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:160
+#: src/gnome_theme_manager/cli/main.py:161
 msgid "  - Color Scheme set to:    {scheme}"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:156
+#: src/gnome_theme_manager/cli/main.py:157
 msgid "  - Cursor Theme set to:     {theme}"
 msgstr ""
 
@@ -82,99 +91,127 @@ msgstr ""
 msgid "  - Flatpak Propagation:          ✓ Filesystem access and variables set"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:158
+#: src/gnome_theme_manager/cli/main.py:159
 msgid "  - GNOME Shell Theme set to: {theme}"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:148
+#: src/gnome_theme_manager/cli/main.py:149
 msgid "  - GTK Theme set to:         {theme}"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:154
+#: src/gnome_theme_manager/cli/main.py:155
 msgid "  - Icon Theme set to:       {theme}"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:76
+#: src/gnome_theme_manager/cli/main.py:77
 msgid "  GNOME Shell Theme:         Not managed (requires 'User Themes' extension)"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:103
+#: src/gnome_theme_manager/cli/main.py:104
 msgid "  Sandbox status unavailable."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:134
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:141
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:148
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:155
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:87
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:98
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:128
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:139
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:150
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:87
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:135
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:142
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:149
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:156
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:88
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:99
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:129
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:140
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:151
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:94
 msgid "-"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:368
-msgid "A preset with this name already exists."
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:78
+msgid "1-click full desktop themes combining GTK, icons, cursors, GNOME Shell, and color preferences."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:590
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:621
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:644
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:675
 msgid "A theme named"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:188
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:122
+msgid "Accent Color"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:123
+msgid "Accent Text Color"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:249
 msgid "Access status of isolated applications to desktop themes."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:191
+#: src/gnome_theme_manager/cli/args.py:195
 msgid "Action to perform on preset"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:313
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:444
 msgid "Active"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:211
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:209
 msgid "Active (~/.local/share/themes and icons)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:82
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:89
 msgid "Active Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:149
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:150
 msgid "Active Theme Compatibility"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:236
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:469
+msgid "Active draft discarded successfully."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:664
+msgid "Adaptive palette extracted from wallpaper applied to GTK and Shell."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:30
+msgid "Adjust desktop font families and scaling factor."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:52
+msgid "Adjusts the global text scaling."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:239
 msgid "All files"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:559
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:565
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:615
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:648
 msgid "Also apply as GNOME Shell theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:565
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:571
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:620
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:656
 msgid "Also apply as GTK theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:306
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:318
 msgid "An error occurred during inspection or installation."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:983
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1219
 msgid "An error occurred during scan:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:363
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:626
 msgid "An error occurred while reading status:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:270
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:173
+msgid "An error occurred while reading theme definitions."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:277
 msgid "An error occurred while retrieving themes from the filesystem."
 msgstr ""
 
@@ -182,97 +219,140 @@ msgstr ""
 msgid "Analyzing source…"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:59
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:71
 msgid "Application Themes (GTK)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:762
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:998
 msgid "Application already in progress."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/window.py:313
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:44
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:45
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:105
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:235
+msgid "Application behavior and automation settings."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/window.py:452
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:46
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:49
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:112
 msgid "Applications (GTK)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:83
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:429
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:453
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:524
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:600
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:635
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:214
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:168
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:597
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:221
 msgid "Apply"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:220
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:90
+msgid "Apply Fonts"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:224
 msgid "Apply a saved preset"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:948
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:969
+msgid "Apply anyway"
 msgstr ""
 
 #: src/gnome_theme_manager/cli/args.py:74
 msgid "Apply one or more themes on GNOME"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:425
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:449
-msgid "Apply preset"
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:91
+msgid "Apply the font configuration to the desktop"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:373
+#: src/gnome_theme_manager/cli/args.py:84
+msgid "Apply unified theme (GTK, Shell, and GTK4/Libadwaita override) with matching name"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:584
+msgid "Applying it might cause unexpected graphical glitches. Do you want to apply anyway?"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:479
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:499
+msgid "Are you sure you want to delete"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:441
 msgid "Are you sure you want to delete preset '{name}'? [y/N]: "
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:308
+#: src/gnome_theme_manager/cli/main.py:376
 msgid "Are you sure you want to uninstall theme '{name}' ({type})? [y/N]: "
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:106
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:107
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:318
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:151
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:192
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:203
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:238
+msgid "Auto-enable User Themes extension"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:239
+msgid "Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:126
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:127
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:449
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:157
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:253
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:265
 msgid "Available"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:200
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:216
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:198
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:214
 msgid "Available on system"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:110
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:121
+msgid "Background Color"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:136
 msgid "Browse Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:205
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:252
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:594
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:625
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:276
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:301
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:349
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:370
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:428
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:452
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:548
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:574
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:265
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:294
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:599
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:634
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:714
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:735
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:133
+msgid "Bundled Theme"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:120
+msgid "Bypass confirmation prompt when applying incomplete or invalid themes"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:416
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:439
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:481
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:501
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:208
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:255
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:648
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:679
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:263
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:292
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:775
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:813
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:897
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:918
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:947
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:968
 msgid "Cancel"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:543
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:93
+msgid "Cannot apply fonts: GSettings unavailable."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:616
 msgid "Category:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:128
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:182
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:131
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:194
 msgid "Change Source"
 msgstr ""
 
@@ -280,16 +360,24 @@ msgstr ""
 msgid "Checking sandbox status…"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:79
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:112
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:40
+msgid "Choose Icon…"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:81
+msgid "Choose Theme Icon"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:679
+msgid "Click to set {color} as Accent for GTK and GNOME Shell"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:80
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:116
 msgid "Color Scheme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:41
-msgid "Color scheme"
-msgstr ""
-
-#: src/gnome_theme_manager/cli/args.py:106
+#: src/gnome_theme_manager/cli/args.py:104
 msgid "Color scheme preference (default or prefer-dark for GNOME 42+)"
 msgstr ""
 
@@ -297,38 +385,42 @@ msgstr ""
 msgid "Command to execute"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:108
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:160
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:109
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:161
 msgid "Compatibility Notes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:128
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:133
 msgid "Compatibility with modern GNOME applications."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:383
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:895
+msgid "Composed in Theme Editor"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:421
 msgid "Compressed archive"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:191
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:192
 msgid "Configure Flatpak overrides and verify compatibility for active themes"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:252
+#: src/gnome_theme_manager/cli/args.py:256
 msgid "Confirm deletion without interactive prompt"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:180
+#: src/gnome_theme_manager/cli/args.py:184
 msgid "Confirm uninstallation without interactive prompt"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:247
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:259
 msgid "Copying files into XDG user directories"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:114
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:53
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:254
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:139
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:52
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:314
 msgid "Current Status"
 msgstr ""
 
@@ -340,147 +432,237 @@ msgstr ""
 msgid "Currently Active GNOME Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:551
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:624
 msgid "Currently active theme:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:70
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:90
+#: src/gnome_theme_manager/cli/main.py:71
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:92
 msgid "Cursor Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:61
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:73
 msgid "Cursor Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:826
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1061
 msgid "Cursor theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:900
+#: src/gnome_theme_manager/cli/main.py:266
+msgid "Cursor theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1136
 msgid "Cursor theme applied"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:96
+#: src/gnome_theme_manager/cli/args.py:94
 msgid "Cursor theme name to apply"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/window.py:321
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:47
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:40
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:47
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:55
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:157
+#: src/gnome_theme_manager/gui_gtk/window.py:460
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:204
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:49
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:51
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:63
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:172
 msgid "Cursors"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:141
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:224
+msgid "Cursors Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:593
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:876
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1016
+msgid "Custom Mix"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:145
 msgid "Custom name for the destination theme directory"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:81
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:101
 msgid "Dark (Prefer dark)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:113
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:117
 msgid "Default"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:79
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:99
 msgid "Default (Light)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:549
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:575
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:482
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:502
 msgid "Delete"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:241
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:479
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:498
+msgid "Delete Global Theme"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:245
 msgid "Delete a stored preset"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:94
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:543
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:569
-msgid "Delete preset"
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:152
+msgid "Delete this Global Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:146
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:152
 msgid "Desktop Environment and Paths"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:406
-msgid "Details not available."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:147
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:148
 msgid "Detected Theme Name"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:130
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:131
 msgid "Detected theme information from selected source."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:219
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:220
 msgid "Diagnostic Error"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:315
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:82
+msgid "Discard changes and reload active fonts"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:23
+msgid "Discovering bundled and user themes."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:375
 msgid "Dismiss notification"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:230
+#: src/gnome_theme_manager/cli/args.py:234
 msgid "Do not apply GTK4 override in ~/.config/gtk-4.0"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:111
+#: src/gnome_theme_manager/cli/args.py:109
 msgid "Do not apply GTK4 override in ~/.config/gtk-4.0 when setting a GTK theme"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:116
-#: src/gnome_theme_manager/cli/args.py:235
+#: src/gnome_theme_manager/cli/args.py:114
+#: src/gnome_theme_manager/cli/args.py:239
 msgid "Do not propagate theme to Snap/Flatpak apps"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:590
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:621
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:644
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:675
 msgid "Do you want to overwrite it?"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:715
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:736
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:39
+msgid "Document Font"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:483
+msgid "Draft auto-save disabled."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:487
+msgid "Draft auto-save enabled."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:452
+msgid "Draft resumed successfully."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:161
+msgid "Edit this Global Theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:960
+msgid "Editing Global Theme '{name}'."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:898
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:919
 msgid "Enable and Continue"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:511
-msgid "Error applying preset"
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:101
+msgid "Enter a font string such as \"Cantarell 11\" or \"Sans Bold 12\"."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:602
-msgid "Error deleting:"
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:413
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:436
+msgid "Enter a name for your new Global Theme:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:486
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:541
 msgid "Error during installation:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:347
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:345
 msgid "Error during propagation:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:393
-msgid "Error:"
-msgstr ""
-
-#: src/gnome_theme_manager/cli/main.py:390
+#: src/gnome_theme_manager/cli/main.py:458
 msgid "Error: Preset action not specified (use 'list', 'save', 'apply' or 'delete')."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:981
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:97
+msgid "Failed to apply fonts."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:395
+msgid "Failed to apply global theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:522
+msgid "Failed to delete global theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:172
+msgid "Failed to load Global Themes"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:462
+msgid "Failed to save global theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:448
+msgid "Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:196
+msgid "Fallback Themes"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:219
+msgid "Fallback pack for icons"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:213
+msgid "Fallback theme for GNOME Shell"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:201
+msgid "Fallback theme for GTK3 applications"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:207
+msgid "Fallback theme for GTK4 and Libadwaita applications"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:225
+msgid "Fallback theme for mouse cursors"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1217
 msgid "Filesystem error:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:329
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:460
 msgid "Filesystem override active"
 msgstr ""
 
@@ -488,190 +670,275 @@ msgstr ""
 msgid "Filter by theme type (default: all)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:191
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:252
 msgid "Flatpak"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:82
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:83
 msgid "Flatpak Environment"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:86
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:87
 msgid "Flatpak Status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:230
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:307
 msgid "Flatpak: user themes filesystem override is inactive."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:383
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:421
 msgid "Folder"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/window.py:309
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:45
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:42
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:48
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:51
+msgid "Font Scaling Factor"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:29
+msgid "Font Settings"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:101
+msgid "Font configuration applied."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:136
+msgid "Font settings are unavailable."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:123
+msgid "Font settings are unavailable: {}"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:120
+msgid "Foreground Color"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/window.py:448
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:47
 #: src/gnome_theme_manager/gui_gtk/pages/themes.py:52
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:79
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:60
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:82
 msgid "GNOME Shell"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:224
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:301
 msgid "GNOME Shell 'User Themes' extension is inactive."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:74
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:101
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:212
+msgid "GNOME Shell Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:75
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:104
 msgid "GNOME Shell Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:62
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:74
 msgid "GNOME Shell Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:835
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1070
 msgid "GNOME Shell theme"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:101
+#: src/gnome_theme_manager/cli/main.py:274
+msgid "GNOME Shell theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:99
 msgid "GNOME Shell theme name to apply"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/window.py:59
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:16
+#: src/gnome_theme_manager/gui_gtk/window.py:85
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:14
 msgid "GNOME Theme Manager"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:150
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:156
 msgid "GSettings / Gio"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:222
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:299
 msgid "GSettings is unavailable in this environment."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:147
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:153
 msgid "GSettings status and user directories for installation."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:38
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:53
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:200
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:61
 msgid "GTK"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:68
+#: src/gnome_theme_manager/cli/main.py:69
 #: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:68
 msgid "GTK Theme (Applications)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:831
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:833
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1066
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1068
 msgid "GTK theme"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:250
+msgid "GTK theme '{name}' appears incomplete or invalid: {reasons}"
 msgstr ""
 
 #: src/gnome_theme_manager/cli/args.py:79
 msgid "GTK theme name to apply"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:127
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:200
+msgid "GTK3 Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:132
 msgid "GTK4 / Libadwaita"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:131
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:206
+msgid "GTK4 Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:136
 msgid "GTK4 Override Status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:140
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1000
+msgid "Global Theme '{name}' saved successfully."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:385
+msgid "Global Theme applied successfully"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:516
+msgid "Global Theme deleted successfully"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:456
+msgid "Global Theme saved successfully"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:227
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:69
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:202
+msgid "Global Themes"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:147
 msgid "Hide system themes"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:276
+#: src/gnome_theme_manager/cli/main.py:344
 msgid "INSTALLED PATH"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:69
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:79
+#: src/gnome_theme_manager/cli/main.py:70
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:80
 msgid "Icon Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:60
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:72
 msgid "Icon Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:837
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1072
 msgid "Icon theme"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:91
+#: src/gnome_theme_manager/cli/main.py:258
+msgid "Icon theme '{name}' appears incomplete or invalid: {reasons}"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:89
 msgid "Icon theme name to apply"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/window.py:317
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:46
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:39
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:46
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:54
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:131
+#: src/gnome_theme_manager/gui_gtk/window.py:456
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:202
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:48
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:50
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:62
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:142
 msgid "Icons"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:208
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:218
+msgid "Icons Fallback"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:212
 msgid "Identifier name of the preset to save"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:162
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:174
 msgid "If disabled, uses XDG standard (~/.local/share/themes)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:412
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:97
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:443
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:104
 msgid "In use"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:315
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:446
 msgid "Inactive"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:129
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:190
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:533
+msgid "Incomplete"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:580
+msgid "Incomplete Theme Warning"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:132
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:202
 msgid "Install"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:122
+#: src/gnome_theme_manager/cli/args.py:126
 msgid "Install a theme from an archive file (.zip, .tar.*)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:130
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:198
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:133
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:210
 msgid "Install and Apply"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:161
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:173
 msgid "Install into legacy path ~/.themes and ~/.icons"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:267
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:279
 msgid "Installation Completed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:227
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:225
 msgid "Installed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:239
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:251
 msgid "Installing theme…"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:979
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1215
 msgid "Insufficient permissions to access some theme folders."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:124
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:125
 msgid "Integration with theme framework and standard system snaps."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:349
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:33
+msgid "Interface Font"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:389
 msgid "Invalid or unsupported archive:"
 msgstr ""
 
@@ -680,11 +947,11 @@ msgstr ""
 msgid "Launch native GNOME GTK4/Libadwaita graphical interface"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:83
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:103
 msgid "Light (Prefer light)"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:197
+#: src/gnome_theme_manager/cli/args.py:201
 msgid "List all stored presets"
 msgstr ""
 
@@ -692,8 +959,12 @@ msgstr ""
 msgid "List available themes on the system"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:23
-msgid "Loading presets..."
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1077
+msgid "Live preview reverted to previous system themes."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:22
+msgid "Loading Global Themes..."
 msgstr ""
 
 #: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:21
@@ -701,267 +972,279 @@ msgid "Loading themes..."
 msgstr ""
 
 #: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:21
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:86
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:93
 msgid "Loading..."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:186
+#: src/gnome_theme_manager/cli/args.py:190
 msgid "Manage theme configuration presets and profiles"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:492
-msgid "Manager unavailable."
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:512
+msgid "Missing required stylesheet or files in folder."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:208
+msgid "Mode"
 msgstr ""
 
 #: src/gnome_theme_manager/cli/args.py:14
 msgid "Modular theme manager for GTK, icons, cursors, and GNOME Shell."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:127
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:45
+msgid "Monospace Font"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:128
 msgid "NAME"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:225
+#: src/gnome_theme_manager/cli/args.py:229
 msgid "Name of the preset to apply"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:246
+#: src/gnome_theme_manager/cli/args.py:250
 msgid "Name of the preset to delete"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:167
+#: src/gnome_theme_manager/cli/args.py:171
 msgid "Name of the theme to uninstall"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:60
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:79
 msgid "No"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:237
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:156
+msgid "No Global Themes Found"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:235
 msgid "No active GTK theme detected"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:230
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:293
 msgid "No active theme settings detected on the system."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:355
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:353
 msgid "No changes applied to sandbox environments."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:53
-msgid "No components configured"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:229
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:292
 msgid "No configuration found"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:40
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:104
+msgid "No font settings were changed."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:157
+msgid "No global themes match your search query."
+msgstr ""
+
+#: src/gnome_theme_manager/cli/main.py:41
 msgid "No items to display."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:459
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:496
 msgid "No other alternative themes for"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:175
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:182
 msgid "No other compatible themes found for this category."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:174
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:181
 msgid "No other themes available"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:159
-msgid "No presets saved"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:41
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:43
 msgid "No recognizable components"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:422
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:452
 msgid "No settings detected or backend unavailable"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:243
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:402
+msgid "No supported themes (GTK, Shell, Icons, Cursors) detected in source."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:250
 msgid "No themes found in this category."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:242
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:249
 msgid "No themes installed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:457
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:494
 msgid "No themes matching"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:209
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:207
 msgid "Not applicable (Flatpak not present)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:225
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:223
 msgid "Not applicable (Snap not present)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:61
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:69
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:318
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:342
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:343
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:420
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:81
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:90
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:449
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:473
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:474
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:451
 msgid "Not available"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:132
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:137
 msgid "Not available (applied during theme switch)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:104
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:124
 msgid "Not available (not installed)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:213
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:211
 msgid "Not configured"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:417
-msgid "Not found"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:204
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:220
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:202
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:218
 msgid "Not installed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:229
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:227
 msgid "Not installed (recommended for GTK themes)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:90
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:110
 msgid "Not managed ('User Themes' extension inactive)"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:68
 #: src/gnome_theme_manager/cli/main.py:69
 #: src/gnome_theme_manager/cli/main.py:70
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:50
+#: src/gnome_theme_manager/cli/main.py:71
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:63
 #: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:69
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:80
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:91
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:81
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:93
 msgid "Not set"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:234
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:232
 msgid "Not verifiable (Snap or gtk-common-themes absent)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:304
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:364
 msgid "Notification"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:911
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:921
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1147
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1157
 msgid "OK"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:127
+#: src/gnome_theme_manager/cli/main.py:128
 msgid "ORIGIN"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:251
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:914
+msgid "Only user-created Global Themes can be edited."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:254
 msgid "Open"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:305
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:317
 msgid "Operation Error"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:124
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:131
 msgid "Other available themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:330
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:461
 msgid "Override inactive"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:595
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:626
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:350
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:371
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:144
+msgid "Overview Background"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:649
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:680
 msgid "Overwrite"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:344
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:367
-msgid "Overwrite preset"
-msgstr ""
-
-#: src/gnome_theme_manager/cli/args.py:214
+#: src/gnome_theme_manager/cli/args.py:218
 msgid "Overwrite preset if already existing"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:147
+#: src/gnome_theme_manager/cli/args.py:151
 msgid "Overwrite theme if destination directory already exists"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:127
+#: src/gnome_theme_manager/cli/main.py:128
 msgid "PATH"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:345
+#: src/gnome_theme_manager/cli/main.py:413
 msgid "PRESET NAME"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:129
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:142
+msgid "Panel Background"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:143
+msgid "Panel Text"
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:133
 msgid "Path of the archive file to install"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:83
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:84
 msgid "Permission integration and theme access for Flatpak applications."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:389
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:519
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:522
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:524
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:598
-msgid "Preset"
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:234
+msgid "Preferences"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:318
-msgid "Preset name cannot be empty."
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1072
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1074
+msgid "Preview"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:259
-msgid "Preset name:"
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1054
+msgid "Preview started for '{name}'. Dismiss or commit to finalize."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:103
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:70
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:183
-msgid "Profiles and Presets"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:266
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:295
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:264
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:293
 msgid "Propagate Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:81
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:80
 msgid "Propagate Theme to Sandboxed Apps"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:190
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:191
 msgid "Propagate Themes to Sandboxed Applications"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:256
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:254
 msgid "Propagate theme to sandboxed applications?"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:351
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:349
 msgid "Propagation completed with warnings:"
 msgstr ""
 
@@ -969,95 +1252,91 @@ msgstr ""
 msgid "Querying Flatpak and Snap runtimes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:256
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:319
 msgid "Read error"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:24
-msgid "Reading saved configuration profiles."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:80
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:79
 msgid "Refresh Status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:265
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:325
 msgid "Refresh current status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:111
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:233
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:246
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:110
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:296
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:253
 msgid "Reload"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:181
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:81
+msgid "Reload Current"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:182
 msgid "Reload Status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:113
-msgid "Reload presets list from disk"
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:112
+msgid "Reload themes list from disk"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:49
+msgid "Reset to default icon"
 msgstr ""
 
 #: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:22
 msgid "Retrieving current theme state and system diagnostics."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:135
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:82
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:318
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:204
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:232
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:260
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:273
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:138
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:81
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:330
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:233
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:323
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:280
 msgid "Retry"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:187
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:248
 msgid "Sandbox Integration (Snap &amp;amp; Flatpak)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:40
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:235
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:45
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:292
 msgid "Sandbox Tools"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:166
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:164
 msgid "Sandbox diagnostics error:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:277
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:302
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:417
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:440
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:776
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:814
 msgid "Save"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:273
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:296
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:413
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:435
 msgid "Save Current Configuration"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:79
-msgid "Save and apply complete GNOME desktop configurations."
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:992
+msgid "Save as Global Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:97
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:163
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:96
 msgid "Save current configuration"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:203
+#: src/gnome_theme_manager/cli/args.py:207
 msgid "Save current theme combination as a new preset"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:160
-msgid "Save the current configuration to create your first preset and restore it at any time."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:127
-msgid "Saved Presets"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:269
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:276
 msgid "Scan error"
 msgstr ""
 
@@ -1065,31 +1344,35 @@ msgstr ""
 msgid "Scanning installed themes across system and user directories."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:134
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:141
 msgid "Search available themes..."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:126
+msgid "Search global themes..."
 msgstr ""
 
 #: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:93
 msgid "Security verification and component detection"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:204
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:207
 msgid "Select"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:132
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:136
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:280
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:326
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:135
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:139
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:292
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:338
 msgid "Select Another Source"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:127
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:130
 #: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:45
 msgid "Select Archive"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:126
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:129
 #: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:36
 msgid "Select Folder"
 msgstr ""
@@ -1102,10 +1385,10 @@ msgstr ""
 msgid "Select a folder or compressed archive (.zip, .tar.gz, .tar.xz) to install new themes."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:225
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:370
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:450
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:203
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:247
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:401
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:487
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:210
 msgid "Select a theme from the list to apply it"
 msgstr ""
 
@@ -1113,23 +1396,35 @@ msgstr ""
 msgid "Select an extracted theme folder on the filesystem"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:219
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:248
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:42
+msgid "Select an image asset (SVG/PNG) to represent this Global Theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:222
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:251
 msgid "Select theme archive"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:197
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:201
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:200
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:204
 msgid "Select theme folder"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:133
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:134
 msgid "Selected Source"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:366
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:385
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:397
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:416
 msgid "Selected:"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:206
+msgid "Shell"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:145
+msgid "Shell Accent"
 msgstr ""
 
 #: src/gnome_theme_manager/cli/args.py:44
@@ -1144,423 +1439,462 @@ msgstr ""
 msgid "Show sandbox runtime integration status (Snap and Flatpak)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:202
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:264
 msgid "Snap"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:123
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:124
 msgid "Snap Environment"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:127
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:128
 msgid "Snap Status"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:161
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:162
 msgid "Snap apps use themes bundled in gtk-common-themes. Custom themes require dedicated snaps."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:228
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:305
 msgid "Snap: 'gtk-common-themes' is not installed."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:499
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:554
 msgid "Some components were not applied:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:129
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:130
 msgid "Source Details"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:140
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:141
 msgid "Source Type"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:353
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:393
 msgid "Source not found:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:154
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1049
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:1051
+msgid "Stop Preview"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:155
 msgid "Supported Components"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:132
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:479
+#: src/gnome_theme_manager/cli/main.py:133
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:539
 msgid "System"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:92
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:111
 msgid "System (/usr/share/...)"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:73
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:92
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:102
+#: src/gnome_theme_manager/cli/main.py:74
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:112
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:105
 msgid "System Default"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:276
+#: src/gnome_theme_manager/cli/main.py:344
 msgid "THEME NAME"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:127
-#: src/gnome_theme_manager/cli/main.py:276
+#: src/gnome_theme_manager/cli/main.py:128
+#: src/gnome_theme_manager/cli/main.py:344
 msgid "TYPE"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:902
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1138
 msgid "The cursor theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:83
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:582
+msgid "The theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:90
 msgid "The theme currently in use on the desktop environment."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:268
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:280
 msgid "The theme was successfully installed in user directories."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:493
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:499
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:501
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:504
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:505
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:513
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:514
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:242
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:246
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:804
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:839
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:840
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:548
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:554
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:556
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:559
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:560
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:568
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:569
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:240
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:244
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1041
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1075
 msgid "Theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:97
+#: src/gnome_theme_manager/cli/main.py:234
+msgid "Theme '{theme}' was not found as GTK or GNOME Shell on the system."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:52
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:232
+msgid "Theme Editor"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:98
 msgid "Theme Filesystem Override"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:61
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:68
 #: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:22
-#: src/gnome_theme_manager/gui_gtk/ui/window.ui:209
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:262
 msgid "Theme Installer"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:589
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:620
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:643
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:674
 msgid "Theme already exists"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:255
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:258
 msgid "Theme archives"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:222
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:225
 msgid "Theme archives (*.zip, *.tar.*)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:361
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:624
 msgid "Theme manager error:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:416
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:447
 msgid "Theme not found in local directories"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:353
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:351
 msgid "Theme propagated successfully to sandboxed applications."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:135
+#: src/gnome_theme_manager/cli/main.py:188
+msgid "Theme structure is incomplete or invalid."
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:139
 msgid "Theme type (if omitted, auto-detection will be performed)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:190
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:263
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:775
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:268
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:284
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1010
 msgid "ThemeManager unavailable or not initialized."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:222
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:240
-#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:71
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:78
 msgid "Themes"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:174
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:197
+msgid "Themes used automatically when requested themes are not installed on host or sandbox environments."
+msgstr ""
+
+#: src/gnome_theme_manager/cli/args.py:178
 msgid "Type of the theme to uninstall"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:800
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1038
 msgid "Unable to apply theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:705
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:734
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:888
 msgid "Unable to enable 'User Themes' extension."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:185
-msgid "Unable to load presets"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:257
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:320
 msgid "Unable to retrieve system status."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:220
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:221
 msgid "Unable to verify sandbox runtimes status."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:304
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:335
 msgid "Unexpected error during scan:"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:160
+#: src/gnome_theme_manager/cli/args.py:164
 msgid "Uninstall a specific theme from user directories"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/presets_page.ui:193
-msgid "Unknown error."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:351
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:391
 msgid "Unrecognized theme structure:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:182
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:957
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:986
+msgid "Update Global Theme"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:183
 msgid "Update sandbox runtime diagnostics"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:132
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:479
+#: src/gnome_theme_manager/cli/main.py:133
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:539
 msgid "User"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:92
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:111
 msgid "User (~/.local/share/...)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:172
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:131
+msgid "User Created"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:180
 msgid "User Icons Folder"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:683
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:866
 msgid "User Themes Extension Disabled"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:161
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:168
 msgid "User Themes Folder"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:709
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:732
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:884
+msgid "User Themes extension enabled automatically."
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:892
 msgid "User Themes extension unavailable."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:109
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:110
 msgid "User overrides grant read-only access to ~/.local/share/themes and icons."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:843
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:163
+msgid "Valid"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:437
+msgid "Valid (all structure checks passed)"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui:162
+msgid "Validation Status"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1078
 msgid "Warnings:"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:346
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:477
 msgid "Warnings: "
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:59
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:77
 msgid "Yes"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:487
+#: src/gnome_theme_manager/cli/main.py:556
 msgid "[ARCHIVE EXTRACTION ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:493
+#: src/gnome_theme_manager/cli/main.py:562
 msgid "[FILE ALREADY EXISTS ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:496
+#: src/gnome_theme_manager/cli/main.py:565
 msgid "[FILE NOT FOUND ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:502
+#: src/gnome_theme_manager/cli/main.py:571
 msgid "[GNOME THEME MANAGER ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:481
+#: src/gnome_theme_manager/cli/main.py:550
 msgid "[GSETTINGS ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:499
+#: src/gnome_theme_manager/cli/main.py:568
 msgid "[INVALID VALUE ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:484
+#: src/gnome_theme_manager/cli/main.py:553
 msgid "[THEME ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:490
+#: src/gnome_theme_manager/cli/main.py:559
 msgid "[THEME VALIDATION ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:505
+#: src/gnome_theme_manager/cli/main.py:574
 msgid "[UNEXPECTED ERROR]"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:176
+#: src/gnome_theme_manager/cli/main.py:175
+#: src/gnome_theme_manager/cli/main.py:281
 msgid "[WARNING]"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:590
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:621
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:644
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:675
 msgid "already exists in user folder."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:831
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1066
 msgid "applied (with GTK4/Libadwaita override)."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:522
-msgid "applied successfully."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:519
-msgid "applied with warnings:"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:524
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:826
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:833
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:835
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:837
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:840
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1061
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1068
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1070
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1072
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1075
 msgid "applied."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:464
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:500
 msgid "available"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:135
+msgid "by"
 msgstr ""
 
 #: src/gnome_theme_manager/cli/args.py:30
 msgid "commands"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:246
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:244
 msgid "custom (requires dedicated snap)"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:598
-msgid "deleted."
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:402
+msgid "e.g. My Custom Desktop"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:265
-msgid "e.g. Work Dark Theme"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:138
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:139
 msgid "gtk-common-themes Package"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:337
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:468
 msgid "gtk-common-themes installed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/status.py:338
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:469
 msgid "gtk-common-themes not installed"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:501
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:582
+msgid "has structural issues or missing files:"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:556
 msgid "installed (partial application)."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:504
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:559
 msgid "installed and applied successfully."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:505
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:560
 msgid "installed and applied."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:513
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:568
 msgid "installed successfully into user directories."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:499
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:514
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:554
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:569
 msgid "installed."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:242
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:430
+msgid "more"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:240
 msgid "natively supported by gtk-common-themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:464
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:500
 msgid "other"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:804
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1041
 msgid "partially applied."
 msgstr ""
 
-#: src/gnome_theme_manager/cli/args.py:189
+#: src/gnome_theme_manager/cli/args.py:193
 msgid "preset actions"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:389
-msgid "saved."
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:452
-msgid "themes"
-msgstr ""
-
-#: src/gnome_theme_manager/gui_gtk/pages/installer.py:547
+#: src/gnome_theme_manager/gui_gtk/pages/installer.py:603
 msgid "this theme"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:524
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:597
 msgid "to"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/themes.py:902
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1138
 msgid "was configured on the system."
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:173
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:181
 msgid "~/.local/share/icons"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:162
+#: src/gnome_theme_manager/gui_gtk/ui/status_page.ui:169
 msgid "~/.local/share/themes"
 msgstr ""
 
-#: src/gnome_theme_manager/gui_gtk/pages/presets.py:75
-msgid "⚠ Unreadable preset — corrupted or incomplete data"
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:682
+msgid "↩️ Revert Preview"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:97
+#: src/gnome_theme_manager/cli/main.py:98
 msgid "✅ Active"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:91
-#: src/gnome_theme_manager/cli/main.py:95
+#: src/gnome_theme_manager/cli/main.py:92
+#: src/gnome_theme_manager/cli/main.py:96
 msgid "✅ Available"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:93
+#: src/gnome_theme_manager/cli/main.py:94
 msgid "✅ Installed"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:97
+#: src/gnome_theme_manager/cli/main.py:98
 msgid "❌ Not active"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:91
-#: src/gnome_theme_manager/cli/main.py:95
+#: src/gnome_theme_manager/cli/main.py:92
+#: src/gnome_theme_manager/cli/main.py:96
 msgid "❌ Not available"
 msgstr ""
 
-#: src/gnome_theme_manager/cli/main.py:93
+#: src/gnome_theme_manager/cli/main.py:94
 msgid "❌ Not installed"
+msgstr ""
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:667
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:687
+msgid "👁️ Preview on Desktop"
 msgstr ""
 

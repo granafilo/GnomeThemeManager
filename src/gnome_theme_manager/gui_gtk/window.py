@@ -27,10 +27,12 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
+    FontsPage,
     GlobalThemesPage,
     InstallerPage,
     SandboxPage,
     StatusPage,
+    TerminalPage,
     ThemeEditorPage,
     ThemesPage,
 )
@@ -88,7 +90,7 @@ class MainWindow(Adw.ApplicationWindow):
         init_bundled_icon_theme()
 
         # Minimum sizing ensuring all pages/cards are fully visible without truncation
-        self.set_size_request(980, 560)
+        self.set_size_request(760, 520)
         self.set_default_size(1080, 720)
 
         # Apply application-wide CSS styling for enhanced readability and typography
@@ -136,6 +138,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_themes_cursor: Gtk.ListBoxRow = self.builder.get_object("row_themes_cursor")
         self.row_global_themes: Gtk.ListBoxRow = self.builder.get_object("row_global_themes")
         self.row_editor: Gtk.ListBoxRow = self.builder.get_object("row_editor")
+        self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
+        self.row_terminal: Gtk.ListBoxRow = self.builder.get_object("row_terminal")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -148,6 +152,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.themes_page = ThemesPage(manager=self.manager)
         self.global_themes_page = GlobalThemesPage(manager=self.manager)
         self.editor_page = ThemeEditorPage(manager=self.manager)
+        self.fonts_page = FontsPage(manager=self.manager)
+        self.terminal_page = TerminalPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -160,6 +166,8 @@ class MainWindow(Adw.ApplicationWindow):
             "themes_cursor": self.themes_page,
             "global_themes": self.global_themes_page,
             "editor": self.editor_page,
+            "fonts": self.fonts_page,
+            "terminal": self.terminal_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -168,6 +176,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.themes_page.get_widget(), "themes")
         self.content_stack.add_named(self.global_themes_page.get_widget(), "global_themes")
         self.content_stack.add_named(self.editor_page.get_widget(), "editor")
+        self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
+        self.content_stack.add_named(self.terminal_page.get_widget(), "terminal")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -179,6 +189,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_themes_cursor: "themes_cursor",
             self.row_global_themes: "global_themes",
             self.row_editor: "editor",
+            self.row_fonts: "fonts",
+            self.row_terminal: "terminal",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -203,6 +215,14 @@ class MainWindow(Adw.ApplicationWindow):
             "global_themes", is_l
         )
         self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
+        self.global_themes_page.on_edit_requested = lambda theme: (
+            self._on_edit_global_theme_requested(theme)
+        )
+
+        self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
+        self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
 
@@ -404,6 +424,14 @@ class MainWindow(Adw.ApplicationWindow):
         ):
             self.themes_page.refresh()
 
+    def _on_edit_global_theme_requested(self, theme: Any) -> None:
+        """Navigate to the editor page and load a user Global Theme for editing."""
+        if self.editor_page is None:
+            return
+        self.editor_page.refresh(sync=True)
+        self.editor_page.load_global_theme_for_editing(theme)
+        self.select_page("editor")
+
     def _on_page_loading_changed(self, page_id: str, is_loading: bool) -> None:
         """Update refresh button sensitivity during page loading."""
         if self._current_page_id == page_id or (
@@ -498,6 +526,10 @@ class MainWindow(Adw.ApplicationWindow):
             and not self.sandbox_page._is_loading
         ):
             self.sandbox_page.refresh()
+        elif page_id == "fonts":
+            self.fonts_page.refresh()
+        elif page_id == "terminal":
+            self.terminal_page.refresh()
 
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:

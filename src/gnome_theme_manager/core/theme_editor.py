@@ -10,6 +10,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from .fonts import FontConfig
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .models import ThemeSet
 
@@ -29,6 +30,7 @@ class ThemeComposition:
     color_scheme: str | None = None
     description: str = ""
     user_composed: bool = True
+    fonts: FontConfig | None = None
 
     def to_theme_set(self) -> ThemeSet:
         """Convert composition into a domain ThemeSet.
@@ -55,6 +57,7 @@ class ThemeComposition:
             "color_scheme": self.color_scheme,
             "description": self.description,
             "user_composed": self.user_composed,
+            "fonts": self.fonts.to_dict() if self.fonts is not None else None,
         }
 
     @classmethod
@@ -70,6 +73,7 @@ class ThemeComposition:
             color_scheme=data.get("color_scheme"),
             description=str(data.get("description", "")).strip(),
             user_composed=bool(data.get("user_composed", True)),
+            fonts=FontConfig.from_dict(data["fonts"]) if data.get("fonts") else None,
         )
 
     def is_empty(self) -> bool:
@@ -101,12 +105,14 @@ class ThemeMixer:
         self,
         composition: ThemeComposition,
         overwrite: bool = False,
+        icon_override: str | None = None,
     ) -> GlobalTheme:
         """Save a ThemeComposition as a user Global Theme with origin='user' and user_composed=True.
 
         Args:
             composition: ThemeComposition data.
             overwrite: If True, overwrite existing user theme with same name.
+            icon_override: Optional custom icon file path for the theme.
 
         Returns:
             Saved GlobalTheme instance.
@@ -129,6 +135,8 @@ class ThemeMixer:
             description=description,
             overwrite=overwrite,
             user_composed=composition.user_composed,
+            icon_override=icon_override,
+            fonts=composition.fonts,
         )
         logger.info(
             "Theme composition '%s' successfully saved as Global Theme '%s'.",

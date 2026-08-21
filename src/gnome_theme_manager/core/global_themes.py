@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from .constants import GLOBAL_THEMES_FILE, PRESETS_DIR
+from .fonts import FontConfig
 from .models import ThemeSet, ThemeType
 from .scanner import ThemeScanner
 from .theme_validator import ThemeValidator
@@ -37,9 +38,12 @@ class GlobalTheme:
     origin: Literal["bundled", "user"] = "bundled"
     is_bundled: bool = False
     created_at: str | None = None
+    updated_at: str | None = None
+    icon_override: str | None = None
     thumbnail_path: Path | None = None
     tags: list[str] = field(default_factory=list)
     user_composed: bool = False
+    fonts: FontConfig | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize GlobalTheme to dictionary."""
@@ -51,10 +55,13 @@ class GlobalTheme:
             "origin": self.origin,
             "is_bundled": self.is_bundled,
             "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "icon_override": self.icon_override,
             "thumbnail_path": str(self.thumbnail_path) if self.thumbnail_path else None,
             "tags": list(self.tags),
             "components": self.components.to_dict(),
             "user_composed": self.user_composed,
+            "fonts": self.fonts.to_dict() if self.fonts is not None else None,
         }
 
     @classmethod
@@ -101,6 +108,17 @@ class GlobalTheme:
         tags = list(data.get("tags", []))
         user_composed = bool(data.get("user_composed", False))
 
+        icon_override = data.get("icon_override")
+        if icon_override is not None:
+            icon_override = str(icon_override)
+
+        fonts_data = data.get("fonts")
+        fonts = (
+            FontConfig.from_dict(fonts_data)
+            if isinstance(fonts_data, dict)
+            else (FontConfig.from_dict(None) if fonts_data is None else FontConfig())
+        )
+
         return cls(
             id=theme_id,
             name=name,
@@ -110,9 +128,11 @@ class GlobalTheme:
             origin=origin_val,
             is_bundled=bundled_flag,
             created_at=created_at,
+            icon_override=icon_override,
             thumbnail_path=thumb_path,
             tags=tags,
             user_composed=user_composed,
+            fonts=fonts,
         )
 
 
@@ -177,6 +197,8 @@ class GlobalThemeManager:
         description: str = "",
         overwrite: bool = False,
         user_composed: bool = False,
+        icon_override: str | None = None,
+        fonts: FontConfig | None = None,
     ) -> GlobalTheme:
         """Save a ThemeSet as a user-level Global Theme.
 
@@ -186,6 +208,8 @@ class GlobalThemeManager:
             description: Optional description.
             overwrite: If True, overwrite existing user theme with same name.
             user_composed: If True, indicates the theme was created via Theme Mixer/Editor.
+            icon_override: Optional custom icon file path representing the theme.
+            fonts: Optional FontConfig to store font preferences with the theme.
 
         Returns:
             The saved GlobalTheme instance.
@@ -219,6 +243,8 @@ class GlobalThemeManager:
             is_bundled=False,
             created_at=now_iso,
             user_composed=user_composed,
+            icon_override=icon_override,
+            fonts=fonts,
         )
 
         all_state = self._load_state_themes()
@@ -585,3 +611,66 @@ class GlobalThemeManager:
             if theme.id == theme_id or theme.name == theme_id:
                 return theme
         return None
+
+    def update_global_theme(
+        self,
+        theme_id: str,
+        theme_set: ThemeSet,
+        description: str | None = None,
+        icon_override: str | None = None,
+        fonts: FontConfig | None = None,
+    ) -> GlobalTheme:
+        """Update an existing user-created Global Theme in place.
+
+        Preserves origin, author, tags, user_composed flag and created_at timestamp.
+        Updates components, description (if provided), icon_override (if provided),
+        fonts (if provided) and refreshed updated_at timestamp.
+
+        Args:
+            theme_id: ID or name of the user global theme to update.
+            theme_set: New component selections (ThemeSet).
+            description: Optional new description (keeps existing when None).
+            icon_override: Optional new custom icon path (keeps existing when None).
+            fonts: Optional new FontConfig (keeps existing when None).
+
+        Returns:
+            Updated GlobalTheme instance.
+
+        Raises:
+            ValueError: If the theme is not found or is not user-editable.
+        """
+        themes = self._load_state_themes()
+        target: GlobalTheme | None = None
+        for theme in themes:
+            if theme.id == theme_id or theme.name == theme_id:
+                target = theme
+                break
+
+        if target is None:
+            raise ValueError(f"Global theme '{theme_id}' not found.")
+        if target.origin != "user":
+            raise ValueError(
+                f"Global theme '{target.name}' is not editable (origin='{target.origin}')."
+            )
+
+        updated = GlobalTheme(
+            id=target.id,
+            name=target.name,
+            description=description if description is not None else target.description,
+            author=target.author,
+            tags=target.tags,
+            components=theme_set,
+            is_bundled=False,
+            origin="user",
+            user_composed=target.user_composed,
+            created_at=target.created_at,
+            updated_at=datetime.now(tz=timezone.utc).isoformat(),
+            icon_override=icon_override if icon_override is not None else target.icon_override,
+            fonts=fonts if fonts is not None else target.fonts,
+        )
+
+        new_themes = [t for t in themes if t.id != target.id]
+        new_themes.append(updated)
+        self._save_state_themes(new_themes)
+        logger.info("Updated global theme %s: %s", updated.id, updated.name)
+        return updated

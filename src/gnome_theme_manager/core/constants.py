@@ -13,6 +13,12 @@ GSETTINGS_KEY_ICON_THEME = "icon-theme"
 GSETTINGS_KEY_CURSOR_THEME = "cursor-theme"
 GSETTINGS_KEY_COLOR_SCHEME = "color-scheme"
 
+# Font keys (org.gnome.desktop.interface) - FASE 4 Task 4.3
+GSETTINGS_KEY_FONT_NAME = "font-name"
+GSETTINGS_KEY_DOCUMENT_FONT_NAME = "document-font-name"
+GSETTINGS_KEY_MONOSPACE_FONT_NAME = "monospace-font-name"
+GSETTINGS_KEY_TEXT_SCALING_FACTOR = "text-scaling-factor"
+
 # Schema and key for GNOME Shell theme (User Themes extension)
 GSETTINGS_SCHEMA_USER_THEME = "org.gnome.shell.extensions.user-theme"
 GSETTINGS_KEY_SHELL_THEME = "name"

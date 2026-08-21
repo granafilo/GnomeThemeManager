@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="GtkFontDialog" id="font_dialog">
+    <property name="title" translatable="yes">Select Font</property>
+  </object>
+  <object class="GtkStack" id="page_root">
+    <property name="transition-type">crossfade</property>
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <child>
+      <object class="AdwToolbarView" id="ready">
+        <property name="vexpand">true</property>
+        <property name="content">
+          <object class="GtkScrolledWindow" id="scrolled">
+            <property name="vexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <child>
+              <object class="AdwClamp">
+                <property name="maximum-size">720</property>
+                <property name="margin-top">24</property>
+                <property name="margin-bottom">24</property>
+                <property name="margin-start">20</property>
+                <property name="margin-end">20</property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">24</property>
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Desktop Typography</property>
+                        <property name="description" translatable="yes">GNOME uses 3 distinct font categories for different parts of the system:</property>
+                        <child>
+                          <object class="AdwActionRow" id="interface_row">
+                            <property name="title" translatable="yes">1. Interface Font (UI)</property>
+                            <property name="subtitle" translatable="yes">Applied to application menus, window headers, buttons, labels, and dialog boxes.</property>
+                            <property name="subtitle-lines">2</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">preferences-desktop-appearance-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkFontDialogButton" id="interface_font_btn">
+                                <property name="dialog">font_dialog</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="document_row">
+                            <property name="title" translatable="yes">2. Document Font (Reading)</property>
+                            <property name="subtitle" translatable="yes">Applied inside document viewers (PDFs, eBooks, help pages) and reading applications.</property>
+                            <property name="subtitle-lines">2</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">accessories-text-editor-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkFontDialogButton" id="document_font_btn">
+                                <property name="dialog">font_dialog</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="monospace_row">
+                            <property name="title" translatable="yes">3. Monospace Font (Terminal and Code)</property>
+                            <property name="subtitle" translatable="yes">Applied to GNOME Terminal, text editors, log viewers, and development consoles.</property>
+                            <property name="subtitle-lines">2</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">utilities-terminal-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkFontDialogButton" id="monospace_font_btn">
+                                <property name="dialog">font_dialog</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Display Scaling</property>
+                        <property name="description" translatable="yes">Adjust the global text size multiplier across the entire desktop.</property>
+                        <child>
+                          <object class="AdwActionRow">
+                            <property name="title" translatable="yes">Text Scaling Factor</property>
+                            <property name="subtitle" translatable="yes">Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)</property>
+                            <property name="subtitle-lines">2</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">format-text-bold-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkSpinButton" id="scale_spin">
+                                <property name="adjustment">
+                                  <object class="GtkAdjustment" id="scale_adj">
+                                    <property name="lower">0.5</property>
+                                    <property name="upper">3.0</property>
+                                    <property name="step-increment">0.05</property>
+                                    <property name="page-increment">0.25</property>
+                                    <property name="value">1.0</property>
+                                  </object>
+                                </property>
+                                <property name="digits">2</property>
+                                <property name="numeric">true</property>
+                                <property name="snap-to-ticks">false</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">12</property>
+                        <property name="halign">end</property>
+                        <child>
+                          <object class="GtkButton" id="reset_button">
+                            <property name="label" translatable="yes">Reload Current</property>
+                            <property name="tooltip-text" translatable="yes">Discard changes and reload active fonts</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="apply_button">
+                            <property name="label" translatable="yes">Apply Fonts</property>
+                            <property name="tooltip-text" translatable="yes">Apply the font configuration to the desktop</property>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCenterBox" id="error">
+        <property name="vexpand">true</property>
+        <property name="hexpand">true</property>
+        <child type="center">
+          <object class="GtkBox">
+            <property name="orientation">vertical</property>
+            <property name="spacing">8</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <child>
+              <object class="GtkImage">
+                <property name="icon-name">dialog-error-symbolic</property>
+                <property name="pixel-size">48</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="error_label">
+                <property name="label" translatable="yes">Font settings are unavailable.</property>
+                <property name="wrap">true</property>
+                <property name="justify">center</property>
+                <property name="max-width-chars">40</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

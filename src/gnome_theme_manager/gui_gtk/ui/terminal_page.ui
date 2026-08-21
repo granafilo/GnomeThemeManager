@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+  <object class="GtkStack" id="page_root">
+    <property name="transition-type">crossfade</property>
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+    <child>
+      <object class="AdwToolbarView" id="ready">
+        <property name="vexpand">true</property>
+        <property name="content">
+          <object class="GtkScrolledWindow" id="scrolled">
+            <property name="vexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <child>
+              <object class="AdwClamp">
+                <property name="maximum-size">720</property>
+                <property name="margin-top">20</property>
+                <property name="margin-bottom">24</property>
+                <property name="margin-start">16</property>
+                <property name="margin-end">16</property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">20</property>
+
+                    <!-- Terminal Live Preview Box -->
+                    <child>
+                      <object class="GtkFrame" id="terminal_preview_frame">
+                        <property name="child">
+                          <object class="GtkBox" id="terminal_preview_box">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">8</property>
+                            <property name="margin-start">16</property>
+                            <property name="margin-end">16</property>
+                            <property name="margin-top">16</property>
+                            <property name="margin-bottom">16</property>
+                            <child>
+                              <object class="GtkLabel" id="terminal_preview_label">
+                                <property name="xalign">0</property>
+                                <property name="use-markup">true</property>
+                                <property name="wrap">true</property>
+                                <property name="label"><![CDATA[<tt><b>user@gnome</b>:<b>~</b>$ uname -a
+Linux 6.8.0-generic x86_64 GNU/Linux
+<b>user@gnome</b>:<b>~</b>$ echo "GNOME Terminal Palette Theme"
+<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> <span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> <span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span></tt>]]></property>
+                              </object>
+                            </child>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+
+                    <!-- Profiles Management Group -->
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Profiles</property>
+                        <property name="description" translatable="yes">Manage, create, and switch GNOME Terminal profiles.</property>
+                        <child>
+                          <object class="AdwComboRow" id="profile_combo_row">
+                            <property name="title" translatable="yes">Active Profile</property>
+                            <property name="subtitle" translatable="yes">Select profile to customize</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">avatar-default-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">4</property>
+                                <property name="valign">center</property>
+                                <child>
+                                  <object class="GtkButton" id="set_default_button">
+                                    <property name="label" translatable="yes">Set Default</property>
+                                    <property name="tooltip-text" translatable="yes">Set this profile as the default GNOME Terminal profile</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="flat"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="new_profile_button">
+                                    <property name="icon-name">list-add-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Create a new GNOME Terminal profile</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="flat"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="delete_profile_button">
+                                    <property name="icon-name">user-trash-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Delete this inactive profile</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="flat"/>
+                                      <class name="destructive-action"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Base Terminal Colors -->
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Colors</property>
+                        <property name="description" translatable="yes">Configure foreground, background, and bold colors for the terminal profile.</property>
+                        <child>
+                          <object class="AdwActionRow" id="bg_row">
+                            <property name="title" translatable="yes">Background Color</property>
+                            <property name="subtitle" translatable="yes">Terminal window background color</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">preferences-color-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkBox" id="bg_picker_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="fg_row">
+                            <property name="title" translatable="yes">Text Color</property>
+                            <property name="subtitle" translatable="yes">Standard terminal foreground text color</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">format-text-bold-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkBox" id="fg_picker_container">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwSwitchRow" id="transparency_switch_row">
+                            <property name="title" translatable="yes">Transparent Background</property>
+                            <property name="subtitle" translatable="yes">Enable transparent background for terminal windows</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="transparency_percent_row">
+                            <property name="title" translatable="yes">Transparency Level</property>
+                            <property name="subtitle" translatable="yes">Percentage of background transparency (0% - 100%)</property>
+                            <child type="suffix">
+                              <object class="GtkSpinButton" id="transparency_spin_button">
+                                <property name="valign">center</property>
+                                <property name="numeric">true</property>
+                                <property name="adjustment">
+                                  <object class="GtkAdjustment" id="transparency_adj">
+                                    <property name="lower">0</property>
+                                    <property name="upper">100</property>
+                                    <property name="step-increment">5</property>
+                                    <property name="page-increment">10</property>
+                                    <property name="value">0</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- ANSI 16 Colors Grid -->
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">ANSI 16-Color Palette</property>
+                        <property name="description" translatable="yes">Standard and bright 16-color ANSI palette for terminal applications.</property>
+                        <child>
+                          <object class="GtkBox" id="ansi_grid_container">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">8</property>
+                            <property name="margin-top">8</property>
+                            <property name="margin-bottom">8</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Text & Cursor Preferences -->
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Text and Cursor Preferences</property>
+                        <property name="description" translatable="yes">Configure font, cursor shape, blinking, and audio bell.</property>
+                        <child>
+                          <object class="AdwSwitchRow" id="use_system_font_row">
+                            <property name="title" translatable="yes">Use System Monospace Font</property>
+                            <property name="subtitle" translatable="yes">Use the desktop default monospace font</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="custom_font_row">
+                            <property name="title" translatable="yes">Custom Font</property>
+                            <property name="subtitle" translatable="yes">Specific font for GNOME Terminal profile</property>
+                            <child type="suffix">
+                              <object class="GtkFontDialogButton" id="terminal_font_button">
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwComboRow" id="cursor_shape_row">
+                            <property name="title" translatable="yes">Cursor Shape</property>
+                            <property name="subtitle" translatable="yes">Block, I-Beam, or Underline</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwComboRow" id="cursor_blink_row">
+                            <property name="title" translatable="yes">Cursor Blinking</property>
+                            <property name="subtitle" translatable="yes">Follow system default, enable, or disable</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwSwitchRow" id="audible_bell_row">
+                            <property name="title" translatable="yes">Terminal Bell</property>
+                            <property name="subtitle" translatable="yes">Play system sound on terminal alert (bell)</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Actions Bar -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">12</property>
+                        <property name="halign">end</property>
+                        <property name="valign">center</property>
+                        <child>
+                          <object class="GtkButton" id="derive_button">
+                            <property name="label" translatable="yes">Derive</property>
+                            <property name="tooltip-text" translatable="yes">Regenerate palette based on the active GTK theme</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="export_button">
+                            <property name="label" translatable="yes">Export JSON</property>
+                            <property name="tooltip-text" translatable="yes">Save palette configuration to a JSON file</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="apply_button">
+                            <property name="label" translatable="yes">Apply</property>
+                            <property name="tooltip-text" translatable="yes">Apply palette directly to the active GNOME Terminal profile</property>
+                            <style>
+                              <class name="suggested-action"/>
+                              <class name="pill"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+  </object>
+</interface>

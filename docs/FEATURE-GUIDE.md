@@ -100,16 +100,16 @@ No more scary alerts: the app heals itself.
 
 ---
 
-## Phase 4 — Editors (v1.4)
+## Phase 4 — Editors (v1.4) ✅
 
 Full control over your own looks.
 
 - **4.1** Edit your existing Global Themes in place; starters duplicate
-  via "save as copy".
-- **4.2** Custom icons for your Global Theme cards.
+  via "save as copy". ✅
+- **4.2** Custom icons for your Global Theme cards with fallback. ✅
 - **4.3** Font editor: interface/document/monospace fonts + scaling,
-  saved inside presets.
-- **4.4** *(stretch)* Terminal editor: your palette into GNOME Terminal.
+  saved inside presets. ✅
+- **4.4** *(stretch)* Terminal editor: full color customization, ANSI 16 palette, profiles, and preferences into GNOME Terminal. ✅
 
 ---
 

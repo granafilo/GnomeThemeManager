@@ -16,14 +16,19 @@ from typing import Any
 from .constants import (
     GSETTINGS_KEY_COLOR_SCHEME,
     GSETTINGS_KEY_CURSOR_THEME,
+    GSETTINGS_KEY_DOCUMENT_FONT_NAME,
+    GSETTINGS_KEY_FONT_NAME,
     GSETTINGS_KEY_GTK_THEME,
     GSETTINGS_KEY_ICON_THEME,
+    GSETTINGS_KEY_MONOSPACE_FONT_NAME,
     GSETTINGS_KEY_SHELL_THEME,
+    GSETTINGS_KEY_TEXT_SCALING_FACTOR,
     GSETTINGS_SCHEMA_INTERFACE,
     GSETTINGS_SCHEMA_USER_THEME,
     GTK4_CONFIG_DIR,
 )
 from .errors import GSettingsUnavailableError
+from .fonts import FontConfig
 from .models import ThemeSet
 
 # Protected PyGObject import
@@ -288,6 +293,94 @@ class GSettingsClient:
             )
 
         self._shell_settings.set_string(GSETTINGS_KEY_SHELL_THEME, name)
+
+    # -------------------------------------------------------------------------
+    # Font Methods (FASE 4 Task 4.3)
+    # -------------------------------------------------------------------------
+
+    def get_fonts(self) -> "FontConfig":
+        """Read and return current active font configuration.
+
+        Returns:
+            A FontConfig dataclass containing the interface, document,
+            monospace font names and text scaling factor.
+        """
+        from .fonts import FontConfig
+
+        interface = self._read_font_string(GSETTINGS_KEY_FONT_NAME, "Cantarell 11")
+        document = self._read_font_string(GSETTINGS_KEY_DOCUMENT_FONT_NAME, "Sans 11")
+        monospace = self._read_font_string(GSETTINGS_KEY_MONOSPACE_FONT_NAME, "Monospace 11")
+        scaling = self._read_scaling_factor()
+        return FontConfig(
+            interface_font=interface,
+            document_font=document,
+            monospace_font=monospace,
+            text_scaling_factor=scaling,
+        )
+
+    def set_fonts(self, fonts: "FontConfig") -> None:
+        """Apply a FontConfig to the desktop interface.
+
+        Args:
+            fonts: FontConfig instance with font values to apply.
+        """
+        if fonts.interface_font is not None:
+            self.set_interface_font(fonts.interface_font)
+        if fonts.document_font is not None:
+            self.set_document_font(fonts.document_font)
+        if fonts.monospace_font is not None:
+            self.set_monospace_font(fonts.monospace_font)
+        if fonts.text_scaling_factor is not None:
+            self.set_text_scaling_factor(fonts.text_scaling_factor)
+        self._sync()
+
+    def apply_fonts(self, fonts: "FontConfig") -> bool:
+        """Apply a FontConfig to the desktop interface.
+
+        Args:
+            fonts: FontConfig instance with font values to apply.
+
+        Returns:
+            True if applied successfully.
+        """
+        self.set_fonts(fonts)
+        return True
+
+    def _read_font_string(self, key: str, default: str) -> str:
+        """Read a font-name style string key with a safe fallback."""
+        if self._has_key(self._settings, key):
+            try:
+                val = self._settings.get_string(key)
+                return str(val) if val is not None else default
+            except Exception:
+                return default
+        return default
+
+    def _read_scaling_factor(self) -> float:
+        """Read text scaling factor with a safe default of 1.0."""
+        if self._has_key(self._settings, GSETTINGS_KEY_TEXT_SCALING_FACTOR):
+            try:
+                return float(self._settings.get_double(GSETTINGS_KEY_TEXT_SCALING_FACTOR))
+            except Exception:
+                return 1.0
+        return 1.0
+
+    def set_interface_font(self, font_spec: str) -> None:
+        """Set interface (UI) font name and size, e.g. 'Cantarell 11'."""
+        self._settings.set_string(GSETTINGS_KEY_FONT_NAME, font_spec)
+
+    def set_document_font(self, font_spec: str) -> None:
+        """Set document font name and size, e.g. 'Sans 11'."""
+        self._settings.set_string(GSETTINGS_KEY_DOCUMENT_FONT_NAME, font_spec)
+
+    def set_monospace_font(self, font_spec: str) -> None:
+        """Set monospace font name and size, e.g. 'Monospace 11'."""
+        self._settings.set_string(GSETTINGS_KEY_MONOSPACE_FONT_NAME, font_spec)
+
+    def set_text_scaling_factor(self, factor: float) -> None:
+        """Set text scaling factor (1.0 = default, >1 larger, <1 smaller)."""
+        if self._has_key(self._settings, GSETTINGS_KEY_TEXT_SCALING_FACTOR):
+            self._settings.set_double(GSETTINGS_KEY_TEXT_SCALING_FACTOR, float(factor))
 
     # -------------------------------------------------------------------------
     # Internal Helpers

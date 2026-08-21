@@ -19,6 +19,7 @@ from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
 from .fallback import FallbackManager
+from .fonts import FontConfig
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
@@ -37,6 +38,12 @@ from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
 from .shell_editor import ShellThemeForkManager
+from .terminal_palette import (
+    TerminalPalette,
+    TerminalProfileSummary,
+    apply_palette_to_gnome_terminal,
+    derive_terminal_palette_from_colors,
+)
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
@@ -482,6 +489,7 @@ class ThemeManager:
         propagate_sandbox: bool = True,
         force: bool = False,
         use_fallback: bool = True,
+        fonts: FontConfig | None = None,
     ) -> ApplyResult:
         """Validate and apply a set of themes to the GNOME desktop.
 
@@ -711,6 +719,17 @@ class ThemeManager:
             shell_theme=shell_to_apply,
         )
         client.apply(target_set)
+
+        # 7b. Font configuration
+        fonts_applied = False
+        if fonts is not None:
+            try:
+                fonts_applied = client.apply_fonts(fonts)
+                if fonts_applied:
+                    logger.info("Font configuration applied: %s", fonts)
+            except Exception as err:
+                warnings.append(f"Failed to apply font configuration: {err}")
+                logger.warning("Font application failed: %s", err)
 
         # 8. GTK4 / Libadwaita override
         gtk4_applied = False
@@ -960,13 +979,18 @@ class ThemeManager:
             raise ThemeNotFoundError(f"Global theme '{theme_id}' not found.")
 
         logger.info("Applying global theme: '%s' (%s)", theme.name, theme.id)
-        return self.apply_themes(theme.components, propagate_sandbox=propagate_sandbox)
+        return self.apply_themes(
+            theme.components,
+            propagate_sandbox=propagate_sandbox,
+            fonts=theme.fonts,
+        )
 
     def save_current_as_global_theme(
         self,
         name: str,
         description: str = "",
         overwrite: bool = False,
+        icon_override: str | None = None,
     ) -> GlobalTheme:
         """Save active desktop configuration as a user-created Global Theme.
 
@@ -974,33 +998,72 @@ class ThemeManager:
             name: User-facing name for the theme.
             description: Optional summary description.
             overwrite: If True, replace existing user theme with same name.
+            icon_override: Optional custom icon file path for the theme.
 
         Returns:
             Saved GlobalTheme instance.
         """
         current_themes = self.get_current_themes()
+        current_fonts = None
+        try:
+            current_fonts = self.get_current_fonts()
+        except GSettingsUnavailableError as err:
+            logger.debug("Could not capture fonts for global theme: %s", err)
         return self._global_themes.save_global_theme(
             name=name,
             theme_set=current_themes,
             description=description,
             overwrite=overwrite,
+            icon_override=icon_override,
+            fonts=current_fonts,
         )
 
     def save_theme_composition(
         self,
         composition: ThemeComposition,
         overwrite: bool = False,
+        icon_override: str | None = None,
     ) -> GlobalTheme:
         """Save a ThemeComposition as a user-composed Global Theme.
 
         Args:
             composition: ThemeComposition object containing component selections.
             overwrite: If True, replace existing user theme with same name.
+            icon_override: Optional custom icon file path for the theme.
 
         Returns:
             Saved GlobalTheme instance.
         """
-        return self._theme_mixer.mix_and_save(composition, overwrite=overwrite)
+        return self._theme_mixer.mix_and_save(
+            composition, overwrite=overwrite, icon_override=icon_override
+        )
+
+    def get_current_fonts(self) -> FontConfig:
+        """Return the active system font configuration.
+
+        Returns:
+            FontConfig with current interface, document, monospace fonts and scaling.
+
+        Raises:
+            GSettingsUnavailableError: If GSettings is unavailable.
+        """
+        client = self._ensure_gsettings()
+        return client.get_fonts()
+
+    def apply_fonts(self, fonts: FontConfig) -> bool:
+        """Apply a font configuration to the active desktop (FASE 4 Task 4.3).
+
+        Args:
+            fonts: FontConfig instance with the font values to apply.
+
+        Returns:
+            True if at least one font key was applied successfully.
+
+        Raises:
+            GSettingsUnavailableError: If GSettings is unavailable.
+        """
+        client = self._ensure_gsettings()
+        return client.apply_fonts(fonts)
 
     def delete_global_theme(self, theme_id_or_name: str) -> bool:
         """Delete a user-created Global Theme.
@@ -1012,6 +1075,138 @@ class ThemeManager:
             True if deleted.
         """
         return self._global_themes.delete_global_theme(theme_id_or_name)
+
+    def update_global_theme(
+        self,
+        theme_id: str,
+        theme_set: ThemeSet,
+        description: str | None = None,
+        icon_override: str | None = None,
+        fonts: FontConfig | None = None,
+    ) -> GlobalTheme:
+        """Update an existing user-created Global Theme in place.
+
+        Args:
+            theme_id: ID or name of the user global theme to update.
+            theme_set: New component selections (ThemeSet).
+            description: Optional new description (keeps existing when None).
+            icon_override: Optional new custom icon path (keeps existing when None).
+            fonts: Optional new FontConfig (keeps existing when None).
+
+        Returns:
+            Updated GlobalTheme instance.
+        """
+        return self._global_themes.update_global_theme(
+            theme_id=theme_id,
+            theme_set=theme_set,
+            description=description,
+            icon_override=icon_override,
+            fonts=fonts,
+        )
+
+    # -------------------------------------------------------------------------
+    # Terminal Palette (Task 4.4)
+    # -------------------------------------------------------------------------
+
+    def get_current_terminal_palette(self, profile_id: str | None = None) -> TerminalPalette | None:
+        """Read current terminal palette and preferences from GNOME Terminal.
+
+        Args:
+            profile_id: Optional profile UUID.
+
+        Returns:
+            TerminalPalette if available, None otherwise.
+        """
+        from .terminal_palette import read_current_gnome_terminal_palette
+
+        return read_current_gnome_terminal_palette(profile_id=profile_id)
+
+    def get_derived_terminal_palette(self, theme_name: str | None = None) -> TerminalPalette:
+        """Derive a 16-color ANSI terminal palette from active or specified GTK theme colors.
+
+        Args:
+            theme_name: Optional theme name (uses active GTK theme if None).
+
+        Returns:
+            TerminalPalette instance.
+        """
+        from .css_extractor import extract_theme_colors
+
+        target_theme = theme_name or self.get_current_themes().gtk_theme
+        colors = None
+        if target_theme:
+            theme_obj = self._scanner.find_theme(target_theme, ThemeType.GTK)
+            if theme_obj:
+                colors = extract_theme_colors(theme_obj.path)
+
+        palette_name = f"{target_theme} Palette" if target_theme else "Desktop Theme Palette"
+        return derive_terminal_palette_from_colors(colors, name=palette_name)
+
+    def list_terminal_profiles(self) -> list[TerminalProfileSummary]:
+        """List all GNOME Terminal profiles.
+
+        Returns:
+            List of TerminalProfileSummary instances.
+        """
+        from .terminal_palette import list_gnome_terminal_profiles
+
+        return list_gnome_terminal_profiles()
+
+    def create_terminal_profile(
+        self, name: str, palette: TerminalPalette | None = None
+    ) -> str | None:
+        """Create a new GNOME Terminal profile.
+
+        Args:
+            name: Visible name for the profile.
+            palette: Optional initial palette/preferences.
+
+        Returns:
+            UUID of newly created profile, or None on failure.
+        """
+        from .terminal_palette import create_gnome_terminal_profile
+
+        return create_gnome_terminal_profile(name, palette=palette)
+
+    def delete_terminal_profile(self, profile_id: str) -> bool:
+        """Delete an inactive GNOME Terminal profile.
+
+        Args:
+            profile_id: UUID of the profile to remove.
+
+        Returns:
+            True if removed, False if profile is active/default or error occurred.
+        """
+        from .terminal_palette import delete_gnome_terminal_profile
+
+        return delete_gnome_terminal_profile(profile_id)
+
+    def set_default_terminal_profile(self, profile_id: str) -> bool:
+        """Set a GNOME Terminal profile as the default.
+
+        Args:
+            profile_id: UUID of the profile to set as default.
+
+        Returns:
+            True if successful, False otherwise.
+        """
+        from .terminal_palette import set_default_gnome_terminal_profile
+
+        return set_default_gnome_terminal_profile(profile_id)
+
+    def apply_terminal_palette(
+        self, palette: TerminalPalette, profile_id: str | None = None
+    ) -> bool:
+        """Apply terminal palette to GNOME Terminal (Task 4.4).
+
+        Args:
+            palette: TerminalPalette to apply.
+            profile_id: Optional GNOME Terminal profile UUID.
+
+        Returns:
+            True if applied successfully, False otherwise.
+        """
+        return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
 
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation
