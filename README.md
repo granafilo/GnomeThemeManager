@@ -10,9 +10,9 @@
 
 ## Project Status
 
-**Current release:** v1.2.0
+**Current release:** v1.3.0
 
-Version 1.2.0 introduces the Theme Editor, color customization forks, and wallpaper adaptive color extraction.
+Version 1.3.0 introduces resilient fallback themes across Host, Flatpak, and Snap, optional automatic User Themes extension enabling, and bundled fallback icons.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -45,7 +45,7 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.2.0 (PEP 440: 1.2.0)
+Current package version: 1.3.0 (PEP 440: 1.3.0)
 
 ## Features
 

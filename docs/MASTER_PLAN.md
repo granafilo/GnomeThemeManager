@@ -470,12 +470,12 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 - Test: lookup Gtk.IconTheme con tema privo dell'icona → fallback risolto
 
 **Acceptance Criteria globali Fase 3:**
-- [ ] Alert "missing themes" assente dal codice e dalla UI
-- [ ] Apply su tema non disponibile → fallback applicato + info banner
-- [ ] Fallback selezionabili, dropdown filtrati per disponibilità
-- [ ] Toggle auto-enable user-theme: ON silenzioso / OFF dialog
-- [ ] README con sezione permessi; UI senza placeholder icone
-- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
+- [x] Alert "missing themes" assente dal codice e dalla UI
+- [x] Apply su tema non disponibile → fallback applicato + info banner
+- [x] Fallback selezionabili, dropdown filtrati per disponibilità
+- [x] Toggle auto-enable user-theme: ON silenzioso / OFF dialog
+- [x] README con sezione permessi; UI senza placeholder icone
+- [x] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 
