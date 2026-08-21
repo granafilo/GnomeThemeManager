@@ -10,9 +10,9 @@
 
 ## Project Status
 
-**Current release:** v1.3.0
+**Current release:** v1.4.0
 
-Version 1.3.0 introduces resilient fallback themes across Host, Flatpak, and Snap, optional automatic User Themes extension enabling, and bundled fallback icons.
+Version 1.4.0 introduces in-place Global Themes editing, custom icon pickers with robust fallback handling, comprehensive Desktop Typography and Font Scaling management, and full GNOME Terminal color/profile customization.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -45,17 +45,28 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.3.0 (PEP 440: 1.3.0)
+Current package version: 1.4.0 (PEP 440: 1.4.0)
 
 ## Features
 
 - **Status & Discovery**: Read active theme status via `current` and list installed themes by category (`list`).
 - **Selective & Global Apply**: Apply individual components (GTK, icon, cursor, shell) or unified **Global Themes** in 1 click.
-- **Theme Editor & Mixer**:
+- **Global Theme & Preset Editors**:
+  - Edit existing user Global Themes in-place with instant UI updates; duplicate bundled starter themes via "Save as copy".
+  - Assign custom icons or symbolic icons to Global Theme cards with resilient fallback chains.
   - Mix and match GTK, Shell, Icons, Cursors, and Color Scheme into custom user-composed Global Themes.
   - Fine-tune GTK and GNOME Shell colors (panel, overview, text, accents) with reversible theme forking.
   - Extract adaptive dominant palettes from the desktop wallpaper with 1-click global accent application.
   - Persistent editor drafts with auto-save toggle and resume prompt.
+- **Typography & Font Management**:
+  - Manage Interface, Document, and Monospace fonts with native `Gtk.FontDialog` pickers.
+  - Control global display text scaling factor with live application and reversible reset.
+  - Embed font preferences directly inside saved Global Themes and presets.
+- **GNOME Terminal Palette & Preferences**:
+  - Manage, create, and delete GNOME Terminal profiles and configure the default profile.
+  - Derive 16-color ANSI palettes automatically from active GTK themes or custom stylesheets.
+  - Customize text/background colors, background transparency (0-100%), cursor style/blink, and audio bells.
+  - Export terminal palettes to JSON or apply them directly to GNOME Terminal profiles.
 - **Theme Previews**:
   - Live system theme preview with instant in-app hot-reload and safe auto-rollback on exit/cancel.
   - Icon pack visual preview grid rendering real GNOME app icons without altering system configuration.

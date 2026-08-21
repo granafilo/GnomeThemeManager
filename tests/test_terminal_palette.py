@@ -32,10 +32,22 @@ def test_terminal_palette_serialization_roundtrip(tmp_path: Path) -> None:
         foreground_color="#D8DEE9",
         background_color="#2E3440",
         palette=[
-            "#2E3440", "#BF616A", "#A3BE8C", "#EBCB8B",
-            "#81A1C1", "#B48EAD", "#88C0D0", "#E5E9F0",
-            "#4C566A", "#BF616A", "#A3BE8C", "#EBCB8B",
-            "#81A1C1", "#B48EAD", "#8FBCBB", "#ECEFF4",
+            "#2E3440",
+            "#BF616A",
+            "#A3BE8C",
+            "#EBCB8B",
+            "#81A1C1",
+            "#B48EAD",
+            "#88C0D0",
+            "#E5E9F0",
+            "#4C566A",
+            "#BF616A",
+            "#A3BE8C",
+            "#EBCB8B",
+            "#81A1C1",
+            "#B48EAD",
+            "#8FBCBB",
+            "#ECEFF4",
         ],
     )
     dest = tmp_path / "nord_palette.json"
@@ -72,7 +84,9 @@ def test_apply_terminal_palette_gnome_terminal() -> None:
     mock_settings_cls = MagicMock()
     mock_profile_settings = MagicMock()
     mock_settings_cls.new_with_path.return_value = mock_profile_settings
-    mock_settings_cls.return_value = MagicMock(get_strv=MagicMock(return_value=["b1dcc9dd-5262-4d8d-a863-c897e6d979b9"]))
+    mock_settings_cls.return_value = MagicMock(
+        get_strv=MagicMock(return_value=["b1dcc9dd-5262-4d8d-a863-c897e6d979b9"])
+    )
 
     palette = TerminalPalette(
         name="Test",

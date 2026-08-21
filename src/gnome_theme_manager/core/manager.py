@@ -1108,9 +1108,7 @@ class ThemeManager:
     # Terminal Palette (Task 4.4)
     # -------------------------------------------------------------------------
 
-    def get_current_terminal_palette(
-        self, profile_id: str | None = None
-    ) -> TerminalPalette | None:
+    def get_current_terminal_palette(self, profile_id: str | None = None) -> TerminalPalette | None:
         """Read current terminal palette and preferences from GNOME Terminal.
 
         Args:

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.4.0] - 2026-08-21
+
+### Added
+- **Global Theme In-Place Editing (4.1)**: Direct in-place editing of user-created Global Themes (name, description, components, icon, fonts); non-destructive "Save as copy" workflow for bundled starter themes.
+- **Custom Theme Icons & Pickers (4.2)**: User-customizable icon metadata for Global Themes with visual icon picker and graceful fallback to theme category icons.
+- **Desktop Typography & Font Editor (4.3)**: Complete font management for Interface, Document, and Monospace font categories via native `Gtk.FontDialog`; text scaling factor control (0.50x – 3.00x) and embedding font settings inside Global Themes.
+- **GNOME Terminal Palette & Preferences Editor (4.4)**: Full color customization, ANSI 16-color palette derivation from GTK styles, background transparency (0-100%), cursor and bell settings, and complete GNOME Terminal profile management (list, create, delete, and set default).
+
 ## [1.3.0] - 2026-08-21
 
 ### Added

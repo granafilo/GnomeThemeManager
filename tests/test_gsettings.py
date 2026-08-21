@@ -254,4 +254,3 @@ def test_gsettings_get_and_apply_fonts():
         assert updated.document_font == "Inter 10"
         assert updated.monospace_font == "Fira Code 12"
         assert updated.text_scaling_factor == 1.25
-

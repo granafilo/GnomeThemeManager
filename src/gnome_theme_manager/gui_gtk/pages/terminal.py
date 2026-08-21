@@ -71,8 +71,12 @@ class TerminalPage:
         self.ansi_grid_container: Gtk.Box = builder.get_object("ansi_grid_container")
 
         self.transparency_switch_row: Adw.SwitchRow = builder.get_object("transparency_switch_row")
-        self.transparency_percent_row: Adw.ActionRow = builder.get_object("transparency_percent_row")
-        self.transparency_spin_button: Gtk.SpinButton = builder.get_object("transparency_spin_button")
+        self.transparency_percent_row: Adw.ActionRow = builder.get_object(
+            "transparency_percent_row"
+        )
+        self.transparency_spin_button: Gtk.SpinButton = builder.get_object(
+            "transparency_spin_button"
+        )
 
         self.use_system_font_row: Adw.SwitchRow = builder.get_object("use_system_font_row")
         self.custom_font_row: Adw.ActionRow = builder.get_object("custom_font_row")
@@ -184,11 +188,12 @@ class TerminalPage:
             self._profiles = self.manager.list_terminal_profiles()
             if not self._profiles:
                 # Fallback: single mock item
-                self._profiles = [TerminalProfileSummary(id="default", name=_("Default"), is_default=True)]
+                self._profiles = [
+                    TerminalProfileSummary(id="default", name=_("Default"), is_default=True)
+                ]
 
             names = [
-                f"{p.name} ({_('Default')})" if p.is_default else p.name
-                for p in self._profiles
+                f"{p.name} ({_('Default')})" if p.is_default else p.name for p in self._profiles
             ]
             str_list = Gtk.StringList.new(names)
             self.profile_combo_row.set_model(str_list)
@@ -265,6 +270,7 @@ class TerminalPage:
 
     def _on_new_profile_clicked(self, _btn: Gtk.Button) -> None:
         """Prompt to create a new profile with current palette."""
+
         def on_confirm(name: str) -> None:
             if not name.strip():
                 return
@@ -375,8 +381,14 @@ class TerminalPage:
             return
 
         short_names = [
-            _("Black"), _("Red"), _("Green"), _("Yellow"),
-            _("Blue"), _("Magenta"), _("Cyan"), _("White"),
+            _("Black"),
+            _("Red"),
+            _("Green"),
+            _("Yellow"),
+            _("Blue"),
+            _("Magenta"),
+            _("Cyan"),
+            _("White"),
         ]
 
         # Container for Normal ANSI 0-7
@@ -404,9 +416,7 @@ class TerminalPage:
         bright_group.append(row2)
 
         for i in range(16):
-            default_color = (
-                DEFAULT_ANSI_PALETTE[i] if i < len(DEFAULT_ANSI_PALETTE) else "#ffffff"
-            )
+            default_color = DEFAULT_ANSI_PALETTE[i] if i < len(DEFAULT_ANSI_PALETTE) else "#ffffff"
             col_name = short_names[i % 8]
             is_bright = i >= 8
             full_title = f"{'Bright ' if is_bright else ''}{col_name} (ANSI {i})"
@@ -495,8 +505,12 @@ class TerminalPage:
                 font_name = fdesc.to_string()
 
         use_sys_font = self.use_system_font_row.get_active() if self.use_system_font_row else True
-        use_trans = self.transparency_switch_row.get_active() if self.transparency_switch_row else False
-        trans_pct = int(self.transparency_spin_button.get_value()) if self.transparency_spin_button else 0
+        use_trans = (
+            self.transparency_switch_row.get_active() if self.transparency_switch_row else False
+        )
+        trans_pct = (
+            int(self.transparency_spin_button.get_value()) if self.transparency_spin_button else 0
+        )
         aud_bell = self.audible_bell_row.get_active() if self.audible_bell_row else False
 
         return TerminalPalette(
@@ -542,7 +556,9 @@ class TerminalPage:
         fg = self.fg_picker.get_color_hex()
 
         c_blue = self._ansi_pickers[4].get_color_hex() if len(self._ansi_pickers) > 4 else "#3584e4"
-        c_green = self._ansi_pickers[2].get_color_hex() if len(self._ansi_pickers) > 2 else "#26a269"
+        c_green = (
+            self._ansi_pickers[2].get_color_hex() if len(self._ansi_pickers) > 2 else "#26a269"
+        )
         c_red = self._ansi_pickers[1].get_color_hex() if len(self._ansi_pickers) > 1 else "#c01c28"
         c_mag = self._ansi_pickers[5].get_color_hex() if len(self._ansi_pickers) > 5 else "#a347ba"
         c_yel = self._ansi_pickers[3].get_color_hex() if len(self._ansi_pickers) > 3 else "#e9ad0c"
@@ -556,6 +572,7 @@ class TerminalPage:
             else:
                 self._preview_css_provider.load_from_data(css_data.encode("utf-8"))
             from gi.repository import Gdk
+
             display = Gdk.Display.get_default()
             if display is not None:
                 Gtk.StyleContext.add_provider_for_display(

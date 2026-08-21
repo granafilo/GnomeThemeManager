@@ -254,9 +254,7 @@ def create_gnome_terminal_profile(
             profiles_settings.set_strv("list", current_list)
 
         path = f"/org/gnome/terminal/legacy/profiles:/:{new_id}/"
-        prof_settings = Gio.Settings.new_with_path(
-            "org.gnome.Terminal.Legacy.Profile", path
-        )
+        prof_settings = Gio.Settings.new_with_path("org.gnome.Terminal.Legacy.Profile", path)
         prof_settings.set_string("visible-name", name)
 
         if palette:

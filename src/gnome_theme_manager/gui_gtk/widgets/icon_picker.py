@@ -256,9 +256,7 @@ class IconPickerButton(Gtk.Box):
         if self._icon_name:
             self._preview_image.set_from_icon_name(self._icon_name)
             # Friendly label or truncated name
-            clean_name = (
-                self._icon_name.removesuffix("-symbolic").replace("-", " ").title()
-            )
+            clean_name = self._icon_name.removesuffix("-symbolic").replace("-", " ").title()
             self._label.set_text(clean_name)
             self._clear_btn.set_visible(True)
         else:

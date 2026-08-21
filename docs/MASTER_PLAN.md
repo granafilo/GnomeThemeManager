@@ -517,11 +517,11 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 - Se troppo complesso: saltare → TODO documentato (regola §3.0 P3)
 
 **Acceptance Criteria globali Fase 4:**
-- [ ] Edit Global Theme user in-place; bundled → save as copy
-- [ ] Icone custom sulle card con fallback
-- [ ] Font editor applica le 4 chiavi; `fonts` nei preset funzionante
-- [ ] (Stretch) terminal applicato o TODO documentato
-- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
+- [x] Edit Global Theme user in-place; bundled → save as copy
+- [x] Icone custom sulle card con fallback
+- [x] Font editor applica le 4 chiavi; `fonts` nei preset funzionante
+- [x] (Stretch) terminal applicato o TODO documentato
+- [x] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 

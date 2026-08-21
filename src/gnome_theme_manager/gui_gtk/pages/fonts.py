@@ -155,15 +155,9 @@ class FontsPage:
             return
 
         self._available = True
-        self._set_button_font(
-            self.interface_font_btn, fonts.interface_font, DEFAULT_INTERFACE_FONT
-        )
-        self._set_button_font(
-            self.document_font_btn, fonts.document_font, DEFAULT_DOCUMENT_FONT
-        )
-        self._set_button_font(
-            self.monospace_font_btn, fonts.monospace_font, DEFAULT_MONOSPACE_FONT
-        )
+        self._set_button_font(self.interface_font_btn, fonts.interface_font, DEFAULT_INTERFACE_FONT)
+        self._set_button_font(self.document_font_btn, fonts.document_font, DEFAULT_DOCUMENT_FONT)
+        self._set_button_font(self.monospace_font_btn, fonts.monospace_font, DEFAULT_MONOSPACE_FONT)
 
         if fonts.text_scaling_factor is not None:
             self.scale_spin.set_value(float(fonts.text_scaling_factor))
