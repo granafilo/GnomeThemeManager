@@ -36,6 +36,7 @@ def _parse_po_file(po_path: Path) -> dict[str, str]:
         if s.startswith('"') and s.endswith('"'):
             s = s[1:-1]
         import codecs
+
         return codecs.decode(s.encode("raw_unicode_escape"), "unicode_escape")
 
     for line in lines:

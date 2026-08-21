@@ -2060,6 +2060,45 @@ msgstr "Reset GTK Colors"
 msgid "Restore GTK colors to original theme defaults"
 msgstr "Restore GTK colors to original theme defaults"
 
+msgid "Fallback Themes"
+msgstr "Fallback Themes"
+
+msgid "Themes used automatically when requested themes are not installed on host or sandbox environments."
+msgstr "Themes used automatically when requested themes are not installed on host or sandbox environments."
+
+msgid "GTK3 Fallback"
+msgstr "GTK3 Fallback"
+
+msgid "Fallback theme for GTK3 applications"
+msgstr "Fallback theme for GTK3 applications"
+
+msgid "GTK4 Fallback"
+msgstr "GTK4 Fallback"
+
+msgid "Fallback theme for GTK4 and Libadwaita applications"
+msgstr "Fallback theme for GTK4 and Libadwaita applications"
+
+msgid "GNOME Shell Fallback"
+msgstr "GNOME Shell Fallback"
+
+msgid "Fallback theme for GNOME Shell"
+msgstr "Fallback theme for GNOME Shell"
+
+msgid "Icons Fallback"
+msgstr "Icons Fallback"
+
+msgid "Fallback pack for icons"
+msgstr "Fallback pack for icons"
+
+msgid "Cursors Fallback"
+msgstr "Cursors Fallback"
+
+msgid "Fallback theme for mouse cursors"
+msgstr "Fallback theme for mouse cursors"
+
+msgid "Fallback"
+msgstr "Fallback"
+
 
 
 

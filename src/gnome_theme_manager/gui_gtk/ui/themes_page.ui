@@ -45,6 +45,13 @@
             <property name="vexpand">true</property>
             <property name="hexpand">true</property>
 
+            <!-- Info banner for warnings/fallbacks -->
+            <child>
+              <object class="AdwBanner" id="banner_warning">
+                <property name="revealed">false</property>
+              </object>
+            </child>
+
             <!-- Main scrollable area containing Active Card and Available List -->
             <child>
               <object class="GtkScrolledWindow" id="themes_scrolled_window">

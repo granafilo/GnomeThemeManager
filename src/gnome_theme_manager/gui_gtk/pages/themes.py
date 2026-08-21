@@ -156,6 +156,7 @@ class ThemesPage:
         }
 
         self.widget: Gtk.Stack = self.builder.get_object("page_root")
+        self.banner_warning: Adw.Banner = self.builder.get_object("banner_warning")
         self.loading_spinner: Gtk.Spinner = self.builder.get_object("loading_spinner")
         self.category_title_label: Gtk.Label = self.builder.get_object("category_title_label")
 
@@ -444,7 +445,7 @@ class ThemesPage:
         elif active_theme_name:
             self.active_theme_row.set_title(active_theme_name)
             self.active_theme_row.set_subtitle(_("Theme not found in local directories"))
-            self.active_theme_badge.set_text(_("Not found"))
+            self.active_theme_badge.set_text(_("Fallback"))
             self.active_theme_badge.set_visible(True)
         else:
             self.active_theme_row.set_title(_("Not available"))

@@ -181,7 +181,70 @@
                   </object>
                 </child>
 
-                <!-- Group 4: Sandbox (Flatpak and Snap) -->
+                <!-- Group 4: Fallback Themes -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_fallbacks">
+                    <property name="title" translatable="yes">Fallback Themes</property>
+                    <property name="description" translatable="yes">Themes used automatically when requested themes are not installed on host or sandbox environments.</property>
+                    <child>
+                      <object class="AdwActionRow" id="row_fallback_gtk3">
+                        <property name="title" translatable="yes">GTK3 Fallback</property>
+                        <property name="subtitle" translatable="yes">Fallback theme for GTK3 applications</property>
+                        <child type="suffix">
+                          <object class="GtkDropDown" id="dropdown_fallback_gtk3">
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_fallback_gtk4">
+                        <property name="title" translatable="yes">GTK4 Fallback</property>
+                        <property name="subtitle" translatable="yes">Fallback theme for GTK4 and Libadwaita applications</property>
+                        <child type="suffix">
+                          <object class="GtkDropDown" id="dropdown_fallback_gtk4">
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_fallback_shell">
+                        <property name="title" translatable="yes">GNOME Shell Fallback</property>
+                        <property name="subtitle" translatable="yes">Fallback theme for GNOME Shell</property>
+                        <child type="suffix">
+                          <object class="GtkDropDown" id="dropdown_fallback_shell">
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_fallback_icons">
+                        <property name="title" translatable="yes">Icons Fallback</property>
+                        <property name="subtitle" translatable="yes">Fallback pack for icons</property>
+                        <child type="suffix">
+                          <object class="GtkDropDown" id="dropdown_fallback_icons">
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwActionRow" id="row_fallback_cursors">
+                        <property name="title" translatable="yes">Cursors Fallback</property>
+                        <property name="subtitle" translatable="yes">Fallback theme for mouse cursors</property>
+                        <child type="suffix">
+                          <object class="GtkDropDown" id="dropdown_fallback_cursors">
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Group 5: Sandbox (Flatpak and Snap) -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_sandbox">
                     <property name="title" translatable="yes">Sandbox Integration (Snap &amp;amp; Flatpak)</property>

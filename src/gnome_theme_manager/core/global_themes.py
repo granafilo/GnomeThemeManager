@@ -17,6 +17,7 @@ from typing import Any, Literal
 from .constants import GLOBAL_THEMES_FILE, PRESETS_DIR
 from .models import ThemeSet, ThemeType
 from .scanner import ThemeScanner
+from .theme_validator import ThemeValidator
 
 logger = logging.getLogger("gnome_theme_manager.core.global_themes")
 
@@ -125,6 +126,7 @@ class GlobalThemeManager:
         state_file: Path | None = None,
         scanner: ThemeScanner | None = None,
         current_themes_provider: Callable[[], ThemeSet] | None = None,
+        validator: ThemeValidator | None = None,
     ) -> None:
         """Initialize GlobalThemeManager.
 
@@ -134,6 +136,7 @@ class GlobalThemeManager:
             state_file: Path to global_themes.json in state directory.
             scanner: ThemeScanner instance to discover real installed themes.
             current_themes_provider: Optional callable returning current ThemeSet.
+            validator: ThemeValidator instance to verify component completeness.
         """
         self._bundled_dir = (
             Path(bundled_dir).expanduser() if bundled_dir is not None else BUNDLED_GLOBAL_THEMES_DIR
@@ -150,6 +153,7 @@ class GlobalThemeManager:
         )
         self._scanner = scanner or ThemeScanner()
         self._current_themes_provider = current_themes_provider
+        self._validator = validator or ThemeValidator()
 
     def _sanitize_name(self, name: str) -> str:
         """Validate and sanitize global theme name preventing path traversal and illegal characters."""
@@ -259,6 +263,32 @@ class GlobalThemeManager:
         all_state = self._load_state_themes()
         updated = [t for t in all_state if t.id != target.id and t.name != target.name]
         self._save_state_themes(updated)
+
+        # Also remove from user_presets (presets.json) if it exists there
+        presets_file = self._user_presets_dir / "presets.json"
+        if presets_file.is_file():
+            try:
+                content = presets_file.read_text(encoding="utf-8")
+                data = json.loads(content)
+                if isinstance(data, dict):
+                    preset_items = data.get("presets", [])
+                    filtered_presets = [
+                        p
+                        for p in preset_items
+                        if isinstance(p, dict)
+                        and p.get("name") != target.name
+                        and f"user-{str(p.get('name', '')).lower().replace(' ', '-')}" != target.id
+                    ]
+                    if len(filtered_presets) != len(preset_items):
+                        data["presets"] = filtered_presets
+                        presets_file.write_text(
+                            json.dumps(data, indent=2, sort_keys=True), encoding="utf-8"
+                        )
+            except Exception as err:
+                logger.warning(
+                    "Failed to clean up preset '%s' from presets.json: %s", target.name, err
+                )
+
         logger.info("Global Theme '%s' deleted successfully.", target.name)
         return True
 
@@ -280,19 +310,34 @@ class GlobalThemeManager:
             )
             generated.append(current_theme)
 
-        # Get all installed themes per component
-        if hasattr(self._scanner, "scan_gtk_themes"):
-            gtk_themes = [t.name for t in self._scanner.scan_gtk_themes()]
-            icon_themes = [t.name for t in self._scanner.scan_icon_themes()]
-            cursor_themes = [t.name for t in self._scanner.scan_cursor_themes()]
-            shell_themes = [t.name for t in self._scanner.scan_shell_themes()]
-        elif hasattr(self._scanner, "list_themes"):
-            gtk_themes = [t.name for t in self._scanner.list_themes(ThemeType.GTK)]
-            icon_themes = [t.name for t in self._scanner.list_themes(ThemeType.ICON)]
-            cursor_themes = [t.name for t in self._scanner.list_themes(ThemeType.CURSOR)]
-            shell_themes = [t.name for t in self._scanner.list_themes(ThemeType.SHELL)]
-        else:
-            gtk_themes, icon_themes, cursor_themes, shell_themes = [], [], [], []
+        # Get valid system-only themes per component
+        def get_valid_system_names(target_type: ThemeType) -> list[str]:
+            if hasattr(self._scanner, "list_themes"):
+                scanned = self._scanner.list_themes(target_type, user_only=False)
+            elif hasattr(self._scanner, "scan_gtk_themes") and target_type == ThemeType.GTK:
+                scanned = self._scanner.scan_gtk_themes(user_only=False)
+            elif hasattr(self._scanner, "scan_icon_themes") and target_type == ThemeType.ICON:
+                scanned = self._scanner.scan_icon_themes(user_only=False)
+            elif hasattr(self._scanner, "scan_cursor_themes") and target_type == ThemeType.CURSOR:
+                scanned = self._scanner.scan_cursor_themes(user_only=False)
+            elif hasattr(self._scanner, "scan_shell_themes") and target_type == ThemeType.SHELL:
+                scanned = self._scanner.scan_shell_themes(user_only=False)
+            else:
+                scanned = []
+
+            # Keep only system-level themes that are completely valid
+            valid_names: list[str] = []
+            for t in scanned:
+                if not t.is_user_level:
+                    val_res = self._validator.validate(t.path, t.theme_type)
+                    if val_res.valid:
+                        valid_names.append(t.name)
+            return valid_names
+
+        gtk_themes = get_valid_system_names(ThemeType.GTK)
+        icon_themes = get_valid_system_names(ThemeType.ICON)
+        cursor_themes = get_valid_system_names(ThemeType.CURSOR)
+        shell_themes = get_valid_system_names(ThemeType.SHELL)
 
         def pick_match(
             pool: list[str], keywords: list[str], fallback: str | None = None
@@ -305,31 +350,41 @@ class GlobalThemeManager:
                 return pool[0]
             return fallback
 
-        # 2. Dark theme suite
+        # 2. Dark theme suite (composed strictly from valid system themes)
         dark_gtk = pick_match(
-            gtk_themes, ["dark", "night", "black"], fallback=current.gtk_theme if current else None
+            gtk_themes,
+            ["yaru-dark", "adwaita-dark", "dark", "night", "black"],
+            fallback="Yaru-dark"
+            if "Yaru-dark" in gtk_themes
+            else (gtk_themes[0] if gtk_themes else None),
         )
         dark_icon = pick_match(
             icon_themes,
-            ["dark", "papirus-dark", "yaru-dark", "black"],
-            fallback=current.icon_theme if current else None,
+            ["yaru-dark", "papirus-dark", "humanity-dark", "ubuntu-mono-dark", "dark"],
+            fallback="Yaru-dark"
+            if "Yaru-dark" in icon_themes
+            else (icon_themes[0] if icon_themes else None),
         )
         dark_cursor = pick_match(
             cursor_themes,
-            ["dark", "bibata", "yaru", "adwaita"],
-            fallback=current.cursor_theme if current else None,
+            ["dmz-black", "yaru", "adwaita", "dark"],
+            fallback="Yaru"
+            if "Yaru" in cursor_themes
+            else (cursor_themes[0] if cursor_themes else None),
         )
         dark_shell = pick_match(
             shell_themes,
-            ["dark", "yaru", "default"],
-            fallback=current.shell_theme if current else None,
+            ["yaru-dark", "yaru", "default", "dark"],
+            fallback="Yaru-dark"
+            if "Yaru-dark" in shell_themes
+            else (shell_themes[0] if shell_themes else None),
         )
 
         if dark_gtk or dark_icon:
             dark_theme = GlobalTheme(
                 id="auto-dark",
                 name="Dark Suite",
-                description="Cohesive dark style using themes detected on your system.",
+                description="Cohesive dark style using verified system themes.",
                 components=ThemeSet(
                     gtk_theme=dark_gtk,
                     icon_theme=dark_icon,
@@ -337,37 +392,41 @@ class GlobalThemeManager:
                     shell_theme=dark_shell,
                     color_scheme="prefer-dark",
                 ),
-                author="Auto-Generated",
+                author="System",
                 is_bundled=True,
-                tags=["dark"],
+                tags=["dark", "system"],
             )
             generated.append(dark_theme)
 
-        # 3. Light / Modern theme suite
-        light_gtk = pick_match(
-            gtk_themes, ["light", "yaru", "adwaita"], fallback=gtk_themes[0] if gtk_themes else None
+        # 3. Light / Modern theme suite (composed strictly from valid system themes)
+        def pick_light(pool: list[str]) -> str | None:
+            for exact in ("Yaru", "Adwaita"):
+                if exact in pool:
+                    return exact
+            for kw in ("light", "yaru", "adwaita"):
+                for item in pool:
+                    if kw.lower() in item.lower() and "dark" not in item.lower():
+                        return item
+            return pool[0] if pool else None
+
+        light_gtk = pick_light(gtk_themes)
+        light_icon = pick_light(icon_themes)
+        light_cursor = (
+            "Adwaita"
+            if "Adwaita" in cursor_themes
+            else (
+                "Yaru"
+                if "Yaru" in cursor_themes
+                else pick_match(cursor_themes, ["dmz-white", "light"])
+            )
         )
-        light_icon = pick_match(
-            icon_themes,
-            ["light", "papirus", "yaru", "adwaita"],
-            fallback=icon_themes[0] if icon_themes else None,
-        )
-        light_cursor = pick_match(
-            cursor_themes,
-            ["light", "adwaita", "yaru"],
-            fallback=cursor_themes[0] if cursor_themes else None,
-        )
-        light_shell = pick_match(
-            shell_themes,
-            ["light", "yaru", "default"],
-            fallback=shell_themes[0] if shell_themes else None,
-        )
+        light_shell = pick_light(shell_themes)
 
         if light_gtk or light_icon:
             light_theme = GlobalTheme(
                 id="auto-light",
                 name="Light Suite",
-                description="Clean light desktop appearance using themes detected on your system.",
+                description="Clean light desktop appearance using verified system themes.",
                 components=ThemeSet(
                     gtk_theme=light_gtk,
                     icon_theme=light_icon,
@@ -375,9 +434,9 @@ class GlobalThemeManager:
                     shell_theme=light_shell,
                     color_scheme="prefer-light",
                 ),
-                author="Auto-Generated",
+                author="System",
                 is_bundled=True,
-                tags=["light"],
+                tags=["light", "system"],
             )
             generated.append(light_theme)
 

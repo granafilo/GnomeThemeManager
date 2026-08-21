@@ -46,6 +46,9 @@ EDITOR_DRAFT_FILE = STATE_DIR / "editor_draft.json"
 # Persistent editor settings state file (~/.local/state/gnome-theme-manager/editor_settings.json)
 EDITOR_SETTINGS_FILE = STATE_DIR / "editor_settings.json"
 
+# Persistent fallback configuration file (~/.local/state/gnome-theme-manager/fallbacks.json)
+FALLBACKS_FILE = STATE_DIR / "fallbacks.json"
+
 
 # -----------------------------------------------------------------------------
 # Dynamic Theme and Icon Path Resolution (XDG Standard + Legacy Fallback)

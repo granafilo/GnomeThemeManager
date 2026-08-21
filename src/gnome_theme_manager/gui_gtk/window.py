@@ -171,12 +171,16 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "global_themes", is_l
         )
-        self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(msg)
+        self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "editor", is_l
         )
-        self.editor_page.on_notify_message = lambda msg, is_err: self.add_toast(msg)
+        self.editor_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
         self.editor_page.on_theme_saved = lambda saved: self.global_themes_page.refresh()
 
         def _on_global_theme_applied_callback(theme_id: str, result: Any) -> None:
@@ -208,7 +212,6 @@ class MainWindow(Adw.ApplicationWindow):
         self.sandbox_page.on_sandbox_propagated = _on_sandbox_propagated_callback
 
         self.select_page("status")
-        self.status_page.refresh()
 
         self._setup_shortcuts(app)
         self._setup_focus_behavior()
@@ -415,12 +418,13 @@ class MainWindow(Adw.ApplicationWindow):
         """Dismiss top feedback notification on close button click."""
         self.clear_feedback()
 
-    def add_toast(self, message: str, timeout: int = 0) -> None:
+    def add_toast(self, message: str, timeout: int = 0, is_error: bool = False) -> None:
         """Display a feedback notification in top area of window.
 
         Args:
             message: Message text to display.
             timeout: Seconds before dismissal (0 = persistent until next user action).
+            is_error: Explicit flag indicating whether this is an error notification.
         """
         if self._feedback_timeout_id is not None:
             GLib.source_remove(self._feedback_timeout_id)
@@ -429,27 +433,54 @@ class MainWindow(Adw.ApplicationWindow):
         if self.feedback_label is not None:
             self.feedback_label.set_label(message)
 
+        msg_lower = message.lower()
+        has_error_kw = (
+            is_error
+            or "error" in msg_lower
+            or "failed" in msg_lower
+            or "unable" in msg_lower
+            or "impossibile" in msg_lower
+            or "errore" in msg_lower
+            or "fallit" in msg_lower
+            or "invalid" in msg_lower
+            or "non valid" in msg_lower
+        )
+        has_warning_kw = (
+            "warning" in msg_lower
+            or "partial" in msg_lower
+            or "avvis" in msg_lower
+            or "incompleto" in msg_lower
+        )
+        has_deleted_kw = (
+            "deleted" in msg_lower
+            or "removed" in msg_lower
+            or "rimoss" in msg_lower
+            or "eliminat" in msg_lower
+        )
+
         if self.feedback_icon is not None:
-            msg_lower = message.lower()
-            if (
-                "error" in msg_lower
-                or "failed" in msg_lower
-                or "unable" in msg_lower
-                or "errore" in msg_lower
-                or "fallit" in msg_lower
-            ):
+            if has_error_kw:
                 self.feedback_icon.set_from_icon_name("dialog-error-symbolic")
-            elif "warning" in msg_lower or "partial" in msg_lower or "avvis" in msg_lower:
+            elif has_warning_kw:
                 self.feedback_icon.set_from_icon_name("dialog-warning-symbolic")
-            elif (
-                "deleted" in msg_lower
-                or "removed" in msg_lower
-                or "rimoss" in msg_lower
-                or "eliminat" in msg_lower
-            ):
+            elif has_deleted_kw:
                 self.feedback_icon.set_from_icon_name("user-trash-symbolic")
             else:
                 self.feedback_icon.set_from_icon_name("emblem-ok-symbolic")
+
+        if self.feedback_box is not None:
+            if has_error_kw:
+                self.feedback_box.add_css_class("error")
+                self.feedback_box.remove_css_class("warning")
+                self.feedback_box.remove_css_class("success")
+            elif has_warning_kw:
+                self.feedback_box.add_css_class("warning")
+                self.feedback_box.remove_css_class("error")
+                self.feedback_box.remove_css_class("success")
+            else:
+                self.feedback_box.add_css_class("success")
+                self.feedback_box.remove_css_class("error")
+                self.feedback_box.remove_css_class("warning")
 
         if self.feedback_revealer is not None:
             self.feedback_revealer.set_reveal_child(True)

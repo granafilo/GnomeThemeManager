@@ -4,7 +4,7 @@
 **Autore:** Planning Agent
 **Destinatario:** Coding Agent
 **Repo:** https://github.com/granafilo/GnomeThemeManager
-**Stato:** FASE 0 ✅ COMPLETATA (agosto 2026) → prossimo: CHORE English-first, poi FASE 1
+**Stato:** FASE 2 ✅ COMPLETATA (agosto 2026) → prossimo: FASE 3
 **Target finale:** parità funzionale con Evolve Core v1.7 (free) + feature differenzianti open-source
 
 ---
