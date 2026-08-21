@@ -37,7 +37,7 @@ class SandboxPage:
     """Controller for 'Sandbox Tools' GTK4/Libadwaita GUI view."""
 
     PAGE_ID: str = "sandbox"
-    ICON_NAME: str = "security-high-symbolic"
+    ICON_NAME: str = "changes-allow-symbolic"
 
     def __init__(self, manager: "ThemeManager | None" = None) -> None:
         """Initialize controller loading sandbox_page.ui template."""
@@ -76,9 +76,9 @@ class SandboxPage:
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
         self._button_configs: dict[str, tuple[str, str]] = {
-            "refresh_button": (_("Refresh Status"), "view-refresh-symbolic"),
+            "refresh_button": (_("Refresh Status"), "emblem-synchronizing-symbolic"),
             "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
-            "error_retry_button": (_("Retry"), "view-refresh-symbolic"),
+            "error_retry_button": (_("Retry"), "emblem-synchronizing-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
             btn = getattr(self, btn_attr, None)

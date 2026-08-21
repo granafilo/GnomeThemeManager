@@ -7,8 +7,8 @@
   <object class="AdwToastOverlay" id="toast_overlay">
     <property name="child">
       <object class="AdwNavigationSplitView" id="split_view">
-        <property name="min-sidebar-width">200</property>
-        <property name="max-sidebar-width">280</property>
+        <property name="min-sidebar-width">220</property>
+        <property name="max-sidebar-width">300</property>
         <property name="sidebar">
           <object class="AdwNavigationPage" id="sidebar_page">
             <property name="title" translatable="yes">GNOME Theme Manager</property>
@@ -39,11 +39,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                                    <property name="icon-name">system-users-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -51,6 +52,9 @@
                                     <property name="label" translatable="yes">Current Status</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -65,11 +69,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">preferences-system-windows-symbolic</property>
+                                    <property name="icon-name">user-desktop-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -77,6 +82,9 @@
                                     <property name="label" translatable="yes">GNOME Shell</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -91,11 +99,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                                    <property name="icon-name">app-logo-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -103,6 +112,9 @@
                                     <property name="label" translatable="yes">Applications (GTK)</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -117,11 +129,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">applications-graphics-symbolic</property>
+                                    <property name="icon-name">face-slightly-smiling-plus-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -129,6 +142,9 @@
                                     <property name="label" translatable="yes">Icons</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -143,11 +159,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">input-mouse-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -155,6 +172,9 @@
                                     <property name="label" translatable="yes">Cursors</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -169,11 +189,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">starred-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -181,6 +202,9 @@
                                     <property name="label" translatable="yes">Global Themes</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -195,11 +219,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">preferences-color-symbolic</property>
+                                    <property name="icon-name">applications-graphics-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -207,6 +232,9 @@
                                     <property name="label" translatable="yes">Theme Editor</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -221,11 +249,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">system-software-install-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -233,6 +262,9 @@
                                     <property name="label" translatable="yes">Theme Installer</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -247,11 +279,12 @@
                                 <property name="spacing">12</property>
                                 <property name="margin-start">12</property>
                                 <property name="margin-end">12</property>
-                                <property name="margin-top">8</property>
-                                <property name="margin-bottom">8</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
-                                    <property name="icon-name">security-high-symbolic</property>
+                                    <property name="icon-name">changes-allow-symbolic</property>
+                                    <property name="pixel-size">20</property>
                                   </object>
                                 </child>
                                 <child>
@@ -259,6 +292,9 @@
                                     <property name="label" translatable="yes">Sandbox Tools</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -285,7 +321,7 @@
                     <property name="show-end-title-buttons">true</property>
                     <child type="end">
                       <object class="GtkButton" id="refresh_button">
-                        <property name="icon-name">view-refresh-symbolic</property>
+                        <property name="icon-name">emblem-synchronizing-symbolic</property>
                         <property name="tooltip-text" translatable="yes">Refresh current status</property>
                         <style>
                           <class name="flat"/>
@@ -335,7 +371,7 @@
                             </child>
                             <child>
                               <object class="GtkButton" id="feedback_close_button">
-                                <property name="icon-name">window-close-symbolic</property>
+                                <property name="icon-name">application-exit-symbolic</property>
                                 <property name="tooltip-text" translatable="yes">Dismiss notification</property>
                                 <property name="valign">center</property>
                                 <style>

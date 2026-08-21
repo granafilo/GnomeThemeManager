@@ -69,7 +69,8 @@
                         <property name="subtitle" translatable="yes">Not set</property>
                         <child type="prefix">
                           <object class="GtkImage">
-                            <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                            <property name="icon-name">app-logo-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -80,7 +81,8 @@
                         <property name="subtitle" translatable="yes">Not set</property>
                         <child type="prefix">
                           <object class="GtkImage">
-                            <property name="icon-name">applications-graphics-symbolic</property>
+                            <property name="icon-name">face-slightly-smiling-plus-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -92,6 +94,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">input-mouse-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -102,7 +105,8 @@
                         <property name="subtitle" translatable="yes">System Default</property>
                         <child type="prefix">
                           <object class="GtkImage">
-                            <property name="icon-name">preferences-system-windows-symbolic</property>
+                            <property name="icon-name">user-desktop-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -114,6 +118,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">weather-clear-night-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -132,7 +137,8 @@
                         <property name="subtitle" translatable="yes">Not available (applied during theme switch)</property>
                         <child type="prefix">
                           <object class="GtkImage">
-                            <property name="icon-name">system-run-symbolic</property>
+                            <property name="icon-name">utilities-system-monitor-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -152,6 +158,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">emblem-default-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -163,6 +170,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">folder-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -174,6 +182,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">folder-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -187,58 +196,33 @@
                     <property name="title" translatable="yes">Fallback Themes</property>
                     <property name="description" translatable="yes">Themes used automatically when requested themes are not installed on host or sandbox environments.</property>
                     <child>
-                      <object class="AdwActionRow" id="row_fallback_gtk3">
+                      <object class="AdwComboRow" id="dropdown_fallback_gtk3">
                         <property name="title" translatable="yes">GTK3 Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GTK3 applications</property>
-                        <child type="suffix">
-                          <object class="GtkDropDown" id="dropdown_fallback_gtk3">
-                            <property name="valign">center</property>
-                          </object>
-                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwActionRow" id="row_fallback_gtk4">
+                      <object class="AdwComboRow" id="dropdown_fallback_gtk4">
                         <property name="title" translatable="yes">GTK4 Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GTK4 and Libadwaita applications</property>
-                        <child type="suffix">
-                          <object class="GtkDropDown" id="dropdown_fallback_gtk4">
-                            <property name="valign">center</property>
-                          </object>
-                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwActionRow" id="row_fallback_shell">
+                      <object class="AdwComboRow" id="dropdown_fallback_shell">
                         <property name="title" translatable="yes">GNOME Shell Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GNOME Shell</property>
-                        <child type="suffix">
-                          <object class="GtkDropDown" id="dropdown_fallback_shell">
-                            <property name="valign">center</property>
-                          </object>
-                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwActionRow" id="row_fallback_icons">
+                      <object class="AdwComboRow" id="dropdown_fallback_icons">
                         <property name="title" translatable="yes">Icons Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback pack for icons</property>
-                        <child type="suffix">
-                          <object class="GtkDropDown" id="dropdown_fallback_icons">
-                            <property name="valign">center</property>
-                          </object>
-                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="AdwActionRow" id="row_fallback_cursors">
+                      <object class="AdwComboRow" id="dropdown_fallback_cursors">
                         <property name="title" translatable="yes">Cursors Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for mouse cursors</property>
-                        <child type="suffix">
-                          <object class="GtkDropDown" id="dropdown_fallback_cursors">
-                            <property name="valign">center</property>
-                          </object>
-                        </child>
                       </object>
                     </child>
                   </object>
@@ -269,7 +253,8 @@
                         <property name="subtitle" translatable="yes">Available</property>
                         <child type="prefix">
                           <object class="GtkImage">
-                            <property name="icon-name">application-x-executable-symbolic</property>
+                            <property name="icon-name">flatpak-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>
@@ -281,6 +266,7 @@
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">package-x-generic-symbolic</property>
+                            <property name="pixel-size">24</property>
                           </object>
                         </child>
                       </object>

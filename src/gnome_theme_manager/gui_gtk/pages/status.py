@@ -162,20 +162,20 @@ class StatusPage:
         self.row_flatpak_status: Adw.ActionRow = self.builder.get_object("row_flatpak_status")
         self.row_snap_status: Adw.ActionRow = self.builder.get_object("row_snap_status")
 
-        # Fallback Dropdowns (Task 3.1)
-        self.dropdown_fallback_gtk3: Gtk.DropDown = self.builder.get_object(
+        # Fallback Dropdowns (Task 3.1 - AdwComboRow)
+        self.dropdown_fallback_gtk3: Adw.ComboRow = self.builder.get_object(
             "dropdown_fallback_gtk3"
         )
-        self.dropdown_fallback_gtk4: Gtk.DropDown = self.builder.get_object(
+        self.dropdown_fallback_gtk4: Adw.ComboRow = self.builder.get_object(
             "dropdown_fallback_gtk4"
         )
-        self.dropdown_fallback_shell: Gtk.DropDown = self.builder.get_object(
+        self.dropdown_fallback_shell: Adw.ComboRow = self.builder.get_object(
             "dropdown_fallback_shell"
         )
-        self.dropdown_fallback_icons: Gtk.DropDown = self.builder.get_object(
+        self.dropdown_fallback_icons: Adw.ComboRow = self.builder.get_object(
             "dropdown_fallback_icons"
         )
-        self.dropdown_fallback_cursors: Gtk.DropDown = self.builder.get_object(
+        self.dropdown_fallback_cursors: Adw.ComboRow = self.builder.get_object(
             "dropdown_fallback_cursors"
         )
 

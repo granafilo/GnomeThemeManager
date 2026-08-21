@@ -22,7 +22,7 @@ from gnome_theme_manager import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
@@ -40,8 +40,33 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk.window")
 # Path to associated UI template file
 UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 
+# Path to bundled fallback icons directory (data/icons)
+BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons"
+
 # Threshold for responsive automatic collapse (collapsible sidebar)
 COLLAPSE_BREAKPOINT_WIDTH: int = 700
+
+
+def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
+    """Register bundled icons directory in the Gtk.IconTheme search path chain."""
+    if not BUNDLED_ICONS_DIR.is_dir():
+        return
+
+    try:
+        theme = icon_theme
+        if theme is None:
+            display = Gdk.Display.get_default()
+            if display is not None:
+                theme = Gtk.IconTheme.get_for_display(display)
+
+        if theme is not None and hasattr(theme, "add_search_path"):
+            current_paths = theme.get_search_path() if hasattr(theme, "get_search_path") else []
+            bundled_str = str(BUNDLED_ICONS_DIR)
+            if bundled_str not in current_paths:
+                theme.add_search_path(bundled_str)
+                logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", bundled_str)
+    except Exception as err:
+        logger.warning("Failed to initialize bundled icon theme: %s", err)
 
 
 class MainWindow(Adw.ApplicationWindow):
@@ -59,9 +84,15 @@ class MainWindow(Adw.ApplicationWindow):
         """
         super().__init__(application=app, title=_("GNOME Theme Manager"))
 
-        # Minimum sizing (required by Libadwaita) and initial default size
-        self.set_size_request(860, 520)
-        self.set_default_size(1000, 700)
+        # Initialize bundled icons fallback chain
+        init_bundled_icon_theme()
+
+        # Minimum sizing ensuring all pages/cards are fully visible without truncation
+        self.set_size_request(980, 560)
+        self.set_default_size(1080, 720)
+
+        # Apply application-wide CSS styling for enhanced readability and typography
+        self._setup_custom_styling()
 
         self.manager = manager or ThemeManager()
         try:
@@ -215,6 +246,80 @@ class MainWindow(Adw.ApplicationWindow):
 
         self._setup_shortcuts(app)
         self._setup_focus_behavior()
+
+    def _setup_custom_styling(self) -> None:
+        """Inject CSS styles for enhanced readability, larger font scale, and comfortable spacing."""
+        from gi.repository import Gdk
+
+        css_provider = Gtk.CssProvider()
+        css_data = """
+        /* Typography scale enhancement */
+        window.main-window {
+            font-size: 1.04rem;
+        }
+
+        /* ActionRow titles & subtitles comfortable scale */
+        row.activatable, preferencesgroup list {
+            min-height: 52px;
+        }
+
+        /* Slightly larger sidebar icons and rows */
+        .navigation-sidebar > row {
+            min-height: 44px;
+            padding: 4px 6px;
+        }
+
+        /* Modern Libadwaita GtkDropDown styling */
+        dropdown > button {
+            min-width: 180px;
+            min-height: 38px;
+            padding: 4px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        dropdown > button image {
+            margin-left: 8px;
+        }
+
+        dropdown > button label {
+            font-weight: 500;
+        }
+
+        /* Popover list styling for dropdown menus */
+        popover.menu listview row, popover.menu listview > row {
+            min-height: 38px;
+            padding: 6px 12px;
+        }
+
+        /* Color picker HEX entries & buttons */
+        entry.numeric {
+            min-height: 36px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        /* Card list padding and border radius */
+        .boxed-list {
+            margin-top: 6px;
+            margin-bottom: 6px;
+        }
+        """
+        try:
+            if hasattr(css_provider, "load_from_string"):
+                css_provider.load_from_string(css_data)
+            else:
+                css_provider.load_from_data(css_data.encode("utf-8"))
+            display = Gdk.Display.get_default()
+            if display is not None:
+                Gtk.StyleContext.add_provider_for_display(
+                    display,
+                    css_provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+                )
+        except Exception as err:
+            logger.debug("Failed to apply custom CSS styling: %s", err)
 
     def _setup_shortcuts(self, app: Adw.Application) -> None:
         """Configure actions and accelerators for close (Ctrl+W) and quit (Ctrl+Q)."""
@@ -464,7 +569,7 @@ class MainWindow(Adw.ApplicationWindow):
             elif has_warning_kw:
                 self.feedback_icon.set_from_icon_name("dialog-warning-symbolic")
             elif has_deleted_kw:
-                self.feedback_icon.set_from_icon_name("user-trash-symbolic")
+                self.feedback_icon.set_from_icon_name("edit-delete-symbolic")
             else:
                 self.feedback_icon.set_from_icon_name("emblem-ok-symbolic")
 

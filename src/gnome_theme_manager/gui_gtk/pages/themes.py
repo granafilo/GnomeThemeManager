@@ -36,10 +36,10 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk.pages.themes")
 UI_FILE = Path(__file__).parent.parent / "ui" / "themes_page.ui"
 
 CATEGORY_ICONS: dict[ThemeType, str] = {
-    ThemeType.GTK: "preferences-desktop-theme-symbolic",
-    ThemeType.ICON: "applications-graphics-symbolic",
+    ThemeType.GTK: "app-logo-symbolic",
+    ThemeType.ICON: "face-slightly-smiling-plus-symbolic",
     ThemeType.CURSOR: "input-mouse-symbolic",
-    ThemeType.SHELL: "preferences-system-windows-symbolic",
+    ThemeType.SHELL: "user-desktop-symbolic",
 }
 
 

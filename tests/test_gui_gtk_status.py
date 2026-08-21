@@ -160,7 +160,7 @@ def test_build_theme_presentation() -> None:
     assert pres.name == "Nordic-Darker"
     assert pres.category_display == "Applications (GTK)"
     assert pres.origin_display == "User (~/.local/share/...)"
-    assert pres.icon_name == "preferences-desktop-theme-symbolic"
+    assert pres.icon_name == "app-logo-symbolic"
     assert pres.is_user_level is True
 
 

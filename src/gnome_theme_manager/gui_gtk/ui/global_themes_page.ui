@@ -48,8 +48,8 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">900</property>
-                <property name="tightening-threshold">600</property>
+                <property name="maximum-size">1000</property>
+                <property name="tightening-threshold">700</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
                 <property name="margin-top">24</property>
@@ -112,7 +112,7 @@
                             <property name="tooltip-text" translatable="yes">Reload themes list from disk</property>
                             <child type="prefix">
                               <object class="GtkImage">
-                                <property name="icon-name">view-refresh-symbolic</property>
+                                <property name="icon-name">emblem-synchronizing-symbolic</property>
                               </object>
                             </child>
                           </object>
