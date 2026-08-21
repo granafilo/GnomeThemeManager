@@ -37,9 +37,16 @@ class MockGioSettings:
         }
 
     def get_string(self, key: str) -> str:
-        return self.values.get(key, "")
+        return str(self.values.get(key, ""))
 
     def set_string(self, key: str, value: str) -> bool:
+        self.values[key] = value
+        return True
+
+    def get_double(self, key: str) -> float:
+        return float(self.values.get(key, 1.0))
+
+    def set_double(self, key: str, value: float) -> bool:
         self.values[key] = value
         return True
 
@@ -198,3 +205,53 @@ def test_gsettings_unavailable_when_gio_missing():
         pytest.raises(GSettingsUnavailableError, match="PyGObject .* is not available"),
     ):
         GSettingsClient()
+
+
+def test_gsettings_get_and_apply_fonts():
+    """Verifica lettura e scrittura font tramite GSettingsClient."""
+    from gnome_theme_manager.core.fonts import FontConfig
+
+    storage = {
+        "font-name": "Cantarell 11",
+        "document-font-name": "Sans 11",
+        "monospace-font-name": "Monospace 11",
+        "text-scaling-factor": 1.0,
+    }
+
+    mock_schema = MagicMock()
+    mock_schema_source = MagicMock()
+    mock_schema_source.lookup.return_value = mock_schema
+
+    with (
+        patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio,
+    ):
+        mock_gio.SettingsSchemaSource.get_default.return_value = mock_schema_source
+        mock_gio.Settings.new_full.return_value = MockGioSettings(
+            "org.gnome.desktop.interface", storage
+        )
+
+        client = GSettingsClient()
+        fonts = client.get_fonts()
+        assert fonts.interface_font == "Cantarell 11"
+        assert fonts.document_font == "Sans 11"
+        assert fonts.monospace_font == "Monospace 11"
+        assert fonts.text_scaling_factor == 1.0
+
+        # Apply new fonts
+        new_fonts = FontConfig(
+            interface_font="Inter 10",
+            document_font="Inter 10",
+            monospace_font="Fira Code 12",
+            text_scaling_factor=1.25,
+        )
+        res = client.apply_fonts(new_fonts)
+        assert res is True
+
+        # Verify values updated
+        updated = client.get_fonts()
+        assert updated.interface_font == "Inter 10"
+        assert updated.document_font == "Inter 10"
+        assert updated.monospace_font == "Fira Code 12"
+        assert updated.text_scaling_factor == 1.25
+

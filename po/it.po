@@ -2167,4 +2167,102 @@ msgstr "Icona Personalizzata del Tema"
 msgid "Optional icon selected from library to represent this Global Theme"
 msgstr "Icona opzionale selezionata dalla libreria per rappresentare questo Tema Globale"
 
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:260
+msgid "Fonts"
+msgstr "Caratteri"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:5
+msgid "Select Font"
+msgstr "Seleziona Carattere"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:29
+msgid "Desktop Typography"
+msgstr "Tipografia del Desktop"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:30
+msgid "GNOME uses 3 distinct font categories for different parts of the system:"
+msgstr "GNOME utilizza 3 categorie distinte di caratteri per le diverse parti del sistema:"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:33
+msgid "1. Interface Font (UI)"
+msgstr "1. Carattere dell'Interfaccia (UI)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:34
+msgid "Applied to application menus, window headers, buttons, labels, and dialog boxes."
+msgstr "Applicato a menu delle app, intestazioni finestre, pulsanti, etichette e finestre di dialogo."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:48
+msgid "2. Document Font (Reading)"
+msgstr "2. Carattere dei Documenti (Lettura)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:49
+msgid "Applied inside document viewers (PDFs, eBooks, help pages) and reading applications."
+msgstr "Applicato all'interno di lettori di documenti (PDF, eBook, guide di sistema) e app di lettura."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:63
+msgid "3. Monospace Font (Terminal and Code)"
+msgstr "3. Carattere a Spaziatura Fissa (Terminale e Codice)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:64
+msgid "Applied to GNOME Terminal, text editors, log viewers, and development consoles."
+msgstr "Applicato al Terminale GNOME, editor di testo, visualizzatori di log e console di sviluppo."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:81
+msgid "Display Scaling"
+msgstr "Fattore di Scala"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:82
+msgid "Adjust the global text size multiplier across the entire desktop."
+msgstr "Regola il moltiplicatore globale della dimensione del testo sull'intero desktop."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:85
+msgid "Text Scaling Factor"
+msgstr "Fattore di Scala del Testo"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:86
+msgid "Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)"
+msgstr "Moltiplicatore di scala (1.0 = 100% dimensione normale, 1.25 = testo ingrandito del 25%)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:121
+msgid "Reload Current"
+msgstr "Ricarica Attuali"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:122
+msgid "Discard changes and reload active fonts"
+msgstr "Annulla le modifiche e ricarica i caratteri attivi"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:130
+msgid "Apply Fonts"
+msgstr "Applica Caratteri"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:131
+msgid "Apply the font configuration to the desktop"
+msgstr "Applica la configurazione dei caratteri al desktop"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:166
+msgid "Font settings are unavailable."
+msgstr "Le impostazioni dei caratteri non sono disponibili."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:93
+msgid "Cannot apply fonts: GSettings unavailable."
+msgstr "Impossibile applicare i caratteri: GSettings non disponibile."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:97
+msgid "Failed to apply fonts."
+msgstr "Applicazione dei caratteri non riuscita."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:101
+msgid "Font configuration applied."
+msgstr "Configurazione caratteri applicata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:104
+msgid "No font settings were changed."
+msgstr "Nessuna impostazione dei caratteri è stata modificata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:122
+msgid "Font settings are unavailable: {}"
+msgstr "Impostazioni caratteri non disponibili: {}"
+
+
+
 

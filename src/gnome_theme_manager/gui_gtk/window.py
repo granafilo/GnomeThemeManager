@@ -27,6 +27,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
+    FontsPage,
     GlobalThemesPage,
     InstallerPage,
     SandboxPage,
@@ -136,6 +137,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_themes_cursor: Gtk.ListBoxRow = self.builder.get_object("row_themes_cursor")
         self.row_global_themes: Gtk.ListBoxRow = self.builder.get_object("row_global_themes")
         self.row_editor: Gtk.ListBoxRow = self.builder.get_object("row_editor")
+        self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -148,6 +150,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.themes_page = ThemesPage(manager=self.manager)
         self.global_themes_page = GlobalThemesPage(manager=self.manager)
         self.editor_page = ThemeEditorPage(manager=self.manager)
+        self.fonts_page = FontsPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -160,6 +163,7 @@ class MainWindow(Adw.ApplicationWindow):
             "themes_cursor": self.themes_page,
             "global_themes": self.global_themes_page,
             "editor": self.editor_page,
+            "fonts": self.fonts_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -168,6 +172,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.themes_page.get_widget(), "themes")
         self.content_stack.add_named(self.global_themes_page.get_widget(), "global_themes")
         self.content_stack.add_named(self.editor_page.get_widget(), "editor")
+        self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -179,6 +184,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_themes_cursor: "themes_cursor",
             self.row_global_themes: "global_themes",
             self.row_editor: "editor",
+            self.row_fonts: "fonts",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -207,6 +213,10 @@ class MainWindow(Adw.ApplicationWindow):
         )
         self.global_themes_page.on_edit_requested = lambda theme: (
             self._on_edit_global_theme_requested(theme)
+        )
+
+        self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
         )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
@@ -509,6 +519,8 @@ class MainWindow(Adw.ApplicationWindow):
             and not self.sandbox_page._is_loading
         ):
             self.sandbox_page.refresh()
+        elif page_id == "fonts":
+            self.fonts_page.refresh()
 
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:

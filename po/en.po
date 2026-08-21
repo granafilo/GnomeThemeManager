@@ -2167,4 +2167,102 @@ msgstr "Custom Theme Icon"
 msgid "Optional icon selected from library to represent this Global Theme"
 msgstr "Optional icon selected from library to represent this Global Theme"
 
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:260
+msgid "Fonts"
+msgstr "Fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:5
+msgid "Select Font"
+msgstr "Select Font"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:29
+msgid "Desktop Typography"
+msgstr "Desktop Typography"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:30
+msgid "GNOME uses 3 distinct font categories for different parts of the system:"
+msgstr "GNOME uses 3 distinct font categories for different parts of the system:"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:33
+msgid "1. Interface Font (UI)"
+msgstr "1. Interface Font (UI)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:34
+msgid "Applied to application menus, window headers, buttons, labels, and dialog boxes."
+msgstr "Applied to application menus, window headers, buttons, labels, and dialog boxes."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:48
+msgid "2. Document Font (Reading)"
+msgstr "2. Document Font (Reading)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:49
+msgid "Applied inside document viewers (PDFs, eBooks, help pages) and reading applications."
+msgstr "Applied inside document viewers (PDFs, eBooks, help pages) and reading applications."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:63
+msgid "3. Monospace Font (Terminal and Code)"
+msgstr "3. Monospace Font (Terminal and Code)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:64
+msgid "Applied to GNOME Terminal, text editors, log viewers, and development consoles."
+msgstr "Applied to GNOME Terminal, text editors, log viewers, and development consoles."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:81
+msgid "Display Scaling"
+msgstr "Display Scaling"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:82
+msgid "Adjust the global text size multiplier across the entire desktop."
+msgstr "Adjust the global text size multiplier across the entire desktop."
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:85
+msgid "Text Scaling Factor"
+msgstr "Text Scaling Factor"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:86
+msgid "Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)"
+msgstr "Scale multiplier (1.0 = 100% standard size, 1.25 = 125% larger text)"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:121
+msgid "Reload Current"
+msgstr "Reload Current"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:122
+msgid "Discard changes and reload active fonts"
+msgstr "Discard changes and reload active fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:130
+msgid "Apply Fonts"
+msgstr "Apply Fonts"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:131
+msgid "Apply the font configuration to the desktop"
+msgstr "Apply the font configuration to the desktop"
+
+#: src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui:166
+msgid "Font settings are unavailable."
+msgstr "Font settings are unavailable."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:93
+msgid "Cannot apply fonts: GSettings unavailable."
+msgstr "Cannot apply fonts: GSettings unavailable."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:97
+msgid "Failed to apply fonts."
+msgstr "Failed to apply fonts."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:101
+msgid "Font configuration applied."
+msgstr "Font configuration applied."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:104
+msgid "No font settings were changed."
+msgstr "No font settings were changed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/fonts.py:122
+msgid "Font settings are unavailable: {}"
+msgstr "Font settings are unavailable: {}"
+
+
+
 
