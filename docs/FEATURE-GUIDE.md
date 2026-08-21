@@ -87,47 +87,54 @@ Build your own look: mix themes and edit colors, safely.
 
 ---
 
-## Phase 3 — Online Store (v1.3)
+## Phase 3 — Fallback & Robustness (v1.3)
 
-Discover and install themes without leaving the app.
+No more scary alerts: the app heals itself.
 
-- **3.1** Store client: search and download GTK/icon/cursor/Shell themes
-  from public online catalogs.
-- **3.2** Store UI: browse results as cards, see details and screenshots,
-  install with one click.
-- **3.3** Extensions browser: list your installed GNOME extensions and
-  enable/disable them; link to the online store.
-- **3.4** Local cache: search results are cached for 24h, so browsing is fast.
-
----
-
-## Phase 4 — Profiles & Automation (v1.4)
-
-The app adapts to you, automatically.
-
-- **4.1** Profiles: bundle a light preset and a dark preset under one name.
-- **4.2** Auto-switch: when the system switches light/dark mode, your profile
-  follows automatically.
-- **4.3** Profiles UI: create, edit and activate profiles from a simple view.
-- **4.4** Autostart: your active profile is applied at login, via a small
-  background service you control.
-- **4.5** Export/import: move a profile (with its presets) to another machine
-  as a single file.
+- **3.1** Fallback themes: pick a backup per category; unavailable themes
+  (e.g. in snap/flatpak) are replaced by your backup — silently, with a
+  small info banner. The "missing themes" alert is gone.
+- **3.2** User Themes extension: optional silent auto-enable.
+- **3.3** Docs: how to make the launcher executable.
+- **3.4** The app ships fallback icons: its UI never shows broken placeholders.
 
 ---
 
-## Phase 5 — Sync & Distribution (v1.5+)
+## Phase 4 — Editors (v1.4)
 
-Take your setup everywhere; install the app everywhere.
+Full control over your own looks.
 
-- **5.1** Sync base: richer export bundles, ready for syncing.
-- **5.2** LAN sync: send/receive profiles between your PCs on the same
-  network — the free alternative to paid "wireless sync".
-- **5.3** Flatpak package: install from Flathub-style bundles.
-- **5.4** .deb package: native install on Ubuntu/Debian.
-- **5.5** More languages: the translation workflow opens to new locales.
-- **5.6** Structured logs: daily rotating logs for easier debugging.
-- **5.7** *(stretch)* First-run tour: a short guided introduction for new users.
+- **4.1** Edit your existing Global Themes in place; starters duplicate
+  via "save as copy".
+- **4.2** Custom icons for your Global Theme cards.
+- **4.3** Font editor: interface/document/monospace fonts + scaling,
+  saved inside presets.
+- **4.4** *(stretch)* Terminal editor: your palette into GNOME Terminal.
+
+---
+
+## Phase 5 — Online Store (v1.5)
+
+- **5.1/5.2** Search, preview and install themes from public catalogs.
+- **5.3** Extensions browser with enable/disable.
+- **5.4** 24h cache for fast browsing.
+
+---
+
+## Phase 6 — Profiles & Automation (v1.6)
+
+- **6.1–6.3** Light+dark profiles with a simple UI.
+- **6.2** Auto-switch when the system switches light/dark.
+- **6.4** Apply your profile at login.
+- **6.5** Export/import profiles as one file.
+
+---
+
+## Phase 7 — Sync & Distribution (v1.7+)
+
+- **7.1** LAN sync between your PCs (free alternative to paid sync).
+- **7.2/7.3** Flatpak and .deb packages.
+- **7.4–7.6** More languages, structured logs, first-run tour.
 
 ---
 

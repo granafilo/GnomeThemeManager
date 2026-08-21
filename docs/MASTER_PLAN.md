@@ -269,6 +269,8 @@ Solo `~/.local/state/gnome-theme-manager/` (JSON). Mai `~/.config/`.
 | Fase 3    | 1.3.0    |
 | Fase 4    | 1.4.0    |
 | Fase 5    | 1.5.0    |
+| Fase 6    | 1.6.0    |
+| Fase 7    | 1.7.0    |
 
 - La versione si aggiorna SOLO durante la chiusura fase (step D), mai durante i task
 - Tag git `v{X.Y.Z}` creato dall'utente dopo il merge, allineato alla versione
@@ -285,6 +287,22 @@ Ogni task che introduce stringhe user-visible DEVE, nello STESSO commit:
    `LANG=it_IT.UTF-8` (italiano) e senza (inglese).
 
 Lo step C della chiusura fase è SOLO verifica finale di consistenza.
+
+### 3.0 Scala di priorità
+Ogni task ha un tag [P0–P3]. I tag guidano l'ordine interno alla fase e le
+decisioni di taglio se una fase rischia di esplodere.
+
+- **P0 — Critico**: blocca fiducia/correttezza (alert bloccanti, apply su temi
+  non disponibili, integrità dello stato). Va fatto sempre, per primo.
+- **P1 — Alto**: completa il core di theming o blocca l'onboarding
+  (editor sui propri temi, docs essenziali, robustezza UI).
+- **P2 — Medio**: valore visibile / differenzianti (store, font, icone,
+  profili, packaging).
+- **P3 — Basso / stretch**: nice-to-have, tagliabile senza danni
+  (terminal editor, tour, lingue extra). Regola: se stretch salta,
+  diventa TODO documentato, non debito silenzioso.
+
+
 
 ---
 
@@ -409,62 +427,188 @@ Branch `feature/phase-0-stabilization` mergiata. Task 0.1–0.7 completati:
 
 ---
 
-### 🔷 FASE 3 — Store Online (v1.3)
+### 🔷 FASE 3 — Fallback & Robustness (v1.3)
 
-**Branch:** `feature/phase-3-online-store`
+**Branch:** `feature/phase-3-fallback-robustness`
+**Obiettivo:** eliminare gli alert bloccanti e rendere l'apply robusto su
+host/snap/flatpak con fallback theme scegliibili dall'utente.
 
-#### Task 3.1 — API client pling.com
-- `core/store_client.py`: `search(query, category)`, `get_details(id)`, `download(id, dest_dir)`; retry/backoff, timeout 30s; dipendenza `requests`
+#### Task 3.1 — Fallback themes + rimozione alert "missing themes" [P0]
+- Moduli: `core/fallback.py` (nuovo), `core/sandbox.py` + `core/manager.py`
+  (estensioni), `gui_gtk/views/settings_view.py` (sezione "Fallback")
+- Config `fallbacks.json` nella state dir: `{gtk3, gtk4, shell, icons,
+  cursors}` selezionabili; default = temi di sistema rilevati al primo avvio
+- `ThemeAvailabilityChecker.check(theme, target)` con target
+  `{host, snap, flatpak}`: verifica presenza nelle directory del target
+- Flusso apply: tema non disponibile su un target → NON applicato lì;
+  applicato il fallback dell'utente per quel target; info banner
+  "fallback in use", mai alert bloccanti
+- UI: 5 dropdown che listano SOLO temi disponibili su tutti i target
+- RIMOZIONE definitiva dell'alert "missing themes": lo scanner flagga i
+  non disponibili, la UI mostra badge "fallback"
+- La propagazione sandbox usa la stessa logica
+- Test: checker su tmp_path; apply con tema mancante → fallback applicato;
+  nessun percorso GUI solleva alert bloccanti
 
-#### Task 3.2 — Store UI
-- `gui_gtk/views/store_view.py`: ricerca + filtri, griglia card, dettaglio con screenshot, "Installa" (riusa Task 1.7), progress bar
+#### Task 3.2 — Estensione User Themes: auto-enable opzionale [P0]
+- Moduli: `core/extensions.py` (estensione), `gui_gtk/views/settings_view.py`
+- Pref `auto_enable_user_theme` in `ui_prefs.json` + toggle in settings
+- ON: apply shell theme abilita l'estensione silenziosamente
+- OFF: resta il dialog Adw del Task 0.6
+- L'alert permanente diventa toast informativo una-tantum
+- Test: entrambi i percorsi con gsettings mockato
 
-#### Task 3.3 — Extensions browser
-- Lista `gnome-extensions list`; toggle enable/disable; "Browse online" → link esterno a extensions.gnome.org
+#### Task 3.3 — Docs: permessi esecuzione [P1]
+- File: `README.md`
+- Sezione "Make the launcher executable": chmod +x, note permessi e
+  launchers (completa il pending della Fase 0)
 
-#### Task 3.4 — Cache locale
+#### Task 3.4 — Icone fallback bundled per la UI [P1]
+- Moduli: `data/icons/` (asset nuovi), `gui_gtk/window.py` (init chain)
+- L'app bundle icone standard usate come fallback nella chain del tema
+  icone: la UI non mostra mai placeholder "icona mancante"
+- Test: lookup Gtk.IconTheme con tema privo dell'icona → fallback risolto
+
+**Acceptance Criteria globali Fase 3:**
+- [ ] Alert "missing themes" assente dal codice e dalla UI
+- [ ] Apply su tema non disponibile → fallback applicato + info banner
+- [ ] Fallback selezionabili, dropdown filtrati per disponibilità
+- [ ] Toggle auto-enable user-theme: ON silenzioso / OFF dialog
+- [ ] README con sezione permessi; UI senza placeholder icone
+- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
+
+---
+
+### 🔷 FASE 4 — Editors (v1.4)
+
+**Branch:** `feature/phase-4-editors`
+**Obiettivo:** completare il controllo dell'utente sui propri temi
+(modifica, icone, font) prima di aprire allo store.
+
+#### Task 4.1 — Editor Global Themes esistenti [P1]
+- Moduli: `core/global_themes.py` (estensione),
+  `gui_gtk/views/global_themes_view.py`
+- Modifica in-place di Global Themes `origin: user`: componenti, nome, icona
+- Bundled non modificabili → "Save as copy" (crea origin user in cima)
+- Bottone "Edit" sulla card apre il Theme Mixer (Task 2.1) precompilato
+- Test: edit in-place preserva origin/created_at e ordinamento;
+  save-as-copy crea preset user
+
+#### Task 4.2 — Icone custom per Global Themes [P2]
+- Moduli: `core/global_themes.py`, `gui_gtk/widgets/icon_picker.py` (nuovo)
+- Campo `icon` nel preset; picker da tema icone corrente o asset bundled
+- Le card renderizzano l'icona custom con fallback (Task 3.4) se assente
+- Test: round-trip preset con icon; icon mancante → fallback
+
+#### Task 4.3 — Font editor [P2]
+- Moduli: `core/fonts.py` (nuovo), `gui_gtk/views/fonts_view.py` (nuova)
+- gsettings `org.gnome.desktop.interface`: `font-name`,
+  `document-font-name`, `monospace-font-name`, `text-scaling-factor`
+- UI: Gtk.FontDialog + spin size + scaling factor + preview live; Apply/Reset
+- Campo opzionale `fonts` nel preset: i Global Themes che lo contengono lo
+  applicano insieme al resto
+- Test: gsettings mockato; round-trip preset con fonts
+
+#### Task 4.4 — Terminal editor (stretch) [P3]
+- Moduli: `core/terminal_palette.py` (nuovo)
+- Palette derivata dal tema corrente (riusa `CssColorExtractor`)
+- Apply a GNOME Terminal via profilo gsettings relocatable; fallback:
+  export palette JSON per import manuale
+- Se troppo complesso: saltare → TODO documentato (regola §3.0 P3)
+
+**Acceptance Criteria globali Fase 4:**
+- [ ] Edit Global Theme user in-place; bundled → save as copy
+- [ ] Icone custom sulle card con fallback
+- [ ] Font editor applica le 4 chiavi; `fonts` nei preset funzionante
+- [ ] (Stretch) terminal applicato o TODO documentato
+- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
+
+---
+
+### 🔷 FASE 5 — Online Store (v1.5)
+
+**Branch:** `feature/phase-5-online-store`
+
+#### Task 5.1 — API client pling.com [P2]
+- Modulo: `core/store_client.py` (nuovo); dipendenza `requests`
+- `search(query, category)`, `get_details(id)`, `download(id, dest_dir)`;
+  retry/backoff, timeout 30s
+
+#### Task 5.2 — Store UI [P2]
+- Modulo: `gui_gtk/views/store_view.py` (nuova)
+- Ricerca + filtri, griglia card, dettaglio con screenshot, "Installa"
+  (riusa installer Task 1.7), progress bar
+
+#### Task 5.3 — Extensions browser [P2]
+- Moduli: `core/extensions.py`, `gui_gtk/views/extensions_view.py`
+- Lista `gnome-extensions list`, toggle enable/disable, link esterno a
+  extensions.gnome.org
+
+#### Task 5.4 — Cache locale [P3]
 - `~/.cache/gnome-theme-manager/store_cache.json`, TTL 24h
 
-**Acceptance Fase 3:** ricerca <3s · download+install da pling ok · toggle estensioni ok · TTL rispettato · coverage ≥80% · protocollo §1.4
+**Acceptance Criteria globali Fase 5:**
+- [ ] Ricerca <3s; download+install da pling ok; toggle estensioni ok; TTL ok
+- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 
-### 🔷 FASE 4 — Profili & Automazioni (v1.4)
+### 🔷 FASE 6 — Profili & Automazioni (v1.6)
 
-**Branch:** `feature/phase-4-profiles`
+**Branch:** `feature/phase-6-profiles`
 
-#### Task 4.1 — Profili con variante light/dark
-- `core/profiles.py`: `{name, light_preset, dark_preset, auto_switch, autostart}` in `profiles.json`
+#### Task 6.1 — Profili con variante light/dark [P2]
+- Modulo: `core/profiles.py` (nuovo)
+- `{name, light_preset, dark_preset, auto_switch, autostart}` in
+  `profiles.json`
 
-#### Task 4.2 — Integrazione color-scheme (GNOME 42+)
-- Read/write `org.gnome.desktop.interface color-scheme`; segnale `changed::color-scheme`; apply automatico se `auto_switch: true`
+#### Task 6.2 — Integrazione color-scheme (GNOME 42+) [P2]
+- Modulo: `core/gsettings.py`
+- Segnale `changed::color-scheme`; apply automatico se `auto_switch: true`
 
-#### Task 4.3 — UI profili
-- Lista profili, form creazione (nome + preset light/dark + toggle), "Imposta come attivo"
+#### Task 6.3 — UI profili [P2]
+- Modulo: `gui_gtk/views/profiles_view.py` (nuova)
+- Lista, form creazione, "Imposta come attivo"
 
-#### Task 4.4 — Autostart via systemd user
-- `~/.config/systemd/user/gnome-theme-manager.service`; enable/disable automatico coerente con `autostart`
+#### Task 6.4 — Autostart via systemd user [P2]
+- Modulo: `core/autostart.py` (nuovo)
+- Service user enable/disable coerente con `autostart`
 
-#### Task 4.5 — Export/import profili
-- Singolo file JSON bundle (profilo + preset light + dark)
+#### Task 6.5 — Export/import profili [P2]
+- Bundle JSON singolo (profilo + preset light + dark)
 
-**Acceptance Fase 4:** switch automatico su cambio color-scheme · apply al reboot · round-trip export/import · coverage ≥80% · protocollo §1.4
+**Acceptance Criteria globali Fase 6:**
+- [ ] Switch automatico su color-scheme; apply al reboot; round-trip export
+- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 
-### 🔷 FASE 5 — Sync & Distribuzione (v1.5+)
+### 🔷 FASE 7 — Sync & Distribuzione (v1.7+)
 
-**Branch:** `feature/phase-5-sync-packaging`
+**Branch:** `feature/phase-7-sync-packaging`
 
-#### Task 5.1 — Base sync (estensione export bundle 4.5)
-#### Task 5.2 — Sync LAN (mDNS/Avahi `_gtm._tcp` + HTTP stdlib; tab Sync con Send/Receive)
-#### Task 5.3 — Packaging Flatpak (`io.github.granafilo.GnomeThemeManager.yml`, test Ubuntu 22.04+/Fedora 38+)
-#### Task 5.4 — Packaging .deb (dir `debian/`, install su Ubuntu 24.04)
-#### Task 5.5 — i18n lingue aggiuntive (infrastruttura gettext già creata dal CHORE English-first; qui: workflow traduzioni + eventuali lingue nuove)
-#### Task 5.6 — Logging strutturato (JSON in `~/.local/state/gnome-theme-manager/logs/`, rotazione giornaliera, `--verbose`)
-#### Task 5.7 — First-run tour (stretch: 5 slide, flag `first_run_completed`)
+#### Task 7.1 — Sync LAN [P2]
+- Modulo: `core/sync_lan.py` (nuovo); mDNS/Avahi `_gtm._tcp` + HTTP stdlib
+- Tab Sync con Send/Receive profile
 
-**Acceptance Fase 5:** sync LAN tra 2 macchine · Flatpak builda e parte · .deb installabile · traduzioni complete · log rotanti · coverage ≥80% · protocollo §1.4
+#### Task 7.2 — Packaging Flatpak [P2]
+- `io.github.granafilo.GnomeThemeManager.yml`; test Ubuntu 22.04+/Fedora 38+
+
+#### Task 7.3 — Packaging .deb [P2]
+- Dir `debian/`; install su Ubuntu 24.04
+
+#### Task 7.4 — i18n lingue aggiuntive [P3]
+- Workflow traduzioni + eventuali nuove lingue (infrastruttura già EN-source)
+
+#### Task 7.5 — Logging strutturato [P3]
+- `core/logger.py`; JSON rotanti in state dir; `--verbose`
+
+#### Task 7.6 — First-run tour (stretch) [P3]
+- `gui_gtk/tour.py`; 5 slide; flag `first_run_completed`
+
+**Acceptance Criteria globali Fase 7:**
+- [ ] Sync LAN tra 2 macchine; Flatpak e .deb installabili; log rotanti
+- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 

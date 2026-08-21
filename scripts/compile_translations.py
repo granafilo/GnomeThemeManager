@@ -35,7 +35,8 @@ def _parse_po_file(po_path: Path) -> dict[str, str]:
         s = s.strip()
         if s.startswith('"') and s.endswith('"'):
             s = s[1:-1]
-        return s.encode("utf-8").decode("unicode_escape")
+        import codecs
+        return codecs.decode(s.encode("raw_unicode_escape"), "unicode_escape")
 
     for line in lines:
         line_s = line.strip()
