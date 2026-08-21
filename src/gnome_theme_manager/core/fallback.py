@@ -161,7 +161,17 @@ class ThemeAvailabilityChecker:
 
         # Try stripping suffixes like '-Custom', '-gtk4', '-shell', ' (Fork)'
         cleaned = theme_name
-        for suffix in ("-Custom", "-custom", "-gtk4", "-shell", " (Fork)", "-dark", "-Dark", "-light", "-Light"):
+        for suffix in (
+            "-Custom",
+            "-custom",
+            "-gtk4",
+            "-shell",
+            " (Fork)",
+            "-dark",
+            "-Dark",
+            "-light",
+            "-Light",
+        ):
             if cleaned.endswith(suffix):
                 candidate = cleaned[: -len(suffix)]
                 if candidate and self.check(candidate, theme_type, target=target):

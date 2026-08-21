@@ -676,7 +676,9 @@ class ThemeManager:
         # (e.g. Colloid-Dark or Yaru-dark) so Snap won't prompt, while GTK4 overrides and host styles use the custom theme.
         checker = self._fallback_manager.availability_checker
         gsettings_gtk = gtk_to_apply
-        if gtk_to_apply is not None and not checker.check(gtk_to_apply, ThemeType.GTK, target="snap"):
+        if gtk_to_apply is not None and not checker.check(
+            gtk_to_apply, ThemeType.GTK, target="snap"
+        ):
             fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.GTK)
             gsettings_gtk = checker.derive_available_theme(
                 gtk_to_apply, ThemeType.GTK, target="snap", fallback_theme=fb_val
@@ -688,7 +690,9 @@ class ThemeManager:
             )
 
         gsettings_icon = icon_to_apply
-        if icon_to_apply is not None and not checker.check(icon_to_apply, ThemeType.ICON, target="snap"):
+        if icon_to_apply is not None and not checker.check(
+            icon_to_apply, ThemeType.ICON, target="snap"
+        ):
             fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.ICON)
             gsettings_icon = checker.derive_available_theme(
                 icon_to_apply, ThemeType.ICON, target="snap", fallback_theme=fb_val

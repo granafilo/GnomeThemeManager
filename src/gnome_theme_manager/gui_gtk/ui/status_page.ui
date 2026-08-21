@@ -244,7 +244,21 @@
                   </object>
                 </child>
 
-                <!-- Group 5: Sandbox (Flatpak and Snap) -->
+                <!-- Group 5: Preferences / Behavior -->
+                <child>
+                  <object class="AdwPreferencesGroup" id="group_behavior_preferences">
+                    <property name="title" translatable="yes">Preferences</property>
+                    <property name="description" translatable="yes">Application behavior and automation settings.</property>
+                    <child>
+                      <object class="AdwSwitchRow" id="row_auto_enable_user_theme">
+                        <property name="title" translatable="yes">Auto-enable User Themes extension</property>
+                        <property name="subtitle" translatable="yes">Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt.</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Group 6: Sandbox (Flatpak and Snap) -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_sandbox">
                     <property name="title" translatable="yes">Sandbox Integration (Snap &amp;amp; Flatpak)</property>

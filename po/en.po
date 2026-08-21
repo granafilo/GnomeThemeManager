@@ -2099,6 +2099,21 @@ msgstr "Fallback theme for mouse cursors"
 msgid "Fallback"
 msgstr "Fallback"
 
+msgid "Preferences"
+msgstr "Preferences"
+
+msgid "Application behavior and automation settings."
+msgstr "Application behavior and automation settings."
+
+msgid "Auto-enable User Themes extension"
+msgstr "Auto-enable User Themes extension"
+
+msgid "Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt."
+msgstr "Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt."
+
+msgid "User Themes extension enabled automatically."
+msgstr "User Themes extension enabled automatically."
+
 
 
 

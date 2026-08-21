@@ -2099,6 +2099,21 @@ msgstr "Tema cursori di riserva"
 msgid "Fallback"
 msgstr "Fallback"
 
+msgid "Preferences"
+msgstr "Preferenze"
+
+msgid "Application behavior and automation settings."
+msgstr "Impostazioni di comportamento e automazione dell'applicazione."
+
+msgid "Auto-enable User Themes extension"
+msgstr "Abilita automaticamente l'estensione User Themes"
+
+msgid "Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt."
+msgstr "Attiva automaticamente l'estensione GNOME Shell User Themes quando si applica un tema della shell senza mostrare la richiesta di conferma."
+
+msgid "User Themes extension enabled automatically."
+msgstr "Estensione User Themes abilitata automaticamente."
+
 
 
 

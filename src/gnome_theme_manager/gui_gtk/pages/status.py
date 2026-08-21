@@ -11,7 +11,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import gi
 
@@ -54,6 +54,7 @@ class StatusSnapshot:
     fallback_cfg_shell: str | None = None
     fallback_cfg_icons: str | None = None
     fallback_cfg_cursors: str | None = None
+    auto_enable_user_theme: bool = False
 
 
 def format_optional_value(value: str | None, default: str | None = None) -> str:
@@ -212,6 +213,14 @@ class StatusPage:
             )
 
         self._updating_fallbacks: bool = False
+        self._updating_prefs: bool = False
+
+        # Behavior Preferences (Task 3.2)
+        self.row_auto_enable_user_theme: Any = self.builder.get_object("row_auto_enable_user_theme")
+        if self.row_auto_enable_user_theme is not None:
+            self.row_auto_enable_user_theme.connect(
+                "notify::active", self._on_auto_enable_user_theme_changed
+            )
 
         self.error_page: Adw.StatusPage = self.builder.get_object("error_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
@@ -332,6 +341,14 @@ class StatusPage:
                     except Exception as fb_err:
                         logger.warning("Error pre-fetching fallback themes in worker: %s", fb_err)
 
+                auto_enable_val = False
+                if self.manager.extensions:
+                    try:
+                        prefs = self.manager.extensions.get_prefs()
+                        auto_enable_val = prefs.auto_enable_user_theme
+                    except Exception as pref_err:
+                        logger.warning("Error loading UI prefs in worker: %s", pref_err)
+
                 snapshot = StatusSnapshot(
                     themes=themes,
                     system_status=system_status,
@@ -349,6 +366,7 @@ class StatusPage:
                     fallback_cfg_shell=fb_shell,
                     fallback_cfg_icons=fb_icons,
                     fallback_cfg_cursors=fb_cursors,
+                    auto_enable_user_theme=auto_enable_val,
                 )
                 return snapshot, None
             except Exception as err:
@@ -463,6 +481,14 @@ class StatusPage:
 
         self._populate_fallback_dropdowns(snapshot)
 
+        # Update auto-enable user-theme toggle state (Task 3.2)
+        if self.row_auto_enable_user_theme is not None:
+            self._updating_prefs = True
+            try:
+                self.row_auto_enable_user_theme.set_active(snapshot.auto_enable_user_theme)
+            finally:
+                self._updating_prefs = False
+
         self.widget.set_visible_child_name("ready")
 
     def _populate_fallback_dropdowns(self, snapshot: StatusSnapshot | None = None) -> None:
@@ -575,9 +601,17 @@ class StatusPage:
             cfg.icons = selected_val
         elif component_key == "cursors":
             cfg.cursors = selected_val
-
         self.manager.fallback_manager.save_config(cfg)
-        logger.info("Updated fallback config for '%s' to '%s'", component_key, selected_val)
+        logger.debug("Updated fallback config for '%s' to '%s'", component_key, selected_val)
+
+    def _on_auto_enable_user_theme_changed(self, *_: Any) -> None:
+        """Handle toggle state change for auto_enable_user_theme preference."""
+        if self._updating_prefs or self.manager is None or self.row_auto_enable_user_theme is None:
+            return
+        is_active = bool(self.row_auto_enable_user_theme.get_active())
+        if self.manager.extensions:
+            self.manager.extensions.set_auto_enable_user_theme(is_active)
+            logger.info("Auto-enable User Themes preference set to %s", is_active)
 
     def _handle_error(self, error: Exception) -> None:
         """Handle errors setting the error view."""
