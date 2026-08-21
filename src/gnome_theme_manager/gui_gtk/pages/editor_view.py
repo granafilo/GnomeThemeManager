@@ -28,6 +28,7 @@ from ...core.models import Theme, ThemeSet, ThemeType
 from ...core.shell_editor import ShellExtractedColors, extract_shell_colors
 from ...core.theme_editor import ThemeComposition
 from ..widgets.color_picker import ColorPickerButton
+from ..widgets.icon_picker import IconPickerButton
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -160,6 +161,12 @@ class ThemeEditorPage:
         self.icon_dropdown.set_model(self._icon_model)
         self.cursor_dropdown.set_model(self._cursor_model)
         self.color_scheme_dropdown.set_model(self._color_scheme_model)
+
+        # Custom Theme Icon picker
+        self.custom_icon_container: Gtk.Box = self.builder.get_object("custom_icon_container")
+        self.icon_picker = IconPickerButton()
+        if self.custom_icon_container:
+            self.custom_icon_container.append(self.icon_picker)
 
         self._color_schemes = ["default", "prefer-dark", "prefer-light"]
         for cs in self._color_schemes:
@@ -887,6 +894,13 @@ class ThemeEditorPage:
             user_composed=True,
         )
 
+    def _get_current_icon_override(self) -> str | None:
+        """Return the custom theme icon path selected by the user, if any."""
+        if not hasattr(self, "icon_picker"):
+            return None
+        path = self.icon_picker.get_icon_path()
+        return path
+
     def load_global_theme_for_editing(self, theme: GlobalTheme) -> None:
         """Load an existing user Global Theme into the editor for modification.
 
@@ -931,6 +945,9 @@ class ThemeEditorPage:
                     self._color_schemes.index(theme_comp.color_scheme)
                 )
 
+            if hasattr(self, "icon_picker"):
+                self.icon_picker.set_icon_path(theme.icon_override)
+
             self._update_colors_from_selected_gtk()
             self._update_colors_from_selected_shell()
 
@@ -948,6 +965,7 @@ class ThemeEditorPage:
         try:
             composition = self._get_current_composition()
 
+            icon_override = self._get_current_icon_override()
             if self._editing_global_theme is not None:
                 theme_set = ThemeSet(
                     gtk_theme=composition.gtk3,
@@ -960,11 +978,14 @@ class ThemeEditorPage:
                     theme_id=self._editing_global_theme.id,
                     theme_set=theme_set,
                     description=composition.description,
+                    icon_override=icon_override,
                 )
                 if self.save_button:
                     self.save_button.set_label(_("Update Global Theme"))
             else:
-                saved = self.manager.save_theme_composition(composition, overwrite=True)
+                saved = self.manager.save_theme_composition(
+                    composition, overwrite=True, icon_override=icon_override
+                )
                 if self.save_button:
                     self.save_button.set_label(_("Save as Global Theme"))
                 if hasattr(self.manager, "editor_drafts"):

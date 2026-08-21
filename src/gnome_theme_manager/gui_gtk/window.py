@@ -205,8 +205,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
-        self.global_themes_page.on_edit_requested = lambda theme: self._on_edit_global_theme_requested(
-            theme
+        self.global_themes_page.on_edit_requested = lambda theme: (
+            self._on_edit_global_theme_requested(theme)
         )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(

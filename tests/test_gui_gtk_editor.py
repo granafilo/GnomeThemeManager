@@ -117,18 +117,36 @@ def test_theme_editor_save_as_global_theme(mock_theme_manager: MagicMock) -> Non
         components=ThemeSet(gtk_theme="Nordic"),
         origin="user",
         user_composed=True,
+        icon_override="starred-symbolic",
     )
 
     page = ThemeEditorPage(manager=mock_theme_manager)
     page.refresh(sync=True)
 
     page.theme_name_entry.set_text("Custom Mix")
+    page.icon_picker.set_icon_path("starred-symbolic")
     page._on_save_as_global_theme_clicked(None)
 
     assert mock_theme_manager.save_theme_composition.called
     called_comp = mock_theme_manager.save_theme_composition.call_args[0][0]
     assert called_comp.name == "Custom Mix"
     assert called_comp.user_composed is True
+    assert (
+        mock_theme_manager.save_theme_composition.call_args[1]["icon_override"]
+        == "starred-symbolic"
+    )
+
+    # Test loading user theme restores custom icon
+    loaded_theme = GlobalTheme(
+        id="user-custom-mix",
+        name="Custom Mix",
+        description="A great mix",
+        components=ThemeSet(gtk_theme="Nordic"),
+        origin="user",
+        icon_override="starred-symbolic",
+    )
+    page.load_global_theme_for_editing(loaded_theme)
+    assert page.icon_picker.get_icon_path() == "starred-symbolic"
 
 
 def test_theme_editor_preview_in_app(mock_theme_manager: MagicMock) -> None:

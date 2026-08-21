@@ -19,6 +19,7 @@ from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
 from .fallback import FallbackManager
+from .fonts import FontConfig
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
@@ -482,6 +483,7 @@ class ThemeManager:
         propagate_sandbox: bool = True,
         force: bool = False,
         use_fallback: bool = True,
+        fonts: FontConfig | None = None,
     ) -> ApplyResult:
         """Validate and apply a set of themes to the GNOME desktop.
 
@@ -711,6 +713,17 @@ class ThemeManager:
             shell_theme=shell_to_apply,
         )
         client.apply(target_set)
+
+        # 7b. Font configuration
+        fonts_applied = False
+        if fonts is not None:
+            try:
+                fonts_applied = client.apply_fonts(fonts)
+                if fonts_applied:
+                    logger.info("Font configuration applied: %s", fonts)
+            except Exception as err:
+                warnings.append(f"Failed to apply font configuration: {err}")
+                logger.warning("Font application failed: %s", err)
 
         # 8. GTK4 / Libadwaita override
         gtk4_applied = False
@@ -960,13 +973,18 @@ class ThemeManager:
             raise ThemeNotFoundError(f"Global theme '{theme_id}' not found.")
 
         logger.info("Applying global theme: '%s' (%s)", theme.name, theme.id)
-        return self.apply_themes(theme.components, propagate_sandbox=propagate_sandbox)
+        return self.apply_themes(
+            theme.components,
+            propagate_sandbox=propagate_sandbox,
+            fonts=theme.fonts,
+        )
 
     def save_current_as_global_theme(
         self,
         name: str,
         description: str = "",
         overwrite: bool = False,
+        icon_override: str | None = None,
     ) -> GlobalTheme:
         """Save active desktop configuration as a user-created Global Theme.
 
@@ -974,33 +992,72 @@ class ThemeManager:
             name: User-facing name for the theme.
             description: Optional summary description.
             overwrite: If True, replace existing user theme with same name.
+            icon_override: Optional custom icon file path for the theme.
 
         Returns:
             Saved GlobalTheme instance.
         """
         current_themes = self.get_current_themes()
+        current_fonts = None
+        try:
+            current_fonts = self.get_current_fonts()
+        except GSettingsUnavailableError as err:
+            logger.debug("Could not capture fonts for global theme: %s", err)
         return self._global_themes.save_global_theme(
             name=name,
             theme_set=current_themes,
             description=description,
             overwrite=overwrite,
+            icon_override=icon_override,
+            fonts=current_fonts,
         )
 
     def save_theme_composition(
         self,
         composition: ThemeComposition,
         overwrite: bool = False,
+        icon_override: str | None = None,
     ) -> GlobalTheme:
         """Save a ThemeComposition as a user-composed Global Theme.
 
         Args:
             composition: ThemeComposition object containing component selections.
             overwrite: If True, replace existing user theme with same name.
+            icon_override: Optional custom icon file path for the theme.
 
         Returns:
             Saved GlobalTheme instance.
         """
-        return self._theme_mixer.mix_and_save(composition, overwrite=overwrite)
+        return self._theme_mixer.mix_and_save(
+            composition, overwrite=overwrite, icon_override=icon_override
+        )
+
+    def get_current_fonts(self) -> FontConfig:
+        """Return the active system font configuration.
+
+        Returns:
+            FontConfig with current interface, document, monospace fonts and scaling.
+
+        Raises:
+            GSettingsUnavailableError: If GSettings is unavailable.
+        """
+        client = self._ensure_gsettings()
+        return client.get_fonts()
+
+    def apply_fonts(self, fonts: FontConfig) -> bool:
+        """Apply a font configuration to the active desktop (FASE 4 Task 4.3).
+
+        Args:
+            fonts: FontConfig instance with the font values to apply.
+
+        Returns:
+            True if at least one font key was applied successfully.
+
+        Raises:
+            GSettingsUnavailableError: If GSettings is unavailable.
+        """
+        client = self._ensure_gsettings()
+        return client.apply_fonts(fonts)
 
     def delete_global_theme(self, theme_id_or_name: str) -> bool:
         """Delete a user-created Global Theme.
@@ -1019,6 +1076,7 @@ class ThemeManager:
         theme_set: ThemeSet,
         description: str | None = None,
         icon_override: str | None = None,
+        fonts: FontConfig | None = None,
     ) -> GlobalTheme:
         """Update an existing user-created Global Theme in place.
 
@@ -1027,6 +1085,7 @@ class ThemeManager:
             theme_set: New component selections (ThemeSet).
             description: Optional new description (keeps existing when None).
             icon_override: Optional new custom icon path (keeps existing when None).
+            fonts: Optional new FontConfig (keeps existing when None).
 
         Returns:
             Updated GlobalTheme instance.
@@ -1036,6 +1095,7 @@ class ThemeManager:
             theme_set=theme_set,
             description=description,
             icon_override=icon_override,
+            fonts=fonts,
         )
 
     # -------------------------------------------------------------------------

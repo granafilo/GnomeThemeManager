@@ -2121,3 +2121,50 @@ msgstr "Estensione User Themes abilitata automaticamente."
 
 
 
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:80
+msgid "Select Theme Icon"
+msgstr "Seleziona l'Icona del Tema"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:98
+msgid "Search icons…"
+msgstr "Cerca icone…"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Themes & Styling"
+msgstr "Temi e Stile"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Symbols & Badges"
+msgstr "Simboli e Distintivi"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Devices & Tech"
+msgstr "Dispositivi e Tecnologia"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:114
+msgid "Creative & Tools"
+msgstr "Strumenti e Creatività"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:173
+msgid "Select an icon from the library"
+msgstr "Seleziona un'icona dalla libreria"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:183
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:221
+msgid "Default Icon"
+msgstr "Icona Predefinita"
+
+#: src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py:196
+msgid "Reset to default icon"
+msgstr "Ripristina l'icona predefinita"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:244
+msgid "Custom Theme Icon"
+msgstr "Icona Personalizzata del Tema"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:245
+msgid "Optional icon selected from library to represent this Global Theme"
+msgstr "Icona opzionale selezionata dalla libreria per rappresentare questo Tema Globale"
+
+

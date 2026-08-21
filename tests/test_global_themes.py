@@ -199,46 +199,76 @@ def test_global_theme_manager_auto_generates_from_installed_themes(tmp_path: Pat
     # Mock themes discovered on system
     from gnome_theme_manager.core.models import Theme, ThemeType
 
-    scanner.list_themes.side_effect = lambda t, *args, **kwargs: {
-        ThemeType.GTK: [
-            Theme(
-                name="Yaru",
-                theme_type=ThemeType.GTK,
-                path=Path("/usr/share/themes/Yaru"),
-                is_user_level=False,
-            ),
-            Theme(
-                name="Yaru-dark",
-                theme_type=ThemeType.GTK,
-                path=Path("/usr/share/themes/Yaru-dark"),
-                is_user_level=False,
-            ),
-        ],
-        ThemeType.ICON: [
-            Theme(
-                name="Yaru",
-                theme_type=ThemeType.ICON,
-                path=Path("/usr/share/icons/Yaru"),
-                is_user_level=False,
-            ),
-        ],
-        ThemeType.CURSOR: [
-            Theme(
-                name="Yaru",
-                theme_type=ThemeType.CURSOR,
-                path=Path("/usr/share/icons/Yaru"),
-                is_user_level=False,
-            ),
-        ],
-        ThemeType.SHELL: [
-            Theme(
-                name="Yaru",
-                theme_type=ThemeType.SHELL,
-                path=Path("/usr/share/themes/Yaru"),
-                is_user_level=False,
-            ),
-        ],
-    }.get(t, [])
+    scanner.list_themes.side_effect = lambda t, *args, **kwargs: (
+        {
+            ThemeType.GTK: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.GTK,
+                    path=Path("/usr/share/themes/Yaru"),
+                    is_user_level=False,
+                ),
+                Theme(
+                    name="Yaru-dark",
+                    theme_type=ThemeType.GTK,
+                    path=Path("/usr/share/themes/Yaru-dark"),
+                    is_user_level=False,
+                ),
+            ],
+            ThemeType.ICON: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.ICON,
+                    path=Path("/usr/share/icons/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+            ThemeType.CURSOR: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.CURSOR,
+                    path=Path("/usr/share/icons/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+            ThemeType.SHELL: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.SHELL,
+                    path=Path("/usr/share/themes/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+        }.get(ThemeType.GTK)
+        if t == ThemeType.GTK
+        else {
+            ThemeType.GTK: [],
+            ThemeType.ICON: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.ICON,
+                    path=Path("/usr/share/icons/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+            ThemeType.CURSOR: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.CURSOR,
+                    path=Path("/usr/share/icons/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+            ThemeType.SHELL: [
+                Theme(
+                    name="Yaru",
+                    theme_type=ThemeType.SHELL,
+                    path=Path("/usr/share/themes/Yaru"),
+                    is_user_level=False,
+                ),
+            ],
+        }.get(t, [])
+    )
 
     validator = MagicMock()
     from gnome_theme_manager.core.theme_validator import ThemeValidationResult
@@ -331,3 +361,45 @@ def test_global_theme_manager_save_delete_and_ordering(tmp_path: Path) -> None:
     # Bundled themes cannot be deleted
     with pytest.raises(ValueError):
         mgr.delete_global_theme("theme-bundled")
+
+
+def test_global_theme_icon_override_serialization(tmp_path: Path) -> None:
+    """Test that icon_override is persisted through save/load and to_dict/from_dict."""
+    state_file = tmp_path / "state" / "global_themes.json"
+    mgr = GlobalThemeManager(
+        bundled_dir=tmp_path / "bundled",
+        state_file=state_file,
+    )
+
+    icon_path = "/home/u/.local/state/gnome-theme-manager/global-themes/icons/my-icon.png"
+    theme = mgr.save_global_theme(
+        "Themed Icon Setup",
+        ThemeSet(gtk_theme="Adwaita", icon_theme="Papirus"),
+        icon_override=icon_path,
+    )
+    assert theme.icon_override == icon_path
+
+    reloaded = GlobalThemeManager(
+        bundled_dir=tmp_path / "bundled",
+        state_file=state_file,
+    )
+    loaded = reloaded.get_global_theme(theme.id)
+    assert loaded is not None
+    assert loaded.icon_override == icon_path
+
+
+def test_global_theme_model_icon_override_roundtrip() -> None:
+    """Test that icon_override survives to_dict/from_dict."""
+    ts = ThemeSet(gtk_theme="Nordic", icon_theme="Papirus-Dark")
+    theme = GlobalTheme(
+        id="nordic-icon",
+        name="Nordic Icon",
+        description="Nordic themed icon test",
+        components=ts,
+        origin="user",
+        icon_override="/tmp/icon.png",
+    )
+    data = theme.to_dict()
+    assert data["icon_override"] == "/tmp/icon.png"
+    reconstructed = GlobalTheme.from_dict(data, is_bundled=False)
+    assert reconstructed.icon_override == "/tmp/icon.png"

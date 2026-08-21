@@ -239,6 +239,18 @@
                             <property name="subtitle" translatable="yes">System dark/light mode preference</property>
                           </object>
                         </child>
+                        <child>
+                          <object class="AdwActionRow" id="row_custom_theme_icon">
+                            <property name="title" translatable="yes">Custom Theme Icon</property>
+                            <property name="subtitle" translatable="yes">Optional icon selected from library to represent this Global Theme</property>
+                            <child>
+                              <object class="GtkBox" id="custom_icon_container">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">8</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
 

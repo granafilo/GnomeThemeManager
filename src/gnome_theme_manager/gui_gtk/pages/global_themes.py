@@ -60,6 +60,39 @@ def _create_component_pill(label_text: str, value_text: str) -> Gtk.Box:
 class _GlobalThemeCard(Gtk.Box):
     """Card widget displaying an individual Global Theme."""
 
+    @staticmethod
+    def _build_card_icon(theme: GlobalTheme) -> Gtk.Image:
+        """Build the card thumbnail: custom override icon name/file if present, else fallback.
+
+        Falls back gracefully to a default symbolic icon if the custom icon
+        is missing or cannot be loaded.
+        """
+        image = Gtk.Image()
+        is_user = theme.origin == "user"
+        fallback_icon = "document-save-as-symbolic" if is_user else "starred-symbolic"
+
+        if not theme.icon_override:
+            image.set_from_icon_name(fallback_icon)
+            return image
+
+        override = theme.icon_override.strip()
+        try:
+            if Path(override).is_file():
+                image.set_from_file(override)
+                return image
+            # Treat as system icon theme name
+            image.set_from_icon_name(override)
+            return image
+        except Exception as err:
+            logger.warning(
+                "Failed to load custom icon '%s' for theme '%s': %s",
+                override,
+                theme.name,
+                err,
+            )
+            image.set_from_icon_name(fallback_icon)
+            return image
+
     def __init__(
         self,
         theme: GlobalTheme,
@@ -83,11 +116,10 @@ class _GlobalThemeCard(Gtk.Box):
         header_box.set_margin_end(16)
         header_box.set_margin_top(16)
 
-        # Icon/Thumbnail
         is_user = theme.origin == "user"
-        icon = Gtk.Image.new_from_icon_name(
-            "document-save-as-symbolic" if is_user else "starred-symbolic"
-        )
+
+        # Icon/Thumbnail (custom override with graceful fallback)
+        icon = self._build_card_icon(theme)
         icon.set_pixel_size(36)
         icon.set_valign(Gtk.Align.CENTER)
         header_box.append(icon)
