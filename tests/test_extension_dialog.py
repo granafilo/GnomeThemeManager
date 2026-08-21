@@ -19,7 +19,7 @@ if is_gtk_available():
 
 
 def test_themes_page_prompts_to_enable_extension_if_disabled(mock_theme_manager) -> None:
-    """Verifica che se l'estensione user-theme è disattivata, il dialogo proponga di abilitarla."""
+    """Verifica che se l'estensione user-theme è disattivata, il dialogo proponga di abilitarla al click su Salva."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 non disponibili.")
 
@@ -60,14 +60,19 @@ def test_themes_page_prompts_to_enable_extension_if_disabled(mock_theme_manager)
     ):
         page.confirm_and_apply_theme(item, sync=True)
 
-        assert len(dialog_instances) == 1
-        heading = (
-            dialog_instances[0].get_heading()
-            if hasattr(dialog_instances[0], "get_heading")
-            else dialog_instances[0].get_title()
-        )
+        # Il primo dialogo è il dialogo di conferma (Apply ... to GNOME Shell?)
+        assert len(dialog_instances) >= 1
+        confirm_dlg = dialog_instances[0]
+
+        # Simula il click su "Save" / "apply"
+        confirm_dlg.emit("response", "apply")
+
+        # Ora si apre il secondo dialogo: abilitazione estensione
+        assert len(dialog_instances) == 2
+        ext_dlg = dialog_instances[1]
+        heading = ext_dlg.get_heading() if hasattr(ext_dlg, "get_heading") else ext_dlg.get_title()
         assert "disabilitata" in heading or "User Themes" in heading
 
         # Abilitiamo e continuiamo
-        dialog_instances[0].emit("response", "enable")
+        ext_dlg.emit("response", "enable")
         mock_theme_manager.extensions.enable_user_theme.assert_called_once()

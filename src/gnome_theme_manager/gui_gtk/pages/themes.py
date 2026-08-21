@@ -36,10 +36,10 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk.pages.themes")
 UI_FILE = Path(__file__).parent.parent / "ui" / "themes_page.ui"
 
 CATEGORY_ICONS: dict[ThemeType, str] = {
-    ThemeType.GTK: "preferences-desktop-theme-symbolic",
-    ThemeType.ICON: "applications-graphics-symbolic",
+    ThemeType.GTK: "app-logo-symbolic",
+    ThemeType.ICON: "face-slightly-smiling-plus-symbolic",
     ThemeType.CURSOR: "input-mouse-symbolic",
-    ThemeType.SHELL: "preferences-system-windows-symbolic",
+    ThemeType.SHELL: "user-desktop-symbolic",
 }
 
 
@@ -156,6 +156,7 @@ class ThemesPage:
         }
 
         self.widget: Gtk.Stack = self.builder.get_object("page_root")
+        self.banner_warning: Adw.Banner = self.builder.get_object("banner_warning")
         self.loading_spinner: Gtk.Spinner = self.builder.get_object("loading_spinner")
         self.category_title_label: Gtk.Label = self.builder.get_object("category_title_label")
 
@@ -444,7 +445,7 @@ class ThemesPage:
         elif active_theme_name:
             self.active_theme_row.set_title(active_theme_name)
             self.active_theme_row.set_subtitle(_("Theme not found in local directories"))
-            self.active_theme_badge.set_text(_("Not found"))
+            self.active_theme_badge.set_text(_("Fallback"))
             self.active_theme_badge.set_visible(True)
         else:
             self.active_theme_row.set_title(_("Not available"))
@@ -592,13 +593,6 @@ class ThemesPage:
                     )
                     return
 
-        needs_extension_check = item.theme_type == ThemeType.SHELL
-        if self.manager is not None and needs_extension_check:
-            is_enabled = self.manager.extensions.is_user_theme_enabled()
-            if not is_enabled:
-                self._open_enable_extension_dialog(item, win, on_complete, sync)
-                return
-
         cat_name = get_dialog_category_name(item.theme_type)
         heading = f"{_('Apply')} “{item.name}” {_('to')} {cat_name}?"
 
@@ -711,10 +705,58 @@ class ThemesPage:
             if self.manager is not None and self.manager.is_preview_active:
                 self.manager.commit_theme_preview()
 
-            if cross_checkbox is not None and cross_checkbox.get_active():
-                opposite_type = (
-                    ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
-                )
+            do_cross = cross_checkbox is not None and cross_checkbox.get_active()
+            opposite_type = ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
+
+            # Check if any component being applied requires GNOME Shell User Themes extension
+            will_apply_shell = item.theme_type == ThemeType.SHELL or (
+                do_cross and opposite_type == ThemeType.SHELL
+            )
+
+            if will_apply_shell and self.manager is not None:
+                is_enabled = self.manager.extensions.is_user_theme_enabled()
+                if not is_enabled:
+                    prefs = self.manager.extensions.get_prefs()
+                    if prefs.auto_enable_user_theme:
+                        enabled_ok = self.manager.extensions.enable_user_theme()
+                        if enabled_ok:
+                            if self.manager.gsettings is not None:
+                                try:
+                                    self.manager.gsettings.__init__(
+                                        schema_name=self.manager.gsettings.schema_name,
+                                        shell_schema_name=self.manager.gsettings.shell_schema_name,
+                                        custom_schema_dirs=self.manager.gsettings.custom_schema_dirs,
+                                    )
+                                except Exception:
+                                    pass
+                            self._show_toast(_("User Themes extension enabled automatically."))
+                        else:
+                            self._show_toast(_("Unable to enable 'User Themes' extension."))
+                    else:
+
+                        def on_ext_dialog_done(res: Any, err: Any) -> None:
+                            if err is not None:
+                                if on_complete:
+                                    on_complete(res, err)
+                                return
+                            # Proceed with apply after user enabled extension
+                            if do_cross:
+                                self.apply_theme(
+                                    item,
+                                    on_complete=lambda r, e: self._apply_opposite_after(
+                                        item.name, opposite_type, on_complete
+                                    ),
+                                    sync=sync,
+                                )
+                            else:
+                                self.apply_theme(item, on_complete=on_complete, sync=sync)
+
+                        self._open_enable_extension_dialog(
+                            item, win, on_complete=on_ext_dialog_done, sync=sync
+                        )
+                        return
+
+            if do_cross:
                 self.apply_theme(
                     item,
                     on_complete=lambda res, err: self._apply_opposite_after(
@@ -839,9 +881,9 @@ class ThemesPage:
                             )
                         except Exception:
                             pass
-                    self.confirm_and_apply_theme(
-                        item, parent_window=parent_window, on_complete=on_complete, sync=sync
-                    )
+                    self._show_toast(_("User Themes extension enabled automatically."))
+                    if on_complete:
+                        on_complete(None, None)
                 else:
                     self._show_toast(_("Unable to enable 'User Themes' extension."))
                     if on_complete:

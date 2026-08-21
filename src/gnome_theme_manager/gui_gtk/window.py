@@ -22,7 +22,7 @@ from gnome_theme_manager import _
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
-from gi.repository import Adw, GLib, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
@@ -40,8 +40,33 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk.window")
 # Path to associated UI template file
 UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 
+# Path to bundled fallback icons directory (data/icons)
+BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons"
+
 # Threshold for responsive automatic collapse (collapsible sidebar)
 COLLAPSE_BREAKPOINT_WIDTH: int = 700
+
+
+def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
+    """Register bundled icons directory in the Gtk.IconTheme search path chain."""
+    if not BUNDLED_ICONS_DIR.is_dir():
+        return
+
+    try:
+        theme = icon_theme
+        if theme is None:
+            display = Gdk.Display.get_default()
+            if display is not None:
+                theme = Gtk.IconTheme.get_for_display(display)
+
+        if theme is not None and hasattr(theme, "add_search_path"):
+            current_paths = theme.get_search_path() if hasattr(theme, "get_search_path") else []
+            bundled_str = str(BUNDLED_ICONS_DIR)
+            if bundled_str not in current_paths:
+                theme.add_search_path(bundled_str)
+                logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", bundled_str)
+    except Exception as err:
+        logger.warning("Failed to initialize bundled icon theme: %s", err)
 
 
 class MainWindow(Adw.ApplicationWindow):
@@ -59,9 +84,15 @@ class MainWindow(Adw.ApplicationWindow):
         """
         super().__init__(application=app, title=_("GNOME Theme Manager"))
 
-        # Minimum sizing (required by Libadwaita) and initial default size
-        self.set_size_request(860, 520)
-        self.set_default_size(1000, 700)
+        # Initialize bundled icons fallback chain
+        init_bundled_icon_theme()
+
+        # Minimum sizing ensuring all pages/cards are fully visible without truncation
+        self.set_size_request(980, 560)
+        self.set_default_size(1080, 720)
+
+        # Apply application-wide CSS styling for enhanced readability and typography
+        self._setup_custom_styling()
 
         self.manager = manager or ThemeManager()
         try:
@@ -171,12 +202,16 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_themes_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "global_themes", is_l
         )
-        self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(msg)
+        self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "editor", is_l
         )
-        self.editor_page.on_notify_message = lambda msg, is_err: self.add_toast(msg)
+        self.editor_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
         self.editor_page.on_theme_saved = lambda saved: self.global_themes_page.refresh()
 
         def _on_global_theme_applied_callback(theme_id: str, result: Any) -> None:
@@ -208,10 +243,83 @@ class MainWindow(Adw.ApplicationWindow):
         self.sandbox_page.on_sandbox_propagated = _on_sandbox_propagated_callback
 
         self.select_page("status")
-        self.status_page.refresh()
 
         self._setup_shortcuts(app)
         self._setup_focus_behavior()
+
+    def _setup_custom_styling(self) -> None:
+        """Inject CSS styles for enhanced readability, larger font scale, and comfortable spacing."""
+        from gi.repository import Gdk
+
+        css_provider = Gtk.CssProvider()
+        css_data = """
+        /* Typography scale enhancement */
+        window.main-window {
+            font-size: 1.04rem;
+        }
+
+        /* ActionRow titles & subtitles comfortable scale */
+        row.activatable, preferencesgroup list {
+            min-height: 52px;
+        }
+
+        /* Slightly larger sidebar icons and rows */
+        .navigation-sidebar > row {
+            min-height: 44px;
+            padding: 4px 6px;
+        }
+
+        /* Modern Libadwaita GtkDropDown styling */
+        dropdown > button {
+            min-width: 180px;
+            min-height: 38px;
+            padding: 4px 14px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        dropdown > button image {
+            margin-left: 8px;
+        }
+
+        dropdown > button label {
+            font-weight: 500;
+        }
+
+        /* Popover list styling for dropdown menus */
+        popover.menu listview row, popover.menu listview > row {
+            min-height: 38px;
+            padding: 6px 12px;
+        }
+
+        /* Color picker HEX entries & buttons */
+        entry.numeric {
+            min-height: 36px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        /* Card list padding and border radius */
+        .boxed-list {
+            margin-top: 6px;
+            margin-bottom: 6px;
+        }
+        """
+        try:
+            if hasattr(css_provider, "load_from_string"):
+                css_provider.load_from_string(css_data)
+            else:
+                css_provider.load_from_data(css_data.encode("utf-8"))
+            display = Gdk.Display.get_default()
+            if display is not None:
+                Gtk.StyleContext.add_provider_for_display(
+                    display,
+                    css_provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+                )
+        except Exception as err:
+            logger.debug("Failed to apply custom CSS styling: %s", err)
 
     def _setup_shortcuts(self, app: Adw.Application) -> None:
         """Configure actions and accelerators for close (Ctrl+W) and quit (Ctrl+Q)."""
@@ -415,12 +523,13 @@ class MainWindow(Adw.ApplicationWindow):
         """Dismiss top feedback notification on close button click."""
         self.clear_feedback()
 
-    def add_toast(self, message: str, timeout: int = 0) -> None:
+    def add_toast(self, message: str, timeout: int = 0, is_error: bool = False) -> None:
         """Display a feedback notification in top area of window.
 
         Args:
             message: Message text to display.
             timeout: Seconds before dismissal (0 = persistent until next user action).
+            is_error: Explicit flag indicating whether this is an error notification.
         """
         if self._feedback_timeout_id is not None:
             GLib.source_remove(self._feedback_timeout_id)
@@ -429,27 +538,54 @@ class MainWindow(Adw.ApplicationWindow):
         if self.feedback_label is not None:
             self.feedback_label.set_label(message)
 
+        msg_lower = message.lower()
+        has_error_kw = (
+            is_error
+            or "error" in msg_lower
+            or "failed" in msg_lower
+            or "unable" in msg_lower
+            or "impossibile" in msg_lower
+            or "errore" in msg_lower
+            or "fallit" in msg_lower
+            or "invalid" in msg_lower
+            or "non valid" in msg_lower
+        )
+        has_warning_kw = (
+            "warning" in msg_lower
+            or "partial" in msg_lower
+            or "avvis" in msg_lower
+            or "incompleto" in msg_lower
+        )
+        has_deleted_kw = (
+            "deleted" in msg_lower
+            or "removed" in msg_lower
+            or "rimoss" in msg_lower
+            or "eliminat" in msg_lower
+        )
+
         if self.feedback_icon is not None:
-            msg_lower = message.lower()
-            if (
-                "error" in msg_lower
-                or "failed" in msg_lower
-                or "unable" in msg_lower
-                or "errore" in msg_lower
-                or "fallit" in msg_lower
-            ):
+            if has_error_kw:
                 self.feedback_icon.set_from_icon_name("dialog-error-symbolic")
-            elif "warning" in msg_lower or "partial" in msg_lower or "avvis" in msg_lower:
+            elif has_warning_kw:
                 self.feedback_icon.set_from_icon_name("dialog-warning-symbolic")
-            elif (
-                "deleted" in msg_lower
-                or "removed" in msg_lower
-                or "rimoss" in msg_lower
-                or "eliminat" in msg_lower
-            ):
-                self.feedback_icon.set_from_icon_name("user-trash-symbolic")
+            elif has_deleted_kw:
+                self.feedback_icon.set_from_icon_name("edit-delete-symbolic")
             else:
                 self.feedback_icon.set_from_icon_name("emblem-ok-symbolic")
+
+        if self.feedback_box is not None:
+            if has_error_kw:
+                self.feedback_box.add_css_class("error")
+                self.feedback_box.remove_css_class("warning")
+                self.feedback_box.remove_css_class("success")
+            elif has_warning_kw:
+                self.feedback_box.add_css_class("warning")
+                self.feedback_box.remove_css_class("error")
+                self.feedback_box.remove_css_class("success")
+            else:
+                self.feedback_box.add_css_class("success")
+                self.feedback_box.remove_css_class("error")
+                self.feedback_box.remove_css_class("warning")
 
         if self.feedback_revealer is not None:
             self.feedback_revealer.set_reveal_child(True)

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3.0] - 2026-08-21
+
+### Added
+- **Fallback Themes & Resilient Apply (3.1)**: User-configurable fallback themes for GTK3, GTK4, GNOME Shell, Icons, and Cursors; graceful auto-fallback when requested themes are missing in Host, Flatpak, or Snap sandboxes with non-blocking info banners instead of disruptive errors.
+- **Optional User Themes Auto-Enable (3.2)**: User configuration toggle to silently auto-enable the GNOME Shell User Themes extension during theme apply.
+- **Launcher Permissions Documentation (3.3)**: Added clear guidance in README for making AppImage and desktop launchers executable.
+- **Bundled Fallback Icons (3.4)**: Integrated standard fallback icons search path chain and dynamic symbolic assets in `data/icons/` ensuring UI elements never render missing icon placeholders.
+
 ## [1.2.0] - 2026-08-20
 
 ### Added

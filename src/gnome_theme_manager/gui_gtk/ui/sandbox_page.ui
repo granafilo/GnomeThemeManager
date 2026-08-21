@@ -66,7 +66,8 @@
             <property name="hexpand">true</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">680</property>
+                <property name="maximum-size">920</property>
+                <property name="tightening-threshold">600</property>
                 <property name="margin-top">24</property>
                 <property name="margin-bottom">24</property>
                 <property name="margin-start">16</property>
@@ -87,7 +88,7 @@
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="flatpak_status_icon">
-                                <property name="icon-name">package-x-generic-symbolic</property>
+                                <property name="icon-name">flatpak-symbolic</property>
                               </object>
                             </child>
                           </object>

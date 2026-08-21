@@ -67,6 +67,12 @@ class IconPackPreview(Gtk.Box):
 
         self._icon_theme = Gtk.IconTheme.new()
 
+        # Ensure bundled fallback icons are registered
+        from ..window import BUNDLED_ICONS_DIR
+
+        if BUNDLED_ICONS_DIR.is_dir():
+            self._icon_theme.add_search_path(str(BUNDLED_ICONS_DIR))
+
         # Add custom path if icon pack is located outside standard directories
         if theme_path is not None and theme_path.is_dir():
             parent_dir = theme_path.parent

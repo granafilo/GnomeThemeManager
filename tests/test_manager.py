@@ -362,14 +362,20 @@ def test_manager_apply_themes_sandbox_failure_produces_warnings(
     assert result.sandbox_propagation.flatpak_success is False
 
 
-def test_manager_apply_themes_missing_theme_raises(
+def test_manager_apply_themes_missing_theme_fallback_and_raises(
     manager: ThemeManager, mock_scanner: MagicMock
 ) -> None:
-    """Verifica che la mancanza di un tema sul filesystem sollevi ThemeNotFoundError."""
+    """Verifica che la mancanza di un tema applichi il fallback o sollevi se use_fallback=False."""
     mock_scanner.find_theme.return_value = None
 
+    # Quando use_fallback=True (default), non solleva eccezioni ma usa il fallback con warning
+    res = manager.apply_themes(ThemeSet(gtk_theme="NonExistent"))
+    assert res.gtk_theme is not None
+    assert any("fallback in use" in w for w in res.warnings)
+
+    # Quando use_fallback=False, solleva ThemeNotFoundError
     with pytest.raises(ThemeNotFoundError, match="GTK theme 'NonExistent' was not found"):
-        manager.apply_themes(ThemeSet(gtk_theme="NonExistent"))
+        manager.apply_themes(ThemeSet(gtk_theme="NonExistent"), use_fallback=False)
 
 
 def test_manager_apply_themes_invalid_color_scheme(manager: ThemeManager) -> None:

@@ -63,18 +63,11 @@ class ColorPickerButton(Gtk.Box):
         self.button.add_css_class("flat")
 
         btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.swatch = Gtk.Box()
-        self.swatch.set_size_request(22, 22)
-        self.swatch.add_css_class("card")
+        self.swatch = Gtk.DrawingArea()
+        self.swatch.set_content_width(22)
+        self.swatch.set_content_height(22)
         self.swatch.set_valign(Gtk.Align.CENTER)
-        self._swatch_provider = Gtk.CssProvider()
-        display = Gdk.Display.get_default() or Gdk.DisplayManager.get().get_default_display()
-        if display:
-            Gtk.StyleContext.add_provider_for_display(
-                display,
-                self._swatch_provider,
-                Gtk.STYLE_PROVIDER_PRIORITY_USER,
-            )
+        self.swatch.set_draw_func(self._draw_swatch)
         btn_content.append(self.swatch)
 
         self.btn_label = Gtk.Label(label=_("Pick"))
@@ -88,11 +81,35 @@ class ColorPickerButton(Gtk.Box):
         self.dialog.set_title(title)
         self.dialog.set_with_alpha(False)
 
-        self._widget_id = f"picker_{id(self)}"
-        self.swatch.add_css_class(self._widget_id)
-
         self.button.connect("clicked", self._on_button_clicked)
         self.set_color_hex(default_hex)
+
+    def _draw_swatch(
+        self,
+        _drawing_area: Gtk.DrawingArea,
+        cr: Any,
+        width: int,
+        height: int,
+    ) -> None:
+        """Draw rounded color swatch preview using Cairo."""
+        rgba = hex_to_rgba(self._current_hex)
+        radius = 5.0
+        # Draw rounded rectangle
+        degrees = 3.141592653589793 / 180.0
+        cr.new_sub_path()
+        cr.arc(width - radius, radius, radius, -90 * degrees, 0 * degrees)
+        cr.arc(width - radius, height - radius, radius, 0 * degrees, 90 * degrees)
+        cr.arc(radius, height - radius, radius, 90 * degrees, 180 * degrees)
+        cr.arc(radius, radius, radius, 180 * degrees, 270 * degrees)
+        cr.close_path()
+
+        cr.set_source_rgba(rgba.red, rgba.green, rgba.blue, rgba.alpha)
+        cr.fill_preserve()
+
+        # Outline border
+        cr.set_source_rgba(0.5, 0.5, 0.5, 0.4)
+        cr.set_line_width(1.0)
+        cr.stroke()
 
     def get_color_hex(self) -> str:
         """Return current hex color string."""
@@ -117,14 +134,7 @@ class ColorPickerButton(Gtk.Box):
             finally:
                 self._updating_entry = False
 
-        css = f".{self._widget_id} {{ background-color: {cleaned}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
-        try:
-            if hasattr(self._swatch_provider, "load_from_string"):
-                self._swatch_provider.load_from_string(css)
-            else:
-                self._swatch_provider.load_from_data(css.encode("utf-8"))
-        except Exception:
-            pass
+        self.swatch.queue_draw()
 
     def _on_entry_changed(self, entry: Gtk.Entry) -> None:
         """Handle manual hex input from user."""
@@ -141,14 +151,7 @@ class ColorPickerButton(Gtk.Box):
         # Validate hex pattern
         if re.match(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", text):
             self._current_hex = text
-            css = f".{self._widget_id} {{ background-color: {text}; border-radius: 6px; border: 1px solid rgba(127,127,127,0.4); }}"
-            try:
-                if hasattr(self._swatch_provider, "load_from_string"):
-                    self._swatch_provider.load_from_string(css)
-                else:
-                    self._swatch_provider.load_from_data(css.encode("utf-8"))
-            except Exception:
-                pass
+            self.swatch.queue_draw()
             self.emit("color-changed", text)
 
     def _on_button_clicked(self, _btn: Gtk.Button) -> None:

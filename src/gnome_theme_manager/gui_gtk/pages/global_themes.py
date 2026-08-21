@@ -147,11 +147,17 @@ class _GlobalThemeCard(Gtk.Box):
             desc_label.add_css_class("body")
             self.append(desc_label)
 
-        # Component Pills Box (FlowBox or Box)
-        comp_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        # Component Pills FlowBox (wraps gracefully without pushing window width)
+        comp_box = Gtk.FlowBox()
+        comp_box.set_selection_mode(Gtk.SelectionMode.NONE)
+        comp_box.set_max_children_per_line(10)
+        comp_box.set_min_children_per_line(1)
+        comp_box.set_column_spacing(6)
+        comp_box.set_row_spacing(6)
         comp_box.set_margin_start(16)
         comp_box.set_margin_end(16)
         comp_box.set_margin_bottom(16)
+        comp_box.set_hexpand(True)
 
         ts: ThemeSet = theme.components
         if ts.gtk_theme:

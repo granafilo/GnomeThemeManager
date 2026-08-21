@@ -11,7 +11,7 @@ import threading
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import gi
 
@@ -45,6 +45,16 @@ class StatusSnapshot:
     cursor_path: str | None = None
     shell_path: str | None = None
     warnings: list[str] = field(default_factory=list)
+    fallback_gtk_opts: list[str] = field(default_factory=list)
+    fallback_shell_opts: list[str] = field(default_factory=list)
+    fallback_icon_opts: list[str] = field(default_factory=list)
+    fallback_cursor_opts: list[str] = field(default_factory=list)
+    fallback_cfg_gtk3: str | None = None
+    fallback_cfg_gtk4: str | None = None
+    fallback_cfg_shell: str | None = None
+    fallback_cfg_icons: str | None = None
+    fallback_cfg_cursors: str | None = None
+    auto_enable_user_theme: bool = False
 
 
 def format_optional_value(value: str | None, default: str | None = None) -> str:
@@ -152,6 +162,66 @@ class StatusPage:
         self.row_flatpak_status: Adw.ActionRow = self.builder.get_object("row_flatpak_status")
         self.row_snap_status: Adw.ActionRow = self.builder.get_object("row_snap_status")
 
+        # Fallback Dropdowns (Task 3.1 - AdwComboRow)
+        self.dropdown_fallback_gtk3: Adw.ComboRow = self.builder.get_object(
+            "dropdown_fallback_gtk3"
+        )
+        self.dropdown_fallback_gtk4: Adw.ComboRow = self.builder.get_object(
+            "dropdown_fallback_gtk4"
+        )
+        self.dropdown_fallback_shell: Adw.ComboRow = self.builder.get_object(
+            "dropdown_fallback_shell"
+        )
+        self.dropdown_fallback_icons: Adw.ComboRow = self.builder.get_object(
+            "dropdown_fallback_icons"
+        )
+        self.dropdown_fallback_cursors: Adw.ComboRow = self.builder.get_object(
+            "dropdown_fallback_cursors"
+        )
+
+        self._fallback_models: dict[str, Gtk.StringList] = {
+            "gtk3": Gtk.StringList.new([]),
+            "gtk4": Gtk.StringList.new([]),
+            "shell": Gtk.StringList.new([]),
+            "icons": Gtk.StringList.new([]),
+            "cursors": Gtk.StringList.new([]),
+        }
+        if self.dropdown_fallback_gtk3 is not None:
+            self.dropdown_fallback_gtk3.set_model(self._fallback_models["gtk3"])
+            self.dropdown_fallback_gtk3.connect(
+                "notify::selected-item", lambda *_: self._on_fallback_changed("gtk3")
+            )
+        if self.dropdown_fallback_gtk4 is not None:
+            self.dropdown_fallback_gtk4.set_model(self._fallback_models["gtk4"])
+            self.dropdown_fallback_gtk4.connect(
+                "notify::selected-item", lambda *_: self._on_fallback_changed("gtk4")
+            )
+        if self.dropdown_fallback_shell is not None:
+            self.dropdown_fallback_shell.set_model(self._fallback_models["shell"])
+            self.dropdown_fallback_shell.connect(
+                "notify::selected-item", lambda *_: self._on_fallback_changed("shell")
+            )
+        if self.dropdown_fallback_icons is not None:
+            self.dropdown_fallback_icons.set_model(self._fallback_models["icons"])
+            self.dropdown_fallback_icons.connect(
+                "notify::selected-item", lambda *_: self._on_fallback_changed("icons")
+            )
+        if self.dropdown_fallback_cursors is not None:
+            self.dropdown_fallback_cursors.set_model(self._fallback_models["cursors"])
+            self.dropdown_fallback_cursors.connect(
+                "notify::selected-item", lambda *_: self._on_fallback_changed("cursors")
+            )
+
+        self._updating_fallbacks: bool = False
+        self._updating_prefs: bool = False
+
+        # Behavior Preferences (Task 3.2)
+        self.row_auto_enable_user_theme: Any = self.builder.get_object("row_auto_enable_user_theme")
+        if self.row_auto_enable_user_theme is not None:
+            self.row_auto_enable_user_theme.connect(
+                "notify::active", self._on_auto_enable_user_theme_changed
+            )
+
         self.error_page: Adw.StatusPage = self.builder.get_object("error_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
         self.empty_retry_button: Gtk.Button = self.builder.get_object("empty_retry_button")
@@ -236,6 +306,49 @@ class StatusPage:
                     if sb.flatpak_available and not sb.flatpak_filesystem_override_active:
                         warnings.append(_("Flatpak: user themes filesystem override is inactive."))
 
+                fb_gtk_opts: list[str] = []
+                fb_shell_opts: list[str] = []
+                fb_icon_opts: list[str] = []
+                fb_cursor_opts: list[str] = []
+                fb_gtk3: str | None = None
+                fb_gtk4: str | None = None
+                fb_shell: str | None = None
+                fb_icons: str | None = None
+                fb_cursors: str | None = None
+
+                if self.manager.fallback_manager:
+                    try:
+                        cfg = self.manager.fallback_manager.get_config()
+                        fb_gtk3 = cfg.gtk3
+                        fb_gtk4 = cfg.gtk4
+                        fb_shell = cfg.shell
+                        fb_icons = cfg.icons
+                        fb_cursors = cfg.cursors
+                        fb_gtk_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                            ThemeType.GTK
+                        )
+                        fb_shell_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                            ThemeType.SHELL
+                        )
+                        fb_icon_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                            ThemeType.ICON
+                        )
+                        fb_cursor_opts = (
+                            self.manager.fallback_manager.get_available_fallback_themes(
+                                ThemeType.CURSOR
+                            )
+                        )
+                    except Exception as fb_err:
+                        logger.warning("Error pre-fetching fallback themes in worker: %s", fb_err)
+
+                auto_enable_val = False
+                if self.manager.extensions:
+                    try:
+                        prefs = self.manager.extensions.get_prefs()
+                        auto_enable_val = prefs.auto_enable_user_theme
+                    except Exception as pref_err:
+                        logger.warning("Error loading UI prefs in worker: %s", pref_err)
+
                 snapshot = StatusSnapshot(
                     themes=themes,
                     system_status=system_status,
@@ -244,6 +357,16 @@ class StatusPage:
                     cursor_path=cursor_path,
                     shell_path=shell_path,
                     warnings=warnings,
+                    fallback_gtk_opts=fb_gtk_opts,
+                    fallback_shell_opts=fb_shell_opts,
+                    fallback_icon_opts=fb_icon_opts,
+                    fallback_cursor_opts=fb_cursor_opts,
+                    fallback_cfg_gtk3=fb_gtk3,
+                    fallback_cfg_gtk4=fb_gtk4,
+                    fallback_cfg_shell=fb_shell,
+                    fallback_cfg_icons=fb_icons,
+                    fallback_cfg_cursors=fb_cursors,
+                    auto_enable_user_theme=auto_enable_val,
                 )
                 return snapshot, None
             except Exception as err:
@@ -356,7 +479,139 @@ class StatusPage:
         else:
             self.banner_warning.set_revealed(False)
 
+        self._populate_fallback_dropdowns(snapshot)
+
+        # Update auto-enable user-theme toggle state (Task 3.2)
+        if self.row_auto_enable_user_theme is not None:
+            self._updating_prefs = True
+            try:
+                self.row_auto_enable_user_theme.set_active(snapshot.auto_enable_user_theme)
+            finally:
+                self._updating_prefs = False
+
         self.widget.set_visible_child_name("ready")
+
+    def _populate_fallback_dropdowns(self, snapshot: StatusSnapshot | None = None) -> None:
+        """Populate the 5 fallback dropdowns filtering for universal availability."""
+        if self.manager is None:
+            return
+
+        self._updating_fallbacks = True
+        try:
+            if snapshot is not None and (snapshot.fallback_gtk_opts or snapshot.fallback_cfg_gtk3):
+                gtk_opts = snapshot.fallback_gtk_opts
+                shell_opts = snapshot.fallback_shell_opts
+                icon_opts = snapshot.fallback_icon_opts
+                cursor_opts = snapshot.fallback_cursor_opts
+                gtk3_val = snapshot.fallback_cfg_gtk3
+                gtk4_val = snapshot.fallback_cfg_gtk4
+                shell_val = snapshot.fallback_cfg_shell
+                icons_val = snapshot.fallback_cfg_icons
+                cursors_val = snapshot.fallback_cfg_cursors
+            else:
+                cfg = self.manager.fallback_manager.get_config()
+                gtk_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                    ThemeType.GTK
+                )
+                shell_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                    ThemeType.SHELL
+                )
+                icon_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                    ThemeType.ICON
+                )
+                cursor_opts = self.manager.fallback_manager.get_available_fallback_themes(
+                    ThemeType.CURSOR
+                )
+                gtk3_val = cfg.gtk3
+                gtk4_val = cfg.gtk4
+                shell_val = cfg.shell
+                icons_val = cfg.icons
+                cursors_val = cfg.cursors
+
+            self._fill_string_list(
+                self._fallback_models["gtk3"], self.dropdown_fallback_gtk3, gtk_opts, gtk3_val
+            )
+            self._fill_string_list(
+                self._fallback_models["gtk4"], self.dropdown_fallback_gtk4, gtk_opts, gtk4_val
+            )
+            self._fill_string_list(
+                self._fallback_models["shell"], self.dropdown_fallback_shell, shell_opts, shell_val
+            )
+            self._fill_string_list(
+                self._fallback_models["icons"], self.dropdown_fallback_icons, icon_opts, icons_val
+            )
+            self._fill_string_list(
+                self._fallback_models["cursors"],
+                self.dropdown_fallback_cursors,
+                cursor_opts,
+                cursors_val,
+            )
+        finally:
+            self._updating_fallbacks = False
+
+    def _fill_string_list(
+        self,
+        string_list: Gtk.StringList,
+        dropdown: Gtk.DropDown | None,
+        items: list[str],
+        selected: str | None,
+    ) -> None:
+        """Fill string list and set selected index."""
+        while string_list.get_n_items() > 0:
+            string_list.remove(0)
+
+        selected_idx = 0
+        for idx, it in enumerate(items):
+            string_list.append(it)
+            if selected and it == selected:
+                selected_idx = idx
+
+        if dropdown is not None and items:
+            dropdown.set_selected(selected_idx)
+
+    def _on_fallback_changed(self, component_key: str) -> None:
+        """Handle user selection changes on fallback dropdowns."""
+        if self._updating_fallbacks or self.manager is None:
+            return
+
+        dropdown_map = {
+            "gtk3": self.dropdown_fallback_gtk3,
+            "gtk4": self.dropdown_fallback_gtk4,
+            "shell": self.dropdown_fallback_shell,
+            "icons": self.dropdown_fallback_icons,
+            "cursors": self.dropdown_fallback_cursors,
+        }
+        dd = dropdown_map.get(component_key)
+        if dd is None:
+            return
+
+        sel_item = dd.get_selected_item()
+        if sel_item is None:
+            return
+        selected_val = sel_item.get_string() if hasattr(sel_item, "get_string") else str(sel_item)
+
+        cfg = self.manager.fallback_manager.get_config()
+        if component_key == "gtk3":
+            cfg.gtk3 = selected_val
+        elif component_key == "gtk4":
+            cfg.gtk4 = selected_val
+        elif component_key == "shell":
+            cfg.shell = selected_val
+        elif component_key == "icons":
+            cfg.icons = selected_val
+        elif component_key == "cursors":
+            cfg.cursors = selected_val
+        self.manager.fallback_manager.save_config(cfg)
+        logger.debug("Updated fallback config for '%s' to '%s'", component_key, selected_val)
+
+    def _on_auto_enable_user_theme_changed(self, *_: Any) -> None:
+        """Handle toggle state change for auto_enable_user_theme preference."""
+        if self._updating_prefs or self.manager is None or self.row_auto_enable_user_theme is None:
+            return
+        is_active = bool(self.row_auto_enable_user_theme.get_active())
+        if self.manager.extensions:
+            self.manager.extensions.set_auto_enable_user_theme(is_active)
+            logger.info("Auto-enable User Themes preference set to %s", is_active)
 
     def _handle_error(self, error: Exception) -> None:
         """Handle errors setting the error view."""

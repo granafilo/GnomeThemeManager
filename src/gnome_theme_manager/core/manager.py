@@ -18,6 +18,7 @@ from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
 from .extensions import ExtensionsManager
+from .fallback import FallbackManager
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
@@ -48,7 +49,8 @@ class ThemeManager:
     """Facade coordinator class for all GNOME theme operations.
 
     Abstracts and decouples subsystem complexity (GSettings, Filesystem,
-    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager, ThemeValidator, ThemeMixer, ThemeForkManager), offering
+    Linker, Installer, Presets, GlobalThemes, SandboxBridge, ExtensionsManager,
+    ThemeValidator, ThemeMixer, ThemeForkManager, FallbackManager), offering
     a clean, UI-independent, highly testable API with optional dependency injection.
     """
 
@@ -66,6 +68,7 @@ class ThemeManager:
         theme_mixer: ThemeMixer | None = None,
         theme_forks: ThemeForkManager | None = None,
         editor_drafts: EditorDraftManager | None = None,
+        fallback_manager: FallbackManager | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -82,6 +85,7 @@ class ThemeManager:
             theme_mixer: Custom ThemeMixer instance (optional).
             theme_forks: Custom ThemeForkManager instance (optional).
             editor_drafts: Custom EditorDraftManager instance (optional).
+            fallback_manager: Custom FallbackManager instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -105,9 +109,15 @@ class ThemeManager:
                 logger.warning("GSettingsClient could not be initialized: %s", err)
                 self._gsettings = None
 
+        self._fallback_manager = fallback_manager or FallbackManager(
+            scanner=self._scanner,
+            gsettings_client=self._gsettings,
+        )
+
         self._global_themes = global_themes or GlobalThemeManager(
             scanner=self._scanner,
             current_themes_provider=self._get_current_themes_safe,
+            validator=self._validator,
         )
         self._theme_mixer = theme_mixer or ThemeMixer(
             global_theme_manager=self._global_themes,
@@ -295,6 +305,11 @@ class ThemeManager:
         return self._global_themes
 
     @property
+    def fallback_manager(self) -> FallbackManager:
+        """Return associated fallback manager."""
+        return self._fallback_manager
+
+    @property
     def validator(self) -> ThemeValidator:
         """Return associated theme validator."""
         return self._validator
@@ -466,122 +481,178 @@ class ThemeManager:
         apply_gtk4_override: bool = True,
         propagate_sandbox: bool = True,
         force: bool = False,
+        use_fallback: bool = True,
     ) -> ApplyResult:
         """Validate and apply a set of themes to the GNOME desktop.
 
-        Verifies physical presence of themes prior to modifying GSettings, optionally
-        applies GTK4 / Libadwaita symlinks, and propagates configuration to Snap and Flatpak.
+        Verifies physical presence of themes prior to modifying GSettings. If a theme
+        is missing and use_fallback=True, applies configured fallback theme with an info warning.
+        Optionally applies GTK4 / Libadwaita symlinks and propagates configuration to Snap and Flatpak.
 
         Args:
             theme_set: Theme set to apply.
             apply_gtk4_override: If True, apply symlinks in ~/.config/gtk-4.0 for GTK themes.
             propagate_sandbox: If True, propagate GTK themes and icon packs to Flatpak and Snap.
             force: If True, bypass ThemeValidationError and apply anyway with warnings.
+            use_fallback: If True, fallback to user-configured default theme if missing instead of failing.
 
         Returns:
             ApplyResult containing applied components and warnings.
 
         Raises:
-            ThemeNotFoundError: If a specified theme does not exist on the filesystem.
+            ThemeNotFoundError: If a specified theme does not exist and use_fallback is False.
             ValueError: If color scheme is unsupported.
             GSettingsUnavailableError: If GSettings is unavailable.
         """
         logger.info(
-            "Theme apply requested: %s (gtk4_override=%s, propagate_sandbox=%s, force=%s)",
+            "Theme apply requested: %s (gtk4_override=%s, propagate_sandbox=%s, force=%s, use_fallback=%s)",
             theme_set,
             apply_gtk4_override,
             propagate_sandbox,
             force,
+            use_fallback,
         )
         client = self._ensure_gsettings()
         warnings: list[str] = []
 
-        # 1. Pre-validation of theme existence and structural validity on filesystem
+        gtk_to_apply = theme_set.gtk_theme
+        icon_to_apply = theme_set.icon_theme
+        cursor_to_apply = theme_set.cursor_theme
+        shell_to_apply = theme_set.shell_theme
+
+        # 1. GTK Theme resolution & validation
         found_gtk: Theme | None = None
-        if theme_set.gtk_theme is not None:
-            found_gtk = self._scanner.find_theme(theme_set.gtk_theme, ThemeType.GTK)
+        if gtk_to_apply is not None:
+            found_gtk = self._scanner.find_theme(gtk_to_apply, ThemeType.GTK)
             if not found_gtk:
-                raise ThemeNotFoundError(
-                    f"GTK theme '{theme_set.gtk_theme}' was not found on the system."
-                )
-            gtk_val = self._validator.validate(found_gtk.path, ThemeType.GTK)
-            if not gtk_val.valid:
-                warn_msg = (
-                    "; ".join(gtk_val.warnings) or "Theme structure is incomplete or invalid."
-                )
-                if force:
-                    warnings.append(f"GTK theme '{theme_set.gtk_theme}' is incomplete: {warn_msg}")
-                else:
-                    raise ThemeValidationError(
-                        f"GTK theme '{theme_set.gtk_theme}' is invalid: {warn_msg}"
+                if use_fallback:
+                    fb_theme = self._fallback_manager.resolve_fallback_for_component(ThemeType.GTK)
+                    warnings.append(
+                        f"GTK theme '{gtk_to_apply}' not found; fallback in use: '{fb_theme}'."
                     )
-            elif gtk_val.warnings:
-                warnings.extend(gtk_val.warnings)
+                    gtk_to_apply = fb_theme
+                    found_gtk = self._scanner.find_theme(fb_theme, ThemeType.GTK)
+                else:
+                    raise ThemeNotFoundError(
+                        f"GTK theme '{gtk_to_apply}' was not found on the system."
+                    )
 
-        if theme_set.icon_theme is not None:
-            found_icon = self._scanner.find_theme(theme_set.icon_theme, ThemeType.ICON)
+            if found_gtk is not None:
+                gtk_val = self._validator.validate(found_gtk.path, ThemeType.GTK)
+                if not gtk_val.valid:
+                    warn_msg = (
+                        "; ".join(gtk_val.warnings) or "Theme structure is incomplete or invalid."
+                    )
+                    if force:
+                        warnings.append(f"GTK theme '{gtk_to_apply}' is incomplete: {warn_msg}")
+                    else:
+                        raise ThemeValidationError(
+                            f"GTK theme '{gtk_to_apply}' is invalid: {warn_msg}"
+                        )
+                elif gtk_val.warnings:
+                    warnings.extend(gtk_val.warnings)
+
+        # 2. Icon Theme resolution & validation
+        if icon_to_apply is not None:
+            found_icon = self._scanner.find_theme(icon_to_apply, ThemeType.ICON)
             if not found_icon:
-                raise ThemeNotFoundError(
-                    f"Icon theme '{theme_set.icon_theme}' was not found on the system."
-                )
-            icon_val = self._validator.validate(found_icon.path, ThemeType.ICON)
-            if not icon_val.valid:
-                warn_msg = "; ".join(icon_val.warnings) or "Icon pack is incomplete or invalid."
-                if force:
+                if use_fallback:
+                    fb_icon = self._fallback_manager.resolve_fallback_for_component(ThemeType.ICON)
                     warnings.append(
-                        f"Icon theme '{theme_set.icon_theme}' is incomplete: {warn_msg}"
+                        f"Icon theme '{icon_to_apply}' not found; fallback in use: '{fb_icon}'."
                     )
+                    icon_to_apply = fb_icon
+                    found_icon = self._scanner.find_theme(fb_icon, ThemeType.ICON)
                 else:
-                    raise ThemeValidationError(
-                        f"Icon theme '{theme_set.icon_theme}' is invalid: {warn_msg}"
+                    raise ThemeNotFoundError(
+                        f"Icon theme '{icon_to_apply}' was not found on the system."
                     )
-            elif icon_val.warnings:
-                warnings.extend(icon_val.warnings)
 
-        if theme_set.cursor_theme is not None:
-            found_cursor = self._scanner.find_theme(theme_set.cursor_theme, ThemeType.CURSOR)
+            if found_icon is not None:
+                icon_val = self._validator.validate(found_icon.path, ThemeType.ICON)
+                if not icon_val.valid:
+                    warn_msg = "; ".join(icon_val.warnings) or "Icon pack is incomplete or invalid."
+                    if force:
+                        warnings.append(f"Icon theme '{icon_to_apply}' is incomplete: {warn_msg}")
+                    else:
+                        raise ThemeValidationError(
+                            f"Icon theme '{icon_to_apply}' is invalid: {warn_msg}"
+                        )
+                elif icon_val.warnings:
+                    warnings.extend(icon_val.warnings)
+
+        # 3. Cursor Theme resolution & validation
+        if cursor_to_apply is not None:
+            found_cursor = self._scanner.find_theme(cursor_to_apply, ThemeType.CURSOR)
             if not found_cursor:
-                raise ThemeNotFoundError(
-                    f"Cursor theme '{theme_set.cursor_theme}' was not found on the system."
-                )
-            cursor_val = self._validator.validate(found_cursor.path, ThemeType.CURSOR)
-            if not cursor_val.valid:
-                warn_msg = (
-                    "; ".join(cursor_val.warnings) or "Cursor theme is incomplete or invalid."
-                )
-                if force:
+                if use_fallback:
+                    fb_cursor = self._fallback_manager.resolve_fallback_for_component(
+                        ThemeType.CURSOR
+                    )
                     warnings.append(
-                        f"Cursor theme '{theme_set.cursor_theme}' is incomplete: {warn_msg}"
+                        f"Cursor theme '{cursor_to_apply}' not found; fallback in use: '{fb_cursor}'."
                     )
+                    cursor_to_apply = fb_cursor
+                    found_cursor = self._scanner.find_theme(fb_cursor, ThemeType.CURSOR)
                 else:
-                    raise ThemeValidationError(
-                        f"Cursor theme '{theme_set.cursor_theme}' is invalid: {warn_msg}"
+                    raise ThemeNotFoundError(
+                        f"Cursor theme '{cursor_to_apply}' was not found on the system."
                     )
-            elif cursor_val.warnings:
-                warnings.extend(cursor_val.warnings)
 
+            if found_cursor is not None:
+                cursor_val = self._validator.validate(found_cursor.path, ThemeType.CURSOR)
+                if not cursor_val.valid:
+                    warn_msg = (
+                        "; ".join(cursor_val.warnings) or "Cursor theme is incomplete or invalid."
+                    )
+                    if force:
+                        warnings.append(
+                            f"Cursor theme '{cursor_to_apply}' is incomplete: {warn_msg}"
+                        )
+                    else:
+                        raise ThemeValidationError(
+                            f"Cursor theme '{cursor_to_apply}' is invalid: {warn_msg}"
+                        )
+                elif cursor_val.warnings:
+                    warnings.extend(cursor_val.warnings)
+
+        # 4. Shell Theme resolution & validation
         found_shell: Theme | None = None
-        if theme_set.shell_theme is not None:
-            found_shell = self._scanner.find_theme(theme_set.shell_theme, ThemeType.SHELL)
+        if shell_to_apply is not None:
+            found_shell = self._scanner.find_theme(shell_to_apply, ThemeType.SHELL)
             if not found_shell:
-                raise ThemeNotFoundError(
-                    f"GNOME Shell theme '{theme_set.shell_theme}' was not found on the system."
-                )
-            shell_val = self._validator.validate(found_shell.path, ThemeType.SHELL)
-            if not shell_val.valid:
-                warn_msg = "; ".join(shell_val.warnings) or "Shell theme is incomplete or invalid."
-                if force:
+                if use_fallback:
+                    fb_shell = self._fallback_manager.resolve_fallback_for_component(
+                        ThemeType.SHELL
+                    )
                     warnings.append(
-                        f"GNOME Shell theme '{theme_set.shell_theme}' is incomplete: {warn_msg}"
+                        f"GNOME Shell theme '{shell_to_apply}' not found; fallback in use: '{fb_shell}'."
                     )
+                    shell_to_apply = fb_shell
+                    found_shell = self._scanner.find_theme(fb_shell, ThemeType.SHELL)
                 else:
-                    raise ThemeValidationError(
-                        f"GNOME Shell theme '{theme_set.shell_theme}' is invalid: {warn_msg}"
+                    raise ThemeNotFoundError(
+                        f"GNOME Shell theme '{shell_to_apply}' was not found on the system."
                     )
-            elif shell_val.warnings:
-                warnings.extend(shell_val.warnings)
 
-        # 2. Color scheme validation
+            if found_shell is not None:
+                shell_val = self._validator.validate(found_shell.path, ThemeType.SHELL)
+                if not shell_val.valid:
+                    warn_msg = (
+                        "; ".join(shell_val.warnings) or "Shell theme is incomplete or invalid."
+                    )
+                    if force:
+                        warnings.append(
+                            f"GNOME Shell theme '{shell_to_apply}' is incomplete: {warn_msg}"
+                        )
+                    else:
+                        raise ThemeValidationError(
+                            f"GNOME Shell theme '{shell_to_apply}' is invalid: {warn_msg}"
+                        )
+                elif shell_val.warnings:
+                    warnings.extend(shell_val.warnings)
+
+        # 5. Color scheme validation
         if (
             theme_set.color_scheme is not None
             and theme_set.color_scheme not in GSETTINGS_COLOR_SCHEMES
@@ -590,8 +661,7 @@ class ThemeManager:
                 f"Invalid color scheme '{theme_set.color_scheme}'. Allowed choices: {list(GSETTINGS_COLOR_SCHEMES)}"
             )
 
-        # 3. Shell theme support check
-        shell_to_apply = theme_set.shell_theme
+        # 6. Shell theme support check
         if shell_to_apply is not None and not client.is_shell_theme_supported:
             warning_msg = (
                 "Cannot apply GNOME Shell theme: the 'User Themes' extension "
@@ -601,17 +671,48 @@ class ThemeManager:
             warnings.append(warning_msg)
             shell_to_apply = None
 
-        # 4. Apply via GSettings
+        # 7. Safe target resolution for GSettings (prevent Snap desktop missing themes popups)
+        # If host theme is a custom fork (e.g. Colloid-Dark-Custom), GSettings key receives the safe base
+        # (e.g. Colloid-Dark or Yaru-dark) so Snap won't prompt, while GTK4 overrides and host styles use the custom theme.
+        checker = self._fallback_manager.availability_checker
+        gsettings_gtk = gtk_to_apply
+        if gtk_to_apply is not None and not checker.check(
+            gtk_to_apply, ThemeType.GTK, target="snap"
+        ):
+            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.GTK)
+            gsettings_gtk = checker.derive_available_theme(
+                gtk_to_apply, ThemeType.GTK, target="snap", fallback_theme=fb_val
+            )
+            logger.info(
+                "Custom GTK theme '%s' not native in Snap; using safe GSettings key '%s'",
+                gtk_to_apply,
+                gsettings_gtk,
+            )
+
+        gsettings_icon = icon_to_apply
+        if icon_to_apply is not None and not checker.check(
+            icon_to_apply, ThemeType.ICON, target="snap"
+        ):
+            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.ICON)
+            gsettings_icon = checker.derive_available_theme(
+                icon_to_apply, ThemeType.ICON, target="snap", fallback_theme=fb_val
+            )
+            logger.info(
+                "Custom Icon theme '%s' not native in Snap; using safe GSettings key '%s'",
+                icon_to_apply,
+                gsettings_icon,
+            )
+
         target_set = ThemeSet(
-            gtk_theme=theme_set.gtk_theme,
-            icon_theme=theme_set.icon_theme,
-            cursor_theme=theme_set.cursor_theme,
+            gtk_theme=gsettings_gtk,
+            icon_theme=gsettings_icon,
+            cursor_theme=cursor_to_apply,
             color_scheme=theme_set.color_scheme,
             shell_theme=shell_to_apply,
         )
         client.apply(target_set)
 
-        # 5. GTK4 / Libadwaita override
+        # 8. GTK4 / Libadwaita override
         gtk4_applied = False
         if found_gtk is not None and apply_gtk4_override:
             gtk4_applied = self._gtk4_linker.apply_override(found_gtk.path)
@@ -620,23 +721,21 @@ class ThemeManager:
             else:
                 logger.debug("No GTK4/3 compatible CSS folder found in '%s'", found_gtk.name)
 
-        # 6. Automatic propagation to sandboxes (Flatpak and Snap)
+        # 9. Automatic propagation to sandboxes (Flatpak and Snap)
         propagation_result: PropagationResult | None = None
-        if propagate_sandbox and (
-            theme_set.gtk_theme is not None or theme_set.icon_theme is not None
-        ):
+        if propagate_sandbox and (gtk_to_apply is not None or icon_to_apply is not None):
             propagation_result = self._sandbox.propagate_all(
-                gtk_theme=theme_set.gtk_theme,
-                icon_theme=theme_set.icon_theme,
+                gtk_theme=gtk_to_apply,
+                icon_theme=icon_to_apply,
             )
             if propagation_result.warnings:
                 warnings.extend(propagation_result.warnings)
 
         return ApplyResult(
-            gtk_theme=theme_set.gtk_theme,
+            gtk_theme=gtk_to_apply,
             gtk4_override_applied=gtk4_applied,
-            icon_theme=theme_set.icon_theme,
-            cursor_theme=theme_set.cursor_theme,
+            icon_theme=icon_to_apply,
+            cursor_theme=cursor_to_apply,
             shell_theme=shell_to_apply,
             color_scheme=theme_set.color_scheme,
             warnings=warnings,

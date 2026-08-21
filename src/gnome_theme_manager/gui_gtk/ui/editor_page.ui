@@ -48,8 +48,8 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">900</property>
-                <property name="tightening-threshold">600</property>
+                <property name="maximum-size">1000</property>
+                <property name="tightening-threshold">700</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
                 <property name="margin-top">24</property>
@@ -210,58 +210,33 @@
                         <property name="title" translatable="yes">Component Mixer</property>
                         <property name="description" translatable="yes">Select individual components from installed desktop themes</property>
                         <child>
-                          <object class="AdwActionRow" id="row_gtk">
+                          <object class="AdwComboRow" id="dropdown_gtk">
                             <property name="title" translatable="yes">GTK Theme (Applications)</property>
                             <property name="subtitle" translatable="yes">Controls window background, widgets, and GTK3/GTK4 styling</property>
-                            <child type="suffix">
-                              <object class="GtkDropDown" id="dropdown_gtk">
-                                <property name="valign">center</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                         <child>
-                          <object class="AdwActionRow" id="row_shell">
+                          <object class="AdwComboRow" id="dropdown_shell">
                             <property name="title" translatable="yes">GNOME Shell Theme</property>
                             <property name="subtitle" translatable="yes">Controls panel, dash, notification popups, and lockscreen</property>
-                            <child type="suffix">
-                              <object class="GtkDropDown" id="dropdown_shell">
-                                <property name="valign">center</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                         <child>
-                          <object class="AdwActionRow" id="row_icon">
+                          <object class="AdwComboRow" id="dropdown_icon">
                             <property name="title" translatable="yes">Icon Pack</property>
                             <property name="subtitle" translatable="yes">Application icons, folder icons, and file type symbols</property>
-                            <child type="suffix">
-                              <object class="GtkDropDown" id="dropdown_icon">
-                                <property name="valign">center</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                         <child>
-                          <object class="AdwActionRow" id="row_cursor">
+                          <object class="AdwComboRow" id="dropdown_cursor">
                             <property name="title" translatable="yes">Cursor Theme</property>
                             <property name="subtitle" translatable="yes">Mouse pointer and interaction animations</property>
-                            <child type="suffix">
-                              <object class="GtkDropDown" id="dropdown_cursor">
-                                <property name="valign">center</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                         <child>
-                          <object class="AdwActionRow" id="row_color_scheme">
+                          <object class="AdwComboRow" id="dropdown_color_scheme">
                             <property name="title" translatable="yes">Color Scheme Preference</property>
                             <property name="subtitle" translatable="yes">System dark/light mode preference</property>
-                            <child type="suffix">
-                              <object class="GtkDropDown" id="dropdown_color_scheme">
-                                <property name="valign">center</property>
-                              </object>
-                            </child>
                           </object>
                         </child>
                       </object>

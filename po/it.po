@@ -2060,6 +2060,60 @@ msgstr "Ripristina Colori GTK"
 msgid "Restore GTK colors to original theme defaults"
 msgstr "Ripristina i colori GTK ai valori originali del tema"
 
+msgid "Fallback Themes"
+msgstr "Temi di Fallback"
+
+msgid "Themes used automatically when requested themes are not installed on host or sandbox environments."
+msgstr "Temi utilizzati automaticamente quando i temi richiesti non sono installati sull'host o negli ambienti sandbox."
+
+msgid "GTK3 Fallback"
+msgstr "Fallback GTK3"
+
+msgid "Fallback theme for GTK3 applications"
+msgstr "Tema di riserva per le applicazioni GTK3"
+
+msgid "GTK4 Fallback"
+msgstr "Fallback GTK4"
+
+msgid "Fallback theme for GTK4 and Libadwaita applications"
+msgstr "Tema di riserva per le applicazioni GTK4 e Libadwaita"
+
+msgid "GNOME Shell Fallback"
+msgstr "Fallback GNOME Shell"
+
+msgid "Fallback theme for GNOME Shell"
+msgstr "Tema di riserva per GNOME Shell"
+
+msgid "Icons Fallback"
+msgstr "Fallback Icone"
+
+msgid "Fallback pack for icons"
+msgstr "Pacchetto icone di riserva"
+
+msgid "Cursors Fallback"
+msgstr "Fallback Cursori"
+
+msgid "Fallback theme for mouse cursors"
+msgstr "Tema cursori di riserva"
+
+msgid "Fallback"
+msgstr "Fallback"
+
+msgid "Preferences"
+msgstr "Preferenze"
+
+msgid "Application behavior and automation settings."
+msgstr "Impostazioni di comportamento e automazione dell'applicazione."
+
+msgid "Auto-enable User Themes extension"
+msgstr "Abilita automaticamente l'estensione User Themes"
+
+msgid "Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt."
+msgstr "Attiva automaticamente l'estensione GNOME Shell User Themes quando si applica un tema della shell senza mostrare la richiesta di conferma."
+
+msgid "User Themes extension enabled automatically."
+msgstr "Estensione User Themes abilitata automaticamente."
+
 
 
 

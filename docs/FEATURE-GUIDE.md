@@ -87,16 +87,16 @@ Build your own look: mix themes and edit colors, safely.
 
 ---
 
-## Phase 3 — Fallback & Robustness (v1.3)
+## Phase 3 — Fallback & Robustness (v1.3) ✅
 
 No more scary alerts: the app heals itself.
 
 - **3.1** Fallback themes: pick a backup per category; unavailable themes
   (e.g. in snap/flatpak) are replaced by your backup — silently, with a
-  small info banner. The "missing themes" alert is gone.
-- **3.2** User Themes extension: optional silent auto-enable.
-- **3.3** Docs: how to make the launcher executable.
-- **3.4** The app ships fallback icons: its UI never shows broken placeholders.
+  small info banner. The "missing themes" alert is gone. ✅
+- **3.2** User Themes extension: optional silent auto-enable. ✅
+- **3.3** Docs: how to make the launcher executable. ✅
+- **3.4** The app ships fallback icons: its UI never shows broken placeholders. ✅
 
 ---
 

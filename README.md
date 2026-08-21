@@ -10,9 +10,9 @@
 
 ## Project Status
 
-**Current release:** v1.2.0
+**Current release:** v1.3.0
 
-Version 1.2.0 introduces the Theme Editor, color customization forks, and wallpaper adaptive color extraction.
+Version 1.3.0 introduces resilient fallback themes across Host, Flatpak, and Snap, optional automatic User Themes extension enabling, and bundled fallback icons.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.
@@ -26,6 +26,7 @@ GNOME, GTK4, Libadwaita, PyGObject, Themes, CLI, Linux Desktop, Snap, Flatpak
 - [Overview](#overview)
 - [Features](#features)
 - [Prerequisites](#prerequisites)
+  - [Make the launcher executable](#make-the-launcher-executable)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -44,7 +45,7 @@ The project includes:
 - A native GNOME GUI built with GTK4 and Libadwaita.
 - Robust rollback, override management, and sandbox propagation features.
 
-Current package version: 1.2.0 (PEP 440: 1.2.0)
+Current package version: 1.3.0 (PEP 440: 1.3.0)
 
 ## Features
 
@@ -69,15 +70,31 @@ Current package version: 1.2.0 (PEP 440: 1.2.0)
 
 ## Prerequisites
 
-To ensure proper execution of the application and desktop launcher:
+### Make the launcher executable
 
-1. **Execution Permissions**: Ensure execution permissions are set on the binary or launcher:
+To run the standalone AppImage bundle, local helper scripts, or launch the app from a custom `.desktop` launcher, ensure that execution permissions are explicitly granted:
+
+1. **AppImage Bundle**:
    ```bash
-   chmod +x /path/to/gnome-theme-manager
+   chmod +x GNOMEThemeManager-*.AppImage
    ```
-2. **Flatpak & Snap Integration**:
-   - For Flatpak: user themes installed in `~/.themes` or `~/.icons` are not visible to sandboxes by default. The application uses `flatpak override` to grant filesystem access to Flatpak sandboxes.
-   - For Snap: ensure standard runtime theme snaps (such as `gtk-common-themes`) are installed and connected to your GNOME host.
+
+2. **Repository Helper Scripts** (for local development or direct script execution):
+   ```bash
+   chmod +x scripts/run_cli.sh scripts/run_all_tests.sh scripts/test-translation.sh
+   ```
+
+3. **Desktop Launcher (`.desktop`) File**:
+   If creating a custom launcher in `~/.local/share/applications/`:
+   ```bash
+   chmod +x ~/.local/share/applications/gnome-theme-manager.desktop
+   ```
+   Ensure the `Exec=` key specifies the absolute path to the executable or AppImage with valid permissions.
+
+### Sandbox Integration (Flatpak & Snap)
+
+- **Flatpak**: User themes installed in `~/.themes` or `~/.icons` are isolated from sandboxes by default. The application automatically propagates access via `flatpak override --filesystem=xdg-data/themes:ro` and `flatpak override --filesystem=xdg-data/icons:ro`.
+- **Snap**: Standard desktop integration relies on theme snaps (such as `gtk-common-themes`). Ensure theme snaps are installed and connected to your GNOME desktop interface slots.
 
 ## Requirements
 

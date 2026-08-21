@@ -80,12 +80,12 @@ class ThemeEditorPage:
         if self.resume_draft_button:
             self.resume_draft_button.connect("clicked", self._on_resume_draft_clicked)
 
-        # Component dropdowns
-        self.gtk_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_gtk")
-        self.shell_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_shell")
-        self.icon_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_icon")
-        self.cursor_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_cursor")
-        self.color_scheme_dropdown: Gtk.DropDown = self.builder.get_object("dropdown_color_scheme")
+        # Component dropdowns (AdwComboRow)
+        self.gtk_dropdown: Adw.ComboRow = self.builder.get_object("dropdown_gtk")
+        self.shell_dropdown: Adw.ComboRow = self.builder.get_object("dropdown_shell")
+        self.icon_dropdown: Adw.ComboRow = self.builder.get_object("dropdown_icon")
+        self.cursor_dropdown: Adw.ComboRow = self.builder.get_object("dropdown_cursor")
+        self.color_scheme_dropdown: Adw.ComboRow = self.builder.get_object("dropdown_color_scheme")
 
         # Discard draft and auto-save controls
         self.discard_draft_button: Gtk.Button | None = self.builder.get_object(

@@ -134,4 +134,7 @@ def mock_theme_manager() -> MagicMock:
 
     mgr.validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
     mgr.apply_component.side_effect = mock_apply_component
+    from gnome_theme_manager.core.extensions import UIPrefs
+
+    mgr.extensions.get_prefs.return_value = UIPrefs(auto_enable_user_theme=False)
     return mgr

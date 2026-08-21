@@ -21,9 +21,9 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     page = SandboxPage(manager=mock_theme_manager)
 
     buttons = [
-        (page.refresh_button, "Refresh Status", "view-refresh-symbolic"),
+        (page.refresh_button, "Refresh Status", "emblem-synchronizing-symbolic"),
         (page.propagate_button, "Propagate Theme to Sandboxed Apps", "emblem-ok-symbolic"),
-        (page.error_retry_button, "Retry", "view-refresh-symbolic"),
+        (page.error_retry_button, "Retry", "emblem-synchronizing-symbolic"),
     ]
 
     for btn, expected_label, expected_icon in buttons:

@@ -199,7 +199,7 @@ def test_global_theme_manager_auto_generates_from_installed_themes(tmp_path: Pat
     # Mock themes discovered on system
     from gnome_theme_manager.core.models import Theme, ThemeType
 
-    scanner.list_themes.side_effect = lambda t: {
+    scanner.list_themes.side_effect = lambda t, *args, **kwargs: {
         ThemeType.GTK: [
             Theme(
                 name="Yaru",
@@ -240,9 +240,15 @@ def test_global_theme_manager_auto_generates_from_installed_themes(tmp_path: Pat
         ],
     }.get(t, [])
 
+    validator = MagicMock()
+    from gnome_theme_manager.core.theme_validator import ThemeValidationResult
+
+    validator.validate.return_value = ThemeValidationResult(valid=True)
+
     mgr = GlobalThemeManager(
         state_file=state_file,
         scanner=scanner,
+        validator=validator,
         current_themes_provider=lambda: ThemeSet(
             gtk_theme="Yaru", icon_theme="Yaru", cursor_theme="Yaru", shell_theme="Yaru"
         ),
@@ -305,6 +311,22 @@ def test_global_theme_manager_save_delete_and_ordering(tmp_path: Path) -> None:
     # Delete user theme
     assert mgr.delete_global_theme("user-my-work-setup") is True
     assert mgr.get_global_theme("user-my-work-setup") is None
+
+    # Test deleting a preset-based user theme
+    user_presets_dir = tmp_path / "presets"
+    user_presets_dir.mkdir(parents=True)
+    (user_presets_dir / "presets.json").write_text(
+        json.dumps({"presets": [{"name": "Old Preset", "components": {"gtk3": "Nordic"}}]}),
+        encoding="utf-8",
+    )
+    mgr_with_presets = GlobalThemeManager(
+        bundled_dir=bundled_dir,
+        state_file=state_file,
+        user_presets_dir=user_presets_dir,
+    )
+    assert mgr_with_presets.get_global_theme("user-old-preset") is not None
+    assert mgr_with_presets.delete_global_theme("user-old-preset") is True
+    assert mgr_with_presets.get_global_theme("user-old-preset") is None
 
     # Bundled themes cannot be deleted
     with pytest.raises(ValueError):

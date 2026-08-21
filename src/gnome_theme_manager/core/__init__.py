@@ -3,6 +3,7 @@
 """Modulo core di GnomeThemeManager."""
 
 from .constants import (
+    FALLBACKS_FILE,
     GLOBAL_THEMES_FILE,
     GSETTINGS_COLOR_SCHEMES,
     GSETTINGS_KEY_COLOR_SCHEME,
@@ -28,6 +29,11 @@ from .errors import (
     GSettingsUnavailableError,
     ThemeNotFoundError,
     ThemeValidationError,
+)
+from .fallback import (
+    FallbackConfig,
+    FallbackManager,
+    ThemeAvailabilityChecker,
 )
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
@@ -74,6 +80,7 @@ from .wallpaper_color import (
 )
 
 __all__ = [
+    "FALLBACKS_FILE",
     "GLOBAL_THEMES_FILE",
     "GSETTINGS_COLOR_SCHEMES",
     "GSETTINGS_KEY_COLOR_SCHEME",
@@ -95,6 +102,8 @@ __all__ = [
     "EditorDraft",
     "EditorDraftManager",
     "ExtractedColors",
+    "FallbackConfig",
+    "FallbackManager",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
@@ -111,6 +120,7 @@ __all__ = [
     "ShellThemeForkManager",
     "SystemStatus",
     "Theme",
+    "ThemeAvailabilityChecker",
     "ThemeComposition",
     "ThemeFork",
     "ThemeForkManager",
