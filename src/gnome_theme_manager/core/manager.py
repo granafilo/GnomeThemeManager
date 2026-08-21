@@ -1013,6 +1013,31 @@ class ThemeManager:
         """
         return self._global_themes.delete_global_theme(theme_id_or_name)
 
+    def update_global_theme(
+        self,
+        theme_id: str,
+        theme_set: ThemeSet,
+        description: str | None = None,
+        icon_override: str | None = None,
+    ) -> GlobalTheme:
+        """Update an existing user-created Global Theme in place.
+
+        Args:
+            theme_id: ID or name of the user global theme to update.
+            theme_set: New component selections (ThemeSet).
+            description: Optional new description (keeps existing when None).
+            icon_override: Optional new custom icon path (keeps existing when None).
+
+        Returns:
+            Updated GlobalTheme instance.
+        """
+        return self._global_themes.update_global_theme(
+            theme_id=theme_id,
+            theme_set=theme_set,
+            description=description,
+            icon_override=icon_override,
+        )
+
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation
     # -------------------------------------------------------------------------

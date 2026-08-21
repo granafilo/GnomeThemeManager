@@ -23,6 +23,7 @@ from gi.repository import Adw, GLib, Gtk
 
 from ...core.css_extractor import ExtractedColors, extract_theme_colors
 from ...core.editor_draft import EditorDraft
+from ...core.global_themes import GlobalTheme
 from ...core.models import Theme, ThemeSet, ThemeType
 from ...core.shell_editor import ShellExtractedColors, extract_shell_colors
 from ...core.theme_editor import ThemeComposition
@@ -214,6 +215,7 @@ class ThemeEditorPage:
         self._installed_shell_themes: dict[str, Theme] = {}
         self._is_loading: bool = False
         self._is_loaded: bool = False
+        self._editing_global_theme: GlobalTheme | None = None
 
     @property
     def is_loading(self) -> bool:
@@ -885,15 +887,92 @@ class ThemeEditorPage:
             user_composed=True,
         )
 
+    def load_global_theme_for_editing(self, theme: GlobalTheme) -> None:
+        """Load an existing user Global Theme into the editor for modification.
+
+        Args:
+            theme: Existing user-created GlobalTheme to edit.
+        """
+        if theme.origin != "user":
+            if self.on_notify_message:
+                self.on_notify_message(_("Only user-created Global Themes can be edited."), True)
+            return
+
+        self._editing_global_theme = theme
+        self._is_restoring_draft = True
+        try:
+            theme_comp = theme.components
+            self.theme_name_entry.set_text(theme.name)
+
+            if theme_comp.gtk_theme:
+                gtk_idx = self._find_model_index(self._gtk_model, theme_comp.gtk_theme)
+                if gtk_idx >= 0:
+                    self.gtk_dropdown.set_selected(gtk_idx)
+                else:
+                    logger.debug("GTK theme '%s' no longer installed.", theme_comp.gtk_theme)
+
+            if theme_comp.shell_theme:
+                shell_idx = self._find_model_index(self._shell_model, theme_comp.shell_theme)
+                if shell_idx >= 0:
+                    self.shell_dropdown.set_selected(shell_idx)
+
+            if theme_comp.icon_theme:
+                icon_idx = self._find_model_index(self._icon_model, theme_comp.icon_theme)
+                if icon_idx >= 0:
+                    self.icon_dropdown.set_selected(icon_idx)
+
+            if theme_comp.cursor_theme:
+                cursor_idx = self._find_model_index(self._cursor_model, theme_comp.cursor_theme)
+                if cursor_idx >= 0:
+                    self.cursor_dropdown.set_selected(cursor_idx)
+
+            if theme_comp.color_scheme and theme_comp.color_scheme in self._color_schemes:
+                self.color_scheme_dropdown.set_selected(
+                    self._color_schemes.index(theme_comp.color_scheme)
+                )
+
+            self._update_colors_from_selected_gtk()
+            self._update_colors_from_selected_shell()
+
+            if self.save_button:
+                self.save_button.set_label(_("Update Global Theme"))
+            if self.on_notify_message:
+                self.on_notify_message(
+                    _("Editing Global Theme '{name}'.").format(name=theme.name), False
+                )
+        finally:
+            self._is_restoring_draft = False
+
     def _on_save_as_global_theme_clicked(self, _btn: Gtk.Button | None) -> None:
-        """Save composition as Global Theme and clear draft."""
+        """Save or update composition as Global Theme and clear draft."""
         try:
             composition = self._get_current_composition()
-            saved = self.manager.save_theme_composition(composition, overwrite=True)
-            if hasattr(self.manager, "editor_drafts"):
-                self.manager.editor_drafts.clear_draft()
-            if self.draft_banner_box:
-                self.draft_banner_box.set_visible(False)
+
+            if self._editing_global_theme is not None:
+                theme_set = ThemeSet(
+                    gtk_theme=composition.gtk3,
+                    icon_theme=composition.icon,
+                    cursor_theme=composition.cursor,
+                    shell_theme=composition.shell,
+                    color_scheme=composition.color_scheme,
+                )
+                saved = self.manager.update_global_theme(
+                    theme_id=self._editing_global_theme.id,
+                    theme_set=theme_set,
+                    description=composition.description,
+                )
+                if self.save_button:
+                    self.save_button.set_label(_("Update Global Theme"))
+            else:
+                saved = self.manager.save_theme_composition(composition, overwrite=True)
+                if self.save_button:
+                    self.save_button.set_label(_("Save as Global Theme"))
+                if hasattr(self.manager, "editor_drafts"):
+                    self.manager.editor_drafts.clear_draft()
+                if self.draft_banner_box:
+                    self.draft_banner_box.set_visible(False)
+
+            self._editing_global_theme = None
 
             msg = _("Global Theme '{name}' saved successfully.").format(name=saved.name)
             if self.on_notify_message:

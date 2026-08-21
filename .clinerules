@@ -1,0 +1,64 @@
+# GnomeThemeManager - Cline Rules (Optimized for Free Omniroute Models)
+
+You are an AI coding assistant working on GnomeThemeManager.
+To operate optimally with free/low-cost models (which may have limited reasoning/context tracking), follow these rules strictly.
+
+## 1. Absolute Rules (from .agents/rules/master_rules.md)
+- **Architecture**: NEVER modify architecture without explicit approval. ALL core business logic must reside in `src/gnome_theme_manager/core/`. GUI (`src/gnome_theme_manager/gui_gtk/`) and CLI (`src/gnome_theme_manager/cli/`) must only consume APIs from `core/`.
+- **Dependencies**: NEVER add dependencies beyond PyGObject and `requests`.
+- **Strict Typing**: All new modules/functions must have PEP 484 type hints and pass `mypy --strict src`.
+- **No Print**: Never use `print()` in `core/` or `gui_gtk/`. Use the `logging` module.
+- **App State**: Never store application state in `~/.config/`. Use `~/.local/state/gnome-theme-manager/`.
+- **Target Stack**: Ubuntu 24.04 + GNOME 46.
+
+## 2. i18n Rules
+- New user-visible strings must be wrapped in `_()`.
+- You must update both `po/en.po` and `po/it.po` in the same commit as the feature.
+- After touching `.po` files, run: `python3 scripts/compile_translations.py` before doing the GUI Check.
+
+## 3. STOP Conditions & Canonical Commands
+If any of these commands fail, you MUST STOP immediately and fix the error before proceeding:
+- **Test Suite**: `pytest -v` (coverage must be >= 80% on `core/`)
+- **Linter**: `ruff check src tests`
+- **Type Checker**: `mypy --strict src`
+- **GUI Launch**: `PYTHONPATH=src python3 -m gnome_theme_manager gui` (must not crash/traceback)
+
+## 4. Error Triage & GTK Debugging
+When a failure occurs, follow this structured process:
+### A. Pytest Failure (C1)
+1. Reproduce by running only the failed test: `pytest <file>::<test> -x -vv`
+2. Read the traceback from the bottom to find the root cause.
+3. Apply a minimal fix, then run the failed test, then run the full suite.
+### B. Ruff Failure (C2)
+1. List errors: `ruff check src/ --output-format=concise`
+2. Apply fixes (remove unused imports, split long lines). Run `ruff check` + `pytest`.
+### C. GTK / GUI Issues
+1. Gather info by running: `GDK_DEBUG=all PYTHONPATH=src python3 -m gnome_theme_manager gui 2>&1 | head -100`
+
+## 5. Token Saving & Context Optimization
+- **Efficient File Reading**: NEVER read whole files if you only need a portion. Always use startLine/endLine arguments to request exactly what you need.
+- **No Code Placeholders**: Never write incomplete functions or use `# ...` comment shortcuts. Free models will corrupt code if they omit sections. Always write out complete code blocks.
+- **No Direct Commits**: Print the exact `git add` and `git commit` commands for the user. Do not commit changes yourself.
+- **Single-task Focus**: Work on only one task or subtask at a time. Run verification scripts before starting the next.
+
+## 6. Vibe Coding Communication Rules (Strict Output Minimization)
+To minimize token usage and focus purely on verification, you MUST follow this response format.
+- **NEVER** output code blocks, file lists, diffs, or detailed technical explanations in the chat response. Keep them inside file edits.
+- **ALWAYS** structure your final response to the user with the following template:
+
+```markdown
+### 📊 Status Update
+
+* **Task/Phase**: [Task X.Y - Name] | **Status**: [IN_PROGRESS | PENDING_USER | COMPLETE]
+* **Verification**:
+  * **Tests**: [PASS | FAIL] (`pytest -v`) - Coverage: XX%
+  * **Linter**: [PASS | FAIL] (`ruff`)
+  * **Type Checker**: [PASS | FAIL] (`mypy`)
+* **Integration**: [1-2 sentences summarizing what was integrated]
+* **GUI CHECK**: [implemented behavior] -> [how to verify it via GUI]
+* **Action Required**: [Git commands to run, e.g. git add ... && git commit -m ...] or [Command to test]
+```
+
+## 7. Language Policy
+- **User Chat**: Always converse with the user in **Italian**.
+- **Code & Messages**: All code, comments, docstrings, commit messages, and PR summaries must be in **English**.

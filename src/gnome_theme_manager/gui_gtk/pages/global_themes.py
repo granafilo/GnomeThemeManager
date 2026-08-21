@@ -65,11 +65,13 @@ class _GlobalThemeCard(Gtk.Box):
         theme: GlobalTheme,
         on_apply: Callable[[str], None],
         on_delete: Callable[[str], None] | None = None,
+        on_edit: Callable[["GlobalTheme"], None] | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._theme = theme
         self._on_apply = on_apply
         self._on_delete = on_delete
+        self._on_edit = on_edit
 
         self.add_css_class("card")
         self.set_margin_top(4)
@@ -124,8 +126,17 @@ class _GlobalThemeCard(Gtk.Box):
             del_btn.set_icon_name("user-trash-symbolic")
             del_btn.set_tooltip_text(_("Delete this Global Theme"))
             del_btn.add_css_class("flat")
-            del_btn.connect("clicked", lambda _: self._on_delete(self._theme.id))  # type: ignore[misc]
+            del_btn.connect("clicked", lambda _: self._on_delete(self._theme.id))
             btn_box.append(del_btn)
+
+        # Edit button for user themes
+        if is_user and self._on_edit is not None:
+            edit_btn = Gtk.Button()
+            edit_btn.set_icon_name("document-edit-symbolic")
+            edit_btn.set_tooltip_text(_("Edit this Global Theme"))
+            edit_btn.add_css_class("flat")
+            edit_btn.connect("clicked", lambda _: self._on_edit(self._theme))
+            btn_box.append(edit_btn)
 
         # Apply Button
         self.apply_btn = Gtk.Button()
@@ -215,6 +226,7 @@ class GlobalThemesPage:
         self.on_loading_changed: Callable[[bool], None] | None = None
         self.on_theme_applied: Callable[[str, ApplyResult], None] | None = None
         self.on_notify_message: Callable[[str, bool], None] | None = None
+        self.on_edit_requested: Callable[[GlobalTheme], None] | None = None
 
         # Signals
         self.search_entry.connect("search-changed", self._on_search_changed)
@@ -316,6 +328,7 @@ class GlobalThemesPage:
                 theme=theme,
                 on_apply=self._apply_theme,
                 on_delete=self._on_delete_theme_requested,
+                on_edit=self._on_edit_theme_requested,
             )
             self.themes_container.append(card)
 
@@ -424,6 +437,11 @@ class GlobalThemesPage:
             msg = f"{_('Failed to save global theme')}: {err}"
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
+
+    def _on_edit_theme_requested(self, theme: GlobalTheme) -> None:
+        """Forward edit request for a user Global Theme to the editor page."""
+        if self.on_edit_requested:
+            self.on_edit_requested(theme)
 
     def _on_delete_theme_requested(self, theme_id: str) -> None:
         """Show delete confirmation dialog for user global theme."""

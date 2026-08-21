@@ -1580,6 +1580,10 @@ msgstr "di"
 msgid "Delete this Global Theme"
 msgstr "Elimina questo Global Theme"
 
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:135
+msgid "Edit this Global Theme"
+msgstr "Modifica questo Global Theme"
+
 #: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:124
 msgid "Apply"
 msgstr "Applica"

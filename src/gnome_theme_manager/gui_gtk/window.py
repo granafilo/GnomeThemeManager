@@ -205,6 +205,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_themes_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
+        self.global_themes_page.on_edit_requested = lambda theme: self._on_edit_global_theme_requested(
+            theme
+        )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "editor", is_l
@@ -403,6 +406,14 @@ class MainWindow(Adw.ApplicationWindow):
             self._current_page_id == "themes" or self._current_page_id.startswith("themes_")
         ):
             self.themes_page.refresh()
+
+    def _on_edit_global_theme_requested(self, theme: Any) -> None:
+        """Navigate to the editor page and load a user Global Theme for editing."""
+        if self.editor_page is None:
+            return
+        self.editor_page.refresh(sync=True)
+        self.editor_page.load_global_theme_for_editing(theme)
+        self.select_page("editor")
 
     def _on_page_loading_changed(self, page_id: str, is_loading: bool) -> None:
         """Update refresh button sensitivity during page loading."""
