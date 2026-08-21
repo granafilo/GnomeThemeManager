@@ -32,6 +32,7 @@ from .pages import (
     InstallerPage,
     SandboxPage,
     StatusPage,
+    TerminalPage,
     ThemeEditorPage,
     ThemesPage,
 )
@@ -89,7 +90,7 @@ class MainWindow(Adw.ApplicationWindow):
         init_bundled_icon_theme()
 
         # Minimum sizing ensuring all pages/cards are fully visible without truncation
-        self.set_size_request(980, 560)
+        self.set_size_request(760, 520)
         self.set_default_size(1080, 720)
 
         # Apply application-wide CSS styling for enhanced readability and typography
@@ -138,6 +139,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_global_themes: Gtk.ListBoxRow = self.builder.get_object("row_global_themes")
         self.row_editor: Gtk.ListBoxRow = self.builder.get_object("row_editor")
         self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
+        self.row_terminal: Gtk.ListBoxRow = self.builder.get_object("row_terminal")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -151,6 +153,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.global_themes_page = GlobalThemesPage(manager=self.manager)
         self.editor_page = ThemeEditorPage(manager=self.manager)
         self.fonts_page = FontsPage(manager=self.manager)
+        self.terminal_page = TerminalPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -164,6 +167,7 @@ class MainWindow(Adw.ApplicationWindow):
             "global_themes": self.global_themes_page,
             "editor": self.editor_page,
             "fonts": self.fonts_page,
+            "terminal": self.terminal_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -173,6 +177,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.global_themes_page.get_widget(), "global_themes")
         self.content_stack.add_named(self.editor_page.get_widget(), "editor")
         self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
+        self.content_stack.add_named(self.terminal_page.get_widget(), "terminal")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -185,6 +190,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_global_themes: "global_themes",
             self.row_editor: "editor",
             self.row_fonts: "fonts",
+            self.row_terminal: "terminal",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -216,6 +222,9 @@ class MainWindow(Adw.ApplicationWindow):
         )
 
         self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
+        self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
 
@@ -521,6 +530,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.sandbox_page.refresh()
         elif page_id == "fonts":
             self.fonts_page.refresh()
+        elif page_id == "terminal":
+            self.terminal_page.refresh()
 
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:

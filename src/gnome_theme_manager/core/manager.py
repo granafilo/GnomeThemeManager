@@ -38,6 +38,12 @@ from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
 from .shell_editor import ShellThemeForkManager
+from .terminal_palette import (
+    TerminalPalette,
+    TerminalProfileSummary,
+    apply_palette_to_gnome_terminal,
+    derive_terminal_palette_from_colors,
+)
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import ThemeForkManager
 from .theme_validator import ThemeValidationResult, ThemeValidator
@@ -1097,6 +1103,112 @@ class ThemeManager:
             icon_override=icon_override,
             fonts=fonts,
         )
+
+    # -------------------------------------------------------------------------
+    # Terminal Palette (Task 4.4)
+    # -------------------------------------------------------------------------
+
+    def get_current_terminal_palette(
+        self, profile_id: str | None = None
+    ) -> TerminalPalette | None:
+        """Read current terminal palette and preferences from GNOME Terminal.
+
+        Args:
+            profile_id: Optional profile UUID.
+
+        Returns:
+            TerminalPalette if available, None otherwise.
+        """
+        from .terminal_palette import read_current_gnome_terminal_palette
+
+        return read_current_gnome_terminal_palette(profile_id=profile_id)
+
+    def get_derived_terminal_palette(self, theme_name: str | None = None) -> TerminalPalette:
+        """Derive a 16-color ANSI terminal palette from active or specified GTK theme colors.
+
+        Args:
+            theme_name: Optional theme name (uses active GTK theme if None).
+
+        Returns:
+            TerminalPalette instance.
+        """
+        from .css_extractor import extract_theme_colors
+
+        target_theme = theme_name or self.get_current_themes().gtk_theme
+        colors = None
+        if target_theme:
+            theme_obj = self._scanner.find_theme(target_theme, ThemeType.GTK)
+            if theme_obj:
+                colors = extract_theme_colors(theme_obj.path)
+
+        palette_name = f"{target_theme} Palette" if target_theme else "Desktop Theme Palette"
+        return derive_terminal_palette_from_colors(colors, name=palette_name)
+
+    def list_terminal_profiles(self) -> list[TerminalProfileSummary]:
+        """List all GNOME Terminal profiles.
+
+        Returns:
+            List of TerminalProfileSummary instances.
+        """
+        from .terminal_palette import list_gnome_terminal_profiles
+
+        return list_gnome_terminal_profiles()
+
+    def create_terminal_profile(
+        self, name: str, palette: TerminalPalette | None = None
+    ) -> str | None:
+        """Create a new GNOME Terminal profile.
+
+        Args:
+            name: Visible name for the profile.
+            palette: Optional initial palette/preferences.
+
+        Returns:
+            UUID of newly created profile, or None on failure.
+        """
+        from .terminal_palette import create_gnome_terminal_profile
+
+        return create_gnome_terminal_profile(name, palette=palette)
+
+    def delete_terminal_profile(self, profile_id: str) -> bool:
+        """Delete an inactive GNOME Terminal profile.
+
+        Args:
+            profile_id: UUID of the profile to remove.
+
+        Returns:
+            True if removed, False if profile is active/default or error occurred.
+        """
+        from .terminal_palette import delete_gnome_terminal_profile
+
+        return delete_gnome_terminal_profile(profile_id)
+
+    def set_default_terminal_profile(self, profile_id: str) -> bool:
+        """Set a GNOME Terminal profile as the default.
+
+        Args:
+            profile_id: UUID of the profile to set as default.
+
+        Returns:
+            True if successful, False otherwise.
+        """
+        from .terminal_palette import set_default_gnome_terminal_profile
+
+        return set_default_gnome_terminal_profile(profile_id)
+
+    def apply_terminal_palette(
+        self, palette: TerminalPalette, profile_id: str | None = None
+    ) -> bool:
+        """Apply terminal palette to GNOME Terminal (Task 4.4).
+
+        Args:
+            palette: TerminalPalette to apply.
+            profile_id: Optional GNOME Terminal profile UUID.
+
+        Returns:
+            True if applied successfully, False otherwise.
+        """
+        return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
 
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation

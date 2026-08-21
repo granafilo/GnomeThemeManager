@@ -8,12 +8,15 @@ src/gnome_theme_manager/gui_gtk/pages/global_themes.py
 src/gnome_theme_manager/gui_gtk/pages/editor_view.py
 src/gnome_theme_manager/gui_gtk/pages/fonts.py
 src/gnome_theme_manager/gui_gtk/widgets/icon_picker.py
+src/gnome_theme_manager/gui_gtk/widgets/color_picker.py
+src/gnome_theme_manager/gui_gtk/pages/terminal.py
 src/gnome_theme_manager/gui_gtk/pages/installer.py
 src/gnome_theme_manager/gui_gtk/pages/sandbox.py
 src/gnome_theme_manager/gui_gtk/pages/status.py
 src/gnome_theme_manager/gui_gtk/pages/themes.py
 src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui
 src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui
+src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui
 src/gnome_theme_manager/gui_gtk/ui/installer_page.ui
 src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
 src/gnome_theme_manager/gui_gtk/ui/status_page.ui

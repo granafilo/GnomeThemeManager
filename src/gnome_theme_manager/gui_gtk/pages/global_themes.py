@@ -128,7 +128,7 @@ class _GlobalThemeCard(Gtk.Box):
         title_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         title_box.set_hexpand(True)
 
-        title_label = Gtk.Label(label=theme.name)
+        title_label = Gtk.Label(label=_(theme.name))
         title_label.set_xalign(0)
         title_label.add_css_class("title-3")
         title_box.append(title_label)
@@ -182,7 +182,7 @@ class _GlobalThemeCard(Gtk.Box):
 
         # Description if present
         if theme.description:
-            desc_label = Gtk.Label(label=theme.description)
+            desc_label = Gtk.Label(label=_(theme.description))
             desc_label.set_xalign(0)
             desc_label.set_wrap(True)
             desc_label.set_margin_start(16)

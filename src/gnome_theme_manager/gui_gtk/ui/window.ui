@@ -272,6 +272,36 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkListBoxRow" id="row_terminal">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">utilities-terminal-symbolic</property>
+                                    <property name="pixel-size">20</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Terminal</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkListBoxRow" id="row_installer">
                             <property name="child">
                               <object class="GtkBox">

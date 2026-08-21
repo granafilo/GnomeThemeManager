@@ -50,6 +50,7 @@ class FontsPage:
         self.title = _("Fonts")
 
         builder = Gtk.Builder()
+        builder.set_translation_domain("gnomethememanager")
         builder.add_from_file(str(UI_FILE))
 
         self.widget: Gtk.Stack = builder.get_object("page_root")
