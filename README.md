@@ -6,13 +6,12 @@
 ![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
 ![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)
-![Status](https://img.shields.io/badge/Status-Beta-orange)
 
 ## Project Status
 
-**Current release:** v1.4.0
+**Current release:** v1.4.1
 
-Version 1.4.0 introduces in-place Global Themes editing, custom icon pickers with robust fallback handling, comprehensive Desktop Typography and Font Scaling management, and full GNOME Terminal color/profile customization.
+Version 1.4.1 delivers key fixes and refinements: AppImage icon resolution fixes, unified custom theme directories combining GTK and GNOME Shell assets, streamlined Theme Editor initialization with a dedicated "Open Global Theme" dialog, and safe deletion of user-installed themes with active-theme protections.
 Full compatibility across all distributions, GNOME versions, or non-standard theme packages is not yet guaranteed.
 
 Modular Python manager for managing GTK themes, icon packs, cursor themes, and GNOME Shell themes on GNOME desktops.

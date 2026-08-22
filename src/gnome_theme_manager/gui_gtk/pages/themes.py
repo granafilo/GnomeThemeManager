@@ -542,6 +542,52 @@ class ThemesPage:
                 badge.set_valign(Gtk.Align.CENTER)
                 row.add_suffix(badge)
 
+                # Delete button for user themes (prohibited if theme is active in ANY category)
+                if item.is_user_level:
+                    del_btn = Gtk.Button()
+                    del_btn.set_icon_name("user-trash-symbolic")
+                    del_btn.add_css_class("flat")
+                    del_btn.set_valign(Gtk.Align.CENTER)
+
+                    # Check if theme is active in its shared folder domain:
+                    # - GTK and Shell share the ~/.themes or ~/.local/share/themes folder
+                    # - Icons and Cursors share the ~/.icons or ~/.local/share/icons folder
+                    is_active_in_domain = False
+                    active_in_cats: list[str] = []
+                    if self._snapshot and self._snapshot.active_themes:
+                        if item.theme_type in (ThemeType.GTK, ThemeType.SHELL):
+                            shared_cats = (ThemeType.GTK, ThemeType.SHELL)
+                        else:
+                            shared_cats = (ThemeType.ICON, ThemeType.CURSOR)
+
+                        for cat_type in shared_cats:
+                            act_name = self._snapshot.active_themes.get(cat_type)
+                            if isinstance(act_name, str) and act_name == item.name:
+                                is_active_in_domain = True
+                                active_in_cats.append(get_dialog_category_name(cat_type))
+
+                    if is_active_in_domain:
+                        del_btn.set_sensitive(False)
+                        where_str = ", ".join(active_in_cats)
+                        del_btn.set_tooltip_text(
+                            _("Cannot delete theme: currently active in {categories}").format(
+                                categories=where_str
+                            )
+                        )
+                    else:
+                        del_btn.set_sensitive(True)
+                        del_btn.set_tooltip_text(_("Delete this theme"))
+
+                        def _make_delete_callback(target_item: ThemeItemPresentation) -> Any:
+                            def _cb(_b: Gtk.Button) -> None:
+                                self._confirm_and_delete_theme(target_item)
+
+                            return _cb
+
+                        del_btn.connect("clicked", _make_delete_callback(item))
+
+                    row.add_suffix(del_btn)
+
                 self.themes_list_box.append(row)
 
     def confirm_and_apply_selected(
@@ -1220,3 +1266,71 @@ class ThemesPage:
 
         self.error_page.set_description(user_msg)
         self.widget.set_visible_child_name("error")
+
+    def _confirm_and_delete_theme(self, item: ThemeItemPresentation) -> None:
+        """Show deletion confirmation dialog for user-installed theme/icons/cursors."""
+        win = self.widget.get_root()
+
+        # Check if this theme folder also contains the opposite GTK or Shell component
+        also_affects_opposite = False
+        if item.theme_type in (ThemeType.GTK, ThemeType.SHELL) and self.manager is not None:
+            opposite_type = ThemeType.SHELL if item.theme_type == ThemeType.GTK else ThemeType.GTK
+            opposite_theme = self.manager.scanner.find_theme(item.name, opposite_type)
+            if opposite_theme and opposite_theme.is_user_level:
+                also_affects_opposite = True
+
+        title = _("Delete Theme")
+        if also_affects_opposite:
+            body = (
+                f"{_('Are you sure you want to delete')} «{item.name}»?\n\n"
+                f"⚠️ {_('This theme folder contains both GTK and GNOME Shell assets. Deleting it will permanently remove the theme for both categories.')}"
+            )
+        else:
+            cat_name = get_dialog_category_name(item.theme_type)
+            body = f"{_('Are you sure you want to permanently delete')} «{item.name}» ({cat_name})?"
+
+        if hasattr(Adw, "AlertDialog"):
+            dialog = Adw.AlertDialog.new(heading=title, body=body)
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("delete", _("Delete"))
+            dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("cancel")
+            dialog.set_close_response("cancel")
+
+            def on_dialog_response(_d: Any, response_id: str) -> None:
+                if response_id == "delete":
+                    self._do_delete_theme(item)
+
+            dialog.connect("response", on_dialog_response)
+            dialog.present(win if isinstance(win, Gtk.Widget) else None)
+        elif hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(
+                win if isinstance(win, Gtk.Window) else None,
+                title,
+                body,
+            )
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("delete", _("Delete"))
+            dialog.set_response_appearance("delete", Adw.ResponseAppearance.DESTRUCTIVE)
+            dialog.set_default_response("cancel")
+            dialog.set_close_response("cancel")
+
+            def on_md_response(_d: Any, response_id: str) -> None:
+                if response_id == "delete":
+                    self._do_delete_theme(item)
+
+            dialog.connect("response", on_md_response)
+            dialog.present()
+
+    def _do_delete_theme(self, item: ThemeItemPresentation) -> None:
+        """Execute uninstallation of a user theme and refresh list."""
+        if self.manager is None:
+            return
+
+        try:
+            self.manager.uninstall_theme(name=item.name, theme_type=item.theme_type)
+            self._show_toast(_("Theme '{name}' deleted successfully.").format(name=item.name))
+            self.refresh()
+        except Exception as err:
+            logger.error("Failed to delete theme '%s': %s", item.name, err)
+            self._show_toast(f"{_('Failed to delete theme:')} {err}")

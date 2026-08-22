@@ -15,6 +15,7 @@ src/gnome_theme_manager/gui_gtk/pages/sandbox.py
 src/gnome_theme_manager/gui_gtk/pages/status.py
 src/gnome_theme_manager/gui_gtk/pages/themes.py
 src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui
+src/gnome_theme_manager/gui_gtk/ui/editor_page.ui
 src/gnome_theme_manager/gui_gtk/ui/fonts_page.ui
 src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui
 src/gnome_theme_manager/gui_gtk/ui/installer_page.ui

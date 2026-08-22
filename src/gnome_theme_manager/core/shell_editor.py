@@ -199,18 +199,27 @@ def generate_shell_css_override(original_css: str, colors: dict[str, str]) -> st
 
     # CSS Rule overrides
     if panel_bg:
-        override_rules.append(f"#panel {{ background-color: {panel_bg}; }}")
+        override_rules.append(f"#panel {{ background-color: {panel_bg} !important; }}")
     if panel_fg:
         override_rules.append(
-            f"#panel, .panel-button, #panel .clock, #panel .aggregate-menu {{ color: {panel_fg}; }}"
+            f"#panel, .panel-button, #panel .clock, #panel .aggregate-menu {{ color: {panel_fg} !important; }}"
         )
     if overview_bg:
         override_rules.append(
-            f".overview, #overview, .overview-controls {{ background-color: {overview_bg}; }}"
+            f".overview, #overview, .overview-controls {{ background-color: {overview_bg} !important; }}"
         )
     if accent:
         override_rules.append(
-            f".popup-menu-item:active, .popup-menu-item:selected, .panel-button:active, .calendar-day-selected {{ background-color: {accent}; color: #ffffff; }}"
+            f".popup-menu-item:active, .popup-menu-item:selected, .panel-button:active, .calendar-day-selected, "
+            f".quick-settings-toggle:checked, .quick-toggle:checked, "
+            f".quick-toggle-menu:checked, .quick-slider .slider, "
+            f".slider-bin .slider {{ background-color: {accent} !important; color: #ffffff !important; }}"
+        )
+        override_rules.append(
+            f".quick-settings-toggle:checked, .quick-toggle:checked {{ "
+            f"background-color: {accent} !important; "
+            f"border-color: {accent} !important; "
+            f"color: #ffffff !important; }}"
         )
 
     override_rules.append(GTM_MARKER_END)
@@ -313,16 +322,16 @@ class ShellThemeForkManager:
     ) -> ShellThemeFork:
         """Create a customized fork for GNOME Shell theme."""
         clean_name = self._sanitize_name(custom_name)
-        fork_name = clean_name if clean_name.endswith("-shell") else f"{clean_name}-shell"
+        fork_name = clean_name
         dest_dir = self._user_themes_dir / fork_name
 
-        if dest_dir.exists():
-            if not overwrite:
-                raise FileExistsError(f"Shell fork directory already exists: {dest_dir}")
-            shutil.rmtree(dest_dir)
+        if dest_dir.exists() and not overwrite:
+            raise FileExistsError(f"Shell fork directory already exists: {dest_dir}")
 
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest_shell_dir = dest_dir / "gnome-shell"
+        if dest_shell_dir.exists() and overwrite:
+            shutil.rmtree(dest_shell_dir)
         dest_shell_dir.mkdir(parents=True, exist_ok=True)
 
         # Copy original gnome-shell contents if present
@@ -332,7 +341,9 @@ class ShellThemeForkManager:
                 if item.is_file():
                     shutil.copy2(item, dest_shell_dir / item.name)
                 elif item.is_dir():
-                    shutil.copytree(item, dest_shell_dir / item.name, dirs_exist_ok=True)
+                    shutil.copytree(
+                        item, dest_shell_dir / item.name, symlinks=True, dirs_exist_ok=True
+                    )
         elif (base_theme_path / "gnome-shell.css").is_file():
             shutil.copy2(base_theme_path / "gnome-shell.css", dest_shell_dir / "gnome-shell.css")
 
@@ -344,13 +355,39 @@ class ShellThemeForkManager:
         updated_css = generate_shell_css_override(initial_css, colors)
         css_file.write_text(updated_css, encoding="utf-8")
 
-        # Write index.theme metadata
-        index_content = (
-            f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={fork_name} (edited)\n"
-            f"Comment=Custom GNOME Shell fork created with GnomeThemeManager\n"
-            f"Encoding=UTF-8\n\n[X-GNOME-Metatheme]\nGnomeShellTheme={fork_name}\n"
-        )
-        (dest_dir / "index.theme").write_text(index_content, encoding="utf-8")
+        # Write or update index.theme metadata
+        index_file = dest_dir / "index.theme"
+        if index_file.is_file():
+            try:
+                lines = index_file.read_text(encoding="utf-8", errors="replace").splitlines()
+                has_metatheme_sec = False
+                has_shell_theme = False
+                updated_lines = []
+                for line in lines:
+                    if line.strip() == "[X-GNOME-Metatheme]":
+                        has_metatheme_sec = True
+                        updated_lines.append(line)
+                    elif line.strip().startswith("GnomeShellTheme="):
+                        has_shell_theme = True
+                        updated_lines.append(f"GnomeShellTheme={fork_name}")
+                    else:
+                        updated_lines.append(line)
+                if not has_metatheme_sec:
+                    updated_lines.extend(
+                        ["", "[X-GNOME-Metatheme]", f"GnomeShellTheme={fork_name}"]
+                    )
+                elif not has_shell_theme:
+                    updated_lines.append(f"GnomeShellTheme={fork_name}")
+                index_file.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
+            except Exception as err:
+                logger.warning("Failed updating index.theme for shell fork: %s", err)
+        else:
+            index_content = (
+                f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={fork_name} (edited)\n"
+                f"Comment=Custom Theme created with GnomeThemeManager\n"
+                f"Encoding=UTF-8\n\n[X-GNOME-Metatheme]\nGtkTheme={fork_name}\nGnomeShellTheme={fork_name}\n"
+            )
+            index_file.write_text(index_content, encoding="utf-8")
 
         fork = ShellThemeFork(
             fork_name=fork_name,

@@ -51,8 +51,14 @@ COLLAPSE_BREAKPOINT_WIDTH: int = 700
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    if not BUNDLED_ICONS_DIR.is_dir():
-        return
+    search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
+
+    # In AppImage runtime, check AppDir data and icons directories
+    appdir = Path(__file__).parent.parent.parent.parent
+    if (appdir / "usr" / "share" / "icons").is_dir():
+        search_dirs.append(appdir / "usr" / "share" / "icons")
+    if (appdir / "data" / "icons").is_dir():
+        search_dirs.append(appdir / "data" / "icons")
 
     try:
         theme = icon_theme
@@ -63,10 +69,12 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
 
         if theme is not None and hasattr(theme, "add_search_path"):
             current_paths = theme.get_search_path() if hasattr(theme, "get_search_path") else []
-            bundled_str = str(BUNDLED_ICONS_DIR)
-            if bundled_str not in current_paths:
-                theme.add_search_path(bundled_str)
-                logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", bundled_str)
+            for s_dir in search_dirs:
+                if s_dir.is_dir():
+                    s_str = str(s_dir)
+                    if s_str not in current_paths:
+                        theme.add_search_path(s_str)
+                        logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", s_str)
     except Exception as err:
         logger.warning("Failed to initialize bundled icon theme: %s", err)
 

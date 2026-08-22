@@ -2610,6 +2610,76 @@ msgstr "Light Suite"
 msgid "Clean light desktop appearance using verified system themes."
 msgstr "Clean light desktop appearance using verified system themes."
 
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:160
+msgid "Open an existing Global Theme to modify it"
+msgstr "Open an existing Global Theme to modify it"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:172
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:949
+msgid "Open Global Theme"
+msgstr "Open Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:182
+msgid "Reset editor values to current system settings"
+msgstr "Reset editor values to current system settings"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:194
+msgid "Reset"
+msgstr "Reset"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:936
+msgid "Editor reset to current desktop settings."
+msgstr "Editor reset to current desktop settings."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:944
+msgid "No user-created Global Themes found to edit."
+msgstr "No user-created Global Themes found to edit."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:956
+msgid "User Global Themes"
+msgstr "User Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:957
+msgid "Select a theme to load into the editor for modification:"
+msgstr "Select a theme to load into the editor for modification:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:973
+msgid "Open in Editor"
+msgstr "Open in Editor"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:554
+msgid "Cannot delete currently active theme"
+msgstr "Cannot delete currently active theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:557
+msgid "Delete this theme"
+msgstr "Delete this theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1257
+msgid "Delete Theme"
+msgstr "Delete Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1260
+msgid "This theme folder contains both GTK and GNOME Shell assets. Deleting it will permanently remove the theme for both categories."
+msgstr "This theme folder contains both GTK and GNOME Shell assets. Deleting it will permanently remove the theme for both categories."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1264
+msgid "Are you sure you want to permanently delete"
+msgstr "Are you sure you want to permanently delete"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:564
+msgid "Cannot delete theme: currently active in {categories}"
+msgstr "Cannot delete theme: currently active in {categories}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1309
+msgid "Theme '{name}' deleted successfully."
+msgstr "Theme '{name}' deleted successfully."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1313
+msgid "Failed to delete theme:"
+msgstr "Failed to delete theme:"
+
+
 
 
 

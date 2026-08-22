@@ -116,12 +116,12 @@ def test_shell_theme_fork_create_and_revert(tmp_path: Path) -> None:
         colors={"panel_bg": "#000000", "accent_color": "#123456"},
     )
 
-    assert fork.fork_name == "CustomShell-shell"
+    assert fork.fork_name == "CustomShell"
     assert fork.fork_path.is_dir()
     assert (fork.fork_path / "gnome-shell" / "gnome-shell.css").is_file()
     assert "#123456" in (fork.fork_path / "gnome-shell" / "gnome-shell.css").read_text()
 
     # Revert fork
-    reverted = mgr.revert_shell_fork("CustomShell-shell")
+    reverted = mgr.revert_shell_fork("CustomShell")
     assert reverted is True
     assert not fork.fork_path.exists()

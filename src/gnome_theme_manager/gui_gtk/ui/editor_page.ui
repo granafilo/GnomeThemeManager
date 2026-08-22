@@ -157,6 +157,48 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkButton" id="open_global_theme_button">
+                            <property name="tooltip-text" translatable="yes">Open an existing Global Theme to modify it</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">document-open-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Open Global Theme</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="reset_to_current_button">
+                            <property name="tooltip-text" translatable="yes">Reset editor values to current system settings</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">view-refresh-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Reset</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkButton" id="save_as_global_theme_button">
                             <property name="tooltip-text" translatable="yes">Save current editor mix as a Global Theme</property>
                             <style>
@@ -172,7 +214,7 @@
                                   </object>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel">
+                                  <object class="GtkLabel" id="save_as_global_theme_label">
                                     <property name="label" translatable="yes">Save as Global Theme</property>
                                   </object>
                                 </child>

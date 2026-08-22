@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 
 APP_NAME="GNOMEThemeManager"
 APP_ID="io.github.granafilo.ThemeManager"
-VERSION="1.4.0"
+VERSION="1.4.1"
 ARCH="${ARCH:-x86_64}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -91,6 +91,16 @@ cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/a
 cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/$APP_ID.svg"
 cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/.DirIcon"
 cp "$ROOT_DIR/appimage/$APP_ID.metainfo.xml" "$APP_DIR/usr/share/metainfo/"
+
+# Copia icone bundled dell'applicazione
+if [ -d "$ROOT_DIR/data" ]; then
+    mkdir -p "$APP_DIR/data"
+    cp -r "$ROOT_DIR/data"/* "$APP_DIR/data/"
+    mkdir -p "$APP_DIR/usr/share/icons"
+    if [ -d "$ROOT_DIR/data/icons" ]; then
+        cp -r "$ROOT_DIR/data/icons"/* "$APP_DIR/usr/share/icons/"
+    fi
+fi
 
 # ------------------------------------------------------------------------------
 # 4. Generazione script di avvio (AppRun e wrapper binario)

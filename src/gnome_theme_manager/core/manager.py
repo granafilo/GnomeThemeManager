@@ -679,41 +679,9 @@ class ThemeManager:
             warnings.append(warning_msg)
             shell_to_apply = None
 
-        # 7. Safe target resolution for GSettings (prevent Snap desktop missing themes popups)
-        # If host theme is a custom fork (e.g. Colloid-Dark-Custom), GSettings key receives the safe base
-        # (e.g. Colloid-Dark or Yaru-dark) so Snap won't prompt, while GTK4 overrides and host styles use the custom theme.
-        checker = self._fallback_manager.availability_checker
-        gsettings_gtk = gtk_to_apply
-        if gtk_to_apply is not None and not checker.check(
-            gtk_to_apply, ThemeType.GTK, target="snap"
-        ):
-            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.GTK)
-            gsettings_gtk = checker.derive_available_theme(
-                gtk_to_apply, ThemeType.GTK, target="snap", fallback_theme=fb_val
-            )
-            logger.info(
-                "Custom GTK theme '%s' not native in Snap; using safe GSettings key '%s'",
-                gtk_to_apply,
-                gsettings_gtk,
-            )
-
-        gsettings_icon = icon_to_apply
-        if icon_to_apply is not None and not checker.check(
-            icon_to_apply, ThemeType.ICON, target="snap"
-        ):
-            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.ICON)
-            gsettings_icon = checker.derive_available_theme(
-                icon_to_apply, ThemeType.ICON, target="snap", fallback_theme=fb_val
-            )
-            logger.info(
-                "Custom Icon theme '%s' not native in Snap; using safe GSettings key '%s'",
-                icon_to_apply,
-                gsettings_icon,
-            )
-
         target_set = ThemeSet(
-            gtk_theme=gsettings_gtk,
-            icon_theme=gsettings_icon,
+            gtk_theme=gtk_to_apply,
+            icon_theme=icon_to_apply,
             cursor_theme=cursor_to_apply,
             color_scheme=theme_set.color_scheme,
             shell_theme=shell_to_apply,
@@ -1080,6 +1048,7 @@ class ThemeManager:
         self,
         theme_id: str,
         theme_set: ThemeSet,
+        name: str | None = None,
         description: str | None = None,
         icon_override: str | None = None,
         fonts: FontConfig | None = None,
@@ -1089,6 +1058,7 @@ class ThemeManager:
         Args:
             theme_id: ID or name of the user global theme to update.
             theme_set: New component selections (ThemeSet).
+            name: Optional new human-readable theme name.
             description: Optional new description (keeps existing when None).
             icon_override: Optional new custom icon path (keeps existing when None).
             fonts: Optional new FontConfig (keeps existing when None).
@@ -1099,6 +1069,7 @@ class ThemeManager:
         return self._global_themes.update_global_theme(
             theme_id=theme_id,
             theme_set=theme_set,
+            name=name,
             description=description,
             icon_override=icon_override,
             fonts=fonts,

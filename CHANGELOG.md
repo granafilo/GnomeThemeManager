@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.4.1] - 2026-08-22
+
+### Fixed
+- **AppImage Sidebar Icons**: Fixed bundled fallback icon resolution in AppImage bundle packaging by properly embedding `data/icons/` into `usr/share/icons/` and extending `Gtk.IconTheme` search path discovery.
+- **Unified Theme Directories**: Custom-composed themes with both GTK and GNOME Shell overrides now save directly to a single unified theme folder (`~/.themes/<name>`), bundling `gtk-4.0/`, `gtk-3.0/`, `gnome-shell/`, and `index.theme` together.
+- **Theme Editor State & Reset**: Cleaned up Editor initialization to always start with the currently active desktop configuration; added an "Open Global Theme" selection dialog to modify existing themes and a "Reset" action.
+- **Theme Deletion & Active Protections**: Added direct deletion support for user-installed GTK, GNOME Shell, Icon, and Cursor themes with confirmation dialogs; deletion is strictly prevented on currently active themes, and combined GTK+Shell themes warn about complete removal across both categories.
+
 ## [1.4.0] - 2026-08-21
 
 ### Added
