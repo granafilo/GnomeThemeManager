@@ -295,20 +295,24 @@ class SandboxBridge:
             )
 
         if gtk_theme:
+            from .theme_snap_manager.detector import ThemeDetector
+
+            detector = ThemeDetector()
+            is_compat, _ = detector.check_theme_compatibility(gtk_theme)
             theme_norm = gtk_theme.strip().lower()
-            if theme_norm in KNOWN_SNAP_COMMON_THEMES:
+
+            if is_compat or theme_norm in KNOWN_SNAP_COMMON_THEMES:
                 messages.append(
                     f"Theme '{gtk_theme}' is natively supported by gtk-common-themes in Snap."
                 )
             else:
                 warn_msg = (
                     f"Custom theme '{gtk_theme}' is not included in the standard "
-                    f"'gtk-common-themes' snap package. Some Snap apps may use default styling. "
-                    f"If available, install a dedicated snap package (e.g. 'snap install {theme_norm}-themes')."
+                    f"'gtk-common-themes' snap package. Use Theme Snap Manager to compile a local Content Snap."
                 )
                 logger.info(warn_msg)
                 warnings.append(warn_msg)
-                messages.append(f"Custom theme '{gtk_theme}' (not included in gtk-common-themes).")
+                messages.append(f"Custom theme '{gtk_theme}' (local Content Snap available).")
         else:
             messages.append("Snap gtk-common-themes verification completed successfully.")
 

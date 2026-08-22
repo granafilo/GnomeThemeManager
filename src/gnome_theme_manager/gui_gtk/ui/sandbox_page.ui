@@ -77,6 +77,36 @@
                     <property name="orientation">vertical</property>
                     <property name="spacing">24</property>
 
+                    <!-- ACTIVE CONFIGURATION GROUP -->
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title" translatable="yes">Active Desktop Configuration</property>
+                        <property name="description" translatable="yes">Themes currently configured in GNOME desktop settings.</property>
+                        <child>
+                          <object class="AdwActionRow" id="active_gtk_row">
+                            <property name="title" translatable="yes">GTK / Application Theme</property>
+                            <property name="subtitle" translatable="yes">-</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="active_gtk_icon">
+                                <property name="icon-name">preferences-desktop-theme-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="active_icon_row">
+                            <property name="title" translatable="yes">Icon &amp; Cursor Theme</property>
+                            <property name="subtitle" translatable="yes">-</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="active_icon_icon">
+                                <property name="icon-name">emblem-photos-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
                     <!-- FLATPAK GROUP -->
                     <child>
                       <object class="AdwPreferencesGroup">
@@ -157,9 +187,53 @@
                           </object>
                         </child>
                         <child>
+                          <object class="AdwActionRow" id="snap_installed_content_row">
+                            <property name="title" translatable="yes">Installed Content Snap</property>
+                            <property name="subtitle" translatable="yes">-</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="snap_installed_content_icon">
+                                <property name="icon-name">starred-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="snap_connected_apps_row">
+                            <property name="title" translatable="yes">Connected Snap Applications</property>
+                            <property name="subtitle" translatable="yes">-</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="snap_connected_apps_icon">
+                                <property name="icon-name">emblem-ok-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="snap_build_custom_row">
+                            <property name="title" translatable="yes">Custom Theme Snap</property>
+                            <property name="subtitle" translatable="yes">Generate and connect a local Content Snap to allow Snap apps to use this custom theme.</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="snap_build_custom_icon">
+                                <property name="icon-name">applications-engineering-symbolic</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkButton" id="snap_build_custom_button">
+                                <property name="label" translatable="yes">Build &amp; Connect Snap</property>
+                                <property name="tooltip-text" translatable="yes">Generate local Content Snap and connect to all compatible Snap apps</property>
+                                <property name="valign">center</property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="AdwActionRow" id="snap_notes_row">
                             <property name="title" translatable="yes">Compatibility Notes</property>
-                            <property name="subtitle" translatable="yes">Snap apps use themes bundled in gtk-common-themes. Custom themes require dedicated snaps.</property>
+                            <property name="subtitle" translatable="yes">Snap apps use themes bundled in gtk-common-themes or local Content Snaps generated for custom themes.</property>
                             <child type="prefix">
                               <object class="GtkImage" id="snap_notes_icon">
                                 <property name="icon-name">dialog-information-symbolic</property>

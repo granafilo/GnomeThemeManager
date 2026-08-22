@@ -184,7 +184,7 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
         assert result.snap_success is True
         assert len(result.warnings) == 1
         assert "not included in the standard" in result.warnings[0]
-        assert "snap install nordic-darker-themes" in result.warnings[0]
+        assert "Theme Snap Manager" in result.warnings[0]
 
 
 def test_propagate_to_snap_not_installed() -> None:

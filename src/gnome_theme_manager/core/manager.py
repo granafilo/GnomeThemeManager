@@ -13,6 +13,7 @@ high-level entry point to consume all core package capabilities:
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .editor_draft import EditorDraftManager
@@ -1315,3 +1316,58 @@ class ThemeManager:
         """
         logger.info("Theme uninstallation requested: '%s' (%s)", name, theme_type)
         return self._installer.uninstall(theme_name=name, theme_type=theme_type)
+
+    def apply_custom_theme_to_snap(
+        self,
+        theme_name: str,
+        theme_path: Path | None = None,
+        icon_name: str | None = None,
+        icon_path: Path | None = None,
+    ) -> dict[str, Any]:
+        """Build and connect a custom Content Snap for a theme (including matching icons).
+
+        Args:
+            theme_name: Name of theme.
+            theme_path: Optional explicit theme directory path.
+            icon_name: Optional explicit icon/cursor theme name.
+            icon_path: Optional explicit icon directory path.
+
+        Returns:
+            Dict containing results of the Content Snap build and connection.
+        """
+        from .theme_snap_manager import apply_custom_theme_with_snap_support
+
+        if theme_path is None:
+            found = self._scanner.find_theme(theme_name, ThemeType.GTK)
+            if not found:
+                raise ThemeNotFoundError(f"GTK theme '{theme_name}' not found on system.")
+            target_path = found.path
+        else:
+            target_path = theme_path
+
+        # Resolve icon path if not provided
+        resolved_icon_name = icon_name
+        resolved_icon_path = icon_path
+
+        if resolved_icon_path is None:
+            # 1. Try finding icons with the same theme name (e.g. Colloid)
+            found_icon = self._scanner.find_theme(theme_name, ThemeType.ICON)
+            if not found_icon:
+                # 2. Try current active icon theme from GSettings
+                try:
+                    curr = self.get_current_themes()
+                    if curr.icon_theme:
+                        found_icon = self._scanner.find_theme(curr.icon_theme, ThemeType.ICON)
+                except Exception:
+                    pass
+
+            if found_icon:
+                resolved_icon_name = found_icon.name
+                resolved_icon_path = found_icon.path
+
+        return apply_custom_theme_with_snap_support(
+            theme_name=theme_name,
+            theme_path=target_path,
+            icon_name=resolved_icon_name,
+            icon_path=resolved_icon_path,
+        )

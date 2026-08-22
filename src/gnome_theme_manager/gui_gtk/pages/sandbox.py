@@ -58,6 +58,9 @@ class SandboxPage:
         self.loading_spinner: Gtk.Spinner = self.builder.get_object("loading_spinner")
         self.loading_label: Gtk.Label = self.builder.get_object("loading_label")
 
+        self.active_gtk_row: Adw.ActionRow = self.builder.get_object("active_gtk_row")
+        self.active_icon_row: Adw.ActionRow = self.builder.get_object("active_icon_row")
+
         self.flatpak_status_row: Adw.ActionRow = self.builder.get_object("flatpak_status_row")
         self.flatpak_status_icon: Gtk.Image | None = self.builder.get_object("flatpak_status_icon")
         self.flatpak_override_row: Adw.ActionRow = self.builder.get_object("flatpak_override_row")
@@ -67,6 +70,16 @@ class SandboxPage:
         self.snap_status_icon: Gtk.Image | None = self.builder.get_object("snap_status_icon")
         self.snap_gtk_common_row: Adw.ActionRow = self.builder.get_object("snap_gtk_common_row")
         self.snap_theme_compat_row: Adw.ActionRow = self.builder.get_object("snap_theme_compat_row")
+        self.snap_installed_content_row: Adw.ActionRow = self.builder.get_object(
+            "snap_installed_content_row"
+        )
+        self.snap_connected_apps_row: Adw.ActionRow = self.builder.get_object(
+            "snap_connected_apps_row"
+        )
+        self.snap_build_custom_row: Adw.ActionRow = self.builder.get_object("snap_build_custom_row")
+        self.snap_build_custom_button: Gtk.Button = self.builder.get_object(
+            "snap_build_custom_button"
+        )
         self.snap_notes_row: Adw.ActionRow = self.builder.get_object("snap_notes_row")
 
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
@@ -85,7 +98,7 @@ class SandboxPage:
             if btn is not None:
                 btn.set_label(lbl)
                 btn._icon_name = icon
-                btn.get_icon_name = lambda _b=btn, _ic=icon: _ic
+                btn.get_icon_name = lambda _btn_self=btn, _icon_val=icon: _icon_val
 
         self._is_loading: bool = False
         self._is_propagating: bool = False
@@ -97,9 +110,10 @@ class SandboxPage:
 
         self.on_sandbox_propagated: Callable[[], None] | None = None
 
-        self.refresh_button.connect("clicked", lambda _: self.refresh())
+        self.refresh_button.connect("clicked", lambda _btn: self.refresh())
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
-        self.error_retry_button.connect("clicked", lambda _: self.refresh())
+        self.snap_build_custom_button.connect("clicked", self._on_build_snap_clicked)
+        self.error_retry_button.connect("clicked", lambda _btn: self.refresh())
 
     def get_widget(self) -> Gtk.Stack:
         """Return main Gtk.Stack widget."""
@@ -194,6 +208,20 @@ class SandboxPage:
         if sb is None:
             sb = SandboxStatus()
 
+        # Update active desktop configuration display
+        active_gtk_text = (themes.gtk_theme or "") if themes else ""
+        active_icon_text = (themes.icon_theme or "") if themes else ""
+        active_cursor_text = (themes.cursor_theme or "") if themes else ""
+
+        if self.active_gtk_row is not None:
+            self.active_gtk_row.set_subtitle(active_gtk_text or _("None detected"))
+
+        if self.active_icon_row is not None:
+            if active_icon_text and active_cursor_text and active_icon_text != active_cursor_text:
+                self.active_icon_row.set_subtitle(f"{active_icon_text} ({_('Cursors')}: {active_cursor_text})")
+            else:
+                self.active_icon_row.set_subtitle(active_icon_text or active_cursor_text or _("None detected"))
+
         if sb.flatpak_available:
             self.flatpak_status_row.set_subtitle(_("Available on system"))
             if self.flatpak_status_icon is not None:
@@ -231,18 +259,109 @@ class SandboxPage:
             self.snap_theme_compat_row.set_subtitle(
                 _("Not verifiable (Snap or gtk-common-themes absent)")
             )
+            self.snap_installed_content_row.set_visible(False)
+            self.snap_connected_apps_row.set_visible(False)
+            self.snap_build_custom_row.set_visible(False)
         elif not active_gtk:
             self.snap_theme_compat_row.set_subtitle(_("No active GTK theme detected"))
+            self.snap_installed_content_row.set_visible(False)
+            self.snap_connected_apps_row.set_visible(False)
+            self.snap_build_custom_row.set_visible(False)
         else:
+            from gnome_theme_manager.core.theme_snap_manager.connector import SnapConnector
+            from gnome_theme_manager.core.theme_snap_manager.detector import ThemeDetector
+
+            detector = ThemeDetector()
+            is_compat, _slots = detector.check_theme_compatibility(active_gtk)
             norm_name = active_gtk.strip().lower()
-            if norm_name in KNOWN_SNAP_COMMON_THEMES:
+
+            # Inspect local Content Snap presence and connections
+            expected_snap_name = f"custom-theme-{norm_name.replace(' ', '-').replace('_', '-')}"
+            connector = SnapConnector(expected_snap_name)
+            installed_snaps = connector.get_installed_snaps()
+            has_custom_snap = expected_snap_name in installed_snaps
+
+            if is_compat or norm_name in KNOWN_SNAP_COMMON_THEMES:
                 self.snap_theme_compat_row.set_subtitle(
                     f"{_('Theme')} '{active_gtk}' {_('natively supported by gtk-common-themes')}"
                 )
+                self.snap_installed_content_row.set_visible(False)
+                self.snap_connected_apps_row.set_visible(False)
+                self.snap_build_custom_row.set_visible(False)
             else:
                 self.snap_theme_compat_row.set_subtitle(
                     f"{_('Theme')} '{active_gtk}' {_('custom (requires dedicated snap)')}"
                 )
+                self.snap_installed_content_row.set_visible(True)
+                self.snap_connected_apps_row.set_visible(True)
+
+                if has_custom_snap:
+                    self.snap_installed_content_row.set_subtitle(
+                        f"{expected_snap_name} ({_('Installed & Active')})"
+                    )
+                    # Query connected apps
+                    connected_targets = connector.get_snaps_using_common_themes()
+                    if connected_targets:
+                        apps_list = ", ".join(sorted(connected_targets))
+                        self.snap_connected_apps_row.set_subtitle(f"{len(connected_targets)} {_('apps')}: {apps_list}")
+                    else:
+                        self.snap_connected_apps_row.set_subtitle(_("No consuming Snap apps detected"))
+
+                    self.snap_build_custom_row.set_visible(True)
+                    self.snap_build_custom_button.set_label(_("Rebuild & Update Snap"))
+                    self.snap_build_custom_row.set_subtitle(
+                        _("Content Snap is active. Click to rebuild and re-sync if theme files changed.")
+                    )
+                else:
+                    self.snap_installed_content_row.set_subtitle(_("Not installed"))
+                    self.snap_connected_apps_row.set_subtitle(_("None (Content Snap not present)"))
+                    self.snap_build_custom_row.set_visible(True)
+                    self.snap_build_custom_button.set_label(_("Build & Connect Snap"))
+                    self.snap_build_custom_row.set_subtitle(
+                        _(
+                            "Generate and connect Content Snap for '{theme}' to remove missing themes alert."
+                        ).format(theme=active_gtk)
+                    )
+
+    def _on_build_snap_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Handle building and connecting custom theme snap."""
+        if not self.manager or not self._current_themes or not self._current_themes.gtk_theme:
+            self._show_toast(_("No active GTK theme available to package."))
+            return
+
+        theme_name = self._current_themes.gtk_theme
+        self._show_toast(_("Building Content Snap for '{theme}'…").format(theme=theme_name))
+        self.snap_build_custom_button.set_sensitive(False)
+
+        def worker() -> tuple[dict[str, Any] | None, Exception | None]:
+            try:
+                assert self.manager is not None
+                res = self.manager.apply_custom_theme_to_snap(theme_name)
+                return res, None
+            except Exception as err:
+                return None, err
+
+        def on_done(result: tuple[dict[str, Any] | None, Exception | None]) -> bool:
+            self.snap_build_custom_button.set_sensitive(True)
+            res, err = result
+            if err:
+                logger.error("Failed building Content Snap: %s", err)
+                self._show_toast(f"{_('Snap packaging failed:')} {err}")
+            elif res:
+                snap_name = res.get("snap_name", "")
+                self._show_toast(
+                    _("Content Snap '{snap}' installed and connected to Snap applications!").format(
+                        snap=snap_name
+                    )
+                )
+                self.refresh()
+            return GLib.SOURCE_REMOVE
+
+        def run_thread() -> None:
+            res = worker()
+            GLib.idle_add(on_done, res)
+
+        threading.Thread(target=run_thread, daemon=True).start()
 
     def _on_propagate_clicked(self, _button: Gtk.Button | None = None) -> None:
         """Open confirmation dialog before propagation."""

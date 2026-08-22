@@ -104,7 +104,13 @@ To run the standalone AppImage bundle, local helper scripts, or launch the app f
 ### Sandbox Integration (Flatpak & Snap)
 
 - **Flatpak**: User themes installed in `~/.themes` or `~/.icons` are isolated from sandboxes by default. The application automatically propagates access via `flatpak override --filesystem=xdg-data/themes:ro` and `flatpak override --filesystem=xdg-data/icons:ro`.
-- **Snap**: Standard desktop integration relies on theme snaps (such as `gtk-common-themes`). Ensure theme snaps are installed and connected to your GNOME desktop interface slots.
+- **Snap & Custom Theme Support**:
+  - **Standard Themes**: Rely on `gtk-common-themes` (`snap install gtk-common-themes`).
+  - **Custom Themes**: To apply third-party or custom GTK/Icon themes to confined Snap applications (like Firefox or Thunderbird) without triggering "missing themes" alerts, GnomeThemeManager generates and connects local Content Snaps (`custom-theme-<name>`).
+  - **Prerequisites for Snap Packaging**:
+    - `snapd` (standard on Ubuntu)
+    - `squashfs-tools` (recommended for instant packaging via `mksquashfs`: `sudo apt install squashfs-tools`)
+    - `policykit-1` / `pkexec` (standard in GNOME for graphical root authorization)
 
 ## Requirements
 
