@@ -392,9 +392,10 @@ class ThemesPage:
         """Handle row selection in available themes list."""
         self._clear_toast()
         if row is not None and hasattr(row, "_theme_item"):
-            self._selected_theme = row._theme_item
+            item: ThemeItemPresentation = row._theme_item
+            self._selected_theme = item
             self.apply_button.set_sensitive(not self._is_applying and not self._is_loading)
-            self.selection_info_label.set_text(f"{_('Selected:')} {self._selected_theme.name}")
+            self.selection_info_label.set_text(f"{_('Selected:')} {item.name}")
         else:
             self._selected_theme = None
             self.apply_button.set_sensitive(False)
@@ -766,15 +767,7 @@ class ThemesPage:
                     if prefs.auto_enable_user_theme:
                         enabled_ok = self.manager.extensions.enable_user_theme()
                         if enabled_ok:
-                            if self.manager.gsettings is not None:
-                                try:
-                                    self.manager.gsettings.__init__(
-                                        schema_name=self.manager.gsettings.schema_name,
-                                        shell_schema_name=self.manager.gsettings.shell_schema_name,
-                                        custom_schema_dirs=self.manager.gsettings.custom_schema_dirs,
-                                    )
-                                except Exception:
-                                    pass
+                            self.manager.reload_gsettings()
                             self._show_toast(_("User Themes extension enabled automatically."))
                         else:
                             self._show_toast(_("Unable to enable 'User Themes' extension."))
@@ -918,15 +911,7 @@ class ThemesPage:
             if self.manager is not None:
                 success = self.manager.extensions.enable_user_theme()
                 if success:
-                    if self.manager.gsettings is not None:
-                        try:
-                            self.manager.gsettings.__init__(
-                                schema_name=self.manager.gsettings.schema_name,
-                                shell_schema_name=self.manager.gsettings.shell_schema_name,
-                                custom_schema_dirs=self.manager.gsettings.custom_schema_dirs,
-                            )
-                        except Exception:
-                            pass
+                    self.manager.reload_gsettings()
                     self._show_toast(_("User Themes extension enabled automatically."))
                     if on_complete:
                         on_complete(None, None)

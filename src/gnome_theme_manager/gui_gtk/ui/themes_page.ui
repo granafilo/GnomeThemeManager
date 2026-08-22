@@ -61,8 +61,8 @@
                 <property name="vscrollbar-policy">automatic</property>
                 <property name="child">
                   <object class="AdwClamp">
-                    <property name="maximum-size">960</property>
-                    <property name="tightening-threshold">700</property>
+                    <property name="maximum-size">840</property>
+                    <property name="tightening-threshold">560</property>
                     <property name="margin-start">16</property>
                     <property name="margin-end">16</property>
                     <property name="margin-top">16</property>
@@ -195,8 +195,8 @@
             <!-- Bottom action bar -->
             <child>
               <object class="AdwClamp">
-                <property name="maximum-size">960</property>
-                <property name="tightening-threshold">700</property>
+                <property name="maximum-size">840</property>
+                <property name="tightening-threshold">560</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
                 <property name="margin-top">8</property>
@@ -208,6 +208,8 @@
                     <child>
                       <object class="GtkLabel" id="selection_info_label">
                         <property name="label" translatable="yes">Select a theme from the list to apply it</property>
+                        <property name="wrap">true</property>
+                        <property name="wrap-mode">word-char</property>
                         <property name="xalign">0</property>
                         <property name="hexpand">true</property>
                         <style>

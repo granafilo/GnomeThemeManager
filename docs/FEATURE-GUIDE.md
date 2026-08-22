@@ -113,6 +113,15 @@ Full control over your own looks.
 
 ---
 
+## Release v1.4.1 — Snap Integration & Maintenance (v1.4.1) ✅
+
+- **v1.4.1-A** Instant Custom Content Snap Packaging: Build local SquashFS Content Snaps (<1s) for custom GTK & Icon themes to remove "Missing themes" warnings in confined Snap apps. ✅
+- **v1.4.1-B** PolicyKit Integration: Batch Snap installation and slot connections under a single `pkexec` graphical password prompt. ✅
+- **v1.4.1-C** Live Sandbox Diagnostics: View real-time active desktop themes, installed Content Snaps, and connected Snap applications. ✅
+- **v1.4.1-D** AppImage & Asset Fixes: Unified theme folder resolution, safer theme deletion with active-theme guards, and resilient launcher icon resolution. ✅
+
+---
+
 ## Phase 5 — Online Store (v1.5)
 
 - **5.1/5.2** Search, preview and install themes from public catalogs.

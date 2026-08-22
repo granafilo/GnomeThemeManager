@@ -1,8 +1,8 @@
 # 🗺️ Development Roadmap — GNOME Theme Manager
 
-**Last updated**: August 21, 2026  
-**Current version**: v1.4.0 (Phase 4 completed)  
-**Status**: Active development (Phase 4 Editors successfully completed)
+**Last updated**: August 22, 2026  
+**Current version**: v1.4.1 (Phase 4 + Release v1.4.1 completed)  
+**Status**: Active development (Release v1.4.1 Snap Integration & Diagnostics completed)
 
 ---
 

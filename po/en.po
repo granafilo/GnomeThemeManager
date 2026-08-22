@@ -2751,17 +2751,25 @@ msgstr "apps"
 msgid "No consuming Snap apps detected"
 msgstr "No consuming Snap apps detected"
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:295
-msgid "Rebuild & Update Snap"
-msgstr "Rebuild & Update Snap"
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:226
+msgid "Build Snap"
+msgstr "Build Snap"
 
-#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:297
-msgid "Content Snap is active. Click to rebuild and re-sync if theme files changed."
-msgstr "Content Snap is active. Click to rebuild and re-sync if theme files changed."
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:319
+msgid "Rebuild Snap"
+msgstr "Rebuild Snap"
 
 #: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:301
 msgid "None (Content Snap not present)"
 msgstr "None (Content Snap not present)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:92
+msgid "Reload"
+msgstr "Reload"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:93
+msgid "Propagate Themes"
+msgstr "Propagate Themes"
 
 
 

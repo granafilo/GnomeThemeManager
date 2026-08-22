@@ -66,8 +66,8 @@
             <property name="hexpand">true</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">920</property>
-                <property name="tightening-threshold">600</property>
+                <property name="maximum-size">840</property>
+                <property name="tightening-threshold">560</property>
                 <property name="margin-top">24</property>
                 <property name="margin-bottom">24</property>
                 <property name="margin-start">16</property>
@@ -84,6 +84,7 @@
                         <property name="description" translatable="yes">Themes currently configured in GNOME desktop settings.</property>
                         <child>
                           <object class="AdwActionRow" id="active_gtk_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">GTK / Application Theme</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -95,7 +96,8 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="active_icon_row">
-                            <property name="title" translatable="yes">Icon &amp; Cursor Theme</property>
+                            <property name="subtitle-lines">2</property>
+                            <property name="title" translatable="yes">Icon &amp;amp; Cursor Theme</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="active_icon_icon">
@@ -114,6 +116,7 @@
                         <property name="description" translatable="yes">Permission integration and theme access for Flatpak applications.</property>
                         <child>
                           <object class="AdwActionRow" id="flatpak_status_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Flatpak Status</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -125,6 +128,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="flatpak_override_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Theme Filesystem Override</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -136,6 +140,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="flatpak_notes_row">
+                            <property name="subtitle-lines">3</property>
                             <property name="title" translatable="yes">Compatibility Notes</property>
                             <property name="subtitle" translatable="yes">User overrides grant read-only access to ~/.local/share/themes and icons.</property>
                             <child type="prefix">
@@ -155,6 +160,7 @@
                         <property name="description" translatable="yes">Integration with theme framework and standard system snaps.</property>
                         <child>
                           <object class="AdwActionRow" id="snap_status_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Snap Status</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -166,6 +172,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_gtk_common_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">gtk-common-themes Package</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -177,6 +184,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_theme_compat_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Active Theme Compatibility</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -188,6 +196,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_installed_content_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Installed Content Snap</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -199,6 +208,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_connected_apps_row">
+                            <property name="subtitle-lines">3</property>
                             <property name="title" translatable="yes">Connected Snap Applications</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
@@ -210,6 +220,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_build_custom_row">
+                            <property name="subtitle-lines">3</property>
                             <property name="title" translatable="yes">Custom Theme Snap</property>
                             <property name="subtitle" translatable="yes">Generate and connect a local Content Snap to allow Snap apps to use this custom theme.</property>
                             <child type="prefix">
@@ -219,7 +230,7 @@
                             </child>
                             <child type="suffix">
                               <object class="GtkButton" id="snap_build_custom_button">
-                                <property name="label" translatable="yes">Build &amp; Connect Snap</property>
+                                <property name="label" translatable="yes">Build Snap</property>
                                 <property name="tooltip-text" translatable="yes">Generate local Content Snap and connect to all compatible Snap apps</property>
                                 <property name="valign">center</property>
                                 <style>
@@ -232,6 +243,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="snap_notes_row">
+                            <property name="subtitle-lines">3</property>
                             <property name="title" translatable="yes">Compatibility Notes</property>
                             <property name="subtitle" translatable="yes">Snap apps use themes bundled in gtk-common-themes or local Content Snaps generated for custom themes.</property>
                             <child type="prefix">
@@ -253,7 +265,7 @@
                         <property name="margin-top">12</property>
                         <child>
                           <object class="GtkButton" id="refresh_button">
-                            <property name="label" translatable="yes">Reload Status</property>
+                            <property name="label" translatable="yes">Reload</property>
                             <property name="tooltip-text" translatable="yes">Update sandbox runtime diagnostics</property>
                             <style>
                               <class name="pill"/>
@@ -262,7 +274,7 @@
                         </child>
                         <child>
                           <object class="GtkButton" id="propagate_button">
-                            <property name="label" translatable="yes">Propagate Themes to Sandboxed Applications</property>
+                            <property name="label" translatable="yes">Propagate Themes</property>
                             <property name="tooltip-text" translatable="yes">Configure Flatpak overrides and verify compatibility for active themes</property>
                             <style>
                               <class name="pill"/>

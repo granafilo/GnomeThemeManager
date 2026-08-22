@@ -282,6 +282,18 @@ class ThemeManager:
         """Return associated GSettings client (None if unavailable)."""
         return self._gsettings
 
+    def reload_gsettings(self) -> None:
+        """Re-initialize GSettings client to refresh schema cache after extension enablement."""
+        if self._gsettings is not None:
+            try:
+                self._gsettings = GSettingsClient(
+                    schema_name=self._gsettings.schema_name,
+                    shell_schema_name=self._gsettings.shell_schema_name,
+                    custom_schema_dirs=self._gsettings.custom_schema_dirs,
+                )
+            except Exception as err:
+                logger.warning("Failed to reload GSettings client: %s", err)
+
     @property
     def gtk4_linker(self) -> GTK4ThemeLinker:
         """Return associated GTK4 linker."""

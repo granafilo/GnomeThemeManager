@@ -93,7 +93,10 @@ def test_sandbox_page_snap_custom_theme_warning(mock_theme_manager: MagicMock) -
     mock_theme_manager.get_current_themes.return_value = ThemeSet(gtk_theme="CustomNordic")
 
     page = SandboxPage(manager=mock_theme_manager)
-    with patch("gnome_theme_manager.core.theme_snap_manager.connector.SnapConnector.get_installed_snaps", return_value=[]):
+    with patch(
+        "gnome_theme_manager.core.theme_snap_manager.connector.SnapConnector.get_installed_snaps",
+        return_value=[],
+    ):
         page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"

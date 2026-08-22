@@ -218,9 +218,13 @@ class SandboxPage:
 
         if self.active_icon_row is not None:
             if active_icon_text and active_cursor_text and active_icon_text != active_cursor_text:
-                self.active_icon_row.set_subtitle(f"{active_icon_text} ({_('Cursors')}: {active_cursor_text})")
+                self.active_icon_row.set_subtitle(
+                    f"{active_icon_text} ({_('Cursors')}: {active_cursor_text})"
+                )
             else:
-                self.active_icon_row.set_subtitle(active_icon_text or active_cursor_text or _("None detected"))
+                self.active_icon_row.set_subtitle(
+                    active_icon_text or active_cursor_text or _("None detected")
+                )
 
         if sb.flatpak_available:
             self.flatpak_status_row.set_subtitle(_("Available on system"))
@@ -303,20 +307,26 @@ class SandboxPage:
                     connected_targets = connector.get_snaps_using_common_themes()
                     if connected_targets:
                         apps_list = ", ".join(sorted(connected_targets))
-                        self.snap_connected_apps_row.set_subtitle(f"{len(connected_targets)} {_('apps')}: {apps_list}")
+                        self.snap_connected_apps_row.set_subtitle(
+                            f"{len(connected_targets)} {_('apps')}: {apps_list}"
+                        )
                     else:
-                        self.snap_connected_apps_row.set_subtitle(_("No consuming Snap apps detected"))
+                        self.snap_connected_apps_row.set_subtitle(
+                            _("No consuming Snap apps detected")
+                        )
 
                     self.snap_build_custom_row.set_visible(True)
-                    self.snap_build_custom_button.set_label(_("Rebuild & Update Snap"))
+                    self.snap_build_custom_button.set_label(_("Rebuild Snap"))
                     self.snap_build_custom_row.set_subtitle(
-                        _("Content Snap is active. Click to rebuild and re-sync if theme files changed.")
+                        _(
+                            "Content Snap is active. Click to rebuild and re-sync if theme files changed."
+                        )
                     )
                 else:
                     self.snap_installed_content_row.set_subtitle(_("Not installed"))
                     self.snap_connected_apps_row.set_subtitle(_("None (Content Snap not present)"))
                     self.snap_build_custom_row.set_visible(True)
-                    self.snap_build_custom_button.set_label(_("Build & Connect Snap"))
+                    self.snap_build_custom_button.set_label(_("Build Snap"))
                     self.snap_build_custom_row.set_subtitle(
                         _(
                             "Generate and connect Content Snap for '{theme}' to remove missing themes alert."

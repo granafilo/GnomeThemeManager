@@ -33,10 +33,10 @@ from .models import ThemeSet
 
 # Protected PyGObject import
 try:
-    import gi  # type: ignore[import-untyped]
+    import gi
 
     gi.require_version("Gio", "2.0")
-    from gi.repository import Gio  # type: ignore[import-untyped]
+    from gi.repository import Gio
 
     _GIO_AVAILABLE = True
 except (ImportError, ValueError, AttributeError):

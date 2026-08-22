@@ -46,7 +46,15 @@ UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons"
 
 # Threshold for responsive automatic collapse (collapsible sidebar)
-COLLAPSE_BREAKPOINT_WIDTH: int = 700
+COLLAPSE_BREAKPOINT_WIDTH: int = 0
+
+# Main window minimum geometry to keep sidebar + content fully usable
+MIN_WINDOW_WIDTH: int = 980
+MIN_WINDOW_HEIGHT: int = 680
+
+# Main window default geometry at startup
+DEFAULT_WINDOW_WIDTH: int = 1080
+DEFAULT_WINDOW_HEIGHT: int = 720
 
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
@@ -97,9 +105,9 @@ class MainWindow(Adw.ApplicationWindow):
         # Initialize bundled icons fallback chain
         init_bundled_icon_theme()
 
-        # Minimum sizing ensuring all pages/cards are fully visible without truncation
-        self.set_size_request(760, 520)
-        self.set_default_size(1080, 720)
+        # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
+        self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+        self.set_default_size(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Apply application-wide CSS styling for enhanced readability and typography
         self._setup_custom_styling()

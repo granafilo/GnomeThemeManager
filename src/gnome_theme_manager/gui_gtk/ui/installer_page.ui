@@ -131,6 +131,7 @@
                         <property name="description" translatable="yes">Detected theme information from selected source.</property>
                         <child>
                           <object class="AdwActionRow" id="source_name_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Selected Source</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">folder-symbolic</property>
@@ -138,6 +139,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="source_type_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Source Type</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">dialog-information-symbolic</property>
@@ -145,6 +147,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_theme_name_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Detected Theme Name</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">preferences-desktop-theme-symbolic</property>
@@ -152,6 +155,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="detected_components_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Supported Components</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <property name="icon-name">emblem-default-symbolic</property>
@@ -159,6 +163,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="validation_status_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Validation Status</property>
                             <property name="subtitle" translatable="yes">Valid</property>
                             <child type="prefix">
@@ -170,6 +175,7 @@
                         </child>
                         <child>
                           <object class="AdwActionRow" id="target_dir_row">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Install into legacy path ~/.themes and ~/.icons</property>
                             <property name="subtitle" translatable="yes">If disabled, uses XDG standard (~/.local/share/themes)</property>
                             <property name="icon-name">folder-remote-symbolic</property>
