@@ -9,7 +9,7 @@
 
 A modern, native theme manager and customization suite for the **GNOME Desktop environment** (GTK4 & Libadwaita).
 
-**Current release:** v1.4.1
+**Current release:** v1.4.8
 
 ---
 
@@ -17,9 +17,10 @@ A modern, native theme manager and customization suite for the **GNOME Desktop e
 
 - **🎨 Unified Theme Management**:
   - Browse, preview, and apply **GTK 3/4**, **GNOME Shell**, **Icon Packs**, and **Cursors**.
-  - **Global Themes**: Save, switch, and share complete desktop setups in 1 click.
+  - **Global Themes**: Save, switch, and share complete desktop setups in 1 click with live GSettings synchronization.
+  - **🌗 Color Scheme Preferences**: 1-click toggling between Default (Light), Dark, and Light appearance across all views.
 - **🖌️ Interactive Theme Editor & Mixer**:
-  - Mix installed components into custom Global Themes.
+  - Mix installed components into custom Global Themes with localized option bindings.
   - Customize extracted GTK and Shell palette colors with live preview and safe auto-rollback.
   - Extract adaptive accent color palettes from your desktop wallpaper.
 - **🔤 Typography & Font Control**:
@@ -30,8 +31,9 @@ A modern, native theme manager and customization suite for the **GNOME Desktop e
 - **📦 Smart Installer & Theme Validation**:
   - Drag-and-drop or select `.zip` / `.tar.*` archives and folders with pre-install integrity checks.
   - Safe theme uninstallation with active-theme protections.
-- **🛡️ Sandbox Propagation**:
+- **🛡️ Sandbox Integration & In-App Guide**:
   - Automatic theme sync for **Flatpak** overrides and **Snap** custom content connectors.
+  - In-app interactive guide modal and conditional runtime diagnostics.
 
 ---
 

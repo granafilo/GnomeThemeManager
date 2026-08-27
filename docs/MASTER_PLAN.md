@@ -540,15 +540,16 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 
 ---
 
-### 🔷 FASE 4.8 — Stabilizzazione e Rifinitura Pre-Store (v1.4.8)
-**Branch:** `chore/phase-4.8-stabilization`
+### 🔷 FASE 4.8 — Stabilizzazione e Rifinitura Pre-Store (v1.4.8) ✅
+**Branch:** `feature/phase-4.8-stabilization`
 **Obiettivo:** Risolvere le ultime incongruenze di stato, documentazione e UX prima di aprire la Fase 5 (Online Store).
 
-- **Task 4.8.1 — Fallback Temi Dinamici [P1]**: Rimuovere i riferimenti hardcodati ai temi di fallback. Estendere `ThemeAvailabilityChecker` per validare dinamicamente i temi di sistema e applicare l'override direttamente alle GSettings senza popup "missing themes".
-- **Task 4.8.2 — Risoluzione Icona Flatpak [P1]**: Correggere il percorso di risoluzione e il bundle dell'icona di avvio per garantire visualizzazione corretta in Flatpak (verificare `.desktop`, `metainfo.xml` e `data/icons/`).
-- **Task 4.8.3 — Documentazione Override Sandbox [P2]**: Espandere `docs/SANDBOX.md` con guida passo-passo per attivare manualmente override filesystem Flatpak e connessioni Snap.
-- **Task 4.8.4 — Allineamento "Configurazione Attuale" [P1]**: Fix del binding UI in Status Page/Global Theme: leggere in tempo reale le GSettings (`org.gnome.desktop.interface`) per evitare discrepanze tra UI e stato reale del desktop.
-- **Task 4.8.5 — Editor Preferenza Chiaro/Scuro [P2]**: Aggiungere `AdwComboRow` per `color-scheme` (predefinito/chiaro/scuro) in Theme Editor Page o scheda Temi Globali.
+- [x] **Task 4.8.1 — Fallback Temi Dinamici [P1]**: Rimosso riferimenti hardcodati ai temi di fallback. Esteso `ThemeAvailabilityChecker` per validare dinamicamente i temi di sistema e applicare l'override direttamente alle GSettings.
+- [x] **Task 4.8.2 — Risoluzione Icona Flatpak [P1]**: Corretto il percorso di risoluzione e bundle dell'icona di avvio per visualizzazione corretta in Flatpak (runtime `/app/share/icons`, `.desktop`, `metainfo.xml`, `data/icons/`).
+- [x] **Task 4.8.3 — Documentazione Override Sandbox & Guida In-App [P2]**: Espanso `docs/SANDBOX.md` e aggiunto dialog modale interattivo in-app con guida e comandi passo-passo per Flatpak e Snap.
+- [x] **Task 4.8.4 — Sincronizzazione Live GSettings e Configurazione Attuale [P1]**: Binding in tempo reale con notifiche `changed` Gio.Settings (`org.gnome.desktop.interface`), risoluzione dinamica dell'entry `auto-current` e pulsante di sincronizzazione rapida nella scheda Temi Globali.
+- [x] **Task 4.8.5 — Editor Preferenza Chiaro/Scuro (`color-scheme`) [P2]**: `AdwComboRow` interattivo per `color-scheme` in Stato Attuale, scheda Temi GTK e Theme Editor con binding live GSettings e localizzazione.
+- [x] **Ottimizzazioni Prestazionali & CI Hardening**: Diagnostica Sandbox asincrona su worker thread, query Snap `gtk-common-themes` single-shot, isolamento scanner mock deterministico per test CI headless.
 
 ---
 

@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="1.4.8" date="2026-08-28">
+      <description>
+        <p>Release 1.4.8: Dynamic system and sandbox theme fallback discovery; 1-click Light/Dark color scheme preference selector across Status, Themes, and Editor; real-time live GSettings desktop synchronization; in-app interactive sandbox guide modal; and asynchronous diagnostics performance optimizations.</p>
+      </description>
+    </release>
     <release version="1.4.1" date="2026-08-22">
       <description>
         <p>Release 1.4.1: Fixed AppImage sidebar icon discovery; unified custom theme folder structure (GTK + Shell); improved Theme Editor state management with Open Theme dialog; and user theme deletion with active theme protections.</p>
