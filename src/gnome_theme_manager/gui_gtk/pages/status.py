@@ -159,6 +159,7 @@ class StatusPage:
         self.row_gsettings_status: Adw.ActionRow = self.builder.get_object("row_gsettings_status")
         self.row_user_themes_path: Adw.ActionRow = self.builder.get_object("row_user_themes_path")
         self.row_user_icons_path: Adw.ActionRow = self.builder.get_object("row_user_icons_path")
+        self.group_sandbox: Adw.PreferencesGroup | None = self.builder.get_object("group_sandbox")
         self.row_flatpak_status: Adw.ActionRow = self.builder.get_object("row_flatpak_status")
         self.row_snap_status: Adw.ActionRow = self.builder.get_object("row_snap_status")
 
@@ -461,16 +462,29 @@ class StatusPage:
                     inactive_label=_("Override inactive"),
                 )
             )
-            self.row_snap_status.set_subtitle(
-                format_sandbox_status(
-                    available=sb.snap_available,
-                    active_or_installed=sb.snap_gtk_common_themes_installed,
-                    active_label=_("gtk-common-themes installed"),
-                    inactive_label=_("gtk-common-themes not installed"),
+            if sb.snap_available:
+                self.row_snap_status.set_visible(True)
+                self.row_snap_status.set_subtitle(
+                    format_sandbox_status(
+                        available=sb.snap_available,
+                        active_or_installed=sb.snap_gtk_common_themes_installed,
+                        active_label=_("gtk-common-themes installed"),
+                        inactive_label=_("gtk-common-themes not installed"),
+                    )
                 )
-            )
+                if self.group_sandbox is not None:
+                    self.group_sandbox.set_title(
+                        GLib.markup_escape_text(_("Sandbox Integration (Snap & Flatpak)"))
+                    )
+            else:
+                self.row_snap_status.set_visible(False)
+                if self.group_sandbox is not None:
+                    self.group_sandbox.set_title(
+                        GLib.markup_escape_text(_("Sandbox Integration (Flatpak)"))
+                    )
         else:
             self.row_flatpak_status.set_subtitle(_("Not available"))
+            self.row_snap_status.set_visible(True)
             self.row_snap_status.set_subtitle(_("Not available"))
 
         if snapshot.warnings:

@@ -21,6 +21,7 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     page = SandboxPage(manager=mock_theme_manager)
 
     buttons = [
+        (page.sandbox_help_button, "Sandbox Guide", "help-about-symbolic"),
         (page.refresh_button, "Refresh Status", "emblem-synchronizing-symbolic"),
         (page.propagate_button, "Propagate Theme to Sandboxed Apps", "emblem-ok-symbolic"),
         (page.error_retry_button, "Retry", "emblem-synchronizing-symbolic"),
@@ -29,6 +30,7 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     for btn, expected_label, expected_icon in buttons:
         assert btn.get_label() == expected_label, f"Etichetta errata: {expected_label}"
         assert btn.get_icon_name() == expected_icon, f"Icona errata: {expected_icon}"
+
 
 
 def test_sandbox_page_refresh_flatpak_and_snap_available(mock_theme_manager: MagicMock) -> None:
@@ -216,3 +218,32 @@ def test_sandbox_page_window_wiring(mock_theme_manager: MagicMock) -> None:
     with patch.object(win.status_page, "refresh") as mock_status_refresh:
         win.sandbox_page.on_sandbox_propagated()
         mock_status_refresh.assert_called_once()
+
+
+def test_sandbox_page_snap_visibility_and_help_dialog(mock_theme_manager: MagicMock) -> None:
+    """Verifica la visibilità condizionale del gruppo Snap e l'apertura del dialog guida."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 non disponibili.")
+
+    mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
+        snap_available=False,
+        flatpak_available=True,
+        snap_gtk_common_themes_installed=False,
+        flatpak_filesystem_override_active=True,
+    )
+
+    page = SandboxPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    assert page.snap_group is not None
+    assert page.snap_group.get_visible() is False
+    assert page.flatpak_group is not None
+    assert page.flatpak_group.get_visible() is True
+
+    # Test clicking help button
+    from gi.repository import Adw
+    with patch.object(Adw.Window, "present"):
+        page._on_help_clicked(page.sandbox_help_button)
+
+
+

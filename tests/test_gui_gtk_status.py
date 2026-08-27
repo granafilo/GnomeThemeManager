@@ -325,3 +325,25 @@ def test_status_page_refresh_concurrency_guard(mock_theme_manager: MagicMock) ->
     gen_before = page._generation_id
     page.refresh()
     assert page._generation_id == gen_before
+
+
+def test_status_page_snap_unavailable_hides_row(mock_theme_manager: MagicMock) -> None:
+    """Check that when snap_available is False, row_snap_status is hidden and group title adjusted."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    status = mock_theme_manager.get_system_status.return_value
+    status.sandbox_status = SandboxStatus(
+        snap_available=False,
+        flatpak_available=True,
+        snap_gtk_common_themes_installed=False,
+        flatpak_filesystem_override_active=True,
+    )
+
+    page = StatusPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    assert page.row_snap_status.get_visible() is False
+    assert page.row_flatpak_status.get_visible() is True
+    assert "Flatpak" in page.group_sandbox.get_title()
+

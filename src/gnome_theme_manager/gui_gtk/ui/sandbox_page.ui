@@ -111,7 +111,7 @@
 
                     <!-- FLATPAK GROUP -->
                     <child>
-                      <object class="AdwPreferencesGroup">
+                      <object class="AdwPreferencesGroup" id="flatpak_group">
                         <property name="title" translatable="yes">Flatpak Environment</property>
                         <property name="description" translatable="yes">Permission integration and theme access for Flatpak applications.</property>
                         <child>
@@ -155,7 +155,7 @@
 
                     <!-- SNAP GROUP -->
                     <child>
-                      <object class="AdwPreferencesGroup">
+                      <object class="AdwPreferencesGroup" id="snap_group">
                         <property name="title" translatable="yes">Snap Environment</property>
                         <property name="description" translatable="yes">Integration with theme framework and standard system snaps.</property>
                         <child>
@@ -263,6 +263,15 @@
                         <property name="spacing">12</property>
                         <property name="halign">center</property>
                         <property name="margin-top">12</property>
+                        <child>
+                          <object class="GtkButton" id="sandbox_help_button">
+                            <property name="label" translatable="yes">Sandbox Guide</property>
+                            <property name="tooltip-text" translatable="yes">How to enable and troubleshoot Flatpak and Snap theme integration</property>
+                            <style>
+                              <class name="pill"/>
+                            </style>
+                          </object>
+                        </child>
                         <child>
                           <object class="GtkButton" id="refresh_button">
                             <property name="label" translatable="yes">Reload</property>

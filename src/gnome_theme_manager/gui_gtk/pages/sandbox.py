@@ -61,11 +61,13 @@ class SandboxPage:
         self.active_gtk_row: Adw.ActionRow = self.builder.get_object("active_gtk_row")
         self.active_icon_row: Adw.ActionRow = self.builder.get_object("active_icon_row")
 
+        self.flatpak_group: Adw.PreferencesGroup | None = self.builder.get_object("flatpak_group")
         self.flatpak_status_row: Adw.ActionRow = self.builder.get_object("flatpak_status_row")
         self.flatpak_status_icon: Gtk.Image | None = self.builder.get_object("flatpak_status_icon")
         self.flatpak_override_row: Adw.ActionRow = self.builder.get_object("flatpak_override_row")
         self.flatpak_notes_row: Adw.ActionRow = self.builder.get_object("flatpak_notes_row")
 
+        self.snap_group: Adw.PreferencesGroup | None = self.builder.get_object("snap_group")
         self.snap_status_row: Adw.ActionRow = self.builder.get_object("snap_status_row")
         self.snap_status_icon: Gtk.Image | None = self.builder.get_object("snap_status_icon")
         self.snap_gtk_common_row: Adw.ActionRow = self.builder.get_object("snap_gtk_common_row")
@@ -82,6 +84,7 @@ class SandboxPage:
         )
         self.snap_notes_row: Adw.ActionRow = self.builder.get_object("snap_notes_row")
 
+        self.sandbox_help_button: Gtk.Button = self.builder.get_object("sandbox_help_button")
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
         self.propagate_button: Gtk.Button = self.builder.get_object("propagate_button")
 
@@ -89,6 +92,7 @@ class SandboxPage:
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
         self._button_configs: dict[str, tuple[str, str]] = {
+            "sandbox_help_button": (_("Sandbox Guide"), "help-about-symbolic"),
             "refresh_button": (_("Refresh Status"), "emblem-synchronizing-symbolic"),
             "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
             "error_retry_button": (_("Retry"), "emblem-synchronizing-symbolic"),
@@ -110,6 +114,8 @@ class SandboxPage:
 
         self.on_sandbox_propagated: Callable[[], None] | None = None
 
+        if self.sandbox_help_button is not None:
+            self.sandbox_help_button.connect("clicked", self._on_help_clicked)
         self.refresh_button.connect("clicked", lambda _btn: self.refresh())
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
         self.snap_build_custom_button.connect("clicked", self._on_build_snap_clicked)
@@ -241,6 +247,12 @@ class SandboxPage:
             self.flatpak_override_row.set_subtitle(_("Active (~/.local/share/themes and icons)"))
         else:
             self.flatpak_override_row.set_subtitle(_("Not configured"))
+
+        if self.flatpak_group is not None:
+            self.flatpak_group.set_visible(True)
+
+        if self.snap_group is not None:
+            self.snap_group.set_visible(sb.snap_available)
 
         if sb.snap_available:
             self.snap_status_row.set_subtitle(_("Available on system"))
@@ -500,6 +512,108 @@ class SandboxPage:
 
             threading.Thread(target=thread_target, daemon=True).start()
 
+    def _on_help_clicked(self, _btn: Any) -> None:
+        """Display comprehensive, wide guide window with terminal commands for Sandbox theme integration."""
+        root_window = self.widget.get_root() if hasattr(self.widget, "get_root") else None
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+
+        win = Adw.Window()
+        win.set_title(_("Sandbox Integration Guide"))
+        win.set_modal(True)
+        if parent_win is not None:
+            win.set_transient_for(parent_win)
+        win.set_default_size(680, 560)
+
+        toolbar_view = Adw.ToolbarView()
+        header_bar = Adw.HeaderBar()
+        header_bar.set_show_end_title_buttons(True)
+        toolbar_view.add_top_bar(header_bar)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        clamp = Adw.Clamp()
+        clamp.set_maximum_size(620)
+        clamp.set_margin_top(18)
+        clamp.set_margin_bottom(24)
+        clamp.set_margin_start(16)
+        clamp.set_margin_end(16)
+
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
+        # 1. Flatpak Group
+        flatpak_group = Adw.PreferencesGroup()
+        flatpak_group.set_title(_("Flatpak Integration"))
+        flatpak_group.set_description(
+            _("Grant isolated Flatpak applications read-only access to user themes and icons.")
+        )
+
+        flatpak_oneclick_row = Adw.ActionRow()
+        flatpak_oneclick_row.set_title(_("Automatic 1-Click Setup"))
+        flatpak_oneclick_row.set_subtitle(
+            _("Click 'Propagate Themes' on the Sandbox page to configure overrides automatically.")
+        )
+        flatpak_group.add(flatpak_oneclick_row)
+
+        flatpak_cmd_row = Adw.ActionRow()
+        flatpak_cmd_row.set_title(_("Manual Terminal Commands"))
+        flatpak_cmd_row.set_subtitle(
+            "flatpak override --user --filesystem=xdg-data/themes:ro\n"
+            "flatpak override --user --filesystem=xdg-data/icons:ro"
+        )
+        flatpak_cmd_row.set_subtitle_lines(3)
+        flatpak_group.add(flatpak_cmd_row)
+
+        flatpak_note_row = Adw.ActionRow()
+        flatpak_note_row.set_title(_("Restart Applications"))
+        flatpak_note_row.set_subtitle(
+            _("Restart any open Flatpak application (e.g. Firefox, Spotify) to apply new themes.")
+        )
+        flatpak_note_row.set_subtitle_lines(2)
+        flatpak_group.add(flatpak_note_row)
+
+        content_box.append(flatpak_group)
+
+        # 2. Snap Group
+        snap_group = Adw.PreferencesGroup()
+        snap_group.set_title(_("Snap Integration"))
+        snap_group.set_description(
+            _("Connect theme slots to confined Snap applications on Ubuntu.")
+        )
+
+        snap_sys_row = Adw.ActionRow()
+        snap_sys_row.set_title(_("System Themes (gtk-common-themes)"))
+        snap_sys_row.set_subtitle("sudo snap install gtk-common-themes")
+        snap_group.add(snap_sys_row)
+
+        snap_custom_row = Adw.ActionRow()
+        snap_custom_row.set_title(_("Custom Themes (Content Snaps)"))
+        snap_custom_row.set_subtitle(
+            _("Click 'Build Snap' to compile and connect a dedicated local Content Snap.")
+        )
+        snap_group.add(snap_custom_row)
+
+        snap_cmd_row = Adw.ActionRow()
+        snap_cmd_row.set_title(_("Manual App Connection"))
+        snap_cmd_row.set_subtitle(
+            GLib.markup_escape_text(
+                "sudo snap connect <app-name>:gtk-3-themes gtk-common-themes:gtk-3-themes\n"
+                "sudo snap connect <app-name>:icon-themes gtk-common-themes:icon-themes"
+            )
+        )
+        snap_cmd_row.set_subtitle_lines(3)
+        snap_group.add(snap_cmd_row)
+
+        content_box.append(snap_group)
+
+        clamp.set_child(content_box)
+        scrolled.set_child(clamp)
+        toolbar_view.set_content(scrolled)
+        win.set_content(toolbar_view)
+
+        win.present()
+
+
     def _get_root_window(self) -> Gtk.Window | None:
         """Retrieve parent Gtk.Window."""
         root = self.widget.get_root()
@@ -520,3 +634,4 @@ class SandboxPage:
             root.add_toast(message, timeout=timeout)
         else:
             logger.info("Feedback [SandboxPage]: %s", message)
+
