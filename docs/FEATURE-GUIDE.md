@@ -113,12 +113,28 @@ Full control over your own looks.
 
 ---
 
-## Release v1.4.1 — Snap Integration & Maintenance (v1.4.1) ✅
+## Release v1.4.1 — Snap Integration & Maintenance ✅
 
-- **v1.4.1-A** Instant Custom Content Snap Packaging: Build local SquashFS Content Snaps (<1s) for custom GTK & Icon themes to remove "Missing themes" warnings in confined Snap apps. ✅
-- **v1.4.1-B** PolicyKit Integration: Batch Snap installation and slot connections under a single `pkexec` graphical password prompt. ✅
-- **v1.4.1-C** Live Sandbox Diagnostics: View real-time active desktop themes, installed Content Snaps, and connected Snap applications. ✅
-- **v1.4.1-D** AppImage & Asset Fixes: Unified theme folder resolution, safer theme deletion with active-theme guards, and resilient launcher icon resolution. ✅
+L'app diventa un cittadino modello degli ambienti sandboxed e si prende cura dei dettagli:
+
+- **Content Snap Istantanei**: I tuoi temi personalizzati vengono impacchettati in Content Snap locali in meno di un secondo, così le app Snap (Firefox, Thunderbird, ecc.) smettono di lamentarsi dei "temi mancanti".
+- **Un Click per i Permessi**: Installazione e connessione di tutti i Content Snap sotto un'unica finestra di autorizzazione PolicyKit.
+- **Diagnostica Live**: Pannello che ti mostra in tempo reale quali temi sono attivi, quali Content Snap sono installati e quali app Snap sono connesse.
+- **Editor Più Intelligente**: L'editor parte dalle impostazioni che stai usando davvero, ti fa rinominare i temi sul posto e include un'azione "Reset" sicura.
+- **Cancellazione Protetta**: Non puoi più cancellare per sbaglio un tema in uso; i temi incompleti o invalidi vengono comunque rimossi in modo pulito.
+- **Niente Più Warning GTK**: Il fallback override applica i temi direttamente alle GSettings, eliminando i popup di errore del desktop.
+
+---
+
+## Release v1.4.2 — Stabilizzazione e Rifinitura Pre-Store 🛠️
+
+Gli ultimi ritocchi prima del grande salto allo Store online:
+
+- **Fallback Temi Intelligenti**: L'app non si affida più a nomi di temi scritti nel codice. Verifica dinamicamente cosa è installato e applica le impostazioni in modo sicuro.
+- **Icona Corretta su Flatpak**: L'icona dell'applicazione viene finalmente visualizzata come si deve anche dentro la sandbox Flatpak.
+- **Guida Sandbox Passo-Passo**: Documentazione chiara con i comandi pronti all'uso per far vedere i tuoi temi alle app Flatpak e Snap.
+- **Stato Reale del Desktop**: Il pannello "Configurazione Attuale" ora legge le GSettings in tempo reale — niente più valori fantasma o non corrispondenti.
+- **Controllo Chiaro/Scuro Esplicito**: Puoi finalmente scegliere direttamente dall'interfaccia se usare lo schema colori Chiaro, Scuro o Predefinito.
 
 ---
 

@@ -2771,6 +2771,164 @@ msgstr "Reload"
 msgid "Propagate Themes"
 msgstr "Propagate Themes"
 
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:89
+msgid "Sandbox Guide"
+msgstr "Sandbox Guide"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:266
+msgid "How to enable and troubleshoot Flatpak and Snap theme integration"
+msgstr "How to enable and troubleshoot Flatpak and Snap theme integration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:518
+msgid "Sandbox Integration Guide"
+msgstr "Sandbox Integration Guide"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:520
+msgid ""
+"Flatpak Integration:\n"
+"• 1-Click: Click 'Propagate Themes' to grant user-level filesystem permissions.\n"
+"• Manual terminal commands:\n"
+"  flatpak override --user --filesystem=xdg-data/themes:ro\n"
+"  flatpak override --user --filesystem=xdg-data/icons:ro\n"
+"• Note: Restart running Flatpak apps to apply new themes.\n"
+"\n"
+"Snap Integration:\n"
+"• System themes: Install standard theme snap:\n"
+"  sudo snap install gtk-common-themes\n"
+"• Custom themes: Click 'Build Snap' to package and connect a local Content Snap.\n"
+"• Manual connection for a specific app:\n"
+"  sudo snap connect <app-name>:gtk-3-themes gtk-common-themes:gtk-3-themes\n"
+"  sudo snap connect <app-name>:icon-themes gtk-common-themes:icon-themes"
+msgstr ""
+"Flatpak Integration:\n"
+"• 1-Click: Click 'Propagate Themes' to grant user-level filesystem permissions.\n"
+"• Manual terminal commands:\n"
+"  flatpak override --user --filesystem=xdg-data/themes:ro\n"
+"  flatpak override --user --filesystem=xdg-data/icons:ro\n"
+"• Note: Restart running Flatpak apps to apply new themes.\n"
+"\n"
+"Snap Integration:\n"
+"• System themes: Install standard theme snap:\n"
+"  sudo snap install gtk-common-themes\n"
+"• Custom themes: Click 'Build Snap' to package and connect a local Content Snap.\n"
+"• Manual connection for a specific app:\n"
+"  sudo snap connect <app-name>:gtk-3-themes gtk-common-themes:gtk-3-themes\n"
+"  sudo snap connect <app-name>:icon-themes gtk-common-themes:icon-themes"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:540
+msgid "Flatpak Integration"
+msgstr "Flatpak Integration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:541
+msgid "Grant isolated Flatpak applications read-only access to user themes and icons."
+msgstr "Grant isolated Flatpak applications read-only access to user themes and icons."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:545
+msgid "Automatic 1-Click Setup"
+msgstr "Automatic 1-Click Setup"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:547
+msgid "Click 'Propagate Themes' on the Sandbox page to configure overrides automatically."
+msgstr "Click 'Propagate Themes' on the Sandbox page to configure overrides automatically."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:552
+msgid "Manual Terminal Commands"
+msgstr "Manual Terminal Commands"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:560
+msgid "Restart Applications"
+msgstr "Restart Applications"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:562
+msgid "Restart any open Flatpak application (e.g. Firefox, Spotify) to apply new themes."
+msgstr "Restart any open Flatpak application (e.g. Firefox, Spotify) to apply new themes."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:570
+msgid "Snap Integration"
+msgstr "Snap Integration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:571
+msgid "Connect theme slots to confined Snap applications on Ubuntu."
+msgstr "Connect theme slots to confined Snap applications on Ubuntu."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:576
+msgid "System Themes (gtk-common-themes)"
+msgstr "System Themes (gtk-common-themes)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:581
+msgid "Custom Themes (Content Snaps)"
+msgstr "Custom Themes (Content Snaps)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:583
+msgid "Click 'Build Snap' to compile and connect a dedicated local Content Snap."
+msgstr "Click 'Build Snap' to compile and connect a dedicated local Content Snap."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:588
+msgid "Manual App Connection"
+msgstr "Manual App Connection"
+
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:476
+msgid "Sandbox Integration (Snap & Flatpak)"
+msgstr "Sandbox Integration (Snap & Flatpak)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/status.py:482
+msgid "Sandbox Integration (Flatpak)"
+msgstr "Sandbox Integration (Flatpak)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:135
+msgid "Active Configuration"
+msgstr "Active Configuration"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:173
+msgid "Applied"
+msgstr "Applied"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:110
+msgid "Update current setup"
+msgstr "Update current setup"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:112
+msgid "Refresh and sync the current desktop configuration with live settings"
+msgstr "Refresh and sync the current desktop configuration with live settings"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:298
+msgid "Current desktop configuration synchronized"
+msgstr "Current desktop configuration synchronized"
+
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:118
+msgid "Choose between default, dark, or light appearance for applications"
+msgstr "Choose between default, dark, or light appearance for applications"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:190
+msgid "Default (Light)"
+msgstr "Default (Light)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:191
+msgid "Dark"
+msgstr "Dark"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:192
+msgid "Light"
+msgstr "Light"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:181
+msgid "Dark (prefer-dark)"
+msgstr "Dark (prefer-dark)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:182
+msgid "Light (prefer-light)"
+msgstr "Light (prefer-light)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:456
+msgid "Color scheme preference updated to '{scheme}'."
+msgstr "Color scheme preference updated to '{scheme}'."
+
+
+
+
+
+
+
 
 
 

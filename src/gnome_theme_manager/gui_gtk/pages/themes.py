@@ -97,6 +97,7 @@ class ThemesSnapshot:
 
     items: list[ThemeItemPresentation]
     active_themes: dict[ThemeType, str | None]
+    color_scheme: str | None = None
 
 
 def build_theme_presentation(
@@ -179,11 +180,27 @@ class ThemesPage:
 
         self.selection_info_label: Gtk.Label = self.builder.get_object("selection_info_label")
         self.apply_button: Gtk.Button = self.builder.get_object("apply_button")
+        self.row_color_scheme: Adw.ComboRow | None = self.builder.get_object("row_color_scheme")
 
         self.empty_page: Adw.StatusPage = self.builder.get_object("empty_page")
         self.empty_refresh_button: Gtk.Button = self.builder.get_object("empty_refresh_button")
         self.error_page: Adw.StatusPage = self.builder.get_object("error_page")
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
+
+        self._color_scheme_options: list[tuple[str, str]] = [
+            ("default", _("Default (Light)")),
+            ("prefer-dark", _("Dark")),
+            ("prefer-light", _("Light")),
+        ]
+        self._color_scheme_values: list[str] = [v for v, _ in self._color_scheme_options]
+        self._color_scheme_model = Gtk.StringList()
+        for _v, label in self._color_scheme_options:
+            self._color_scheme_model.append(label)
+
+        self._updating_color_scheme = False
+        if self.row_color_scheme is not None:
+            self.row_color_scheme.set_model(self._color_scheme_model)
+            self.row_color_scheme.connect("notify::selected", self._on_color_scheme_changed)
 
         self._load_ui_prefs()
 
@@ -299,9 +316,11 @@ class ThemesPage:
                     )
 
                 active_map: dict[ThemeType, str | None] = {}
+                active_color_scheme: str | None = None
                 try:
                     current_set = self.manager.get_current_themes()
                     if isinstance(current_set, ThemeSet):
+                        active_color_scheme = current_set.color_scheme
                         active_map = {
                             ThemeType.GTK: current_set.gtk_theme
                             if isinstance(current_set.gtk_theme, str)
@@ -327,7 +346,11 @@ class ThemesPage:
                 ) as err:
                     logger.warning("Unable to retrieve active themes: %s", err)
 
-                snapshot = ThemesSnapshot(items=presentation_items, active_themes=active_map)
+                snapshot = ThemesSnapshot(
+                    items=presentation_items,
+                    active_themes=active_map,
+                    color_scheme=active_color_scheme,
+                )
                 return snapshot, None
             except (GnomeThemeManagerError, OSError, PermissionError, TimeoutError) as err:
                 return None, err
@@ -418,6 +441,27 @@ class ThemesPage:
 
         self.confirm_and_apply_selected()
 
+    def _on_color_scheme_changed(self, *args: Any) -> None:
+        """Handle user selecting color scheme preference from GTK themes page."""
+        if getattr(self, "_updating_color_scheme", False) or self.row_color_scheme is None:
+            return
+
+        idx = self.row_color_scheme.get_selected()
+        if 0 <= idx < len(self._color_scheme_values):
+            val = self._color_scheme_values[idx]
+            try:
+                if self.manager is not None and self.manager.gsettings is not None:
+                    self.manager.gsettings.set_color_scheme(val)
+                    logger.info("Color scheme updated to '%s' from GTK themes page.", val)
+                    self._show_toast(
+                        _("Color scheme preference updated to '{scheme}'.").format(
+                            scheme=self._color_scheme_options[idx][1]
+                        )
+                    )
+            except Exception as err:
+                logger.error("Failed to update color scheme: %s", err)
+                self._show_toast(str(err))
+
     def _update_filtered_list(self) -> None:
         """Update active theme card and filtered available themes list."""
         if self._snapshot is None:
@@ -452,6 +496,20 @@ class ThemesPage:
             self.active_theme_row.set_title(_("Not available"))
             self.active_theme_row.set_subtitle(_("No settings detected or backend unavailable"))
             self.active_theme_badge.set_visible(False)
+
+        if target_category == ThemeType.GTK and self.row_color_scheme is not None:
+            self.row_color_scheme.set_visible(True)
+            curr_cs = self._snapshot.color_scheme or "default"
+            self._updating_color_scheme = True
+            try:
+                if curr_cs in self._color_scheme_values:
+                    self.row_color_scheme.set_selected(self._color_scheme_values.index(curr_cs))
+                else:
+                    self.row_color_scheme.set_selected(0)
+            finally:
+                self._updating_color_scheme = False
+        elif self.row_color_scheme is not None:
+            self.row_color_scheme.set_visible(False)
 
         query = self.search_entry.get_text().strip().lower()
         hide_system = self.system_themes_toggle.get_active()

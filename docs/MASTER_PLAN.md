@@ -525,6 +525,34 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 
 ---
 
+### 🔷 FASE 4.5 — Snap Integration & Maintenance (v1.4.1) ✅
+**Branch:** `fix/v1.4.1` (già mergiato su `main`)
+**Obiettivo:** Integrazione sandbox avanzata (Snap/Flatpak), diagnostica live e fix di stabilità post-Fase 4.
+
+- **Task 4.5.1 — Instant Custom Content Snap Packaging [P1]**: Sottosistema `core/theme_snap_manager` per compilare Content Snap locali (<1s via `snap pack` + `mksquashfs`) per temi GTK e icone personalizzati, eliminando i warning "Missing themes" nelle app Snap confinate.
+- **Task 4.5.2 — PolicyKit Integration [P1]**: Installazione batch e connessione slot Snap sotto un singolo prompt grafico `pkexec`.
+- **Task 4.5.3 — Live Sandbox Diagnostics [P2]**: Vista real-time dei temi desktop attivi, Content Snap installati e app Snap connesse.
+- **Task 4.5.4 — Theme Editor Improvements [P2]**: Avvio editor sulle impostazioni desktop attive, dialog "Open Global Theme", azione "Reset", aggiornamento in-place del nome e fix dei selettori CSS Shell Quick Settings.
+- **Task 4.5.5 — Theme Deletion Protections [P1]**: Azione delete su temi utente con protezioni attive per tema in uso, fix `NameError` logger nell'installer e cancellazione di temi incompleti/invalidi.
+- **Task 4.5.6 — Core GTK Fallback Override Fix [P1]**: Fix della logica di fallback per applicare direttamente il tema selezionato alle GSettings.
+- **Task 4.5.7 — AppImage & Asset Fixes [P2]**: Unificazione risoluzione cartelle temi, launcher icon resolution resiliente.
+- **Task 4.5.8 — i18n & Packaging [P2]**: Aggiornamento cataloghi PO/MO en/it, `metainfo.xml`, README e CHANGELOG.
+
+---
+
+### 🔷 FASE 4.8 — Stabilizzazione e Rifinitura Pre-Store (v1.4.8) ✅
+**Branch:** `feature/phase-4.8-stabilization`
+**Obiettivo:** Risolvere le ultime incongruenze di stato, documentazione e UX prima di aprire la Fase 5 (Online Store).
+
+- [x] **Task 4.8.1 — Fallback Temi Dinamici [P1]**: Rimosso riferimenti hardcodati ai temi di fallback. Esteso `ThemeAvailabilityChecker` per validare dinamicamente i temi di sistema e applicare l'override direttamente alle GSettings.
+- [x] **Task 4.8.2 — Risoluzione Icona Flatpak [P1]**: Corretto il percorso di risoluzione e bundle dell'icona di avvio per visualizzazione corretta in Flatpak (runtime `/app/share/icons`, `.desktop`, `metainfo.xml`, `data/icons/`).
+- [x] **Task 4.8.3 — Documentazione Override Sandbox & Guida In-App [P2]**: Espanso `docs/SANDBOX.md` e aggiunto dialog modale interattivo in-app con guida e comandi passo-passo per Flatpak e Snap.
+- [x] **Task 4.8.4 — Sincronizzazione Live GSettings e Configurazione Attuale [P1]**: Binding in tempo reale con notifiche `changed` Gio.Settings (`org.gnome.desktop.interface`), risoluzione dinamica dell'entry `auto-current` e pulsante di sincronizzazione rapida nella scheda Temi Globali.
+- [x] **Task 4.8.5 — Editor Preferenza Chiaro/Scuro (`color-scheme`) [P2]**: `AdwComboRow` interattivo per `color-scheme` in Stato Attuale, scheda Temi GTK e Theme Editor con binding live GSettings e localizzazione.
+- [x] **Ottimizzazioni Prestazionali & CI Hardening**: Diagnostica Sandbox asincrona su worker thread, query Snap `gtk-common-themes` single-shot, isolamento scanner mock deterministico per test CI headless.
+
+---
+
 ### 🔷 FASE 5 — Online Store (v1.5)
 
 **Branch:** `feature/phase-5-online-store`

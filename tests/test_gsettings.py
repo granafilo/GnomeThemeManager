@@ -254,3 +254,20 @@ def test_gsettings_get_and_apply_fonts():
         assert updated.document_font == "Inter 10"
         assert updated.monospace_font == "Fira Code 12"
         assert updated.text_scaling_factor == 1.25
+
+
+def test_gsettings_connect_changed(mock_gio_environment) -> None:
+    """Verifica che connect_changed registri il callback su Gio.Settings."""
+    client = GSettingsClient()
+    events: list[str] = []
+
+    # Mock connect on _settings
+    mock_connect = MagicMock(return_value=42)
+    client._settings.connect = mock_connect
+    if client._shell_settings:
+        client._shell_settings.connect = MagicMock(return_value=43)
+
+    handlers = client.connect_changed(lambda key: events.append(key))
+    assert len(handlers) >= 1
+    assert 42 in handlers
+    mock_connect.assert_called_once()

@@ -586,6 +586,21 @@ class GlobalThemeManager:
         for theme in user_presets:
             theme_map[theme.id] = theme
 
+        # Always dynamically synchronize auto-current with live desktop settings
+        if self._current_themes_provider is not None:
+            current = self._current_themes_provider()
+            if current and not current.is_empty():
+                theme_map["auto-current"] = GlobalTheme(
+                    id="auto-current",
+                    name="Current Setup",
+                    description="Snapshot of active system themes and preferences.",
+                    components=current,
+                    author="System",
+                    origin="bundled",
+                    is_bundled=True,
+                    tags=["default", "active"],
+                )
+
         all_themes = list(theme_map.values())
 
         user_themes = [t for t in all_themes if t.origin == "user"]

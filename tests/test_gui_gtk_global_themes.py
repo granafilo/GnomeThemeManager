@@ -181,3 +181,44 @@ def test_global_theme_card_icon_fallback(mock_theme_manager: MagicMock) -> None:
     icon = _GlobalThemeCard._build_card_icon(fallback_theme)
     assert isinstance(icon, Gtk.Image)
     assert icon.get_icon_name() == "starred-symbolic"
+
+
+def test_global_theme_card_active_state_detection(mock_theme_manager: MagicMock) -> None:
+    """Verify card indicates active state when theme matches active GSettings."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gnome_theme_manager.gui_gtk.pages.global_themes import _GlobalThemeCard
+
+    theme_active = GlobalTheme(
+        id="t-active",
+        name="Nordic",
+        description="Active theme",
+        components=ThemeSet(gtk_theme="Nordic", icon_theme="Papirus"),
+        origin="bundled",
+    )
+    theme_inactive = GlobalTheme(
+        id="t-inactive",
+        name="Yaru",
+        description="Inactive theme",
+        components=ThemeSet(gtk_theme="Yaru", icon_theme="Yaru"),
+        origin="bundled",
+    )
+
+    current = ThemeSet(gtk_theme="Nordic", icon_theme="Papirus", cursor_theme="Adwaita")
+
+    card_active = _GlobalThemeCard(
+        theme=theme_active,
+        on_apply=lambda _: None,
+        current_themes=current,
+    )
+    assert card_active.is_active is True
+    assert card_active.apply_btn.get_label() == "Applied"
+
+    card_inactive = _GlobalThemeCard(
+        theme=theme_inactive,
+        on_apply=lambda _: None,
+        current_themes=current,
+    )
+    assert card_inactive.is_active is False
+    assert card_inactive.apply_btn.get_label() == "Apply"

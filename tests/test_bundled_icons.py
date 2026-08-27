@@ -40,6 +40,7 @@ def test_bundled_icons_directory_and_assets_exist() -> None:
         "dialog-error-symbolic.svg",
         "dialog-warning-symbolic.svg",
         "emblem-ok-symbolic.svg",
+        "flatpak-symbolic.svg",
     ]
 
     for icon in required_icons:
@@ -71,6 +72,14 @@ def test_main_window_initializes_bundled_icons(mock_theme_manager) -> None:
     win = MainWindow(app=app, manager=mock_theme_manager)
     assert win is not None
     assert BUNDLED_ICONS_DIR.is_dir()
+
+
+def test_bundled_app_launcher_icons_exist() -> None:
+    """Verify data/icons contains standard scalable app launcher icons."""
+    data_icons = Path(__file__).parent.parent / "data" / "icons"
+    apps_dir = data_icons / "hicolor" / "scalable" / "apps"
+    assert (apps_dir / "io.github.granafilo.ThemeManager.svg").is_file()
+    assert (apps_dir / "io.github.granafilo.ThemeManager-symbolic.svg").is_file()
 
 
 def test_icon_pack_preview_includes_bundled_search_path(tmp_path: Path) -> None:

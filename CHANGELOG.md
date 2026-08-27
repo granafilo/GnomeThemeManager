@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.4.8] - 2026-08-28
+
+### Added
+- **Color Scheme Preference Selector (4.8.5)**: Added interactive `AdwComboRow` widgets across Current Status, GTK Themes, and Theme Editor views to toggle between *Default (Light)*, *Dark*, and *Light* desktop appearance in 1 click, dynamically synchronized with `org.gnome.desktop.interface color-scheme`.
+- **In-App Sandbox Integration Guide (4.8.3)**: Integrated modal documentation window inside Sandbox Tools with formatted step-by-step instructions, CLI commands, and Pango-safe markup for manual Flatpak filesystem overrides and Snap connections.
+- **Dynamic Current Setup Sync (4.8.4)**: Real-time `Gio.Settings` change listener (`connect_changed`) updating all open pages instantly; added "Update Current Setup" 1-click sync button and active badge indicators on Global Theme presets.
+- **Flatpak Runtime Icon Resolution (4.8.2)**: Embedded `/app/share/icons` and bundled fallback SVGs (`flatpak-symbolic`, app icons) ensuring crystal-clear icon rendering across native, Flatpak, and AppImage runtimes.
+
+### Changed & Optimized
+- **Dynamic Fallback Scanning (4.8.1)**: Removed hardcoded system fallback names; `ThemeAvailabilityChecker` and `FallbackManager` now dynamically scan system and sandbox directories to determine valid alternatives and apply GSettings directly without blocking alerts.
+- **Asynchronous Sandbox Diagnostics**: Moved all sandbox runtime and Snap inspections to background threads, making page switching instantaneous and UI rendering non-blocking.
+- **Single-Shot Snap Queries**: Optimized Snap connector diagnostics to query connections in a single batch command instead of per-package sequential loops.
+
 ## [1.4.1] - 2026-08-22
 
 ### Fixed

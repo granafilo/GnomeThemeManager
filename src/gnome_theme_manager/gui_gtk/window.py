@@ -61,12 +61,25 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
     search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
 
-    # In AppImage runtime, check AppDir data and icons directories
+    # Flatpak runtime icon search paths
+    for flatpak_dir in [
+        Path("/app/share/icons"),
+        Path("/app/share/gnome-theme-manager/data/icons"),
+        Path("/app/share/gnome-theme-manager/icons"),
+    ]:
+        if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
+            search_dirs.append(flatpak_dir)
+
+    # In AppImage runtime or dev source tree, check data and icons directories
     appdir = Path(__file__).parent.parent.parent.parent
-    if (appdir / "usr" / "share" / "icons").is_dir():
-        search_dirs.append(appdir / "usr" / "share" / "icons")
-    if (appdir / "data" / "icons").is_dir():
-        search_dirs.append(appdir / "data" / "icons")
+    for candidate in [
+        appdir / "usr" / "share" / "icons",
+        appdir / "data" / "icons",
+        Path("/usr/share/icons"),
+        Path("/usr/local/share/icons"),
+    ]:
+        if candidate.is_dir() and candidate not in search_dirs:
+            search_dirs.append(candidate)
 
     try:
         theme = icon_theme
@@ -237,6 +250,9 @@ class MainWindow(Adw.ApplicationWindow):
             self._on_edit_global_theme_requested(theme)
         )
 
+        self.status_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
         self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
         self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
@@ -252,6 +268,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         def _on_global_theme_applied_callback(theme_id: str, result: Any) -> None:
             self.status_page.refresh()
+            self.global_themes_page.refresh()
             if self.themes_page.current_snapshot is not None or not self.themes_page.is_loading:
                 self.themes_page.refresh()
 
@@ -259,6 +276,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         def _on_theme_applied_callback(item: Any, result: Any) -> None:
             self.status_page.refresh()
+            self.global_themes_page.refresh()
 
         self.themes_page.on_theme_applied = _on_theme_applied_callback
 
@@ -270,6 +288,7 @@ class MainWindow(Adw.ApplicationWindow):
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
             self.themes_page.refresh()
+            self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
 
@@ -277,6 +296,10 @@ class MainWindow(Adw.ApplicationWindow):
             self.status_page.refresh()
 
         self.sandbox_page.on_sandbox_propagated = _on_sandbox_propagated_callback
+
+        # Real-time GSettings synchronization (Task 4.8.4)
+        if self.manager.gsettings is not None:
+            self.manager.gsettings.connect_changed(self._on_gsettings_changed)
 
         self.select_page("status")
 
@@ -512,23 +535,11 @@ class MainWindow(Adw.ApplicationWindow):
             if hasattr(ctrl, "is_loading"):
                 self.refresh_button.set_sensitive(not ctrl.is_loading)
 
-        if (
-            page_id.startswith("themes")
-            and self.themes_page.current_snapshot is None
-            and not self.themes_page.is_loading
-        ):
+        if page_id.startswith("themes") and not self.themes_page.is_loading:
             self.themes_page.refresh()
-        elif (
-            page_id == "status"
-            and self.status_page.current_snapshot is None
-            and not self.status_page.is_loading
-        ):
+        elif page_id == "status" and not self.status_page.is_loading:
             self.status_page.refresh()
-        elif (
-            page_id == "global_themes"
-            and not self.global_themes_page._all_themes
-            and not self.global_themes_page.is_loading
-        ):
+        elif page_id == "global_themes" and not self.global_themes_page.is_loading:
             self.global_themes_page.refresh()
         elif (
             page_id == "editor"
@@ -536,11 +547,7 @@ class MainWindow(Adw.ApplicationWindow):
             and not self.editor_page.is_loading
         ):
             self.editor_page.refresh()
-        elif (
-            page_id == "sandbox"
-            and self.sandbox_page._current_sandbox_status is None
-            and not self.sandbox_page._is_loading
-        ):
+        elif page_id == "sandbox" and not self.sandbox_page._is_loading:
             self.sandbox_page.refresh()
         elif page_id == "fonts":
             self.fonts_page.refresh()
@@ -553,6 +560,27 @@ class MainWindow(Adw.ApplicationWindow):
 
         if self.split_view.get_collapsed():
             self.split_view.set_show_content(True)
+
+    def _on_gsettings_changed(self, key: str) -> None:
+        """Handle real-time GSettings changes from system, CLI, or settings."""
+        logger.debug("Live GSettings modification detected on key: %s", key)
+        GLib.idle_add(self._sync_live_gsettings_pages)
+
+    def _sync_live_gsettings_pages(self) -> bool:
+        """Synchronize active GUI view with live GSettings state."""
+        if self._current_page_id == "status" and not self.status_page.is_loading:
+            self.status_page.refresh()
+        elif self._current_page_id == "global_themes" and not self.global_themes_page.is_loading:
+            self.global_themes_page.refresh()
+        elif (
+            self._current_page_id
+            and self._current_page_id.startswith("themes")
+            and not self.themes_page.is_loading
+        ):
+            self.themes_page.refresh()
+        elif self._current_page_id == "sandbox" and not self.sandbox_page._is_loading:
+            self.sandbox_page.refresh()
+        return GLib.SOURCE_REMOVE
 
     @property
     def current_page_id(self) -> str | None:

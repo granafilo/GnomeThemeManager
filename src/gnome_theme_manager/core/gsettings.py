@@ -9,6 +9,7 @@ This module encapsulates all read and write calls to:
 - `org.gnome.shell.extensions.user-theme` (GNOME Shell theme)
 """
 
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -228,6 +229,32 @@ class GSettingsClient:
             shell_theme=shell_theme,
         )
 
+    def connect_changed(self, callback: Callable[[str], None]) -> list[int]:
+        """Connect a callback to live GSettings changes across interface and shell schemas.
+
+        Args:
+            callback: Function called when any key changes, receiving the key name.
+
+        Returns:
+            List of integer handler IDs.
+        """
+        handlers: list[int] = []
+        if self._settings is not None and hasattr(self._settings, "connect"):
+            try:
+                hid = int(self._settings.connect("changed", lambda _s, key: callback(key)))
+                handlers.append(hid)
+            except Exception:
+                pass
+
+        if self._shell_settings is not None and hasattr(self._shell_settings, "connect"):
+            try:
+                hid = int(self._shell_settings.connect("changed", lambda _s, key: callback(key)))
+                handlers.append(hid)
+            except Exception:
+                pass
+
+        return handlers
+
     # -------------------------------------------------------------------------
     # Write Methods
     # -------------------------------------------------------------------------
@@ -392,6 +419,13 @@ class GSettingsClient:
         if settings_obj is None:
             return False
         try:
+            schema = (
+                getattr(settings_obj.props, "settings_schema", None)
+                if hasattr(settings_obj, "props")
+                else None
+            )
+            if schema is not None and hasattr(schema, "has_key"):
+                return bool(schema.has_key(key))
             if hasattr(settings_obj, "list_keys"):
                 return bool(key in settings_obj.list_keys())
             if hasattr(settings_obj, "keys"):

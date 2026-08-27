@@ -110,6 +110,13 @@ def test_fallback_config_roundtrip(tmp_path: Path) -> None:
 def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
     """Verifica che al primo avvio (file inesistente), FallbackManager rilevi i default dai temi di sistema."""
     config_file = tmp_path / "fallbacks.json"
+    scanner_mock = MagicMock()
+    scanner_mock.find_theme.return_value = Theme(
+        name="Yaru",
+        theme_type=ThemeType.GTK,
+        path=tmp_path / "Yaru",
+        is_user_level=False,
+    )
     gsettings_mock = MagicMock()
     gsettings_mock.get_current.return_value = ThemeSet(
         gtk_theme="Yaru",
@@ -118,7 +125,9 @@ def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
         shell_theme="Yaru",
     )
 
-    fm = FallbackManager(config_file=config_file, gsettings_client=gsettings_mock)
+    fm = FallbackManager(
+        config_file=config_file, scanner=scanner_mock, gsettings_client=gsettings_mock
+    )
     cfg = fm.get_config()
     assert cfg.gtk3 == "Yaru"
     assert cfg.gtk4 == "Yaru"
@@ -161,7 +170,7 @@ def test_manager_apply_missing_theme_uses_fallback(tmp_path: Path) -> None:
     validator.validate.return_value = MagicMock(valid=True, warnings=[])
 
     config_file = tmp_path / "fallbacks.json"
-    fallback_mgr = FallbackManager(config_file=config_file)
+    fallback_mgr = FallbackManager(config_file=config_file, scanner=scanner)
     fallback_mgr.save_config(
         FallbackConfig(
             gtk3="Adwaita",
@@ -219,3 +228,33 @@ def test_manager_get_available_fallback_options(tmp_path: Path) -> None:
     # Yaru deve essere presente, CustomTheme (non presente su snap) non deve essere tra le opzioni fallback universali
     assert "Yaru" in opts
     assert "CustomTheme" not in opts
+
+
+def test_derive_available_theme_dynamic_discovery(tmp_path: Path) -> None:
+    """Verifica che derive_available_theme scopra dinamicamente temi alternativi disponibili."""
+    scanner = MagicMock()
+    theme_yaru_dark = Theme("Yaru-dark", ThemeType.GTK, tmp_path / "Yaru-dark", False)
+    scanner.scan_all.return_value = [theme_yaru_dark]
+    scanner.find_theme.side_effect = lambda name, t_type: (
+        theme_yaru_dark if name == "Yaru-dark" else None
+    )
+
+    checker = ThemeAvailabilityChecker(scanner=scanner)
+    # Tema custom sconosciuto scuro deve risolvere verso Yaru-dark
+    derived = checker.derive_available_theme(
+        "NonExistent-Dark-Custom", ThemeType.GTK, target="snap"
+    )
+    assert derived == "Yaru-dark"
+
+
+def test_fallback_manager_dynamic_resolution_missing_configured(tmp_path: Path) -> None:
+    """Verifica che FallbackManager risolva verso un tema valido se il configurato non esiste sul disco."""
+    scanner = MagicMock()
+    theme_system = Theme("SystemDefault", ThemeType.GTK, tmp_path / "SystemDefault", False)
+    scanner.find_theme.return_value = None
+    scanner.scan_gtk_themes.return_value = [theme_system]
+    scanner._scan_themes_by_type.return_value = [theme_system]
+
+    fm = FallbackManager(config_file=tmp_path / "fallbacks.json", scanner=scanner)
+    resolved = fm.resolve_fallback_for_component(ThemeType.GTK)
+    assert resolved == "SystemDefault"

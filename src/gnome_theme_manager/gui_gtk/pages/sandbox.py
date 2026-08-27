@@ -10,6 +10,7 @@ and manual propagation of filesystem permissions and environment variables.
 import logging
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -31,6 +32,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger("gnome_theme_manager.gui_gtk")
 
 UI_FILE = Path(__file__).parent.parent / "ui" / "sandbox_page.ui"
+
+
+@dataclass(frozen=True)
+class SandboxDiagnosticsData:
+    """Immutable data container for sandbox status and diagnostics."""
+
+    status: SandboxStatus
+    themes: ThemeSet
+    is_compat: bool = False
+    has_custom_snap: bool = False
+    expected_snap_name: str = ""
+    connected_targets: list[str] = field(default_factory=list)
 
 
 class SandboxPage:
@@ -61,11 +74,13 @@ class SandboxPage:
         self.active_gtk_row: Adw.ActionRow = self.builder.get_object("active_gtk_row")
         self.active_icon_row: Adw.ActionRow = self.builder.get_object("active_icon_row")
 
+        self.flatpak_group: Adw.PreferencesGroup | None = self.builder.get_object("flatpak_group")
         self.flatpak_status_row: Adw.ActionRow = self.builder.get_object("flatpak_status_row")
         self.flatpak_status_icon: Gtk.Image | None = self.builder.get_object("flatpak_status_icon")
         self.flatpak_override_row: Adw.ActionRow = self.builder.get_object("flatpak_override_row")
         self.flatpak_notes_row: Adw.ActionRow = self.builder.get_object("flatpak_notes_row")
 
+        self.snap_group: Adw.PreferencesGroup | None = self.builder.get_object("snap_group")
         self.snap_status_row: Adw.ActionRow = self.builder.get_object("snap_status_row")
         self.snap_status_icon: Gtk.Image | None = self.builder.get_object("snap_status_icon")
         self.snap_gtk_common_row: Adw.ActionRow = self.builder.get_object("snap_gtk_common_row")
@@ -82,6 +97,7 @@ class SandboxPage:
         )
         self.snap_notes_row: Adw.ActionRow = self.builder.get_object("snap_notes_row")
 
+        self.sandbox_help_button: Gtk.Button = self.builder.get_object("sandbox_help_button")
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
         self.propagate_button: Gtk.Button = self.builder.get_object("propagate_button")
 
@@ -89,6 +105,7 @@ class SandboxPage:
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
         self._button_configs: dict[str, tuple[str, str]] = {
+            "sandbox_help_button": (_("Sandbox Guide"), "help-about-symbolic"),
             "refresh_button": (_("Refresh Status"), "emblem-synchronizing-symbolic"),
             "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
             "error_retry_button": (_("Retry"), "emblem-synchronizing-symbolic"),
@@ -110,6 +127,8 @@ class SandboxPage:
 
         self.on_sandbox_propagated: Callable[[], None] | None = None
 
+        if self.sandbox_help_button is not None:
+            self.sandbox_help_button.connect("clicked", self._on_help_clicked)
         self.refresh_button.connect("clicked", lambda _btn: self.refresh())
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
         self.snap_build_custom_button.connect("clicked", self._on_build_snap_clicked)
@@ -136,7 +155,7 @@ class SandboxPage:
             self.propagate_button.set_sensitive(can_propagate)
 
     def refresh(self, sync: bool = False) -> None:
-        """Refresh sandbox diagnostics and compatibility."""
+        """Refresh sandbox diagnostics and compatibility asynchronously."""
         if self._is_loading and not sync:
             logger.debug("Sandbox refresh already in progress, request ignored.")
             return
@@ -148,42 +167,90 @@ class SandboxPage:
         self._set_state("loading")
         self._set_controls_sensitive(False)
 
-        def worker_fetch() -> tuple[SandboxStatus | None, ThemeSet | None, Exception | None]:
+        def worker_fetch() -> tuple[SandboxDiagnosticsData | None, Exception | None]:
             try:
                 if self.manager is None:
-                    return SandboxStatus(), ThemeSet(), None
+                    return (
+                        SandboxDiagnosticsData(
+                            status=SandboxStatus(),
+                            themes=ThemeSet(),
+                        ),
+                        None,
+                    )
 
                 sb_status = self.manager.get_sandbox_status()
-                current_themes: ThemeSet | None = None
+                current_themes: ThemeSet
                 try:
                     current_themes = self.manager.get_current_themes()
                 except GSettingsUnavailableError:
                     current_themes = ThemeSet()
 
-                return sb_status, current_themes, None
+                active_gtk = current_themes.gtk_theme
+                is_compat = False
+                has_custom_snap = False
+                expected_snap_name = ""
+                connected_targets: list[str] = []
+
+                if sb_status.snap_available and active_gtk:
+                    norm_name = active_gtk.strip().lower()
+                    if norm_name in KNOWN_SNAP_COMMON_THEMES:
+                        is_compat = True
+                    else:
+                        from gnome_theme_manager.core.theme_snap_manager.detector import (
+                            ThemeDetector,
+                        )
+
+                        detector = ThemeDetector()
+                        is_compat, _slots = detector.check_theme_compatibility(active_gtk)
+
+                    expected_snap_name = (
+                        f"custom-theme-{norm_name.replace(' ', '-').replace('_', '-')}"
+                    )
+                    if not is_compat:
+                        from gnome_theme_manager.core.theme_snap_manager.connector import (
+                            SnapConnector,
+                        )
+
+                        connector = SnapConnector(expected_snap_name)
+                        installed_snaps = connector.get_installed_snaps()
+                        has_custom_snap = expected_snap_name in installed_snaps
+                        if has_custom_snap:
+                            connected_targets = sorted(connector.get_snaps_using_common_themes())
+
+                return (
+                    SandboxDiagnosticsData(
+                        status=sb_status,
+                        themes=current_themes,
+                        is_compat=is_compat,
+                        has_custom_snap=has_custom_snap,
+                        expected_snap_name=expected_snap_name,
+                        connected_targets=connected_targets,
+                    ),
+                    None,
+                )
             except Exception as err:
-                return None, None, err
+                return None, err
 
         def on_fetch_completed(
-            result: tuple[SandboxStatus | None, ThemeSet | None, Exception | None],
+            result: tuple[SandboxDiagnosticsData | None, Exception | None],
         ) -> bool:
             if current_gen != self._refresh_generation:
                 return GLib.SOURCE_REMOVE
 
             self._is_loading = False
-            sb_status, themes, error = result
+            diag_data, error = result
 
-            if error is not None:
+            if error is not None or diag_data is None:
                 logger.error("Error retrieving sandbox diagnostics: %s", error)
                 self.error_status_page.set_description(f"{_('Sandbox diagnostics error:')} {error}")
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE
 
-            self._current_sandbox_status = sb_status
-            self._current_themes = themes
+            self._current_sandbox_status = diag_data.status
+            self._current_themes = diag_data.themes
 
-            self._update_ui_presentation(sb_status, themes)
+            self._update_ui_presentation(diag_data)
             self._set_state("ready")
             self._set_controls_sensitive(True)
             return GLib.SOURCE_REMOVE
@@ -201,12 +268,11 @@ class SandboxPage:
 
     def _update_ui_presentation(
         self,
-        sb: SandboxStatus | None,
-        themes: ThemeSet | None,
+        data: SandboxDiagnosticsData,
     ) -> None:
-        """Update UI rows with diagnostic data."""
-        if sb is None:
-            sb = SandboxStatus()
+        """Update UI rows with diagnostic data (pure GTK widget calls, no I/O)."""
+        sb = data.status
+        themes = data.themes
 
         # Update active desktop configuration display
         active_gtk_text = (themes.gtk_theme or "") if themes else ""
@@ -242,6 +308,12 @@ class SandboxPage:
         else:
             self.flatpak_override_row.set_subtitle(_("Not configured"))
 
+        if self.flatpak_group is not None:
+            self.flatpak_group.set_visible(True)
+
+        if self.snap_group is not None:
+            self.snap_group.set_visible(sb.snap_available)
+
         if sb.snap_available:
             self.snap_status_row.set_subtitle(_("Available on system"))
             if self.snap_status_icon is not None:
@@ -272,20 +344,12 @@ class SandboxPage:
             self.snap_connected_apps_row.set_visible(False)
             self.snap_build_custom_row.set_visible(False)
         else:
-            from gnome_theme_manager.core.theme_snap_manager.connector import SnapConnector
-            from gnome_theme_manager.core.theme_snap_manager.detector import ThemeDetector
+            is_compat = data.is_compat
+            has_custom_snap = data.has_custom_snap
+            expected_snap_name = data.expected_snap_name
+            connected_targets = data.connected_targets
 
-            detector = ThemeDetector()
-            is_compat, _slots = detector.check_theme_compatibility(active_gtk)
-            norm_name = active_gtk.strip().lower()
-
-            # Inspect local Content Snap presence and connections
-            expected_snap_name = f"custom-theme-{norm_name.replace(' ', '-').replace('_', '-')}"
-            connector = SnapConnector(expected_snap_name)
-            installed_snaps = connector.get_installed_snaps()
-            has_custom_snap = expected_snap_name in installed_snaps
-
-            if is_compat or norm_name in KNOWN_SNAP_COMMON_THEMES:
+            if is_compat:
                 self.snap_theme_compat_row.set_subtitle(
                     f"{_('Theme')} '{active_gtk}' {_('natively supported by gtk-common-themes')}"
                 )
@@ -303,10 +367,8 @@ class SandboxPage:
                     self.snap_installed_content_row.set_subtitle(
                         f"{expected_snap_name} ({_('Installed & Active')})"
                     )
-                    # Query connected apps
-                    connected_targets = connector.get_snaps_using_common_themes()
                     if connected_targets:
-                        apps_list = ", ".join(sorted(connected_targets))
+                        apps_list = ", ".join(connected_targets)
                         self.snap_connected_apps_row.set_subtitle(
                             f"{len(connected_targets)} {_('apps')}: {apps_list}"
                         )
@@ -499,6 +561,107 @@ class SandboxPage:
                 GLib.idle_add(on_propagation_completed, res)
 
             threading.Thread(target=thread_target, daemon=True).start()
+
+    def _on_help_clicked(self, _btn: Any) -> None:
+        """Display comprehensive, wide guide window with terminal commands for Sandbox theme integration."""
+        root_window = self.widget.get_root() if hasattr(self.widget, "get_root") else None
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+
+        win = Adw.Window()
+        win.set_title(_("Sandbox Integration Guide"))
+        win.set_modal(True)
+        if parent_win is not None:
+            win.set_transient_for(parent_win)
+        win.set_default_size(680, 560)
+
+        toolbar_view = Adw.ToolbarView()
+        header_bar = Adw.HeaderBar()
+        header_bar.set_show_end_title_buttons(True)
+        toolbar_view.add_top_bar(header_bar)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+
+        clamp = Adw.Clamp()
+        clamp.set_maximum_size(620)
+        clamp.set_margin_top(18)
+        clamp.set_margin_bottom(24)
+        clamp.set_margin_start(16)
+        clamp.set_margin_end(16)
+
+        content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
+        # 1. Flatpak Group
+        flatpak_group = Adw.PreferencesGroup()
+        flatpak_group.set_title(_("Flatpak Integration"))
+        flatpak_group.set_description(
+            _("Grant isolated Flatpak applications read-only access to user themes and icons.")
+        )
+
+        flatpak_oneclick_row = Adw.ActionRow()
+        flatpak_oneclick_row.set_title(_("Automatic 1-Click Setup"))
+        flatpak_oneclick_row.set_subtitle(
+            _("Click 'Propagate Themes' on the Sandbox page to configure overrides automatically.")
+        )
+        flatpak_group.add(flatpak_oneclick_row)
+
+        flatpak_cmd_row = Adw.ActionRow()
+        flatpak_cmd_row.set_title(_("Manual Terminal Commands"))
+        flatpak_cmd_row.set_subtitle(
+            "flatpak override --user --filesystem=xdg-data/themes:ro\n"
+            "flatpak override --user --filesystem=xdg-data/icons:ro"
+        )
+        flatpak_cmd_row.set_subtitle_lines(3)
+        flatpak_group.add(flatpak_cmd_row)
+
+        flatpak_note_row = Adw.ActionRow()
+        flatpak_note_row.set_title(_("Restart Applications"))
+        flatpak_note_row.set_subtitle(
+            _("Restart any open Flatpak application (e.g. Firefox, Spotify) to apply new themes.")
+        )
+        flatpak_note_row.set_subtitle_lines(2)
+        flatpak_group.add(flatpak_note_row)
+
+        content_box.append(flatpak_group)
+
+        # 2. Snap Group
+        snap_group = Adw.PreferencesGroup()
+        snap_group.set_title(_("Snap Integration"))
+        snap_group.set_description(
+            _("Connect theme slots to confined Snap applications on Ubuntu.")
+        )
+
+        snap_sys_row = Adw.ActionRow()
+        snap_sys_row.set_title(_("System Themes (gtk-common-themes)"))
+        snap_sys_row.set_subtitle("sudo snap install gtk-common-themes")
+        snap_group.add(snap_sys_row)
+
+        snap_custom_row = Adw.ActionRow()
+        snap_custom_row.set_title(_("Custom Themes (Content Snaps)"))
+        snap_custom_row.set_subtitle(
+            _("Click 'Build Snap' to compile and connect a dedicated local Content Snap.")
+        )
+        snap_group.add(snap_custom_row)
+
+        snap_cmd_row = Adw.ActionRow()
+        snap_cmd_row.set_title(_("Manual App Connection"))
+        snap_cmd_row.set_subtitle(
+            GLib.markup_escape_text(
+                "sudo snap connect <app-name>:gtk-3-themes gtk-common-themes:gtk-3-themes\n"
+                "sudo snap connect <app-name>:icon-themes gtk-common-themes:icon-themes"
+            )
+        )
+        snap_cmd_row.set_subtitle_lines(3)
+        snap_group.add(snap_cmd_row)
+
+        content_box.append(snap_group)
+
+        clamp.set_child(content_box)
+        scrolled.set_child(clamp)
+        toolbar_view.set_content(scrolled)
+        win.set_content(toolbar_view)
+
+        win.present()
 
     def _get_root_window(self) -> Gtk.Window | None:
         """Retrieve parent Gtk.Window."""

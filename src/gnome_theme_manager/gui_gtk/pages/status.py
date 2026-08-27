@@ -154,13 +154,31 @@ class StatusPage:
         self.row_icon_theme: Adw.ActionRow = self.builder.get_object("row_icon_theme")
         self.row_cursor_theme: Adw.ActionRow = self.builder.get_object("row_cursor_theme")
         self.row_shell_theme: Adw.ActionRow = self.builder.get_object("row_shell_theme")
-        self.row_color_scheme: Adw.ActionRow = self.builder.get_object("row_color_scheme")
+        self.row_color_scheme: Adw.ComboRow = self.builder.get_object("row_color_scheme")
         self.row_gtk4_override: Adw.ActionRow = self.builder.get_object("row_gtk4_override")
         self.row_gsettings_status: Adw.ActionRow = self.builder.get_object("row_gsettings_status")
         self.row_user_themes_path: Adw.ActionRow = self.builder.get_object("row_user_themes_path")
         self.row_user_icons_path: Adw.ActionRow = self.builder.get_object("row_user_icons_path")
+        self.group_sandbox: Adw.PreferencesGroup | None = self.builder.get_object("group_sandbox")
         self.row_flatpak_status: Adw.ActionRow = self.builder.get_object("row_flatpak_status")
         self.row_snap_status: Adw.ActionRow = self.builder.get_object("row_snap_status")
+
+        self.on_notify_message: Callable[[str, bool], None] | None = None
+
+        self._color_scheme_options: list[tuple[str, str]] = [
+            ("default", _("Default (Light)")),
+            ("prefer-dark", _("Dark")),
+            ("prefer-light", _("Light")),
+        ]
+        self._color_scheme_values: list[str] = [v for v, _ in self._color_scheme_options]
+        self._color_scheme_model = Gtk.StringList()
+        for _v, label in self._color_scheme_options:
+            self._color_scheme_model.append(label)
+
+        self._updating_color_scheme: bool = False
+        if self.row_color_scheme is not None:
+            self.row_color_scheme.set_model(self._color_scheme_model)
+            self.row_color_scheme.connect("notify::selected", self._on_color_scheme_changed)
 
         # Fallback Dropdowns (Task 3.1 - AdwComboRow)
         self.dropdown_fallback_gtk3: Adw.ComboRow = self.builder.get_object(
@@ -438,7 +456,17 @@ class StatusPage:
         self.row_shell_theme.set_subtitle(
             format_shell_theme(t.shell_theme, s.shell_theme_supported)
         )
-        self.row_color_scheme.set_subtitle(format_color_scheme(t.color_scheme))
+
+        if self.row_color_scheme is not None:
+            curr_cs = t.color_scheme or "default"
+            self._updating_color_scheme = True
+            try:
+                if curr_cs in self._color_scheme_values:
+                    self.row_color_scheme.set_selected(self._color_scheme_values.index(curr_cs))
+                else:
+                    self.row_color_scheme.set_selected(0)
+            finally:
+                self._updating_color_scheme = False
 
         if s.gtk4_override_status == Gtk4OverrideStatus.ACTIVE:
             self.row_gtk4_override.set_subtitle(_("Active"))
@@ -461,16 +489,29 @@ class StatusPage:
                     inactive_label=_("Override inactive"),
                 )
             )
-            self.row_snap_status.set_subtitle(
-                format_sandbox_status(
-                    available=sb.snap_available,
-                    active_or_installed=sb.snap_gtk_common_themes_installed,
-                    active_label=_("gtk-common-themes installed"),
-                    inactive_label=_("gtk-common-themes not installed"),
+            if sb.snap_available:
+                self.row_snap_status.set_visible(True)
+                self.row_snap_status.set_subtitle(
+                    format_sandbox_status(
+                        available=sb.snap_available,
+                        active_or_installed=sb.snap_gtk_common_themes_installed,
+                        active_label=_("gtk-common-themes installed"),
+                        inactive_label=_("gtk-common-themes not installed"),
+                    )
                 )
-            )
+                if self.group_sandbox is not None:
+                    self.group_sandbox.set_title(
+                        GLib.markup_escape_text(_("Sandbox Integration (Snap & Flatpak)"))
+                    )
+            else:
+                self.row_snap_status.set_visible(False)
+                if self.group_sandbox is not None:
+                    self.group_sandbox.set_title(
+                        GLib.markup_escape_text(_("Sandbox Integration (Flatpak)"))
+                    )
         else:
             self.row_flatpak_status.set_subtitle(_("Not available"))
+            self.row_snap_status.set_visible(True)
             self.row_snap_status.set_subtitle(_("Not available"))
 
         if snapshot.warnings:
@@ -612,6 +653,30 @@ class StatusPage:
         if self.manager.extensions:
             self.manager.extensions.set_auto_enable_user_theme(is_active)
             logger.info("Auto-enable User Themes preference set to %s", is_active)
+
+    def _on_color_scheme_changed(self, *args: Any) -> None:
+        """Handle user changing color scheme preference from Status page."""
+        if getattr(self, "_updating_color_scheme", False) or self.row_color_scheme is None:
+            return
+
+        idx = self.row_color_scheme.get_selected()
+        if 0 <= idx < len(self._color_scheme_values):
+            val = self._color_scheme_values[idx]
+            try:
+                if self.manager is not None and self.manager.gsettings is not None:
+                    self.manager.gsettings.set_color_scheme(val)
+                    logger.info("Color scheme updated to '%s' from Status page.", val)
+                    if self.on_notify_message:
+                        self.on_notify_message(
+                            _("Color scheme preference updated to '{scheme}'.").format(
+                                scheme=self._color_scheme_options[idx][1]
+                            ),
+                            False,
+                        )
+            except Exception as err:
+                logger.error("Failed to update color scheme from Status page: %s", err)
+                if self.on_notify_message:
+                    self.on_notify_message(str(err), True)
 
     def _handle_error(self, error: Exception) -> None:
         """Handle errors setting the error view."""

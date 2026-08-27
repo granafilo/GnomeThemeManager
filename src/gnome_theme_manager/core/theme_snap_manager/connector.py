@@ -78,14 +78,48 @@ class SnapConnector:
             return set()
 
         target_snaps: set[str] = set()
-        installed = self.get_installed_snaps()
 
+        def _parse_lines(output: str) -> None:
+            for line in output.splitlines():
+                if "gtk-common-themes" in line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        for part in parts:
+                            if ":" in part:
+                                app = part.split(":", 1)[0]
+                                if app not in (
+                                    "core",
+                                    "core20",
+                                    "core22",
+                                    "snapd",
+                                    "bare",
+                                    "gtk-common-themes",
+                                ):
+                                    target_snaps.add(app)
+
+        # 1. Single command query for gtk-common-themes slot/plug
+        res = self._run_cmd([snap_bin, "connections", "gtk-common-themes"])
+        if res.returncode == 0 and res.stdout.strip():
+            _parse_lines(res.stdout)
+            if target_snaps:
+                logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
+                return target_snaps
+
+        # 2. General connections query
+        res_gen = self._run_cmd([snap_bin, "connections"])
+        if res_gen.returncode == 0 and res_gen.stdout.strip():
+            _parse_lines(res_gen.stdout)
+            if target_snaps:
+                logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
+                return target_snaps
+
+        # 3. Fallback per installed snap (useful if snapd restricts batch queries)
+        installed = self.get_installed_snaps()
         for snap_name in installed:
             if snap_name in ("core", "core20", "core22", "snapd", "bare", "gtk-common-themes"):
                 continue
-
-            res = self._run_cmd([snap_bin, "connections", snap_name])
-            if res.returncode == 0 and "gtk-common-themes" in res.stdout:
+            res_ind = self._run_cmd([snap_bin, "connections", snap_name])
+            if res_ind.returncode == 0 and "gtk-common-themes" in res_ind.stdout:
                 target_snaps.add(snap_name)
 
         logger.debug("Snaps using gtk-common-themes: %s", target_snaps)

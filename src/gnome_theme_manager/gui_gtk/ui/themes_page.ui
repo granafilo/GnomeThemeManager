@@ -112,6 +112,14 @@
                                 </child>
                               </object>
                             </child>
+                            <child>
+                              <object class="AdwComboRow" id="row_color_scheme">
+                                <property name="title" translatable="yes">Color Scheme Preference</property>
+                                <property name="subtitle" translatable="yes">Choose between default, dark, or light appearance for applications</property>
+                                <property name="subtitle-lines">2</property>
+                                <property name="visible">false</property>
+                              </object>
+                            </child>
                           </object>
                         </child>
 
