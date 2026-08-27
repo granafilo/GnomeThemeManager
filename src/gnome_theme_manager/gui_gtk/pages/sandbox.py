@@ -10,6 +10,7 @@ and manual propagation of filesystem permissions and environment variables.
 import logging
 import threading
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -31,6 +32,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger("gnome_theme_manager.gui_gtk")
 
 UI_FILE = Path(__file__).parent.parent / "ui" / "sandbox_page.ui"
+
+
+@dataclass(frozen=True)
+class SandboxDiagnosticsData:
+    """Immutable data container for sandbox status and diagnostics."""
+
+    status: SandboxStatus
+    themes: ThemeSet
+    is_compat: bool = False
+    has_custom_snap: bool = False
+    expected_snap_name: str = ""
+    connected_targets: list[str] = field(default_factory=list)
 
 
 class SandboxPage:
@@ -142,7 +155,7 @@ class SandboxPage:
             self.propagate_button.set_sensitive(can_propagate)
 
     def refresh(self, sync: bool = False) -> None:
-        """Refresh sandbox diagnostics and compatibility."""
+        """Refresh sandbox diagnostics and compatibility asynchronously."""
         if self._is_loading and not sync:
             logger.debug("Sandbox refresh already in progress, request ignored.")
             return
@@ -154,42 +167,94 @@ class SandboxPage:
         self._set_state("loading")
         self._set_controls_sensitive(False)
 
-        def worker_fetch() -> tuple[SandboxStatus | None, ThemeSet | None, Exception | None]:
+        def worker_fetch() -> tuple[SandboxDiagnosticsData | None, Exception | None]:
             try:
                 if self.manager is None:
-                    return SandboxStatus(), ThemeSet(), None
+                    return (
+                        SandboxDiagnosticsData(
+                            status=SandboxStatus(),
+                            themes=ThemeSet(),
+                        ),
+                        None,
+                    )
 
                 sb_status = self.manager.get_sandbox_status()
-                current_themes: ThemeSet | None = None
+                current_themes: ThemeSet
                 try:
                     current_themes = self.manager.get_current_themes()
                 except GSettingsUnavailableError:
                     current_themes = ThemeSet()
 
-                return sb_status, current_themes, None
+                active_gtk = current_themes.gtk_theme
+                is_compat = False
+                has_custom_snap = False
+                expected_snap_name = ""
+                connected_targets: list[str] = []
+
+                if sb_status.snap_available and active_gtk:
+                    norm_name = active_gtk.strip().lower()
+                    if norm_name in KNOWN_SNAP_COMMON_THEMES:
+                        is_compat = True
+                    else:
+                        from gnome_theme_manager.core.theme_snap_manager.detector import (
+                            ThemeDetector,
+                        )
+
+                        detector = ThemeDetector()
+                        is_compat, _slots = detector.check_theme_compatibility(active_gtk)
+
+                    expected_snap_name = (
+                        f"custom-theme-{norm_name.replace(' ', '-').replace('_', '-')}"
+                    )
+                    if not is_compat:
+                        from gnome_theme_manager.core.theme_snap_manager.connector import (
+                            SnapConnector,
+                        )
+
+                        connector = SnapConnector(expected_snap_name)
+                        installed_snaps = connector.get_installed_snaps()
+                        has_custom_snap = expected_snap_name in installed_snaps
+                        if has_custom_snap:
+                            connected_targets = sorted(
+                                connector.get_snaps_using_common_themes()
+                            )
+
+                return (
+                    SandboxDiagnosticsData(
+                        status=sb_status,
+                        themes=current_themes,
+                        is_compat=is_compat,
+                        has_custom_snap=has_custom_snap,
+                        expected_snap_name=expected_snap_name,
+                        connected_targets=connected_targets,
+                    ),
+                    None,
+                )
             except Exception as err:
-                return None, None, err
+                return None, err
 
         def on_fetch_completed(
-            result: tuple[SandboxStatus | None, ThemeSet | None, Exception | None],
+            result: tuple[SandboxDiagnosticsData | None, Exception | None],
         ) -> bool:
             if current_gen != self._refresh_generation:
                 return GLib.SOURCE_REMOVE
 
             self._is_loading = False
-            sb_status, themes, error = result
+            diag_data, error = result
 
-            if error is not None:
+            if error is not None or diag_data is None:
                 logger.error("Error retrieving sandbox diagnostics: %s", error)
-                self.error_status_page.set_description(f"{_('Sandbox diagnostics error:')} {error}")
+                self.error_status_page.set_description(
+                    f"{_('Sandbox diagnostics error:')} {error}"
+                )
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE
 
-            self._current_sandbox_status = sb_status
-            self._current_themes = themes
+            self._current_sandbox_status = diag_data.status
+            self._current_themes = diag_data.themes
 
-            self._update_ui_presentation(sb_status, themes)
+            self._update_ui_presentation(diag_data)
             self._set_state("ready")
             self._set_controls_sensitive(True)
             return GLib.SOURCE_REMOVE
@@ -207,12 +272,11 @@ class SandboxPage:
 
     def _update_ui_presentation(
         self,
-        sb: SandboxStatus | None,
-        themes: ThemeSet | None,
+        data: SandboxDiagnosticsData,
     ) -> None:
-        """Update UI rows with diagnostic data."""
-        if sb is None:
-            sb = SandboxStatus()
+        """Update UI rows with diagnostic data (pure GTK widget calls, no I/O)."""
+        sb = data.status
+        themes = data.themes
 
         # Update active desktop configuration display
         active_gtk_text = (themes.gtk_theme or "") if themes else ""
@@ -284,20 +348,12 @@ class SandboxPage:
             self.snap_connected_apps_row.set_visible(False)
             self.snap_build_custom_row.set_visible(False)
         else:
-            from gnome_theme_manager.core.theme_snap_manager.connector import SnapConnector
-            from gnome_theme_manager.core.theme_snap_manager.detector import ThemeDetector
+            is_compat = data.is_compat
+            has_custom_snap = data.has_custom_snap
+            expected_snap_name = data.expected_snap_name
+            connected_targets = data.connected_targets
 
-            detector = ThemeDetector()
-            is_compat, _slots = detector.check_theme_compatibility(active_gtk)
-            norm_name = active_gtk.strip().lower()
-
-            # Inspect local Content Snap presence and connections
-            expected_snap_name = f"custom-theme-{norm_name.replace(' ', '-').replace('_', '-')}"
-            connector = SnapConnector(expected_snap_name)
-            installed_snaps = connector.get_installed_snaps()
-            has_custom_snap = expected_snap_name in installed_snaps
-
-            if is_compat or norm_name in KNOWN_SNAP_COMMON_THEMES:
+            if is_compat:
                 self.snap_theme_compat_row.set_subtitle(
                     f"{_('Theme')} '{active_gtk}' {_('natively supported by gtk-common-themes')}"
                 )
@@ -315,10 +371,8 @@ class SandboxPage:
                     self.snap_installed_content_row.set_subtitle(
                         f"{expected_snap_name} ({_('Installed & Active')})"
                     )
-                    # Query connected apps
-                    connected_targets = connector.get_snaps_using_common_themes()
                     if connected_targets:
-                        apps_list = ", ".join(sorted(connected_targets))
+                        apps_list = ", ".join(connected_targets)
                         self.snap_connected_apps_row.set_subtitle(
                             f"{len(connected_targets)} {_('apps')}: {apps_list}"
                         )
