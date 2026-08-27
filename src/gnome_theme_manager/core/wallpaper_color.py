@@ -45,10 +45,10 @@ def _sample_pixels_from_file(
 ) -> list[tuple[int, int, int]]:
     """Sample RGB pixels from an image file using GdkPixbuf (if available) or basic byte parsing."""
     try:
-        import gi  # type: ignore[import-untyped]
+        import gi
 
         gi.require_version("GdkPixbuf", "2.0")
-        from gi.repository import GdkPixbuf  # type: ignore[import-untyped]
+        from gi.repository import GdkPixbuf
 
         # Load image (downscale only if larger than 64x64)
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(str(image_path))

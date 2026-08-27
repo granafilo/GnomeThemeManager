@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="1.4.1" date="2026-08-22">
+      <description>
+        <p>Release 1.4.1: Fixed AppImage sidebar icon discovery; unified custom theme folder structure (GTK + Shell); improved Theme Editor state management with Open Theme dialog; and user theme deletion with active theme protections.</p>
+      </description>
+    </release>
     <release version="1.4.0" date="2026-08-21">
       <description>
         <p>Release 1.4.0: Global Theme in-place editing; custom theme icon pickers; comprehensive Desktop Typography and text scaling controls; GNOME Terminal ANSI color derivation, preferences, and profile management.</p>

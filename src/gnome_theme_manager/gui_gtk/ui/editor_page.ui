@@ -48,8 +48,8 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">1000</property>
-                <property name="tightening-threshold">700</property>
+                <property name="maximum-size">840</property>
+                <property name="tightening-threshold">560</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
                 <property name="margin-top">24</property>
@@ -157,6 +157,48 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkButton" id="open_global_theme_button">
+                            <property name="tooltip-text" translatable="yes">Open an existing Global Theme to modify it</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">document-open-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Open Global Theme</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="reset_to_current_button">
+                            <property name="tooltip-text" translatable="yes">Reset editor values to current system settings</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">view-refresh-symbolic</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Reset</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkButton" id="save_as_global_theme_button">
                             <property name="tooltip-text" translatable="yes">Save current editor mix as a Global Theme</property>
                             <style>
@@ -172,7 +214,7 @@
                                   </object>
                                 </child>
                                 <child>
-                                  <object class="GtkLabel">
+                                  <object class="GtkLabel" id="save_as_global_theme_label">
                                     <property name="label" translatable="yes">Save as Global Theme</property>
                                   </object>
                                 </child>
@@ -211,36 +253,42 @@
                         <property name="description" translatable="yes">Select individual components from installed desktop themes</property>
                         <child>
                           <object class="AdwComboRow" id="dropdown_gtk">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">GTK Theme (Applications)</property>
                             <property name="subtitle" translatable="yes">Controls window background, widgets, and GTK3/GTK4 styling</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwComboRow" id="dropdown_shell">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">GNOME Shell Theme</property>
                             <property name="subtitle" translatable="yes">Controls panel, dash, notification popups, and lockscreen</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwComboRow" id="dropdown_icon">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Icon Pack</property>
                             <property name="subtitle" translatable="yes">Application icons, folder icons, and file type symbols</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwComboRow" id="dropdown_cursor">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Cursor Theme</property>
                             <property name="subtitle" translatable="yes">Mouse pointer and interaction animations</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwComboRow" id="dropdown_color_scheme">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Color Scheme Preference</property>
                             <property name="subtitle" translatable="yes">System dark/light mode preference</property>
                           </object>
                         </child>
                         <child>
                           <object class="AdwActionRow" id="row_custom_theme_icon">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Custom Theme Icon</property>
                             <property name="subtitle" translatable="yes">Optional icon selected from library to represent this Global Theme</property>
                             <child>
@@ -288,6 +336,7 @@
                         <!-- Wallpaper Palette Swatches Row -->
                         <child>
                           <object class="AdwActionRow" id="row_wallpaper_palette">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Adaptive Wallpaper Palette</property>
                             <property name="subtitle" translatable="yes">Click a swatch to apply as Accent color for both GTK and Shell</property>
                             <child type="suffix">
@@ -334,6 +383,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_shell_panel_bg">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Panel Background</property>
                             <property name="subtitle" translatable="yes">#panel { background-color: ... }</property>
                             <child type="suffix">
@@ -346,6 +396,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_shell_panel_fg">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Panel Text and Icons</property>
                             <property name="subtitle" translatable="yes">#panel, .panel-button { color: ... }</property>
                             <child type="suffix">
@@ -358,6 +409,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_shell_overview_bg">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Overview Background</property>
                             <property name="subtitle" translatable="yes">.overview { background-color: ... }</property>
                             <child type="suffix">
@@ -370,6 +422,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_shell_accent">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Shell Accent / Selection</property>
                             <property name="subtitle" translatable="yes">.popup-menu-item:selected { background-color: ... }</property>
                             <child type="suffix">
@@ -415,6 +468,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_fg_color">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Foreground / Text Color</property>
                             <property name="subtitle" translatable="yes">@define-color theme_fg_color</property>
                             <child type="suffix">
@@ -427,6 +481,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_bg_color">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Background / Window Color</property>
                             <property name="subtitle" translatable="yes">@define-color theme_bg_color</property>
                             <child type="suffix">
@@ -439,6 +494,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_accent_color">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Accent / Selection Color</property>
                             <property name="subtitle" translatable="yes">@define-color theme_selected_bg_color</property>
                             <child type="suffix">
@@ -451,6 +507,7 @@
 
                         <child>
                           <object class="AdwActionRow" id="row_accent_fg_color">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Accent Text Color</property>
                             <property name="subtitle" translatable="yes">@define-color theme_selected_fg_color</property>
                             <child type="suffix">
@@ -470,6 +527,7 @@
                         <property name="title" translatable="yes">Draft Settings</property>
                         <child>
                           <object class="AdwActionRow" id="row_auto_save_draft">
+                            <property name="subtitle-lines">2</property>
                             <property name="title" translatable="yes">Auto-save Draft</property>
                             <property name="subtitle" translatable="yes">Automatically preserve unfinished editor work across app restarts</property>
                             <property name="activatable-widget">auto_save_draft_switch</property>

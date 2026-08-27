@@ -93,10 +93,16 @@ def test_sandbox_page_snap_custom_theme_warning(mock_theme_manager: MagicMock) -
     mock_theme_manager.get_current_themes.return_value = ThemeSet(gtk_theme="CustomNordic")
 
     page = SandboxPage(manager=mock_theme_manager)
-    page.refresh(sync=True)
+    with patch(
+        "gnome_theme_manager.core.theme_snap_manager.connector.SnapConnector.get_installed_snaps",
+        return_value=[],
+    ):
+        page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
+    assert page.active_gtk_row.get_subtitle() == "CustomNordic"
     assert "custom" in page.snap_theme_compat_row.get_subtitle().lower()
+    assert "Not installed" in page.snap_installed_content_row.get_subtitle()
 
 
 def test_sandbox_page_snap_missing_gtk_common_themes(mock_theme_manager: MagicMock) -> None:

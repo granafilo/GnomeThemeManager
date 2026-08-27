@@ -92,7 +92,7 @@ def test_create_theme_fork_copies_and_overrides_colors(tmp_path: Path) -> None:
         overwrite=True,
     )
 
-    assert fork.fork_name == "My Dark Adwaita-gtk4"
+    assert fork.fork_name == "My Dark Adwaita"
     assert fork.fork_path.is_dir()
     assert (fork.fork_path / "gtk-4.0" / "gtk.css").is_file()
 
@@ -106,7 +106,7 @@ def test_create_theme_fork_copies_and_overrides_colors(tmp_path: Path) -> None:
     assert state_file.is_file()
     forks_list = fork_mgr.list_forks()
     assert len(forks_list) == 1
-    assert forks_list[0].fork_name == "My Dark Adwaita-gtk4"
+    assert forks_list[0].fork_name == "My Dark Adwaita"
     assert forks_list[0].base_theme_name == "Adwaita"
 
 
@@ -135,7 +135,7 @@ def test_theme_fork_index_theme_label(tmp_path: Path) -> None:
     )
 
     index_content = (fork.fork_path / "index.theme").read_text(encoding="utf-8")
-    assert "Name=Yaru Orange-gtk4 (edited)" in index_content
+    assert "Name=Yaru Orange (edited)" in index_content
 
 
 def test_revert_theme_fork(tmp_path: Path) -> None:

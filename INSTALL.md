@@ -57,13 +57,6 @@ sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 ```bash
 sudo dnf install -y python3-gobject gtk4 libadwaita
 ```
-
-### Arch Linux / Manjaro
-
-```bash
-sudo pacman -S --needed python-gobject gtk4 libadwaita
-```
-
 ---
 
 ## 🛠️ 3. Building the AppImage Locally

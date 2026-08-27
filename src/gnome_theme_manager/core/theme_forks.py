@@ -119,10 +119,13 @@ def _inject_colors_in_css(css_content: str, colors: dict[str, str]) -> str:
 
 
 def _update_index_theme_label(index_path: Path, new_name: str) -> None:
-    """Update or create index.theme setting Name={new_name} (edited)."""
+    """Update or create index.theme setting Name={new_name} (edited) and GtkTheme={new_name}."""
     label = f"{new_name} (edited)"
     if not index_path.is_file():
-        content = f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={label}\nComment=Customized Theme Fork\n"
+        content = (
+            f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={label}\nComment=Customized Theme Fork\n"
+            f"Encoding=UTF-8\n\n[X-GNOME-Metatheme]\nGtkTheme={new_name}\n"
+        )
         index_path.write_text(content, encoding="utf-8")
         return
 
@@ -130,17 +133,32 @@ def _update_index_theme_label(index_path: Path, new_name: str) -> None:
         lines = index_path.read_text(encoding="utf-8", errors="replace").splitlines()
         updated_lines: list[str] = []
         name_found = False
+        has_metatheme = False
+        has_gtk_theme = False
+
         for line in lines:
-            if line.strip().startswith("Name="):
+            if line.strip() == "[X-GNOME-Metatheme]":
+                has_metatheme = True
+                updated_lines.append(line)
+            elif line.strip().startswith("Name="):
                 updated_lines.append(f"Name={label}")
                 name_found = True
+            elif line.strip().startswith("GtkTheme="):
+                has_gtk_theme = True
+                updated_lines.append(f"GtkTheme={new_name}")
             else:
                 updated_lines.append(line)
+
         if not name_found:
             updated_lines.append(f"Name={label}")
+        if not has_metatheme:
+            updated_lines.extend(["", "[X-GNOME-Metatheme]", f"GtkTheme={new_name}"])
+        elif not has_gtk_theme:
+            updated_lines.append(f"GtkTheme={new_name}")
+
         index_path.write_text("\n".join(updated_lines) + "\n", encoding="utf-8")
     except Exception as err:
-        logger.warning("Could not update index.theme Name field in %s: %s", index_path, err)
+        logger.warning("Could not update index.theme in %s: %s", index_path, err)
 
 
 class ThemeForkManager:
@@ -255,19 +273,14 @@ class ThemeForkManager:
         if not base_path.is_dir():
             raise FileNotFoundError(f"Base theme directory not found: {base_path}")
 
-        # Destination directory: e.g. ~/.themes/{custom_name}-gtk4 or ~/.themes/{custom_name}
-        dest_dir_name = clean_name if clean_name.endswith("-gtk4") else f"{clean_name}-gtk4"
+        # Destination directory: ~/.themes/{custom_name} or ~/.local/share/themes/{custom_name}
+        dest_dir_name = clean_name
         dest_dir = self._user_themes_dir / dest_dir_name
 
-        if dest_dir.exists():
-            if not overwrite:
-                raise FileExistsError(f"Theme fork directory already exists: {dest_dir}")
-            shutil.rmtree(dest_dir)
+        dest_dir.mkdir(parents=True, exist_ok=True)
 
-        self._user_themes_dir.mkdir(parents=True, exist_ok=True)
-
-        # Copy base theme tree
-        shutil.copytree(base_path, dest_dir, symlinks=True)
+        # Copy base theme tree into dest_dir (merging if directory already exists)
+        shutil.copytree(base_path, dest_dir, symlinks=True, dirs_exist_ok=True)
 
         # Search for and modify all CSS stylesheets
         css_targets = [

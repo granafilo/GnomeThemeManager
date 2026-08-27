@@ -13,6 +13,7 @@ high-level entry point to consume all core package capabilities:
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .editor_draft import EditorDraftManager
@@ -280,6 +281,18 @@ class ThemeManager:
     def gsettings(self) -> GSettingsClient | None:
         """Return associated GSettings client (None if unavailable)."""
         return self._gsettings
+
+    def reload_gsettings(self) -> None:
+        """Re-initialize GSettings client to refresh schema cache after extension enablement."""
+        if self._gsettings is not None:
+            try:
+                self._gsettings = GSettingsClient(
+                    schema_name=self._gsettings.schema_name,
+                    shell_schema_name=self._gsettings.shell_schema_name,
+                    custom_schema_dirs=self._gsettings.custom_schema_dirs,
+                )
+            except Exception as err:
+                logger.warning("Failed to reload GSettings client: %s", err)
 
     @property
     def gtk4_linker(self) -> GTK4ThemeLinker:
@@ -679,41 +692,9 @@ class ThemeManager:
             warnings.append(warning_msg)
             shell_to_apply = None
 
-        # 7. Safe target resolution for GSettings (prevent Snap desktop missing themes popups)
-        # If host theme is a custom fork (e.g. Colloid-Dark-Custom), GSettings key receives the safe base
-        # (e.g. Colloid-Dark or Yaru-dark) so Snap won't prompt, while GTK4 overrides and host styles use the custom theme.
-        checker = self._fallback_manager.availability_checker
-        gsettings_gtk = gtk_to_apply
-        if gtk_to_apply is not None and not checker.check(
-            gtk_to_apply, ThemeType.GTK, target="snap"
-        ):
-            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.GTK)
-            gsettings_gtk = checker.derive_available_theme(
-                gtk_to_apply, ThemeType.GTK, target="snap", fallback_theme=fb_val
-            )
-            logger.info(
-                "Custom GTK theme '%s' not native in Snap; using safe GSettings key '%s'",
-                gtk_to_apply,
-                gsettings_gtk,
-            )
-
-        gsettings_icon = icon_to_apply
-        if icon_to_apply is not None and not checker.check(
-            icon_to_apply, ThemeType.ICON, target="snap"
-        ):
-            fb_val = self._fallback_manager.resolve_fallback_for_component(ThemeType.ICON)
-            gsettings_icon = checker.derive_available_theme(
-                icon_to_apply, ThemeType.ICON, target="snap", fallback_theme=fb_val
-            )
-            logger.info(
-                "Custom Icon theme '%s' not native in Snap; using safe GSettings key '%s'",
-                icon_to_apply,
-                gsettings_icon,
-            )
-
         target_set = ThemeSet(
-            gtk_theme=gsettings_gtk,
-            icon_theme=gsettings_icon,
+            gtk_theme=gtk_to_apply,
+            icon_theme=icon_to_apply,
             cursor_theme=cursor_to_apply,
             color_scheme=theme_set.color_scheme,
             shell_theme=shell_to_apply,
@@ -1080,6 +1061,7 @@ class ThemeManager:
         self,
         theme_id: str,
         theme_set: ThemeSet,
+        name: str | None = None,
         description: str | None = None,
         icon_override: str | None = None,
         fonts: FontConfig | None = None,
@@ -1089,6 +1071,7 @@ class ThemeManager:
         Args:
             theme_id: ID or name of the user global theme to update.
             theme_set: New component selections (ThemeSet).
+            name: Optional new human-readable theme name.
             description: Optional new description (keeps existing when None).
             icon_override: Optional new custom icon path (keeps existing when None).
             fonts: Optional new FontConfig (keeps existing when None).
@@ -1099,6 +1082,7 @@ class ThemeManager:
         return self._global_themes.update_global_theme(
             theme_id=theme_id,
             theme_set=theme_set,
+            name=name,
             description=description,
             icon_override=icon_override,
             fonts=fonts,
@@ -1344,3 +1328,58 @@ class ThemeManager:
         """
         logger.info("Theme uninstallation requested: '%s' (%s)", name, theme_type)
         return self._installer.uninstall(theme_name=name, theme_type=theme_type)
+
+    def apply_custom_theme_to_snap(
+        self,
+        theme_name: str,
+        theme_path: Path | None = None,
+        icon_name: str | None = None,
+        icon_path: Path | None = None,
+    ) -> dict[str, Any]:
+        """Build and connect a custom Content Snap for a theme (including matching icons).
+
+        Args:
+            theme_name: Name of theme.
+            theme_path: Optional explicit theme directory path.
+            icon_name: Optional explicit icon/cursor theme name.
+            icon_path: Optional explicit icon directory path.
+
+        Returns:
+            Dict containing results of the Content Snap build and connection.
+        """
+        from .theme_snap_manager import apply_custom_theme_with_snap_support
+
+        if theme_path is None:
+            found = self._scanner.find_theme(theme_name, ThemeType.GTK)
+            if not found:
+                raise ThemeNotFoundError(f"GTK theme '{theme_name}' not found on system.")
+            target_path = found.path
+        else:
+            target_path = theme_path
+
+        # Resolve icon path if not provided
+        resolved_icon_name = icon_name
+        resolved_icon_path = icon_path
+
+        if resolved_icon_path is None:
+            # 1. Try finding icons with the same theme name (e.g. Colloid)
+            found_icon = self._scanner.find_theme(theme_name, ThemeType.ICON)
+            if not found_icon:
+                # 2. Try current active icon theme from GSettings
+                try:
+                    curr = self.get_current_themes()
+                    if curr.icon_theme:
+                        found_icon = self._scanner.find_theme(curr.icon_theme, ThemeType.ICON)
+                except Exception:
+                    pass
+
+            if found_icon:
+                resolved_icon_name = found_icon.name
+                resolved_icon_path = found_icon.path
+
+        return apply_custom_theme_with_snap_support(
+            theme_name=theme_name,
+            theme_path=target_path,
+            icon_name=resolved_icon_name,
+            icon_path=resolved_icon_path,
+        )

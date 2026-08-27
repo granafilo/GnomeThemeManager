@@ -68,6 +68,15 @@ class ThemeEditorPage:
         # Header controls
         self.theme_name_entry: Gtk.Entry = self.builder.get_object("theme_name_entry")
         self.save_button: Gtk.Button = self.builder.get_object("save_as_global_theme_button")
+        self.save_button_label: Gtk.Label | None = self.builder.get_object(
+            "save_as_global_theme_label"
+        )
+        self.open_global_theme_button: Gtk.Button | None = self.builder.get_object(
+            "open_global_theme_button"
+        )
+        self.reset_to_current_button: Gtk.Button | None = self.builder.get_object(
+            "reset_to_current_button"
+        )
         self.preview_button: Gtk.Button = self.builder.get_object("preview_button")
         self.preview_button_label: Gtk.Label | None = self.builder.get_object(
             "preview_button_label"
@@ -178,6 +187,10 @@ class ThemeEditorPage:
         # Connect event handlers
         if self.theme_name_entry:
             self.theme_name_entry.connect("changed", self._on_user_edited)
+        if self.open_global_theme_button:
+            self.open_global_theme_button.connect("clicked", self._on_open_global_theme_clicked)
+        if self.reset_to_current_button:
+            self.reset_to_current_button.connect("clicked", self._on_reset_to_current_clicked)
         if self.save_button:
             self.save_button.connect("clicked", self._on_save_as_global_theme_clicked)
         if self.preview_button:
@@ -901,6 +914,85 @@ class ThemeEditorPage:
         path = self.icon_picker.get_icon_path()
         return path
 
+    def _update_save_button_label(self, label_text: str) -> None:
+        """Update save button label in both button and child label widget."""
+        if self.save_button_label:
+            self.save_button_label.set_label(label_text)
+        elif self.save_button:
+            self.save_button.set_label(label_text)
+
+    def _on_reset_to_current_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Reset editor components and colors to current desktop system settings."""
+        self._editing_global_theme = None
+        self.theme_name_entry.set_text("")
+        if hasattr(self, "icon_picker"):
+            self.icon_picker.set_icon_path(None)
+        if hasattr(self.manager, "editor_drafts"):
+            self.manager.editor_drafts.clear_draft()
+        if self.draft_banner_box:
+            self.draft_banner_box.set_visible(False)
+        self._update_save_button_label(_("Save as Global Theme"))
+        self.refresh(sync=True)
+        if self.on_notify_message:
+            self.on_notify_message(_("Editor reset to current desktop settings."), False)
+
+    def _on_open_global_theme_clicked(self, _btn: Gtk.Button | None) -> None:
+        """Present a modal selection dialog with all available user Global Themes."""
+        all_global = self.manager.list_global_themes()
+        user_themes = [t for t in all_global if t.origin == "user"]
+
+        if not user_themes:
+            if self.on_notify_message:
+                self.on_notify_message(_("No user-created Global Themes found to edit."), False)
+            return
+
+        dialog = Adw.PreferencesWindow()
+        dialog.set_title(_("Open Global Theme"))
+        dialog.set_modal(True)
+        dialog.set_default_size(480, 360)
+        parent = self.widget.get_root()
+        if isinstance(parent, Gtk.Window):
+            dialog.set_transient_for(parent)
+
+        pref_page = Adw.PreferencesPage()
+        pref_group = Adw.PreferencesGroup()
+        pref_group.set_title(_("User Global Themes"))
+        pref_group.set_description(_("Select a theme to load into the editor for modification:"))
+
+        for g_theme in user_themes:
+            row = Adw.ActionRow()
+            row.set_title(g_theme.name)
+            if g_theme.description:
+                row.set_subtitle(g_theme.description)
+            row.set_activatable(True)
+
+            img = Gtk.Image.new_from_icon_name("document-save-as-symbolic")
+            img.set_pixel_size(24)
+            row.add_prefix(img)
+
+            open_btn = Gtk.Button()
+            open_btn.set_icon_name("document-open-symbolic")
+            open_btn.set_tooltip_text(_("Open in Editor"))
+            open_btn.add_css_class("flat")
+            open_btn.set_valign(Gtk.Align.CENTER)
+
+            def _make_loader(theme_obj: GlobalTheme) -> Any:
+                def _loader(_w: Any) -> None:
+                    dialog.close()
+                    self.load_global_theme_for_editing(theme_obj)
+
+                return _loader
+
+            loader_cb = _make_loader(g_theme)
+            open_btn.connect("clicked", loader_cb)
+            row.connect("activated", loader_cb)
+            row.add_suffix(open_btn)
+            pref_group.add(row)
+
+        pref_page.add(pref_group)
+        dialog.add(pref_page)
+        dialog.present()
+
     def load_global_theme_for_editing(self, theme: GlobalTheme) -> None:
         """Load an existing user Global Theme into the editor for modification.
 
@@ -951,8 +1043,7 @@ class ThemeEditorPage:
             self._update_colors_from_selected_gtk()
             self._update_colors_from_selected_shell()
 
-            if self.save_button:
-                self.save_button.set_label(_("Update Global Theme"))
+            self._update_save_button_label(_("Update Global Theme"))
             if self.on_notify_message:
                 self.on_notify_message(
                     _("Editing Global Theme '{name}'.").format(name=theme.name), False
@@ -977,17 +1068,16 @@ class ThemeEditorPage:
                 saved = self.manager.update_global_theme(
                     theme_id=self._editing_global_theme.id,
                     theme_set=theme_set,
+                    name=composition.name,
                     description=composition.description,
                     icon_override=icon_override,
                 )
-                if self.save_button:
-                    self.save_button.set_label(_("Update Global Theme"))
+                self._update_save_button_label(_("Update Global Theme"))
             else:
                 saved = self.manager.save_theme_composition(
                     composition, overwrite=True, icon_override=icon_override
                 )
-                if self.save_button:
-                    self.save_button.set_label(_("Save as Global Theme"))
+                self._update_save_button_label(_("Save as Global Theme"))
                 if hasattr(self.manager, "editor_drafts"):
                     self.manager.editor_drafts.clear_draft()
                 if self.draft_banner_box:

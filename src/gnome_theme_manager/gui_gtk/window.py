@@ -46,13 +46,27 @@ UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons"
 
 # Threshold for responsive automatic collapse (collapsible sidebar)
-COLLAPSE_BREAKPOINT_WIDTH: int = 700
+COLLAPSE_BREAKPOINT_WIDTH: int = 0
+
+# Main window minimum geometry to keep sidebar + content fully usable
+MIN_WINDOW_WIDTH: int = 980
+MIN_WINDOW_HEIGHT: int = 680
+
+# Main window default geometry at startup
+DEFAULT_WINDOW_WIDTH: int = 1080
+DEFAULT_WINDOW_HEIGHT: int = 720
 
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    if not BUNDLED_ICONS_DIR.is_dir():
-        return
+    search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
+
+    # In AppImage runtime, check AppDir data and icons directories
+    appdir = Path(__file__).parent.parent.parent.parent
+    if (appdir / "usr" / "share" / "icons").is_dir():
+        search_dirs.append(appdir / "usr" / "share" / "icons")
+    if (appdir / "data" / "icons").is_dir():
+        search_dirs.append(appdir / "data" / "icons")
 
     try:
         theme = icon_theme
@@ -63,10 +77,12 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
 
         if theme is not None and hasattr(theme, "add_search_path"):
             current_paths = theme.get_search_path() if hasattr(theme, "get_search_path") else []
-            bundled_str = str(BUNDLED_ICONS_DIR)
-            if bundled_str not in current_paths:
-                theme.add_search_path(bundled_str)
-                logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", bundled_str)
+            for s_dir in search_dirs:
+                if s_dir.is_dir():
+                    s_str = str(s_dir)
+                    if s_str not in current_paths:
+                        theme.add_search_path(s_str)
+                        logger.debug("Added bundled icons directory to Gtk.IconTheme: %s", s_str)
     except Exception as err:
         logger.warning("Failed to initialize bundled icon theme: %s", err)
 
@@ -89,9 +105,9 @@ class MainWindow(Adw.ApplicationWindow):
         # Initialize bundled icons fallback chain
         init_bundled_icon_theme()
 
-        # Minimum sizing ensuring all pages/cards are fully visible without truncation
-        self.set_size_request(760, 520)
-        self.set_default_size(1080, 720)
+        # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
+        self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
+        self.set_default_size(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Apply application-wide CSS styling for enhanced readability and typography
         self._setup_custom_styling()

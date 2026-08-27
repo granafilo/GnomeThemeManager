@@ -616,6 +616,7 @@ class GlobalThemeManager:
         self,
         theme_id: str,
         theme_set: ThemeSet,
+        name: str | None = None,
         description: str | None = None,
         icon_override: str | None = None,
         fonts: FontConfig | None = None,
@@ -623,12 +624,13 @@ class GlobalThemeManager:
         """Update an existing user-created Global Theme in place.
 
         Preserves origin, author, tags, user_composed flag and created_at timestamp.
-        Updates components, description (if provided), icon_override (if provided),
-        fonts (if provided) and refreshed updated_at timestamp.
+        Updates components, name (if provided), description (if provided),
+        icon_override (if provided), fonts (if provided) and refreshed updated_at timestamp.
 
         Args:
             theme_id: ID or name of the user global theme to update.
             theme_set: New component selections (ThemeSet).
+            name: Optional new human-readable theme name.
             description: Optional new description (keeps existing when None).
             icon_override: Optional new custom icon path (keeps existing when None).
             fonts: Optional new FontConfig (keeps existing when None).
@@ -653,9 +655,13 @@ class GlobalThemeManager:
                 f"Global theme '{target.name}' is not editable (origin='{target.origin}')."
             )
 
+        updated_name = (
+            self._sanitize_name(name) if name is not None and name.strip() else target.name
+        )
+
         updated = GlobalTheme(
             id=target.id,
-            name=target.name,
+            name=updated_name,
             description=description if description is not None else target.description,
             author=target.author,
             tags=target.tags,

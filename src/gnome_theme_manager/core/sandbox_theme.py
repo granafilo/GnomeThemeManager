@@ -18,12 +18,12 @@ from .models import ApplyResult, ThemeSet
 
 # Protected PyGObject imports
 try:
-    import gi  # type: ignore[import-untyped]
+    import gi
 
     gi.require_version("Gtk", "4.0")
     gi.require_version("Gdk", "4.0")
     gi.require_version("Gio", "2.0")
-    from gi.repository import Gdk, Gio, Gtk  # type: ignore[import-untyped]
+    from gi.repository import Gdk, Gio, Gtk
 
     _GTK_AVAILABLE = True
 except (ImportError, ValueError, AttributeError):

@@ -403,3 +403,29 @@ def test_global_theme_model_icon_override_roundtrip() -> None:
     assert data["icon_override"] == "/tmp/icon.png"
     reconstructed = GlobalTheme.from_dict(data, is_bundled=False)
     assert reconstructed.icon_override == "/tmp/icon.png"
+
+
+def test_update_global_theme_with_name_change(tmp_path: Path) -> None:
+    """Test updating a global theme's name and components in place."""
+    state_file = tmp_path / "state" / "global_themes.json"
+    mgr = GlobalThemeManager(
+        bundled_dir=tmp_path / "bundled",
+        state_file=state_file,
+    )
+    theme = mgr.save_global_theme(
+        "Initial Name",
+        ThemeSet(gtk_theme="Adwaita", icon_theme="Papirus"),
+    )
+    assert theme.name == "Initial Name"
+
+    updated = mgr.update_global_theme(
+        theme_id=theme.id,
+        theme_set=ThemeSet(gtk_theme="Yaru", icon_theme="Papirus-Dark"),
+        name="Renamed Setup",
+        description="Updated description",
+    )
+    assert updated.name == "Renamed Setup"
+    assert updated.description == "Updated description"
+    assert updated.components.gtk_theme == "Yaru"
+    assert updated.components.icon_theme == "Papirus-Dark"
+    assert updated.id == theme.id

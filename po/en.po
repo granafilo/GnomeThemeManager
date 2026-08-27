@@ -2610,6 +2610,168 @@ msgstr "Light Suite"
 msgid "Clean light desktop appearance using verified system themes."
 msgstr "Clean light desktop appearance using verified system themes."
 
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:160
+msgid "Open an existing Global Theme to modify it"
+msgstr "Open an existing Global Theme to modify it"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:172
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:949
+msgid "Open Global Theme"
+msgstr "Open Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:182
+msgid "Reset editor values to current system settings"
+msgstr "Reset editor values to current system settings"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui:194
+msgid "Reset"
+msgstr "Reset"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:936
+msgid "Editor reset to current desktop settings."
+msgstr "Editor reset to current desktop settings."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:944
+msgid "No user-created Global Themes found to edit."
+msgstr "No user-created Global Themes found to edit."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:956
+msgid "User Global Themes"
+msgstr "User Global Themes"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:957
+msgid "Select a theme to load into the editor for modification:"
+msgstr "Select a theme to load into the editor for modification:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:973
+msgid "Open in Editor"
+msgstr "Open in Editor"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:554
+msgid "Cannot delete currently active theme"
+msgstr "Cannot delete currently active theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:557
+msgid "Delete this theme"
+msgstr "Delete this theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1257
+msgid "Delete Theme"
+msgstr "Delete Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1260
+msgid "This theme folder contains both GTK and GNOME Shell assets. Deleting it will permanently remove the theme for both categories."
+msgstr "This theme folder contains both GTK and GNOME Shell assets. Deleting it will permanently remove the theme for both categories."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1264
+msgid "Are you sure you want to permanently delete"
+msgstr "Are you sure you want to permanently delete"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:564
+msgid "Cannot delete theme: currently active in {categories}"
+msgstr "Cannot delete theme: currently active in {categories}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1309
+msgid "Theme '{name}' deleted successfully."
+msgstr "Theme '{name}' deleted successfully."
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:1313
+msgid "Failed to delete theme:"
+msgstr "Failed to delete theme:"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:160
+msgid "Custom Theme Snap"
+msgstr "Custom Theme Snap"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:169
+msgid "Build & Connect Snap"
+msgstr "Build & Connect Snap"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:170
+msgid "Generate local Content Snap and connect to all compatible Snap apps"
+msgstr "Generate local Content Snap and connect to all compatible Snap apps"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:250
+msgid "Generate and connect Content Snap for '{theme}' to remove missing themes alert."
+msgstr "Generate and connect Content Snap for '{theme}' to remove missing themes alert."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:257
+msgid "No active GTK theme available to package."
+msgstr "No active GTK theme available to package."
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:273
+msgid "Building Content Snap for '{theme}'…"
+msgstr "Building Content Snap for '{theme}'…"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:277
+msgid "Snap packaging failed:"
+msgstr "Snap packaging failed:"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:281
+msgid "Content Snap '{snap}' installed and connected to Snap applications!"
+msgstr "Content Snap '{snap}' installed and connected to Snap applications!"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:82
+msgid "Active Desktop Configuration"
+msgstr "Active Desktop Configuration"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:83
+msgid "Themes currently configured in GNOME desktop settings."
+msgstr "Themes currently configured in GNOME desktop settings."
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:86
+msgid "GTK / Application Theme"
+msgstr "GTK / Application Theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:97
+msgid "Icon & Cursor Theme"
+msgstr "Icon & Cursor Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:211
+msgid "None detected"
+msgstr "None detected"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:189
+msgid "Installed Content Snap"
+msgstr "Installed Content Snap"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:199
+msgid "Connected Snap Applications"
+msgstr "Connected Snap Applications"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:284
+msgid "Installed & Active"
+msgstr "Installed & Active"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:290
+msgid "apps"
+msgstr "apps"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:292
+msgid "No consuming Snap apps detected"
+msgstr "No consuming Snap apps detected"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui:226
+msgid "Build Snap"
+msgstr "Build Snap"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:319
+msgid "Rebuild Snap"
+msgstr "Rebuild Snap"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:301
+msgid "None (Content Snap not present)"
+msgstr "None (Content Snap not present)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:92
+msgid "Reload"
+msgstr "Reload"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py:93
+msgid "Propagate Themes"
+msgstr "Propagate Themes"
+
+
 
 
 

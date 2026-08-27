@@ -9,6 +9,8 @@ This module implements:
 4. User-scoped theme installation and uninstallation (~/.local/share/...).
 """
 
+import json
+import logging
 import shutil
 import tarfile
 import tempfile
@@ -18,6 +20,8 @@ from pathlib import Path
 from .constants import USER_ICONS_DIRS, USER_THEMES_DIRS
 from .errors import ArchiveExtractionError, ThemeNotFoundError, ThemeValidationError
 from .models import Theme, ThemeType
+
+logger = logging.getLogger("gnome_theme_manager.core.installer")
 
 
 def safe_extract(archive_path: Path, target_dir: Path) -> Path:
@@ -626,4 +630,29 @@ class ThemeInstaller:
             )
 
         shutil.rmtree(found_user_path)
+
+        # Also clean up any recorded entry in theme_forks.json if applicable
+        try:
+            from .constants import THEME_FORKS_FILE
+
+            state_file = THEME_FORKS_FILE.expanduser()
+            if state_file.is_file():
+                data = json.loads(state_file.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    forks = data.get("forks", [])
+                    filtered_forks = [
+                        f
+                        for f in forks
+                        if isinstance(f, dict)
+                        and f.get("fork_name") != theme_name
+                        and str(found_user_path) not in str(f.get("fork_path", ""))
+                    ]
+                    if len(filtered_forks) != len(forks):
+                        state_file.write_text(
+                            json.dumps({"forks": filtered_forks}, indent=2, sort_keys=True),
+                            encoding="utf-8",
+                        )
+        except Exception as err:
+            logger.debug("Could not clean up fork state on uninstall: %s", err)
+
         return True
