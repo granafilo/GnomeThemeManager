@@ -32,7 +32,6 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
         assert btn.get_icon_name() == expected_icon, f"Icona errata: {expected_icon}"
 
 
-
 def test_sandbox_page_refresh_flatpak_and_snap_available(mock_theme_manager: MagicMock) -> None:
     """Verifica la corretta presentazione della diagnostica quando Flatpak e Snap sono disponibili."""
     if not is_gtk_available():
@@ -242,8 +241,6 @@ def test_sandbox_page_snap_visibility_and_help_dialog(mock_theme_manager: MagicM
 
     # Test clicking help button
     from gi.repository import Adw
+
     with patch.object(Adw.Window, "present"):
         page._on_help_clicked(page.sandbox_help_button)
-
-
-

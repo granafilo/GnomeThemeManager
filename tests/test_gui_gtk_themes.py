@@ -1208,4 +1208,3 @@ def test_themes_page_color_scheme_combo_row(mock_theme_manager: MagicMock) -> No
     # Change selection to 2 ("prefer-light")
     page.row_color_scheme.set_selected(2)
     mock_theme_manager.gsettings.set_color_scheme.assert_called_with("prefer-light")
-

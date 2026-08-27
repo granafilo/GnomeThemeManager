@@ -118,9 +118,17 @@ class _GlobalThemeCard(Gtk.Box):
                 matches = False
             if ts.cursor_theme and ts.cursor_theme != current_themes.cursor_theme:
                 matches = False
-            if ts.shell_theme and current_themes.shell_theme and ts.shell_theme != current_themes.shell_theme:
+            if (
+                ts.shell_theme
+                and current_themes.shell_theme
+                and ts.shell_theme != current_themes.shell_theme
+            ):
                 matches = False
-            if ts.color_scheme and current_themes.color_scheme and ts.color_scheme != current_themes.color_scheme:
+            if (
+                ts.color_scheme
+                and current_themes.color_scheme
+                and ts.color_scheme != current_themes.color_scheme
+            ):
                 matches = False
             self.is_active = matches
 
@@ -226,17 +234,17 @@ class _GlobalThemeCard(Gtk.Box):
         comp_box.set_margin_bottom(16)
         comp_box.set_hexpand(True)
 
-        ts: ThemeSet = theme.components
-        if ts.gtk_theme:
-            comp_box.append(_create_component_pill(_("GTK"), ts.gtk_theme))
-        if ts.icon_theme:
-            comp_box.append(_create_component_pill(_("Icons"), ts.icon_theme))
-        if ts.cursor_theme:
-            comp_box.append(_create_component_pill(_("Cursors"), ts.cursor_theme))
-        if ts.shell_theme:
-            comp_box.append(_create_component_pill(_("Shell"), ts.shell_theme))
-        if ts.color_scheme:
-            comp_box.append(_create_component_pill(_("Mode"), ts.color_scheme))
+        components = theme.components
+        if components.gtk_theme:
+            comp_box.append(_create_component_pill(_("GTK"), components.gtk_theme))
+        if components.icon_theme:
+            comp_box.append(_create_component_pill(_("Icons"), components.icon_theme))
+        if components.cursor_theme:
+            comp_box.append(_create_component_pill(_("Cursors"), components.cursor_theme))
+        if components.shell_theme:
+            comp_box.append(_create_component_pill(_("Shell"), components.shell_theme))
+        if components.color_scheme:
+            comp_box.append(_create_component_pill(_("Mode"), components.color_scheme))
 
         self.append(comp_box)
 

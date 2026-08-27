@@ -222,4 +222,3 @@ def test_global_theme_card_active_state_detection(mock_theme_manager: MagicMock)
     )
     assert card_inactive.is_active is False
     assert card_inactive.apply_btn.get_label() == "Apply"
-

@@ -419,7 +419,11 @@ class GSettingsClient:
         if settings_obj is None:
             return False
         try:
-            schema = getattr(settings_obj.props, "settings_schema", None) if hasattr(settings_obj, "props") else None
+            schema = (
+                getattr(settings_obj.props, "settings_schema", None)
+                if hasattr(settings_obj, "props")
+                else None
+            )
             if schema is not None and hasattr(schema, "has_key"):
                 return bool(schema.has_key(key))
             if hasattr(settings_obj, "list_keys"):

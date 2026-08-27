@@ -663,7 +663,7 @@ class StatusPage:
         if 0 <= idx < len(self._color_scheme_values):
             val = self._color_scheme_values[idx]
             try:
-                if self.manager.gsettings is not None:
+                if self.manager is not None and self.manager.gsettings is not None:
                     self.manager.gsettings.set_color_scheme(val)
                     logger.info("Color scheme updated to '%s' from Status page.", val)
                     if self.on_notify_message:

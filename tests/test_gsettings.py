@@ -271,4 +271,3 @@ def test_gsettings_connect_changed(mock_gio_environment) -> None:
     assert len(handlers) >= 1
     assert 42 in handlers
     mock_connect.assert_called_once()
-

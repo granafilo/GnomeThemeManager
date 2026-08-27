@@ -371,6 +371,8 @@ def test_status_page_color_scheme_combo_row(mock_theme_manager: MagicMock) -> No
     page.row_color_scheme.set_selected(2)
     mock_theme_manager.gsettings.set_color_scheme.assert_called_with("prefer-light")
     assert len(notifications) == 1
-    assert "Light" in notifications[0][0] or "prefer-light" in notifications[0][0] or "Chiaro" in notifications[0][0]
-
-
+    assert (
+        "Light" in notifications[0][0]
+        or "prefer-light" in notifications[0][0]
+        or "Chiaro" in notifications[0][0]
+    )

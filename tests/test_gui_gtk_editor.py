@@ -227,4 +227,3 @@ def test_theme_editor_color_scheme_binding(mock_theme_manager: MagicMock) -> Non
     page._set_selected_color_scheme(None)
     assert page.color_scheme_dropdown.get_selected() == 0
     assert page._get_selected_color_scheme() == "default"
-

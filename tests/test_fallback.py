@@ -110,6 +110,13 @@ def test_fallback_config_roundtrip(tmp_path: Path) -> None:
 def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
     """Verifica che al primo avvio (file inesistente), FallbackManager rilevi i default dai temi di sistema."""
     config_file = tmp_path / "fallbacks.json"
+    scanner_mock = MagicMock()
+    scanner_mock.find_theme.return_value = Theme(
+        name="Yaru",
+        theme_type=ThemeType.GTK,
+        path=tmp_path / "Yaru",
+        is_user_level=False,
+    )
     gsettings_mock = MagicMock()
     gsettings_mock.get_current.return_value = ThemeSet(
         gtk_theme="Yaru",
@@ -118,7 +125,9 @@ def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
         shell_theme="Yaru",
     )
 
-    fm = FallbackManager(config_file=config_file, gsettings_client=gsettings_mock)
+    fm = FallbackManager(
+        config_file=config_file, scanner=scanner_mock, gsettings_client=gsettings_mock
+    )
     cfg = fm.get_config()
     assert cfg.gtk3 == "Yaru"
     assert cfg.gtk4 == "Yaru"
@@ -161,7 +170,7 @@ def test_manager_apply_missing_theme_uses_fallback(tmp_path: Path) -> None:
     validator.validate.return_value = MagicMock(valid=True, warnings=[])
 
     config_file = tmp_path / "fallbacks.json"
-    fallback_mgr = FallbackManager(config_file=config_file)
+    fallback_mgr = FallbackManager(config_file=config_file, scanner=scanner)
     fallback_mgr.save_config(
         FallbackConfig(
             gtk3="Adwaita",

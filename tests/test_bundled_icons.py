@@ -92,4 +92,3 @@ def test_icon_pack_preview_includes_bundled_search_path(tmp_path: Path) -> None:
     preview = IconPackPreview(theme_name="NonExistentTheme", theme_path=tmp_path)
     paths = preview._icon_theme.get_search_path()
     assert any(str(BUNDLED_ICONS_DIR) in p for p in paths)
-

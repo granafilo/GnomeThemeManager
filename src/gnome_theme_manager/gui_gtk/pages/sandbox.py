@@ -215,9 +215,7 @@ class SandboxPage:
                         installed_snaps = connector.get_installed_snaps()
                         has_custom_snap = expected_snap_name in installed_snaps
                         if has_custom_snap:
-                            connected_targets = sorted(
-                                connector.get_snaps_using_common_themes()
-                            )
+                            connected_targets = sorted(connector.get_snaps_using_common_themes())
 
                 return (
                     SandboxDiagnosticsData(
@@ -244,9 +242,7 @@ class SandboxPage:
 
             if error is not None or diag_data is None:
                 logger.error("Error retrieving sandbox diagnostics: %s", error)
-                self.error_status_page.set_description(
-                    f"{_('Sandbox diagnostics error:')} {error}"
-                )
+                self.error_status_page.set_description(f"{_('Sandbox diagnostics error:')} {error}")
                 self._set_state("error")
                 self._set_controls_sensitive(True)
                 return GLib.SOURCE_REMOVE
@@ -667,7 +663,6 @@ class SandboxPage:
 
         win.present()
 
-
     def _get_root_window(self) -> Gtk.Window | None:
         """Retrieve parent Gtk.Window."""
         root = self.widget.get_root()
@@ -688,4 +683,3 @@ class SandboxPage:
             root.add_toast(message, timeout=timeout)
         else:
             logger.info("Feedback [SandboxPage]: %s", message)
-
