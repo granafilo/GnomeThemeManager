@@ -250,6 +250,9 @@ class MainWindow(Adw.ApplicationWindow):
             self._on_edit_global_theme_requested(theme)
         )
 
+        self.status_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
         self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
         self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err

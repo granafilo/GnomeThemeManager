@@ -196,3 +196,35 @@ def test_theme_editor_draft_auto_save_and_prompt(mock_theme_manager: MagicMock) 
     page._on_resume_draft_clicked(None)
     assert page.theme_name_entry.get_text() == "Unfinished Masterpiece"
     assert page.draft_banner_box.get_visible() is False
+
+
+def test_theme_editor_color_scheme_binding(mock_theme_manager: MagicMock) -> None:
+    """Verify color_scheme_dropdown maps friendly options to/from GSettings values."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gnome_theme_manager.gui_gtk.pages.editor_view import ThemeEditorPage
+
+    mock_theme_manager.get_current_themes.return_value = ThemeSet(
+        gtk_theme="Yaru",
+        color_scheme="prefer-dark",
+    )
+    mock_theme_manager.list_themes.return_value = []
+
+    page = ThemeEditorPage(manager=mock_theme_manager)
+    page.refresh(sync=True)
+
+    # prefer-dark should correspond to index 1 ("Dark (prefer-dark)")
+    assert page.color_scheme_dropdown.get_selected() == 1
+    assert page._get_selected_color_scheme() == "prefer-dark"
+
+    # Change to prefer-light
+    page._set_selected_color_scheme("prefer-light")
+    assert page.color_scheme_dropdown.get_selected() == 2
+    assert page._get_selected_color_scheme() == "prefer-light"
+
+    # Default fallback
+    page._set_selected_color_scheme(None)
+    assert page.color_scheme_dropdown.get_selected() == 0
+    assert page._get_selected_color_scheme() == "default"
+

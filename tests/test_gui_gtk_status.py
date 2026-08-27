@@ -215,7 +215,7 @@ def test_status_page_ready_state_success(mock_theme_manager: MagicMock) -> None:
     assert "Yaru" in page.row_icon_theme.get_subtitle()
     assert "Yaru" in page.row_cursor_theme.get_subtitle()
     assert "Yaru" in page.row_shell_theme.get_subtitle()
-    assert "Default" in page.row_color_scheme.get_subtitle()
+    assert page.row_color_scheme.get_selected() == 0
     assert "Active" in page.row_gtk4_override.get_subtitle()
     assert "Available" in page.row_gsettings_status.get_subtitle()
     assert "/home/user/.local/share/themes" in page.row_user_themes_path.get_subtitle()
@@ -346,4 +346,31 @@ def test_status_page_snap_unavailable_hides_row(mock_theme_manager: MagicMock) -
     assert page.row_snap_status.get_visible() is False
     assert page.row_flatpak_status.get_visible() is True
     assert "Flatpak" in page.group_sandbox.get_title()
+
+
+def test_status_page_color_scheme_combo_row(mock_theme_manager: MagicMock) -> None:
+    """Check that row_color_scheme in StatusPage displays and changes active color scheme."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    mock_theme_manager.get_current_themes.return_value = ThemeSet(
+        gtk_theme="Yaru",
+        color_scheme="prefer-dark",
+    )
+
+    page = StatusPage(manager=mock_theme_manager)
+    notifications = []
+    page.on_notify_message = lambda msg, is_err: notifications.append((msg, is_err))
+    page.refresh(sync=True)
+
+    assert page.row_color_scheme is not None
+    # prefer-dark corresponds to index 1 ("Dark")
+    assert page.row_color_scheme.get_selected() == 1
+
+    # Change selection to 2 ("prefer-light")
+    page.row_color_scheme.set_selected(2)
+    mock_theme_manager.gsettings.set_color_scheme.assert_called_with("prefer-light")
+    assert len(notifications) == 1
+    assert "Light" in notifications[0][0] or "prefer-light" in notifications[0][0] or "Chiaro" in notifications[0][0]
+
 

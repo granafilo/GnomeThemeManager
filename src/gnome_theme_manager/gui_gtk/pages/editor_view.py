@@ -177,9 +177,14 @@ class ThemeEditorPage:
         if self.custom_icon_container:
             self.custom_icon_container.append(self.icon_picker)
 
-        self._color_schemes = ["default", "prefer-dark", "prefer-light"]
-        for cs in self._color_schemes:
-            self._color_scheme_model.append(cs)
+        self._color_scheme_options: list[tuple[str, str]] = [
+            ("default", _("Default (Light)")),
+            ("prefer-dark", _("Dark (prefer-dark)")),
+            ("prefer-light", _("Light (prefer-light)")),
+        ]
+        self._color_scheme_values: list[str] = [v for v, _ in self._color_scheme_options]
+        for _val, lbl in self._color_scheme_options:
+            self._color_scheme_model.append(lbl)
 
         self._is_restoring_draft = False
         self._extracted_shell_colors: ShellExtractedColors | None = None
@@ -236,6 +241,21 @@ class ThemeEditorPage:
         self._is_loading: bool = False
         self._is_loaded: bool = False
         self._editing_global_theme: GlobalTheme | None = None
+
+    def _get_selected_color_scheme(self) -> str:
+        """Return the GSettings value for the selected color scheme option."""
+        idx = self.color_scheme_dropdown.get_selected()
+        if 0 <= idx < len(self._color_scheme_values):
+            return self._color_scheme_values[idx]
+        return "default"
+
+    def _set_selected_color_scheme(self, scheme: str | None) -> None:
+        """Set the active option in color_scheme_dropdown from GSettings value."""
+        val = scheme or "default"
+        if val in self._color_scheme_values:
+            self.color_scheme_dropdown.set_selected(self._color_scheme_values.index(val))
+        else:
+            self.color_scheme_dropdown.set_selected(0)
 
     @property
     def is_loading(self) -> bool:
@@ -365,9 +385,7 @@ class ThemeEditorPage:
         )
         self.cursor_dropdown.set_selected(cursor_idx)
 
-        cs_val = current_set.color_scheme or "default"
-        cs_idx = self._color_schemes.index(cs_val) if cs_val in self._color_schemes else 0
-        self.color_scheme_dropdown.set_selected(cs_idx)
+        self._set_selected_color_scheme(current_set.color_scheme)
 
         self._update_colors_from_selected_gtk()
         self._update_colors_from_selected_shell()
@@ -399,7 +417,7 @@ class ThemeEditorPage:
             shell_theme=self._get_selected_string(self.shell_dropdown),
             icon_theme=self._get_selected_string(self.icon_dropdown),
             cursor_theme=self._get_selected_string(self.cursor_dropdown),
-            color_scheme=self._get_selected_string(self.color_scheme_dropdown),
+            color_scheme=self._get_selected_color_scheme(),
             colors=self._get_current_colors(),
         )
         self.manager.editor_drafts.save_draft(draft)
@@ -440,10 +458,8 @@ class ThemeEditorPage:
                 if cursor_idx >= 0:
                     self.cursor_dropdown.set_selected(cursor_idx)
 
-            if draft.color_scheme and draft.color_scheme in self._color_schemes:
-                self.color_scheme_dropdown.set_selected(
-                    self._color_schemes.index(draft.color_scheme)
-                )
+            if draft.color_scheme:
+                self._set_selected_color_scheme(draft.color_scheme)
 
             if draft.colors:
                 if "theme_fg_color" in draft.colors:
@@ -614,7 +630,7 @@ class ThemeEditorPage:
 
                 icon_name = self._get_selected_string(self.icon_dropdown)
                 cursor_name = self._get_selected_string(self.cursor_dropdown)
-                color_scheme = self._get_selected_string(self.color_scheme_dropdown)
+                color_scheme = self._get_selected_color_scheme()
 
                 theme_set = ThemeSet(
                     gtk_theme=effective_gtk,
@@ -893,7 +909,7 @@ class ThemeEditorPage:
 
         icon_name = self._get_selected_string(self.icon_dropdown)
         cursor_name = self._get_selected_string(self.cursor_dropdown)
-        color_scheme = self._get_selected_string(self.color_scheme_dropdown)
+        color_scheme = self._get_selected_color_scheme()
 
         return ThemeComposition(
             name=name,
@@ -1032,10 +1048,8 @@ class ThemeEditorPage:
                 if cursor_idx >= 0:
                     self.cursor_dropdown.set_selected(cursor_idx)
 
-            if theme_comp.color_scheme and theme_comp.color_scheme in self._color_schemes:
-                self.color_scheme_dropdown.set_selected(
-                    self._color_schemes.index(theme_comp.color_scheme)
-                )
+            if theme_comp.color_scheme:
+                self._set_selected_color_scheme(theme_comp.color_scheme)
 
             if hasattr(self, "icon_picker"):
                 self.icon_picker.set_icon_path(theme.icon_override)
@@ -1114,7 +1128,7 @@ class ThemeEditorPage:
 
             icon_name = self._get_selected_string(self.icon_dropdown)
             cursor_name = self._get_selected_string(self.cursor_dropdown)
-            color_scheme = self._get_selected_string(self.color_scheme_dropdown)
+            color_scheme = self._get_selected_color_scheme()
 
             theme_set = ThemeSet(
                 gtk_theme=effective_gtk,

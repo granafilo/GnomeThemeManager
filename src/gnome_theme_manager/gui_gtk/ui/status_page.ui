@@ -116,10 +116,10 @@
                       </object>
                     </child>
                     <child>
-                      <object class="AdwActionRow" id="row_color_scheme">
+                      <object class="AdwComboRow" id="row_color_scheme">
                         <property name="subtitle-lines">2</property>
                         <property name="title" translatable="yes">Color Scheme</property>
-                        <property name="subtitle" translatable="yes">Default</property>
+                        <property name="subtitle" translatable="yes">Choose between default, dark, or light appearance for applications</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">weather-clear-night-symbolic</property>

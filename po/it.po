@@ -2895,6 +2895,35 @@ msgstr "Ricarica e sincronizza la configurazione attuale del desktop con le impo
 msgid "Current desktop configuration synchronized"
 msgstr "Configurazione attuale del desktop sincronizzata"
 
+#: src/gnome_theme_manager/gui_gtk/ui/themes_page.ui:118
+msgid "Choose between default, dark, or light appearance for applications"
+msgstr "Scegli tra tema predefinito, scuro o chiaro per le applicazioni"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:190
+msgid "Default (Light)"
+msgstr "Predefinito (Chiaro)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:191
+msgid "Dark"
+msgstr "Scuro"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:192
+msgid "Light"
+msgstr "Chiaro"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:181
+msgid "Dark (prefer-dark)"
+msgstr "Scuro (prefer-dark)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py:182
+msgid "Light (prefer-light)"
+msgstr "Chiaro (prefer-light)"
+
+#: src/gnome_theme_manager/gui_gtk/pages/themes.py:456
+msgid "Color scheme preference updated to '{scheme}'."
+msgstr "Preferenza tema aggiornata a '{scheme}'."
+
+
 
 
 

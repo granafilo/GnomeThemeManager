@@ -57,6 +57,7 @@ def test_themes_page_ui_structure_and_scrolling() -> None:
     assert "category_title_label" in object_ids
     assert "active_theme_group" in object_ids
     assert "active_theme_row" in object_ids
+    assert "row_color_scheme" in object_ids
     assert "available_section_title" in object_ids
     assert "search_entry" in object_ids
     assert "themes_scrolled_window" in object_ids
@@ -1172,3 +1173,39 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     assert len(toasts) == 5
     assert "partially" in toasts[-1].lower()
     assert "User Themes" in toasts[-1]
+
+
+def test_themes_page_color_scheme_combo_row(mock_theme_manager: MagicMock) -> None:
+    """Verifica che il selettore color_scheme sia visibile solo per GTK e aggiorni GSettings."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    mock_theme_manager.get_current_themes.return_value = ThemeSet(
+        gtk_theme="Yaru",
+        color_scheme="prefer-dark",
+    )
+    mock_theme_manager.scanner.list_themes.return_value = []
+
+    page = ThemesPage(manager=mock_theme_manager)
+    page.set_category(ThemeType.GTK)
+    page.refresh(sync=True)
+
+    assert page.row_color_scheme is not None
+    assert page.row_color_scheme.get_visible() is True
+    # prefer-dark should correspond to index 1 ("Dark")
+    assert page.row_color_scheme.get_selected() == 1
+
+    # Switch to Icons -> row should be hidden
+    page.set_category(ThemeType.ICON)
+    page.refresh(sync=True)
+    assert page.row_color_scheme.get_visible() is False
+
+    # Switch back to GTK and change color scheme
+    page.set_category(ThemeType.GTK)
+    page.refresh(sync=True)
+    assert page.row_color_scheme.get_visible() is True
+
+    # Change selection to 2 ("prefer-light")
+    page.row_color_scheme.set_selected(2)
+    mock_theme_manager.gsettings.set_color_scheme.assert_called_with("prefer-light")
+
