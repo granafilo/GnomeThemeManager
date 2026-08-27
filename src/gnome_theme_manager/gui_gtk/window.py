@@ -61,12 +61,25 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
     search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
 
-    # In AppImage runtime, check AppDir data and icons directories
+    # Flatpak runtime icon search paths
+    for flatpak_dir in [
+        Path("/app/share/icons"),
+        Path("/app/share/gnome-theme-manager/data/icons"),
+        Path("/app/share/gnome-theme-manager/icons"),
+    ]:
+        if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
+            search_dirs.append(flatpak_dir)
+
+    # In AppImage runtime or dev source tree, check data and icons directories
     appdir = Path(__file__).parent.parent.parent.parent
-    if (appdir / "usr" / "share" / "icons").is_dir():
-        search_dirs.append(appdir / "usr" / "share" / "icons")
-    if (appdir / "data" / "icons").is_dir():
-        search_dirs.append(appdir / "data" / "icons")
+    for candidate in [
+        appdir / "usr" / "share" / "icons",
+        appdir / "data" / "icons",
+        Path("/usr/share/icons"),
+        Path("/usr/local/share/icons"),
+    ]:
+        if candidate.is_dir() and candidate not in search_dirs:
+            search_dirs.append(candidate)
 
     try:
         theme = icon_theme
