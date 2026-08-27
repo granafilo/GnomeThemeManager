@@ -2875,6 +2875,28 @@ msgstr "Integrazione Sandbox (Snap & Flatpak)"
 msgid "Sandbox Integration (Flatpak)"
 msgstr "Integrazione Sandbox (Flatpak)"
 
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:135
+msgid "Active Configuration"
+msgstr "Configurazione attiva"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:173
+msgid "Applied"
+msgstr "Applicato"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:110
+msgid "Update current setup"
+msgstr "Aggiorna configurazione corrente"
+
+#: src/gnome_theme_manager/gui_gtk/ui/global_themes_page.ui:112
+msgid "Refresh and sync the current desktop configuration with live settings"
+msgstr "Ricarica e sincronizza la configurazione attuale del desktop con le impostazioni correnti"
+
+#: src/gnome_theme_manager/gui_gtk/pages/global_themes.py:298
+msgid "Current desktop configuration synchronized"
+msgstr "Configurazione attuale del desktop sincronizzata"
+
+
+
 
 
 

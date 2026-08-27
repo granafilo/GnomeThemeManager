@@ -106,6 +106,18 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkButton" id="sync_current_button">
+                            <property name="label" translatable="yes">Update current setup</property>
+                            <property name="hexpand">false</property>
+                            <property name="tooltip-text" translatable="yes">Refresh and sync the current desktop configuration with live settings</property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">view-refresh-symbolic</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkButton" id="reload_button">
                             <property name="label" translatable="yes">Reload</property>
                             <property name="hexpand">false</property>

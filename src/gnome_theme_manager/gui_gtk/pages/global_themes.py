@@ -99,12 +99,30 @@ class _GlobalThemeCard(Gtk.Box):
         on_apply: Callable[[str], None],
         on_delete: Callable[[str], None] | None = None,
         on_edit: Callable[["GlobalTheme"], None] | None = None,
+        current_themes: ThemeSet | None = None,
     ) -> None:
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         self._theme = theme
         self._on_apply = on_apply
         self._on_delete = on_delete
         self._on_edit = on_edit
+
+        # Determine if this Global Theme matches active GSettings
+        self.is_active: bool = False
+        if current_themes is not None:
+            ts = theme.components
+            matches = True
+            if ts.gtk_theme and ts.gtk_theme != current_themes.gtk_theme:
+                matches = False
+            if ts.icon_theme and ts.icon_theme != current_themes.icon_theme:
+                matches = False
+            if ts.cursor_theme and ts.cursor_theme != current_themes.cursor_theme:
+                matches = False
+            if ts.shell_theme and current_themes.shell_theme and ts.shell_theme != current_themes.shell_theme:
+                matches = False
+            if ts.color_scheme and current_themes.color_scheme and ts.color_scheme != current_themes.color_scheme:
+                matches = False
+            self.is_active = matches
 
         self.add_css_class("card")
         self.set_margin_top(4)
@@ -134,6 +152,8 @@ class _GlobalThemeCard(Gtk.Box):
         title_box.append(title_label)
 
         meta_parts: list[str] = []
+        if self.is_active:
+            meta_parts.append(_("Active Configuration"))
         if is_user:
             meta_parts.append(_("User Created"))
         else:
@@ -172,8 +192,12 @@ class _GlobalThemeCard(Gtk.Box):
 
         # Apply Button
         self.apply_btn = Gtk.Button()
-        self.apply_btn.set_label(_("Apply"))
-        self.apply_btn.add_css_class("suggested-action")
+        if self.is_active:
+            self.apply_btn.set_label(_("Applied"))
+            self.apply_btn.add_css_class("flat")
+        else:
+            self.apply_btn.set_label(_("Apply"))
+            self.apply_btn.add_css_class("suggested-action")
         self.apply_btn.connect("clicked", lambda _: self._on_apply(self._theme.id))
         btn_box.append(self.apply_btn)
 
@@ -245,6 +269,7 @@ class GlobalThemesPage:
         self.search_entry: Gtk.SearchEntry = self.builder.get_object("search_entry")
         self.themes_container: Gtk.Box = self.builder.get_object("themes_container")
         self.save_theme_button: Gtk.Button | None = self.builder.get_object("save_theme_button")
+        self.sync_current_button: Gtk.Button | None = self.builder.get_object("sync_current_button")
         self.reload_button: Gtk.Button | None = self.builder.get_object("reload_button")
         self.empty_page: Adw.StatusPage = self.builder.get_object("empty_page")
         self.error_page: Adw.StatusPage = self.builder.get_object("error_page")
@@ -264,8 +289,16 @@ class GlobalThemesPage:
         self.search_entry.connect("search-changed", self._on_search_changed)
         if self.save_theme_button is not None:
             self.save_theme_button.connect("clicked", self._on_save_clicked)
+        if self.sync_current_button is not None:
+            self.sync_current_button.connect("clicked", lambda _: self._on_sync_current_clicked())
         if self.reload_button is not None:
             self.reload_button.connect("clicked", lambda _: self.refresh())
+
+    def _on_sync_current_clicked(self) -> None:
+        """Explicitly synchronize the current configuration card with live system themes."""
+        self.refresh(sync=True)
+        if self.on_notify_message:
+            self.on_notify_message(_("Current desktop configuration synchronized"), False)
 
     def get_widget(self) -> Gtk.Stack:
         """Return the root GTK widget for this page."""
@@ -355,9 +388,11 @@ class GlobalThemesPage:
             self.widget.set_visible_child_name("empty")
             return
 
+        current_themes = self.manager._get_current_themes_safe()
         for theme in filtered:
             card = _GlobalThemeCard(
                 theme=theme,
+                current_themes=current_themes,
                 on_apply=self._apply_theme,
                 on_delete=self._on_delete_theme_requested,
                 on_edit=self._on_edit_theme_requested,

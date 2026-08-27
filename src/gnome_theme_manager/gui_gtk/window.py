@@ -265,6 +265,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         def _on_global_theme_applied_callback(theme_id: str, result: Any) -> None:
             self.status_page.refresh()
+            self.global_themes_page.refresh()
             if self.themes_page.current_snapshot is not None or not self.themes_page.is_loading:
                 self.themes_page.refresh()
 
@@ -272,6 +273,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         def _on_theme_applied_callback(item: Any, result: Any) -> None:
             self.status_page.refresh()
+            self.global_themes_page.refresh()
 
         self.themes_page.on_theme_applied = _on_theme_applied_callback
 
@@ -283,6 +285,7 @@ class MainWindow(Adw.ApplicationWindow):
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
             self.themes_page.refresh()
+            self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
 
@@ -290,6 +293,10 @@ class MainWindow(Adw.ApplicationWindow):
             self.status_page.refresh()
 
         self.sandbox_page.on_sandbox_propagated = _on_sandbox_propagated_callback
+
+        # Real-time GSettings synchronization (Task 4.8.4)
+        if self.manager.gsettings is not None:
+            self.manager.gsettings.connect_changed(self._on_gsettings_changed)
 
         self.select_page("status")
 
@@ -525,23 +532,11 @@ class MainWindow(Adw.ApplicationWindow):
             if hasattr(ctrl, "is_loading"):
                 self.refresh_button.set_sensitive(not ctrl.is_loading)
 
-        if (
-            page_id.startswith("themes")
-            and self.themes_page.current_snapshot is None
-            and not self.themes_page.is_loading
-        ):
+        if page_id.startswith("themes") and not self.themes_page.is_loading:
             self.themes_page.refresh()
-        elif (
-            page_id == "status"
-            and self.status_page.current_snapshot is None
-            and not self.status_page.is_loading
-        ):
+        elif page_id == "status" and not self.status_page.is_loading:
             self.status_page.refresh()
-        elif (
-            page_id == "global_themes"
-            and not self.global_themes_page._all_themes
-            and not self.global_themes_page.is_loading
-        ):
+        elif page_id == "global_themes" and not self.global_themes_page.is_loading:
             self.global_themes_page.refresh()
         elif (
             page_id == "editor"
@@ -549,11 +544,7 @@ class MainWindow(Adw.ApplicationWindow):
             and not self.editor_page.is_loading
         ):
             self.editor_page.refresh()
-        elif (
-            page_id == "sandbox"
-            and self.sandbox_page._current_sandbox_status is None
-            and not self.sandbox_page._is_loading
-        ):
+        elif page_id == "sandbox" and not self.sandbox_page._is_loading:
             self.sandbox_page.refresh()
         elif page_id == "fonts":
             self.fonts_page.refresh()
@@ -566,6 +557,27 @@ class MainWindow(Adw.ApplicationWindow):
 
         if self.split_view.get_collapsed():
             self.split_view.set_show_content(True)
+
+    def _on_gsettings_changed(self, key: str) -> None:
+        """Handle real-time GSettings changes from system, CLI, or settings."""
+        logger.debug("Live GSettings modification detected on key: %s", key)
+        GLib.idle_add(self._sync_live_gsettings_pages)
+
+    def _sync_live_gsettings_pages(self) -> bool:
+        """Synchronize active GUI view with live GSettings state."""
+        if self._current_page_id == "status" and not self.status_page.is_loading:
+            self.status_page.refresh()
+        elif self._current_page_id == "global_themes" and not self.global_themes_page.is_loading:
+            self.global_themes_page.refresh()
+        elif (
+            self._current_page_id
+            and self._current_page_id.startswith("themes")
+            and not self.themes_page.is_loading
+        ):
+            self.themes_page.refresh()
+        elif self._current_page_id == "sandbox" and not self.sandbox_page._is_loading:
+            self.sandbox_page.refresh()
+        return GLib.SOURCE_REMOVE
 
     @property
     def current_page_id(self) -> str | None:
