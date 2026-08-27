@@ -154,7 +154,7 @@ class ThemeAvailabilityChecker:
 
         If `theme_name` is already available on the target, returns `theme_name`.
         Otherwise, attempts to derive a valid parent name (e.g. 'Colloid-Dark' for 'Colloid-Dark-Custom'),
-        and if that is also unavailable, returns `fallback_theme` or 'Adwaita' / 'Yaru'.
+        and if that is also unavailable, dynamically discovers an available system theme.
         """
         if self.check(theme_name, theme_type, target=target):
             return theme_name
@@ -177,23 +177,38 @@ class ThemeAvailabilityChecker:
                 if candidate and self.check(candidate, theme_type, target=target):
                     return candidate
 
-        # Try matching base prefix in available snap themes
-        if target == "snap":
-            norm = theme_name.lower()
-            if "colloid" in norm:
-                colloid_candidate = "Colloid-Dark" if "dark" in norm else "Colloid"
-                if self.check(colloid_candidate, theme_type, target="snap"):
-                    return colloid_candidate
-            if "yaru" in norm:
-                yaru_candidate = "Yaru-dark" if "dark" in norm else "Yaru"
-                return yaru_candidate
-            if "adwaita" in norm:
-                return "Adwaita-dark" if "dark" in norm else "Adwaita"
-
+        # Check explicitly provided fallback theme
         if fallback_theme and self.check(fallback_theme, theme_type, target=target):
             return fallback_theme
 
-        return "Yaru-dark" if "dark" in theme_name.lower() else "Yaru"
+        # Dynamically discover an available theme on target from scanned system themes
+        is_dark_requested = "dark" in theme_name.lower()
+        scanned = self._scanner.scan_all()
+        matching_variant: str | None = None
+        first_valid: str | None = None
+
+        for t in scanned:
+            if (
+                t.theme_type == theme_type
+                and not t.invalid
+                and self.check(t.name, theme_type, target=target)
+            ):
+                if ("dark" in t.name.lower()) == is_dark_requested and matching_variant is None:
+                    matching_variant = t.name
+                if first_valid is None:
+                    first_valid = t.name
+
+        if matching_variant:
+            return matching_variant
+        if first_valid:
+            return first_valid
+
+        # Known common system fallback candidates dynamically checked
+        for candidate in ("Yaru-dark", "Yaru", "Adwaita-dark", "Adwaita"):
+            if self.check(candidate, theme_type, target=target):
+                return candidate
+
+        return fallback_theme or theme_name
 
 
 class FallbackManager:
@@ -254,32 +269,58 @@ class FallbackManager:
             logger.error("Failed to save fallbacks.json: %s", err)
 
     def _detect_default_fallbacks(self) -> FallbackConfig:
-        """Detect initial fallback values from active system settings or standard defaults."""
-        detected_gtk = "Adwaita"
-        detected_icon = "Adwaita"
-        detected_cursor = "Adwaita"
-        detected_shell = "Adwaita"
+        """Detect initial fallback values from active system settings or dynamically discovered themes."""
+        detected: dict[str, str] = {
+            "gtk3": "",
+            "gtk4": "",
+            "shell": "",
+            "icons": "",
+            "cursors": "",
+        }
 
         if self._gsettings is not None:
             try:
                 current = self._gsettings.get_current()
                 if current.gtk_theme:
-                    detected_gtk = current.gtk_theme
+                    detected["gtk3"] = current.gtk_theme
+                    detected["gtk4"] = current.gtk_theme
                 if current.icon_theme:
-                    detected_icon = current.icon_theme
+                    detected["icons"] = current.icon_theme
                 if current.cursor_theme:
-                    detected_cursor = current.cursor_theme
+                    detected["cursors"] = current.cursor_theme
                 if current.shell_theme:
-                    detected_shell = current.shell_theme
+                    detected["shell"] = current.shell_theme
             except Exception as err:
                 logger.debug("Could not read GSettings for default fallbacks: %s", err)
 
+        # For any missing or unverified component, dynamically find first valid system theme
+        mapping = {
+            "gtk3": ThemeType.GTK,
+            "gtk4": ThemeType.GTK,
+            "shell": ThemeType.SHELL,
+            "icons": ThemeType.ICON,
+            "cursors": ThemeType.CURSOR,
+        }
+        for key, theme_type in mapping.items():
+            val = detected[key]
+            if not val or not self._scanner.find_theme(val, theme_type):
+                available = self.get_available_fallback_themes(theme_type)
+                if available:
+                    detected[key] = available[0]
+                else:
+                    for t in self._scanner._scan_themes_by_type(theme_type, user_only=False):
+                        if not t.invalid:
+                            detected[key] = t.name
+                            break
+                    if not detected[key]:
+                        detected[key] = "Adwaita"
+
         return FallbackConfig(
-            gtk3=detected_gtk,
-            gtk4=detected_gtk,
-            shell=detected_shell,
-            icons=detected_icon,
-            cursors=detected_cursor,
+            gtk3=detected["gtk3"],
+            gtk4=detected["gtk4"],
+            shell=detected["shell"],
+            icons=detected["icons"],
+            cursors=detected["cursors"],
         )
 
     def get_available_fallback_themes(self, theme_type: ThemeType) -> list[str]:
@@ -304,17 +345,19 @@ class FallbackManager:
 
         available_names: list[str] = []
         for t in scanned:
+            if t.invalid:
+                continue
             if (
                 self._availability_checker.check_all_targets(t.name, t.theme_type, theme_obj=t)
                 and t.name not in available_names
             ):
                 available_names.append(t.name)
 
-        # Always ensure standard system fallbacks are represented if found
+        # If no universally available theme was found, dynamically include any valid system-level themes found
         if not available_names:
-            for fallback_candidate in ("Adwaita", "Yaru"):
-                if self._scanner.find_theme(fallback_candidate, theme_type):
-                    available_names.append(fallback_candidate)
+            for t in scanned:
+                if not t.invalid and not t.is_user_level and t.name not in available_names:
+                    available_names.append(t.name)
 
         return sorted(available_names, key=str.casefold)
 
@@ -328,12 +371,28 @@ class FallbackManager:
             Theme name to use as fallback.
         """
         cfg = self.get_config()
+        configured = ""
         if theme_type == ThemeType.GTK:
-            return cfg.gtk3 or "Adwaita"
-        if theme_type == ThemeType.ICON:
-            return cfg.icons or "Adwaita"
-        if theme_type == ThemeType.CURSOR:
-            return cfg.cursors or "Adwaita"
-        if theme_type == ThemeType.SHELL:
-            return cfg.shell or "Adwaita"
-        return "Adwaita"
+            configured = cfg.gtk3 or cfg.gtk4
+        elif theme_type == ThemeType.ICON:
+            configured = cfg.icons
+        elif theme_type == ThemeType.CURSOR:
+            configured = cfg.cursors
+        elif theme_type == ThemeType.SHELL:
+            configured = cfg.shell
+
+        if configured:
+            found = self._scanner.find_theme(configured, theme_type)
+            if found and not found.invalid:
+                return configured
+
+        # If configured theme is missing on disk or invalid, find dynamic system fallback
+        available = self.get_available_fallback_themes(theme_type)
+        if available:
+            return available[0]
+
+        for t in self._scanner._scan_themes_by_type(theme_type, user_only=False):
+            if not t.invalid:
+                return t.name
+
+        return configured or "Adwaita"

@@ -219,3 +219,33 @@ def test_manager_get_available_fallback_options(tmp_path: Path) -> None:
     # Yaru deve essere presente, CustomTheme (non presente su snap) non deve essere tra le opzioni fallback universali
     assert "Yaru" in opts
     assert "CustomTheme" not in opts
+
+
+def test_derive_available_theme_dynamic_discovery(tmp_path: Path) -> None:
+    """Verifica che derive_available_theme scopra dinamicamente temi alternativi disponibili."""
+    scanner = MagicMock()
+    theme_yaru_dark = Theme("Yaru-dark", ThemeType.GTK, tmp_path / "Yaru-dark", False)
+    scanner.scan_all.return_value = [theme_yaru_dark]
+    scanner.find_theme.side_effect = lambda name, t_type: (
+        theme_yaru_dark if name == "Yaru-dark" else None
+    )
+
+    checker = ThemeAvailabilityChecker(scanner=scanner)
+    # Tema custom sconosciuto scuro deve risolvere verso Yaru-dark
+    derived = checker.derive_available_theme(
+        "NonExistent-Dark-Custom", ThemeType.GTK, target="snap"
+    )
+    assert derived == "Yaru-dark"
+
+
+def test_fallback_manager_dynamic_resolution_missing_configured(tmp_path: Path) -> None:
+    """Verifica che FallbackManager risolva verso un tema valido se il configurato non esiste sul disco."""
+    scanner = MagicMock()
+    theme_system = Theme("SystemDefault", ThemeType.GTK, tmp_path / "SystemDefault", False)
+    scanner.find_theme.return_value = None
+    scanner.scan_gtk_themes.return_value = [theme_system]
+    scanner._scan_themes_by_type.return_value = [theme_system]
+
+    fm = FallbackManager(config_file=tmp_path / "fallbacks.json", scanner=scanner)
+    resolved = fm.resolve_fallback_for_component(ThemeType.GTK)
+    assert resolved == "SystemDefault"
