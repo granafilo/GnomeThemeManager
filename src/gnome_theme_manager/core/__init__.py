@@ -27,6 +27,10 @@ from .errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
     GSettingsUnavailableError,
+    StoreDownloadError,
+    StoreError,
+    StoreItemNotFoundError,
+    StoreNetworkError,
     ThemeNotFoundError,
     ThemeValidationError,
 )
@@ -64,6 +68,13 @@ from .shell_editor import (
     ShellThemeForkManager,
     extract_shell_colors,
     generate_shell_css_override,
+)
+from .store_client import (
+    StoreCategory,
+    StoreClient,
+    StoreDownloadFile,
+    StoreItem,
+    theme_type_to_store_category,
 )
 from .terminal_palette import (
     TerminalPalette,
@@ -130,6 +141,14 @@ __all__ = [
     "ShellExtractedColors",
     "ShellThemeFork",
     "ShellThemeForkManager",
+    "StoreCategory",
+    "StoreClient",
+    "StoreDownloadError",
+    "StoreDownloadFile",
+    "StoreError",
+    "StoreItem",
+    "StoreItemNotFoundError",
+    "StoreNetworkError",
     "SystemStatus",
     "TerminalPalette",
     "TerminalProfileSummary",
@@ -168,4 +187,5 @@ __all__ = [
     "revert_theme_fork",
     "safe_extract",
     "set_default_gnome_terminal_profile",
+    "theme_type_to_store_category",
 ]

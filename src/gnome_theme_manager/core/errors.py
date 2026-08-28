@@ -45,3 +45,19 @@ class ThemeRollbackError(GnomeThemeManagerError):
 
 class SandboxCommandError(GnomeThemeManagerError):
     """Raised for timeouts, unavailable commands, or unexpected exit codes from Flatpak/Snap."""
+
+
+class StoreError(GnomeThemeManagerError):
+    """Base exception for all online store API and communication failures."""
+
+
+class StoreItemNotFoundError(StoreError):
+    """Raised when an item requested from the store is not found."""
+
+
+class StoreDownloadError(StoreError):
+    """Raised when downloading a file or archive from the store fails."""
+
+
+class StoreNetworkError(StoreError):
+    """Raised when network connectivity or API timeout issues occur."""
