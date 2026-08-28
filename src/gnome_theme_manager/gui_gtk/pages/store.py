@@ -6,6 +6,7 @@ Provides search, category filtering, grid cards view, item detail inspection wit
 and 1-click install & apply workflow with progress indicators.
 """
 
+import hashlib
 import html
 import logging
 import re
@@ -15,6 +16,7 @@ import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
+from urllib.parse import urlparse
 
 import gi
 
@@ -237,16 +239,21 @@ class _StoreCardWidget(Gtk.Box):
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                safe_name = (
-                    re.sub(r"[^a-zA-Z0-9_\.-]", "_", img_url.split("/")[-1])
-                    or f"thumb_{self.item.id}.png"
-                )
-                cached_path = THUMBNAILS_CACHE_DIR / safe_name
+                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
+                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
+                ext = Path(urlparse(high_res_url).path).suffix.lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
+                    ext = ".png"
+                cached_path = THUMBNAILS_CACHE_DIR / f"thumb_{url_hash}{ext}"
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
                     import requests
 
-                    res = requests.get(img_url, timeout=10)
+                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
+                    res = requests.get(high_res_url, headers=headers, timeout=15)
+                    if res.status_code != 200 or len(res.content) == 0:
+                        res = requests.get(img_url, headers=headers, timeout=15)
+
                     if res.status_code == 200 and len(res.content) > 0:
                         cached_path.write_bytes(res.content)
 
@@ -323,7 +330,7 @@ class StorePage:
         self.sort_dropdown: Gtk.DropDown = self.builder.get_object("sort_dropdown")
         self.search_button: Gtk.Button = self.builder.get_object("search_button")
         self.content_stack: Gtk.Stack = self.builder.get_object("content_stack")
-        self.cards_grid: Gtk.FlowBox = self.builder.get_object("cards_grid")
+        self.cards_grid: Gtk.Grid = self.builder.get_object("cards_grid")
         self.results_count_label: Gtk.Label = self.builder.get_object("results_count_label")
         self.btn_prev_page: Gtk.Button = self.builder.get_object("btn_prev_page")
         self.lbl_page_indicator: Gtk.Label = self.builder.get_object("lbl_page_indicator")
@@ -540,23 +547,63 @@ class StorePage:
         return False
 
     def _populate_grid_cards(self, items: list[StoreItem]) -> None:
-        """Render store cards into the responsive flow box container."""
-        while child := self.cards_grid.get_first_child():
-            self.cards_grid.remove(child)
+        """Render store cards into the multi-column GtkGrid taking sidebar into account."""
+        self._is_populating = True
+        try:
+            while child := self.cards_grid.get_first_child():
+                self.cards_grid.remove(child)
 
-        if not items:
-            return
+            if not items:
+                return
 
-        for item in items:
-            card = _StoreCardWidget(
-                item=item,
-                on_view_details=self.show_item_details,
-                on_quick_install=self._on_quick_install_item,
-            )
-            self.cards_grid.append(card)
+            grid_width = self.cards_grid.get_width()
+            if grid_width <= 0:
+                root = self.widget.get_root()
+                win_width = root.get_width() if isinstance(root, Gtk.Window) else 1000
+                # Account for sidebar ~240px and margins
+                grid_width = max(300, win_width - 280)
+
+            if grid_width >= 860:
+                cols = 4
+            elif grid_width >= 520:
+                cols = 3
+            else:
+                cols = 2
+
+            self._active_cols = cols
+
+            for idx, item in enumerate(items):
+                card = _StoreCardWidget(
+                    item=item,
+                    on_view_details=self.show_item_details,
+                    on_quick_install=self._on_quick_install_item,
+                )
+                row = idx // cols
+                col = idx % cols
+                self.cards_grid.attach(card, col, row, 1, 1)
+        finally:
+            self._is_populating = False
 
     def _on_grid_width_changed(self, *_args: object) -> None:
-        """Handle window width resize adaptation."""
+        """Handle window width resize considering sidebar width."""
+        if (
+            getattr(self, "_is_populating", False)
+            or not self._current_items
+            or self.widget.get_visible_child_name() != "browse"
+        ):
+            return
+        grid_width = self.cards_grid.get_width()
+        if grid_width <= 0:
+            return
+        if grid_width >= 860:
+            target_cols = 4
+        elif grid_width >= 520:
+            target_cols = 3
+        else:
+            target_cols = 2
+
+        if target_cols != getattr(self, "_active_cols", 0):
+            self._populate_grid_cards(self._current_items)
 
     def show_item_details(self, item: StoreItem) -> None:
         """Switch to detailed item view, fetch complete metadata and screenshots."""
@@ -707,13 +754,21 @@ class StorePage:
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                safe_name = "gthumb_" + re.sub(r"[^a-zA-Z0-9_\.-]", "_", img_url.split("/")[-1])
-                cached_path = THUMBNAILS_CACHE_DIR / safe_name
+                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
+                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
+                ext = Path(urlparse(high_res_url).path).suffix.lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
+                    ext = ".png"
+                cached_path = THUMBNAILS_CACHE_DIR / f"gthumb_{url_hash}{ext}"
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
                     import requests
 
-                    res = requests.get(img_url, timeout=15)
+                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
+                    res = requests.get(high_res_url, headers=headers, timeout=15)
+                    if res.status_code != 200 or len(res.content) == 0:
+                        res = requests.get(img_url, headers=headers, timeout=15)
+
                     if res.status_code == 200 and len(res.content) > 0:
                         cached_path.write_bytes(res.content)
 
@@ -724,27 +779,37 @@ class StorePage:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def _load_screenshot_async(self, img_url: str) -> None:
-        """Download screenshot in background for detail view."""
+    def _load_screenshot_async(
+        self, img_url: str, on_loaded: Callable[[str], None] | None = None
+    ) -> None:
+        """Download high-resolution screenshot in background for detail view."""
 
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                safe_name = (
-                    re.sub(r"[^a-zA-Z0-9_\.-]", "_", img_url.split("/")[-1])
-                    or f"shot_{self._selected_item.id if self._selected_item else 'item'}.png"
-                )
-                cached_path = THUMBNAILS_CACHE_DIR / safe_name
+                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
+                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
+                ext = Path(urlparse(high_res_url).path).suffix.lower()
+                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
+                    ext = ".png"
+                cached_path = THUMBNAILS_CACHE_DIR / f"full_{url_hash}{ext}"
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
                     import requests
 
-                    res = requests.get(img_url, timeout=15)
+                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
+                    res = requests.get(high_res_url, headers=headers, timeout=20)
+                    if res.status_code != 200 or len(res.content) == 0:
+                        res = requests.get(img_url, headers=headers, timeout=20)
+
                     if res.status_code == 200 and len(res.content) > 0:
                         cached_path.write_bytes(res.content)
 
                 if cached_path.is_file() and cached_path.stat().st_size > 0:
-                    GLib.idle_add(self.detail_screenshot_picture.set_filename, str(cached_path))
+                    file_path_str = str(cached_path)
+                    GLib.idle_add(self.detail_screenshot_picture.set_filename, file_path_str)
+                    if on_loaded:
+                        GLib.idle_add(on_loaded, file_path_str)
             except Exception as err:
                 logger.debug("Failed to load screenshot preview: %s", err)
 
@@ -822,17 +887,15 @@ class StorePage:
             title_widget.set_subtitle(counter)
             self._set_active_screenshot_index(current_idx[0])
 
-            safe_name = (
-                re.sub(r"[^a-zA-Z0-9_\.-]", "_", url.split("/")[-1])
-                or f"shot_{self._selected_item.id if self._selected_item else 'item'}.png"
-            )
-            cached_path = THUMBNAILS_CACHE_DIR / safe_name
+            url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()[:24]
+            ext = Path(urlparse(url).path).suffix.lower()
+            if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
+                ext = ".png"
+            cached_path = THUMBNAILS_CACHE_DIR / f"full_{url_hash}{ext}"
             if cached_path.is_file() and cached_path.stat().st_size > 0:
                 picture.set_filename(str(cached_path))
             else:
-                self._load_screenshot_async(url)
-                if cached_path.is_file():
-                    picture.set_filename(str(cached_path))
+                self._load_screenshot_async(url, on_loaded=lambda p: picture.set_filename(p))
 
         def on_prev(_: Gtk.Button) -> None:
             update_image(current_idx[0] - 1)

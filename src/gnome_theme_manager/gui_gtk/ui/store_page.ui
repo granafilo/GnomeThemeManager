@@ -382,14 +382,11 @@
                                 <property name="orientation">vertical</property>
                                 <property name="spacing">20</property>
                                 <child>
-                                  <object class="GtkFlowBox" id="cards_grid">
+                                  <object class="GtkGrid" id="cards_grid">
                                     <property name="valign">start</property>
                                     <property name="halign">fill</property>
                                     <property name="hexpand">true</property>
-                                    <property name="selection-mode">none</property>
-                                    <property name="homogeneous">true</property>
-                                    <property name="min-children-per-line">1</property>
-                                    <property name="max-children-per-line">4</property>
+                                    <property name="column-homogeneous">true</property>
                                     <property name="row-spacing">16</property>
                                     <property name="column-spacing">16</property>
                                   </object>

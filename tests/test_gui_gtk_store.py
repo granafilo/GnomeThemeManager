@@ -358,9 +358,8 @@ class TestStorePageUnit:
         items = mock_manager.store_client.search.return_value
         page._on_search_completed(items, None)
 
-        assert isinstance(page.cards_grid, Gtk.FlowBox)
-        assert page.cards_grid.get_max_children_per_line() == 4
-        assert page.cards_grid.get_min_children_per_line() == 1
+        assert isinstance(page.cards_grid, Gtk.Grid)
+        assert page.cards_grid.get_column_homogeneous() is True
         page._on_grid_width_changed()
 
 

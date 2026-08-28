@@ -95,6 +95,31 @@ class StoreDownloadFile:
     price: str = "0"
     mimetype: str = ""
 
+    def to_dict(self) -> dict[str, Any]:
+        """Convert download file metadata to dictionary."""
+        return {
+            "file_index": self.file_index,
+            "name": self.name,
+            "download_url": self.download_url,
+            "size_str": self.size_str,
+            "version": self.version,
+            "price": self.price,
+            "mimetype": self.mimetype,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "StoreDownloadFile":
+        """Reconstruct StoreDownloadFile from dictionary."""
+        return cls(
+            file_index=int(data.get("file_index", 0)),
+            name=str(data.get("name", "")),
+            download_url=str(data.get("download_url", "")),
+            size_str=str(data.get("size_str", "")),
+            version=str(data.get("version", "")),
+            price=str(data.get("price", "0")),
+            mimetype=str(data.get("mimetype", "")),
+        )
+
 
 @dataclass
 class StoreItem:
@@ -119,6 +144,19 @@ class StoreItem:
     files: list[StoreDownloadFile] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     xdg_type: str = ""
+    score: int = 0
+    homepage: str = ""
+    category: str = ""
+
+    @property
+    def typename(self) -> str:
+        """Alias for type_name."""
+        return self.type_name
+
+    @property
+    def preview_urls(self) -> list[str]:
+        """Alias for preview_images."""
+        return self.preview_images
 
     @property
     def is_installable(self) -> bool:
@@ -140,6 +178,67 @@ class StoreItem:
         all_tags = " ".join(self.tags).lower()
         return any(
             kw in all_tags for kw in ("gtk", "gnome-shell", "gnome shell", "icon", "cursor", "font")
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert store item to dictionary."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "version": self.version,
+            "author": self.author,
+            "type_id": self.type_id,
+            "type_name": self.type_name,
+            "summary": self.summary,
+            "description": self.description,
+            "rating": self.rating,
+            "downloads": self.downloads,
+            "score": self.score,
+            "created": self.created,
+            "updated": self.updated,
+            "details_url": self.details_url,
+            "homepage": self.homepage,
+            "preview_image_url": self.preview_image_url,
+            "small_preview_image_url": self.small_preview_image_url,
+            "preview_images": list(self.preview_images),
+            "files": [f.to_dict() for f in self.files],
+            "tags": list(self.tags),
+            "xdg_type": self.xdg_type,
+            "category": self.category,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "StoreItem":
+        """Reconstruct StoreItem from dictionary."""
+        files_data = data.get("files", [])
+        files = (
+            [StoreDownloadFile.from_dict(f) if isinstance(f, dict) else f for f in files_data]
+            if isinstance(files_data, list)
+            else []
+        )
+        return cls(
+            id=str(data.get("id", "")),
+            name=str(data.get("name", "")),
+            version=str(data.get("version", "")),
+            author=str(data.get("author", data.get("personid", ""))),
+            type_id=int(data.get("type_id", 0)),
+            type_name=str(data.get("type_name", data.get("typename", ""))),
+            summary=str(data.get("summary", "")),
+            description=str(data.get("description", "")),
+            rating=int(data.get("rating", 0)),
+            downloads=int(data.get("downloads", 0)),
+            score=int(data.get("score", 0)),
+            created=str(data.get("created", "")),
+            updated=str(data.get("updated", "")),
+            details_url=str(data.get("details_url", "")),
+            homepage=str(data.get("homepage", "")),
+            preview_image_url=str(data.get("preview_image_url", "")),
+            small_preview_image_url=str(data.get("small_preview_image_url", "")),
+            preview_images=list(data.get("preview_images", data.get("preview_urls", []))),
+            files=files,
+            tags=list(data.get("tags", [])),
+            xdg_type=str(data.get("xdg_type", "")),
+            category=str(data.get("category", "")),
         )
 
 
@@ -257,10 +356,20 @@ class StoreClient:
         if not isinstance(payload, dict):
             raise StoreError("Malformed API response: expected JSON object.")
 
-        status_code = payload.get("statuscode", 100)
-        if status_code != 100 and payload.get("status") != "ok":
-            msg = payload.get("message", f"API status code {status_code}")
-            raise StoreError(f"Store API error: {msg}")
+        if "ocs" in payload and isinstance(payload["ocs"], dict):
+            payload = payload["ocs"]
+
+        status_code = 100
+        if "meta" in payload and isinstance(payload["meta"], dict):
+            status_code = payload["meta"].get("statuscode", 100)
+            if status_code != 100 and payload["meta"].get("status") != "ok":
+                msg = payload["meta"].get("message", f"API status code {status_code}")
+                raise StoreError(f"Store API error: {msg}")
+        else:
+            status_code = payload.get("statuscode", 100)
+            if status_code != 100 and payload.get("status") != "ok":
+                msg = payload.get("message", f"API status code {status_code}")
+                raise StoreError(f"Store API error: {msg}")
 
         data = payload.get("data", [])
         if not isinstance(data, list):
@@ -318,6 +427,9 @@ class StoreClient:
 
         if not isinstance(payload, dict):
             raise StoreError("Malformed API response: expected JSON object.")
+
+        if "ocs" in payload and isinstance(payload["ocs"], dict):
+            payload = payload["ocs"]
 
         data = payload.get("data", [])
         if not data or not isinstance(data, list) or not isinstance(data[0], dict):
@@ -482,24 +594,28 @@ class StoreClient:
         if raw_downloads is not None and str(raw_downloads).isdigit():
             downloads = int(raw_downloads)
 
-        # Parse preview images
+        # Parse preview images with high-resolution master URL normalization
         preview_images: list[str] = []
         for i in range(1, 30):
             pic_url = str(raw.get(f"previewpic{i}", "")).strip()
-            if pic_url and pic_url.startswith("http") and pic_url not in preview_images:
-                preview_images.append(pic_url)
+            if pic_url and pic_url.startswith("http"):
+                high_res_url = re.sub(r"/cache/[^/]+/", "/", pic_url)
+                if high_res_url not in preview_images:
+                    preview_images.append(high_res_url)
 
         # Also extract embedded images from HTML description if available
         if description:
             for img_url in re.findall(
                 r'<img[^>]+src=["\'](https?://[^"\']+)["\']', description, re.IGNORECASE
             ):
-                clean_img = img_url.strip()
+                clean_img = re.sub(r"/cache/[^/]+/", "/", img_url.strip())
                 if clean_img and clean_img not in preview_images:
                     preview_images.append(clean_img)
 
         preview_image_url = preview_images[0] if preview_images else ""
         small_preview_image_url = str(raw.get("smallpreviewpic1", "")).strip()
+        if small_preview_image_url:
+            small_preview_image_url = re.sub(r"/cache/[^/]+/", "/", small_preview_image_url)
         if not small_preview_image_url and preview_image_url:
             small_preview_image_url = preview_image_url
 
