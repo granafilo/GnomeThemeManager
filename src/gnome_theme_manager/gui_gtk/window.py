@@ -12,6 +12,7 @@ Manages the main GTK4 and Libadwaita shell:
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -61,7 +62,12 @@ DEFAULT_WINDOW_HEIGHT: int = 720
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
+    search_dirs: list[Path] = [
+        BUNDLED_ICONS_DIR,
+        BUNDLED_ICONS_DIR / "hicolor",
+        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "apps",
+        BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
+    ]
 
     # Flatpak runtime icon search paths
     for flatpak_dir in [
@@ -77,8 +83,10 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     for candidate in [
         appdir / "usr" / "share" / "icons",
         appdir / "data" / "icons",
+        appdir / "data" / "icons" / "hicolor",
         Path("/usr/share/icons"),
         Path("/usr/local/share/icons"),
+        Path.home() / ".local" / "share" / "icons",
     ]:
         if candidate.is_dir() and candidate not in search_dirs:
             search_dirs.append(candidate)
@@ -119,6 +127,9 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Initialize bundled icons fallback chain
         init_bundled_icon_theme()
+
+        # Set application window icon name
+        self.set_icon_name("io.github.granafilo.ThemeManager")
 
         # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
         self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
@@ -245,6 +256,19 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
+
+        # Auto-integrate desktop launcher and icons when running inside AppImage
+        if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
+            try:
+                if self.manager.integrate_desktop():
+                    self.add_toast(
+                        _(
+                            "Desktop integration updated. Close and reopen your file manager to see the updated AppImage icon."
+                        ),
+                        timeout=5,
+                    )
+            except Exception as err:
+                logger.warning("Desktop integration error: %s", err)
 
         self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "status", is_l

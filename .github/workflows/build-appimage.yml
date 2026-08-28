@@ -145,6 +145,24 @@ jobs:
           echo "AppImage Size:"
           du -h dist/*.AppImage
 
+      - name: Verify embedded AppImage icons (.DirIcon, desktop, hicolor)
+        run: |
+          set -euxo pipefail
+          APPIMAGE=$(ls dist/*.AppImage | head -n1)
+          chmod +x "$APPIMAGE"
+          TMP_DIR=$(mktemp -d)
+          cd "$TMP_DIR"
+          "$GITHUB_WORKSPACE/$APPIMAGE" --appimage-extract
+          test -f squashfs-root/.DirIcon
+          file squashfs-root/.DirIcon | grep -i "PNG"
+          test -f squashfs-root/io.github.granafilo.ThemeManager.png
+          test -f squashfs-root/io.github.granafilo.ThemeManager.desktop
+          grep "Icon=io.github.granafilo.ThemeManager" squashfs-root/io.github.granafilo.ThemeManager.desktop
+          test -f squashfs-root/usr/share/icons/hicolor/512x512/apps/io.github.granafilo.ThemeManager.png
+          test -f squashfs-root/usr/share/icons/hicolor/256x256/apps/io.github.granafilo.ThemeManager.png
+          echo "✓ AppImage .DirIcon, desktop entry, and hicolor icons verified."
+          rm -rf "$TMP_DIR"
+
       - name: Upload AppImage Artifact
         uses: actions/upload-artifact@v4
         with:

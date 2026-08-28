@@ -22,6 +22,7 @@ from .constants import (
     USER_THEMES_DIRS,
 )
 from .css_extractor import ExtractedColors, extract_theme_colors, parse_css_define_colors
+from .desktop_integration import integrate_desktop
 from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
@@ -190,6 +191,7 @@ __all__ = [
     "generate_shell_css_override",
     "import_palette_from_json",
     "inspect_extracted_tree",
+    "integrate_desktop",
     "list_gnome_terminal_profiles",
     "parse_css_define_colors",
     "revert_theme_fork",

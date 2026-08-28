@@ -3339,6 +3339,27 @@ msgstr "Extension '{name}' disabled."
 msgid "Failed to toggle extension '{name}'."
 msgstr "Failed to toggle extension '{name}'."
 
+#: src/gnome_theme_manager/gui_gtk/window.py:265
+msgid "Desktop integration updated. Close and reopen your file manager to see the updated AppImage icon."
+msgstr "Desktop integration updated. Close and reopen your file manager to see the updated AppImage icon."
+
+#: src/gnome_theme_manager/cli/args.py:261
+msgid "Install desktop launcher and application icons in ~/.local/share"
+msgstr "Install desktop launcher and application icons in ~/.local/share"
+
+#: src/gnome_theme_manager/cli/main.py:545
+msgid "\n✓ Desktop integration installed successfully."
+msgstr "\n✓ Desktop integration installed successfully."
+
+#: src/gnome_theme_manager/cli/main.py:546
+msgid "  Restart the application (or log out and back in) to see the updated icon.\n"
+msgstr "  Restart the application (or log out and back in) to see the updated icon.\n"
+
+#: src/gnome_theme_manager/cli/main.py:549
+msgid "\nError: Desktop integration failed."
+msgstr "\nError: Desktop integration failed."
+
+
 
 
 

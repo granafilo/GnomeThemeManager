@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.5.0] - 2026-08-28
+
+### Added
+- **Online Theme Store (5.1 & 5.2)**: Integrated OpenDesktop and Pling OCS v1 API client with category filtering (GTK3/4, Shell, Icons, Cursors), search, dynamic multi-column responsive grid card view, sort options, and 1-click automatic download and installation into `~/.themes` and `~/.icons`.
+- **Theme Detail View & Screenshot Inspection**: Rich detail page with author, downloads, rating, tags, changelog descriptions, and full-screen lightbox modal for high-definition screenshot viewing.
+- **GNOME Shell Extensions Manager (5.3)**: Built-in Extensions view listing system and user-installed extensions with one-click enable/disable toggles, individual extension settings button launch, system Extension Manager opener, and official GNOME Extensions web catalog link.
+- **High-Resolution Master Image Rendering**: Automatic bypass of CDN downscaling proxies to fetch original uncompressed 2K/4K screenshots and gallery previews.
+- **Solid Opaque Page Transitions**: Opaque window background CSS and transition stabilization across all main pages eliminating crossfade alpha-ghosting.
+
 ## [1.4.8] - 2026-08-28
 
 ### Added

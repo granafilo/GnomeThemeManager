@@ -221,6 +221,36 @@ class ThemeValidator:
         except Exception:
             pass
 
+        # Validate that declared directories in index.theme are well-formed (each declared directory must have a section with 'Size')
+        try:
+            config = configparser.ConfigParser(interpolation=None)
+            config.read(index_path, encoding="utf-8")
+            main_sec = "Icon Theme" if config.has_section("Icon Theme") else "Desktop Entry"
+            dirs_str = config.get(main_sec, "Directories", fallback="")
+            if dirs_str:
+                for d in [item.strip() for item in dirs_str.split(",") if item.strip()]:
+                    if not config.has_section(d):
+                        warnings.append(
+                            f"Directory '{d}' declared in Directories list is missing its section in index.theme."
+                        )
+                        return ThemeValidationResult(
+                            valid=False, warnings=warnings, missing_files=[f"index.theme [{d}]"]
+                        )
+                    elif not config.has_option(d, "Size"):
+                        warnings.append(
+                            f"Directory '{d}' in index.theme is missing the required 'Size' field."
+                        )
+                        return ThemeValidationResult(
+                            valid=False,
+                            warnings=warnings,
+                            missing_files=[f"index.theme [{d}] Size"],
+                        )
+        except Exception as err:
+            warnings.append(f"Error parsing index.theme directories: {err}")
+            return ThemeValidationResult(
+                valid=False, warnings=warnings, missing_files=["index.theme"]
+            )
+
         # Count detected standard icons across all subdirectories
         found_standard_icons: set[str] = set()
         for p in path.rglob("*"):

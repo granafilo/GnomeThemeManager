@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 
 APP_NAME="GNOMEThemeManager"
 APP_ID="io.github.granafilo.ThemeManager"
-VERSION="1.4.8"
+VERSION="1.5.0"
 ARCH="${ARCH:-x86_64}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -85,12 +85,65 @@ echo -e "\n${YELLOW}[3/6] Copia sorgenti Python e moduli...${NC}"
 cp -r "$ROOT_DIR/src/gnome_theme_manager" "$APP_DIR/usr/lib/python3/site-packages/"
 
 # Copia risorse desktop, metadati ed icone
-cp "$ROOT_DIR/appimage/$APP_ID.desktop" "$APP_DIR/usr/share/applications/"
-cp "$ROOT_DIR/appimage/$APP_ID.desktop" "$APP_DIR/"
-cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/apps/"
-cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/$APP_ID.svg"
-cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/.DirIcon"
+if [ -f "$ROOT_DIR/data/desktop/$APP_ID.desktop" ]; then
+    cp "$ROOT_DIR/data/desktop/$APP_ID.desktop" "$APP_DIR/usr/share/applications/"
+    cp "$ROOT_DIR/data/desktop/$APP_ID.desktop" "$APP_DIR/"
+elif [ -f "$ROOT_DIR/appimage/$APP_ID.desktop" ]; then
+    cp "$ROOT_DIR/appimage/$APP_ID.desktop" "$APP_DIR/usr/share/applications/"
+    cp "$ROOT_DIR/appimage/$APP_ID.desktop" "$APP_DIR/"
+fi
 cp "$ROOT_DIR/appimage/$APP_ID.metainfo.xml" "$APP_DIR/usr/share/metainfo/"
+
+# Copia definizioni MIME
+mkdir -p "$APP_DIR/usr/share/mime/packages"
+if [ -f "$ROOT_DIR/data/mime/packages/gtm-appimage.xml" ]; then
+    cp "$ROOT_DIR/data/mime/packages/gtm-appimage.xml" "$APP_DIR/usr/share/mime/packages/"
+fi
+
+# Copia icone hicolor dell'applicazione (512x512, 256x256, 128x128 e scalable - apps e mimetypes)
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/512x512/apps"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/512x512/mimetypes"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/256x256/apps"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/256x256/mimetypes"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/128x128/apps"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/128x128/mimetypes"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/scalable/apps"
+mkdir -p "$APP_DIR/usr/share/icons/hicolor/scalable/mimetypes"
+
+# Icona 512x512 PNG canonica
+if [ -f "$ROOT_DIR/data/icons/hicolor/512x512/apps/$APP_ID.png" ]; then
+    cp "$ROOT_DIR/data/icons/hicolor/512x512/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/512x512/apps/$APP_ID.png"
+    cp "$ROOT_DIR/data/icons/hicolor/512x512/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/512x512/mimetypes/application-vnd.appimage.png"
+    cp "$ROOT_DIR/data/icons/hicolor/512x512/apps/$APP_ID.png" "$APP_DIR/$APP_ID.png"
+    # .DirIcon DEVE essere un file PNG regolare 512x512 (non symlink, non SVG)
+    cp "$ROOT_DIR/data/icons/hicolor/512x512/apps/$APP_ID.png" "$APP_DIR/.DirIcon"
+elif [ -f "$ROOT_DIR/data/icons/$APP_ID.png" ]; then
+    cp "$ROOT_DIR/data/icons/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/512x512/apps/$APP_ID.png"
+    cp "$ROOT_DIR/data/icons/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/512x512/mimetypes/application-vnd.appimage.png"
+    cp "$ROOT_DIR/data/icons/$APP_ID.png" "$APP_DIR/$APP_ID.png"
+    cp "$ROOT_DIR/data/icons/$APP_ID.png" "$APP_DIR/.DirIcon"
+fi
+
+# Icona 256x256 PNG canonica
+if [ -f "$ROOT_DIR/data/icons/hicolor/256x256/apps/$APP_ID.png" ]; then
+    cp "$ROOT_DIR/data/icons/hicolor/256x256/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/256x256/apps/$APP_ID.png"
+    cp "$ROOT_DIR/data/icons/hicolor/256x256/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/256x256/mimetypes/application-vnd.appimage.png"
+fi
+
+# Icona 128x128 PNG canonica
+if [ -f "$ROOT_DIR/data/icons/hicolor/128x128/apps/$APP_ID.png" ]; then
+    cp "$ROOT_DIR/data/icons/hicolor/128x128/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/128x128/apps/$APP_ID.png"
+    cp "$ROOT_DIR/data/icons/hicolor/128x128/apps/$APP_ID.png" "$APP_DIR/usr/share/icons/hicolor/128x128/mimetypes/application-vnd.appimage.png"
+fi
+
+# Icona Scalable SVG
+if [ -f "$ROOT_DIR/data/icons/hicolor/scalable/apps/$APP_ID.svg" ]; then
+    cp "$ROOT_DIR/data/icons/hicolor/scalable/apps/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg"
+    cp "$ROOT_DIR/data/icons/hicolor/scalable/apps/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/mimetypes/application-vnd.appimage.svg"
+elif [ -f "$ROOT_DIR/appimage/$APP_ID.svg" ]; then
+    cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/apps/$APP_ID.svg"
+    cp "$ROOT_DIR/appimage/$APP_ID.svg" "$APP_DIR/usr/share/icons/hicolor/scalable/mimetypes/application-vnd.appimage.svg"
+fi
 
 # Copia icone bundled dell'applicazione
 if [ -d "$ROOT_DIR/data" ]; then
@@ -114,6 +167,7 @@ HERE="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 APP_ROOT="$(dirname "$(dirname "$HERE")")"
 
 export PYTHONPATH="$APP_ROOT/usr/lib/python3/site-packages:$PYTHONPATH"
+export XDG_DATA_DIRS="$APP_ROOT/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
 exec python3 -m gnome_theme_manager "$@"
 EOF
 chmod +x "$APP_DIR/usr/bin/gnome-theme-manager"
@@ -162,6 +216,21 @@ echo -e "\n${YELLOW}[6/6] Validazione pacchetto generato...${NC}"
 
 if [ -f "$TARGET_FILE" ]; then
     SIZE=$(du -h "$TARGET_FILE" | cut -f1)
+    
+    # Verifica post-build delle icone (.DirIcon e file desktop)
+    echo -e "${YELLOW}Verifica integrità icone incorporate (.DirIcon)...${NC}"
+    TMP_EXTRACT=$(mktemp -d)
+    (
+        cd "$TMP_EXTRACT"
+        ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$TARGET_FILE" --appimage-extract > /dev/null 2>&1 || true
+        if [ -f "squashfs-root/.DirIcon" ] && [ -f "squashfs-root/$APP_ID.png" ]; then
+            echo -e "${GREEN}✓ Icona .DirIcon e $APP_ID.png estratte e confermate nell'AppImage.${NC}"
+        else
+            echo -e "${RED}Attenzione: Impossibile confermare la presenza di .DirIcon nell'AppImage estratto.${NC}" >&2
+        fi
+    )
+    rm -rf "$TMP_EXTRACT"
+
     echo -e "${GREEN}====================================================${NC}"
     echo -e "${GREEN}  ✓ APPIMAGE CREATO CON SUCCESSO!${NC}"
     echo -e "${GREEN}  Percorso:  $TARGET_FILE${NC}"

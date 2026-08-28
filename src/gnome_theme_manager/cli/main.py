@@ -540,6 +540,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "preset":
             return handle_preset_command(manager=manager, args=args)
+        elif args.command == "integrate-desktop":
+            if manager.integrate_desktop():
+                print(_("\n✓ Desktop integration installed successfully."))
+                print(
+                    _(
+                        "  Restart the application (or log out and back in) to see the updated icon.\n"
+                    )
+                )
+                return 0
+            else:
+                print(_("\nError: Desktop integration failed."), file=sys.stderr)
+                return 1
         else:
             parser.print_help()
             return 0

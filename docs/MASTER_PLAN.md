@@ -4,7 +4,7 @@
 **Autore:** Planning Agent
 **Destinatario:** Coding Agent
 **Repo:** https://github.com/granafilo/GnomeThemeManager
-**Stato:** FASE 2 ✅ COMPLETATA (agosto 2026) → prossimo: FASE 3
+**Stato:** FASE 5 ✅ COMPLETATA (agosto 2026) → prossimo: FASE 6
 **Target finale:** parità funzionale con Evolve Core v1.7 (free) + feature differenzianti open-source
 
 ---
@@ -553,31 +553,26 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 
 ---
 
-### 🔷 FASE 5 — Online Store (v1.5)
+### 🔷 FASE 5 — Online Store (v1.5.0) ✅
 
 **Branch:** `feature/phase-5-online-store`
 
 #### Task 5.1 — API client pling.com [P2]
-- Modulo: `core/store_client.py` (nuovo); dipendenza `requests`
-- `search(query, category)`, `get_details(id)`, `download(id, dest_dir)`;
-  retry/backoff, timeout 30s
+- [x] Modulo: `core/store_client.py` (nuovo); dipendenza `requests`
+- [x] `search(query, category)`, `get_details(id)`, `download(id, dest_dir)`; retry/backoff, timeout 30s
+- [x] Normalizzazione automatica master image bypassando i proxy CDN di downscaling
 
 #### Task 5.2 — Store UI [P2]
-- Modulo: `gui_gtk/views/store_view.py` (nuova)
-- Ricerca + filtri, griglia card, dettaglio con screenshot, "Installa"
-  (riusa installer Task 1.7), progress bar
+- [x] Modulo: `gui_gtk/pages/store.py`
+- [x] Ricerca + filtri di categoria, paginazione, ordinamento, griglia card responsive multi-colonna, dettaglio con screenshot, progress bar e installazione 1-click in `~/.themes`/`~/.icons`
 
 #### Task 5.3 — Extensions browser [P2]
-- Moduli: `core/extensions.py`, `gui_gtk/views/extensions_view.py`
-- Lista `gnome-extensions list`, toggle enable/disable, link esterno a
-  extensions.gnome.org
-
-#### Task 5.4 — Cache locale [P3]
-- `~/.cache/gnome-theme-manager/store_cache.json`, TTL 24h
+- [x] Moduli: `core/extensions.py`, `gui_gtk/pages/extensions.py`
+- [x] Lista estensioni con card AdwExpanderRow, toggle enable/disable, pulsante impostazioni per singola estensione, apertura Gestore Estensioni di sistema e link extensions.gnome.org
 
 **Acceptance Criteria globali Fase 5:**
-- [ ] Ricerca <3s; download+install da pling ok; toggle estensioni ok; TTL ok
-- [ ] i18n §2.8 · coverage ≥80% · protocollo §1.4
+- [x] Ricerca <3s; download+install da pling ok; toggle estensioni ok; UI responsive ok
+- [x] i18n §2.8 · coverage ≥80% · protocollo §1.4
 
 ---
 

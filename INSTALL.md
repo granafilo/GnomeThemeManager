@@ -77,7 +77,18 @@ chmod +x scripts/build-appimage.sh
 ./scripts/build-appimage.sh
 ```
 
-The script will generate the `.AppImage` bundle inside the `dist/` directory.
+The script will generate the `.AppImage` bundle inside the `dist/` directory, complete with bundled `.DirIcon`, multi-resolution PNG icons (128x128, 256x256, 512x512), and hicolor app/mimetypes integration.
+
+### 🎨 Application Icon Sources
+
+The application icons bundled into the AppImage and desktop integrations are located in the following repository paths:
+
+- **Multi-size PNG Icons**: `data/icons/hicolor/{128x128,256x256,512x512}/apps/io.github.granafilo.ThemeManager.png`
+- **Scalable SVG Master**: `data/icons/hicolor/scalable/apps/io.github.granafilo.ThemeManager.svg`
+- **AppImage Root Bundle Icons**: `appimage/io.github.granafilo.ThemeManager.png` and `appimage/io.github.granafilo.ThemeManager.svg`
+- **Desktop Entry (`Icon=io.github.granafilo.ThemeManager`)**: `data/desktop/io.github.granafilo.ThemeManager.desktop` and `appimage/io.github.granafilo.ThemeManager.desktop`
+
+To update the application icon in the future, replace the PNG and SVG files in `data/icons/hicolor/` and re-run `./scripts/build-appimage.sh`.
 
 ---
 

@@ -256,4 +256,10 @@ def create_parser() -> argparse.ArgumentParser:
         help=_("Confirm deletion without interactive prompt"),
     )
 
+    # Subcommand: integrate-desktop
+    subparsers.add_parser(
+        "integrate-desktop",
+        help=_("Install desktop launcher and application icons in ~/.local/share"),
+    )
+
     return parser

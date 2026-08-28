@@ -1497,3 +1497,30 @@ class ThemeManager:
                 overwrite=overwrite,
                 target_dir=target_dir,
             )
+
+    def integrate_desktop(
+        self,
+        custom_target_apps_dir: Path | None = None,
+        custom_target_icons_dir: Path | None = None,
+        custom_target_mime_dir: Path | None = None,
+        custom_exec_path: str | None = None,
+    ) -> bool:
+        """Perform desktop integration installing .desktop, MIME type, and hicolor icons.
+
+        Args:
+            custom_target_apps_dir: Optional custom applications target directory.
+            custom_target_icons_dir: Optional custom icons target directory.
+            custom_target_mime_dir: Optional custom MIME target directory.
+            custom_exec_path: Optional custom Exec= path in desktop entry.
+
+        Returns:
+            True if integration succeeded, False otherwise.
+        """
+        from .desktop_integration import integrate_desktop
+
+        return integrate_desktop(
+            custom_target_apps_dir=custom_target_apps_dir,
+            custom_target_icons_dir=custom_target_icons_dir,
+            custom_target_mime_dir=custom_target_mime_dir,
+            custom_exec_path=custom_exec_path,
+        )

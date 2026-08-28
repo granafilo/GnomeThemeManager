@@ -9,12 +9,18 @@
 
 A modern, native theme manager and customization suite for the **GNOME Desktop environment** (GTK4 & Libadwaita).
 
-**Current release:** v1.4.8
+**Current release:** v1.5.0
 
 ---
 
 ## ✨ Features
 
+- **🌐 Online Theme Store**:
+  - Browse, search, and filter thousands of themes from **Pling** and **OpenDesktop** across GTK, Shell, Icons, and Cursors.
+  - High-resolution screenshot inspection, author ratings, download counts, and 1-click automatic installation into `~/.themes` and `~/.icons`.
+- **🧩 GNOME Shell Extensions Manager**:
+  - Live list of user and system extensions with instant enable/disable toggles.
+  - Direct access to individual extension settings dialogs, system Extensions app, and extensions.gnome.org catalog.
 - **🎨 Unified Theme Management**:
   - Browse, preview, and apply **GTK 3/4**, **GNOME Shell**, **Icon Packs**, and **Cursors**.
   - **Global Themes**: Save, switch, and share complete desktop setups in 1 click with live GSettings synchronization.
