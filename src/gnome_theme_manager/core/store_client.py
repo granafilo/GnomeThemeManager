@@ -38,6 +38,7 @@ class StoreCategory(str, Enum):
     """Pling / OpenDesktop category IDs for desktop themes."""
 
     ALL = ""
+    GTK_SHELL = "135x134"  # GTK 3/4 & GNOME Shell Themes combined
     GTK = "135"  # GTK 3.x / 4.x Theme/Style
     SHELL = "134"  # GNOME Shell Theme
     ICON = "386"  # Icon Theme
@@ -119,6 +120,28 @@ class StoreItem:
     tags: list[str] = field(default_factory=list)
     xdg_type: str = ""
 
+    @property
+    def is_installable(self) -> bool:
+        """Return True if this store item represents a theme type installable on GNOME."""
+        supported_type_ids = {
+            int(StoreCategory.GTK.value),  # 135
+            int(StoreCategory.SHELL.value),  # 134
+            int(StoreCategory.ICON.value),  # 386
+            int(StoreCategory.CURSOR.value),  # 107
+            int(StoreCategory.FONT.value),  # 103
+        }
+        if self.type_id in supported_type_ids:
+            return True
+
+        t_name = self.type_name.lower()
+        if any(kw in t_name for kw in ("gtk", "gnome shell", "icon", "cursor", "font")):
+            return True
+
+        all_tags = " ".join(self.tags).lower()
+        return any(
+            kw in all_tags for kw in ("gtk", "gnome-shell", "gnome shell", "icon", "cursor", "font")
+        )
+
 
 class StoreClient:
     """Client for interacting with OpenDesktop/Pling OCS v1 API."""
@@ -187,17 +210,32 @@ class StoreClient:
         elif isinstance(category, (ThemeType, str)):
             cat_str = theme_type_to_store_category(category)
 
+        sort_mapping: dict[str, str] = {
+            "new": "new",
+            "latest": "new",
+            "recent": "new",
+            "rating": "high",
+            "high": "high",
+            "score": "high",
+            "downloads": "down",
+            "down": "down",
+            "most": "down",
+            "top": "down",
+            "alpha": "alpha",
+            "alphabetical": "alpha",
+        }
+        sort_mode = sort_mapping.get(sort.lower().strip(), "new") if sort else "new"
+
         params: dict[str, Any] = {
             "format": "json",
             "page": max(0, page),
             "pagesize": max(1, page_size),
+            "sortmode": sort_mode,
         }
         if query.strip():
             params["search"] = query.strip()
         if cat_str.strip():
             params["categories"] = cat_str.strip()
-        if sort:
-            params["sort"] = sort
 
         url = f"{self.base_url}content/data"
         logger.debug("Searching store: %s with params %s", url, params)
@@ -372,7 +410,7 @@ class StoreClient:
                     total_size = int(content_len_header)
 
                 bytes_downloaded = 0
-                chunk_size = 64 * 1024  # 64 KB
+                chunk_size = 256 * 1024  # 256 KB
 
                 with open(output_file_path, "wb") as f_out:
                     for chunk in res.iter_content(chunk_size=chunk_size):
@@ -446,10 +484,19 @@ class StoreClient:
 
         # Parse preview images
         preview_images: list[str] = []
-        for i in range(1, 10):
+        for i in range(1, 30):
             pic_url = str(raw.get(f"previewpic{i}", "")).strip()
-            if pic_url and pic_url not in preview_images:
+            if pic_url and pic_url.startswith("http") and pic_url not in preview_images:
                 preview_images.append(pic_url)
+
+        # Also extract embedded images from HTML description if available
+        if description:
+            for img_url in re.findall(
+                r'<img[^>]+src=["\'](https?://[^"\']+)["\']', description, re.IGNORECASE
+            ):
+                clean_img = img_url.strip()
+                if clean_img and clean_img not in preview_images:
+                    preview_images.append(clean_img)
 
         preview_image_url = preview_images[0] if preview_images else ""
         small_preview_image_url = str(raw.get("smallpreviewpic1", "")).strip()

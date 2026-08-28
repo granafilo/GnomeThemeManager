@@ -8,6 +8,7 @@ from .global_themes import GlobalThemesPage
 from .installer import InstallerPage
 from .sandbox import SandboxPage
 from .status import StatusPage
+from .store import StorePage
 from .terminal import TerminalPage
 from .themes import ThemesPage
 
@@ -17,6 +18,7 @@ __all__ = [
     "InstallerPage",
     "SandboxPage",
     "StatusPage",
+    "StorePage",
     "TerminalPage",
     "ThemeEditorPage",
     "ThemesPage",

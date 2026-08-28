@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Declarative template for 'Online Store' page (Pling / OpenDesktop) -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+
+  <object class="GtkStack" id="page_root">
+    <property name="transition-type">crossfade</property>
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+
+    <!-- 1. CATEGORIES HUB (Landing View) -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">categories</property>
+        <property name="child">
+          <object class="GtkScrolledWindow" id="categories_scrolled">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <property name="vscrollbar-policy">automatic</property>
+            <property name="child">
+              <object class="AdwClamp">
+                <property name="maximum-size">960</property>
+                <property name="tightening-threshold">680</property>
+                <property name="margin-start">20</property>
+                <property name="margin-end">20</property>
+                <property name="margin-top">24</property>
+                <property name="margin-bottom">32</property>
+                <property name="child">
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">24</property>
+
+                    <!-- Store Hub Header -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">6</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label" translatable="yes">Online Store</property>
+                            <property name="xalign">0</property>
+                            <style>
+                              <class name="title-1"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="label" translatable="yes">Choose a category to explore community creations from Pling &amp; GNOME-Look.</property>
+                            <property name="xalign">0</property>
+                            <property name="wrap">true</property>
+                            <style>
+                              <class name="dim-label"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Category Cards Box -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">16</property>
+
+                        <!-- Category 1: GTK & GNOME Shell Themes -->
+                        <child>
+                          <object class="GtkButton" id="category_card_gtk_shell">
+                            <style>
+                              <class name="card"/>
+                              <class name="store-hub-category-card"/>
+                            </style>
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">18</property>
+                                <property name="margin-start">16</property>
+                                <property name="margin-end">16</property>
+                                <property name="margin-top">16</property>
+                                <property name="margin-bottom">16</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">desktop-symbolic</property>
+                                    <property name="pixel-size">40</property>
+                                    <style>
+                                      <class name="accent"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">4</property>
+                                    <property name="hexpand">true</property>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">GTK3/4 &amp; GNOME Shell Themes</property>
+                                        <property name="xalign">0</property>
+                                        <style>
+                                          <class name="heading"/>
+                                          <class name="title-3"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Application window themes, Libadwaita overrides, and GNOME Shell interface themes</property>
+                                        <property name="xalign">0</property>
+                                        <property name="wrap">true</property>
+                                        <style>
+                                          <class name="dim-label"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">go-next-symbolic</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <!-- Category 2: Full Icon Themes -->
+                        <child>
+                          <object class="GtkButton" id="category_card_icons">
+                            <style>
+                              <class name="card"/>
+                              <class name="store-hub-category-card"/>
+                            </style>
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">18</property>
+                                <property name="margin-start">16</property>
+                                <property name="margin-end">16</property>
+                                <property name="margin-top">16</property>
+                                <property name="margin-bottom">16</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">folder-pictures-symbolic</property>
+                                    <property name="pixel-size">40</property>
+                                    <style>
+                                      <class name="accent"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">4</property>
+                                    <property name="hexpand">true</property>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Full Icon Themes</property>
+                                        <property name="xalign">0</property>
+                                        <style>
+                                          <class name="heading"/>
+                                          <class name="title-3"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Icon sets for applications, folders, files, and system status</property>
+                                        <property name="xalign">0</property>
+                                        <property name="wrap">true</property>
+                                        <style>
+                                          <class name="dim-label"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">go-next-symbolic</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <!-- Category 3: Cursors -->
+                        <child>
+                          <object class="GtkButton" id="category_card_cursors">
+                            <style>
+                              <class name="card"/>
+                              <class name="store-hub-category-card"/>
+                            </style>
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">18</property>
+                                <property name="margin-start">16</property>
+                                <property name="margin-end">16</property>
+                                <property name="margin-top">16</property>
+                                <property name="margin-bottom">16</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">input-mouse-symbolic</property>
+                                    <property name="pixel-size">40</property>
+                                    <style>
+                                      <class name="accent"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">4</property>
+                                    <property name="hexpand">true</property>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Cursors</property>
+                                        <property name="xalign">0</property>
+                                        <style>
+                                          <class name="heading"/>
+                                          <class name="title-3"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="label" translatable="yes">Mouse pointers, click styles, and animated cursor sets</property>
+                                        <property name="xalign">0</property>
+                                        <property name="wrap">true</property>
+                                        <style>
+                                          <class name="dim-label"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">go-next-symbolic</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 2. DEDICATED CATEGORY BROWSER State -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">browse</property>
+        <property name="child">
+          <object class="GtkScrolledWindow" id="scrolled_window">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <property name="vscrollbar-policy">automatic</property>
+            <property name="child">
+              <object class="AdwClamp">
+                <property name="maximum-size">1200</property>
+                <property name="tightening-threshold">800</property>
+                <property name="margin-start">16</property>
+                <property name="margin-end">16</property>
+                <property name="margin-top">20</property>
+                <property name="margin-bottom">24</property>
+                <property name="child">
+                  <object class="GtkBox" id="ready_main_box">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">16</property>
+
+                    <!-- Category Navigation & Title Bar -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">12</property>
+                        <child>
+                          <object class="GtkButton" id="btn_back_to_categories">
+                            <property name="icon-name">go-previous-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">All Categories</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="category_title_label">
+                            <property name="label">Category Title</property>
+                            <property name="xalign">0</property>
+                            <property name="hexpand">true</property>
+                            <style>
+                              <class name="title-2"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Search & Filter Controls -->
+                    <child>
+                      <object class="GtkBox" id="search_controls_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <child>
+                          <object class="GtkSearchEntry" id="search_entry">
+                            <property name="placeholder-text" translatable="yes">Search in this category...</property>
+                            <property name="hexpand">true</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkDropDown" id="sort_dropdown">
+                            <property name="tooltip-text" translatable="yes">Sort results</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="search_button">
+                            <property name="label" translatable="yes">Search</property>
+                            <style>
+                              <class name="suggested-action"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Result Status Row -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <child>
+                          <object class="GtkLabel" id="results_count_label">
+                            <property name="label" translatable="yes">Found items</property>
+                            <property name="xalign">0</property>
+                            <property name="hexpand">true</property>
+                            <style>
+                              <class name="dim-label"/>
+                              <class name="caption"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Content Stack (Grid / Empty / Loading / Error) -->
+                    <child>
+                      <object class="GtkStack" id="content_stack">
+                        <property name="transition-type">crossfade</property>
+                        <property name="vexpand">true</property>
+
+                        <!-- A. GRID Results with Pagination -->
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">grid</property>
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">20</property>
+                                <child>
+                                  <object class="GtkGrid" id="cards_grid">
+                                    <property name="valign">start</property>
+                                    <property name="halign">fill</property>
+                                    <property name="hexpand">true</property>
+                                    <property name="column-homogeneous">true</property>
+                                    <property name="row-spacing">16</property>
+                                    <property name="column-spacing">16</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox" id="pagination_box">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="spacing">12</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin-top">12</property>
+                                    <property name="margin-bottom">16</property>
+                                    <child>
+                                      <object class="GtkButton" id="btn_prev_page">
+                                        <property name="icon-name">go-previous-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Previous Page</property>
+                                        <property name="sensitive">false</property>
+                                        <style>
+                                          <class name="flat"/>
+                                          <class name="circular"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="lbl_page_indicator">
+                                        <property name="label">Page 1</property>
+                                        <property name="valign">center</property>
+                                        <style>
+                                          <class name="heading"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="btn_next_page">
+                                        <property name="icon-name">go-next-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Next Page</property>
+                                        <style>
+                                          <class name="flat"/>
+                                          <class name="circular"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <!-- B. LOADING State -->
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">loading</property>
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">16</property>
+                                <property name="margin-top">48</property>
+                                <property name="margin-bottom">48</property>
+                                <child>
+                                  <object class="GtkSpinner" id="loading_spinner">
+                                    <property name="spinning">true</property>
+                                    <property name="halign">center</property>
+                                    <property name="valign">center</property>
+                                    <property name="width-request">48</property>
+                                    <property name="height-request">48</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Connecting and loading themes...</property>
+                                    <property name="halign">center</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <!-- C. EMPTY / NO RESULTS State -->
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">empty</property>
+                            <property name="child">
+                              <object class="AdwStatusPage" id="empty_page">
+                                <property name="icon-name">edit-find-symbolic</property>
+                                <property name="title" translatable="yes">No Items Found</property>
+                                <property name="description" translatable="yes">Try adjusting your keywords.</property>
+                                <property name="child">
+                                  <object class="GtkButton" id="empty_clear_button">
+                                    <property name="label" translatable="yes">Clear Search</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin-top">12</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </property>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+
+                        <!-- D. ERROR / OFFLINE State -->
+                        <child>
+                          <object class="GtkStackPage">
+                            <property name="name">error</property>
+                            <property name="child">
+                              <object class="AdwStatusPage" id="error_page">
+                                <property name="icon-name">network-error-symbolic</property>
+                                <property name="title" translatable="yes">Unable to Connect to Store</property>
+                                <property name="description" translatable="yes">Check your internet connection and retry.</property>
+                                <property name="child">
+                                  <object class="GtkButton" id="error_retry_button">
+                                    <property name="label" translatable="yes">Retry</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin-top">12</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </property>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 2. DETAIL State -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">detail</property>
+        <property name="child">
+          <object class="GtkScrolledWindow" id="detail_scrolled_window">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="hscrollbar-policy">never</property>
+            <property name="vscrollbar-policy">automatic</property>
+            <property name="child">
+              <object class="AdwClamp">
+                <property name="maximum-size">920</property>
+                <property name="margin-start">16</property>
+                <property name="margin-end">16</property>
+                <property name="margin-top">20</property>
+                <property name="margin-bottom">24</property>
+                <property name="child">
+                  <object class="GtkBox" id="detail_main_box">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">16</property>
+
+                    <!-- Navigation Header (Back Button) -->
+                    <child>
+                      <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <child>
+                          <object class="GtkButton" id="detail_back_button">
+                            <property name="label" translatable="yes">← Back to Store</property>
+                            <style>
+                              <class name="flat"/>
+                            </style>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
+                    <!-- Detail Card Container -->
+                    <child>
+                      <object class="GtkBox" id="detail_card_box">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">16</property>
+                        <style>
+                          <class name="card"/>
+                        </style>
+
+                        <!-- Item Header: Icon / Title / Author / Version / Rating -->
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">16</property>
+                            <property name="margin-start">16</property>
+                            <property name="margin-end">16</property>
+                            <property name="margin-top">16</property>
+                            <child>
+                              <object class="GtkImage" id="detail_icon_image">
+                                <property name="icon-name">software-store-symbolic</property>
+                                <property name="pixel-size">64</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">4</property>
+                                <property name="hexpand">true</property>
+                                <child>
+                                  <object class="GtkLabel" id="detail_title_label">
+                                    <property name="label">Theme Name</property>
+                                    <property name="xalign">0</property>
+                                    <property name="wrap">true</property>
+                                    <style>
+                                      <class name="title-2"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="detail_author_label">
+                                    <property name="label">by Author</property>
+                                    <property name="xalign">0</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox" id="detail_meta_pills_box">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="spacing">8</property>
+                                    <property name="margin-top">4</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Screenshot Preview Area with Gallery -->
+                        <child>
+                          <object class="GtkBox" id="detail_preview_container">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">12</property>
+                            <property name="margin-start">16</property>
+                            <property name="margin-end">16</property>
+                            <style>
+                              <class name="store-detail-preview-frame"/>
+                            </style>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="halign">fill</property>
+                                <property name="valign">center</property>
+                                <child>
+                                  <object class="GtkButton" id="detail_prev_image_button">
+                                    <property name="icon-name">go-previous-symbolic</property>
+                                    <property name="valign">center</property>
+                                    <property name="halign">center</property>
+                                    <property name="width-request">44</property>
+                                    <property name="height-request">44</property>
+                                    <property name="tooltip-text" translatable="yes">Previous Screenshot</property>
+                                    <style>
+                                      <class name="circular"/>
+                                      <class name="flat"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">6</property>
+                                    <property name="halign">fill</property>
+                                    <property name="hexpand">true</property>
+                                    <child>
+                                      <object class="GtkPicture" id="detail_screenshot_picture">
+                                        <property name="can-shrink">true</property>
+                                        <property name="content-fit">contain</property>
+                                        <property name="height-request">420</property>
+                                        <property name="hexpand">true</property>
+                                        <property name="vexpand">true</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkBox">
+                                        <property name="orientation">horizontal</property>
+                                        <property name="spacing">8</property>
+                                        <property name="halign">center</property>
+                                        <child>
+                                          <object class="GtkLabel" id="detail_image_counter_label">
+                                            <property name="valign">center</property>
+                                            <style>
+                                              <class name="dim-label"/>
+                                              <class name="caption"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="GtkButton" id="detail_fullscreen_button">
+                                            <property name="icon-name">view-fullscreen-symbolic</property>
+                                            <property name="tooltip-text" translatable="yes">View Fullscreen</property>
+                                            <style>
+                                              <class name="circular"/>
+                                              <class name="flat"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="detail_next_image_button">
+                                    <property name="icon-name">go-next-symbolic</property>
+                                    <property name="valign">center</property>
+                                    <property name="halign">center</property>
+                                    <property name="width-request">44</property>
+                                    <property name="height-request">44</property>
+                                    <property name="tooltip-text" translatable="yes">Next Screenshot</property>
+                                    <style>
+                                      <class name="circular"/>
+                                      <class name="flat"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <!-- Thumbnail Gallery Strip -->
+                            <child>
+                              <object class="GtkScrolledWindow" id="detail_thumbnails_scrolled">
+                                <property name="hscrollbar-policy">automatic</property>
+                                <property name="vscrollbar-policy">never</property>
+                                <property name="min-content-height">76</property>
+                                <property name="max-content-height">76</property>
+                                <property name="propagate-natural-width">false</property>
+                                <property name="child">
+                                  <object class="GtkBox" id="detail_thumbnails_box">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="spacing">10</property>
+                                    <property name="halign">center</property>
+                                    <property name="margin-top">4</property>
+                                    <property name="margin-bottom">4</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Summary & Description -->
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">8</property>
+                            <property name="margin-start">16</property>
+                            <property name="margin-end">16</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="label" translatable="yes">Description</property>
+                                <property name="xalign">0</property>
+                                <style>
+                                  <class name="heading"/>
+                                </style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="detail_description_label">
+                                <property name="label">Theme description...</property>
+                                <property name="xalign">0</property>
+                                <property name="wrap">true</property>
+                                <property name="selectable">true</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- File Download & Install Action Section -->
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">12</property>
+                            <property name="margin-start">16</property>
+                            <property name="margin-end">16</property>
+                            <property name="margin-bottom">16</property>
+                            <property name="margin-top">8</property>
+
+                            <!-- Unsupported format warning banner -->
+                            <child>
+                              <object class="AdwBanner" id="detail_unsupported_banner">
+                                <property name="title" translatable="yes">This item is not a supported GNOME theme (GTK, Shell, Icon, Cursor, Font) and cannot be installed automatically.</property>
+                                <property name="revealed">false</property>
+                              </object>
+                            </child>
+
+                            <!-- File Variant Selector -->
+                            <child>
+                              <object class="GtkBox" id="detail_file_selector_box">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">8</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Package / Variant:</property>
+                                    <property name="xalign">0</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkDropDown" id="detail_file_dropdown">
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- Action Buttons -->
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="halign">end</property>
+                                <child>
+                                  <object class="GtkButton" id="detail_install_button">
+                                    <property name="label" translatable="yes">Install Theme</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="detail_install_apply_button">
+                                    <property name="label" translatable="yes">Install &amp; Apply</property>
+                                    <style>
+                                      <class name="pill"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- Download Progress Bar & Status -->
+                            <child>
+                              <object class="GtkBox" id="detail_progress_box">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">4</property>
+                                <property name="visible">false</property>
+                                <child>
+                                  <object class="GtkProgressBar" id="detail_progress_bar">
+                                    <property name="fraction">0.0</property>
+                                    <property name="show-text">true</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="detail_progress_label">
+                                    <property name="label" translatable="yes">Downloading package...</property>
+                                    <property name="xalign">0</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                      <class name="caption"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+  </object>
+</interface>

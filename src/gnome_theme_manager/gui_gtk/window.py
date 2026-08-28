@@ -32,6 +32,7 @@ from .pages import (
     InstallerPage,
     SandboxPage,
     StatusPage,
+    StorePage,
     TerminalPage,
     ThemeEditorPage,
     ThemesPage,
@@ -169,6 +170,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_editor: Gtk.ListBoxRow = self.builder.get_object("row_editor")
         self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
         self.row_terminal: Gtk.ListBoxRow = self.builder.get_object("row_terminal")
+        self.row_store: Gtk.ListBoxRow = self.builder.get_object("row_store")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -183,6 +185,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.editor_page = ThemeEditorPage(manager=self.manager)
         self.fonts_page = FontsPage(manager=self.manager)
         self.terminal_page = TerminalPage(manager=self.manager)
+        self.store_page = StorePage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -197,6 +200,7 @@ class MainWindow(Adw.ApplicationWindow):
             "editor": self.editor_page,
             "fonts": self.fonts_page,
             "terminal": self.terminal_page,
+            "store": self.store_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -207,6 +211,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.editor_page.get_widget(), "editor")
         self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
         self.content_stack.add_named(self.terminal_page.get_widget(), "terminal")
+        self.content_stack.add_named(self.store_page.get_widget(), "store")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -220,6 +225,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_editor: "editor",
             self.row_fonts: "fonts",
             self.row_terminal: "terminal",
+            self.row_store: "store",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -257,6 +263,10 @@ class MainWindow(Adw.ApplicationWindow):
         self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
+        self.store_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "store", is_l
+        )
+        self.store_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "editor", is_l
@@ -363,6 +373,64 @@ class MainWindow(Adw.ApplicationWindow):
         .boxed-list {
             margin-top: 6px;
             margin-bottom: 6px;
+        }
+
+        /* Online Store Cards & Banners */
+        .store-hub-category-card {
+            background-color: alpha(@card_bg_color, 0.75);
+            border: 1px solid alpha(@borders, 0.45);
+            border-radius: 16px;
+            padding: 4px;
+            transition: all 200ms ease-in-out;
+        }
+
+        .store-hub-category-card:hover {
+            background-color: alpha(@card_bg_color, 0.95);
+            border-color: alpha(@accent_color, 0.7);
+        }
+
+        .store-theme-card {
+            background-color: alpha(@card_bg_color, 0.75);
+            border: 1px solid alpha(@borders, 0.45);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .store-theme-card:hover {
+            background-color: alpha(@card_bg_color, 0.95);
+            border-color: alpha(@accent_color, 0.6);
+        }
+
+        .store-banner-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            border-radius: 12px;
+            min-height: 150px;
+        }
+
+        .store-banner-box picture, .store-banner-box image {
+            border-radius: 12px;
+        }
+
+        .store-detail-preview-frame {
+            background-color: alpha(@window_bg_color, 0.5);
+            border: 1px solid alpha(@borders, 0.3);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .store-thumb-btn {
+            border-radius: 8px;
+            padding: 2px;
+            border: 2px solid transparent;
+        }
+
+        .store-thumb-btn.suggested-action {
+            border-color: @accent_color;
+        }
+
+        .store-lightbox-bg {
+            background-color: #0b0d13;
+            padding: 16px;
         }
         """
         try:

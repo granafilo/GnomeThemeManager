@@ -11,6 +11,7 @@ This module implements:
 
 import json
 import logging
+import os
 import shutil
 import tarfile
 import tempfile
@@ -98,21 +99,116 @@ def _extract_zip(archive_path: Path, target_dir: Path) -> None:
         ) from err
 
 
+def _theme_tar_filter(member: tarfile.TarInfo, dest_path: str) -> tarfile.TarInfo | None:
+    """Security filter for extracting theme and icon archives safely.
+
+    Protects against Path Traversal while permitting intra-archive relative symlinks
+    and sanitizing absolute symlink targets common in community icon packs.
+    """
+    dest = Path(dest_path).resolve()
+    target = (dest / member.name).resolve()
+
+    # 1. Prevent Path Traversal
+    try:
+        target.relative_to(dest)
+    except ValueError:
+        raise ArchiveExtractionError(
+            f"Detected Path Traversal attempt in TAR archive: '{member.name}'"
+        )
+
+    # 2. Sanitize Symlinks and Hard Links (crucial for icon packs)
+    if member.issym() or member.islnk():
+        link = member.linkname
+        if link.startswith("/"):
+            # Target is rooted at archive root: compute relative path from member's parent directory
+            target_in_archive = Path(link.lstrip("/"))
+            member_dir = Path(member.name).parent
+            member.linkname = os.path.relpath(target_in_archive, member_dir)
+
+        # Prevent symlinks escaping target directory
+        member_dir_abs = target.parent
+        resolved_link = (member_dir_abs / member.linkname).resolve()
+        try:
+            resolved_link.relative_to(dest)
+        except ValueError:
+            logger.debug("Skipping external symlink '%s' -> '%s'", member.name, member.linkname)
+            return None
+
+    # 3. Strip special permissions (SUID/SGID)
+    member.mode &= 0o777
+
+    return member
+
+
 def _extract_tar(archive_path: Path, target_dir: Path) -> None:
-    """Extract a TAR archive with security checks against Path Traversal."""
+    """Extract a TAR archive with security checks against Path Traversal and support for icon symlinks."""
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir.resolve()
+
     try:
         with tarfile.open(archive_path, "r:*") as tar_ref:
-            for member in tar_ref.getmembers():
-                member_path = target_dir / member.name
-                if not _is_within_directory(target_dir, member_path):
+            deferred_links: list[tarfile.TarInfo] = []
+
+            for member in tar_ref:
+                target = (dest / member.name).resolve()
+                try:
+                    target.relative_to(dest)
+                except ValueError:
                     raise ArchiveExtractionError(
                         f"Detected Path Traversal attempt in TAR archive: '{member.name}'"
                     )
 
-            if hasattr(tarfile, "data_filter"):
-                tar_ref.extractall(target_dir, filter="data")
-            else:
-                tar_ref.extractall(target_dir)
+                member.mode &= 0o777
+
+                if member.issym() or member.islnk():
+                    deferred_links.append(member)
+                else:
+                    try:
+                        tar_ref.extract(
+                            member,
+                            path=dest,
+                            filter="fully_trusted"
+                            if hasattr(tarfile, "fully_trusted_filter")
+                            else None,
+                        )
+                    except Exception as err:
+                        logger.debug("Non-fatal: could not extract member %s: %s", member.name, err)
+
+            # Second pass for links after all directory structures and target files are unpacked
+            for link_member in deferred_links:
+                target = (dest / link_member.name).resolve()
+                link = link_member.linkname
+                if link.startswith("/"):
+                    target_in_archive = Path(link.lstrip("/"))
+                    member_dir = Path(link_member.name).parent
+                    link_member.linkname = os.path.relpath(target_in_archive, member_dir)
+
+                resolved_link = (target.parent / link_member.linkname).resolve()
+                try:
+                    resolved_link.relative_to(dest)
+                except ValueError:
+                    logger.debug(
+                        "Skipping external symlink '%s' -> '%s'",
+                        link_member.name,
+                        link_member.linkname,
+                    )
+                    continue
+
+                try:
+                    tar_ref.extract(
+                        link_member,
+                        path=dest,
+                        filter="fully_trusted"
+                        if hasattr(tarfile, "fully_trusted_filter")
+                        else None,
+                    )
+                except Exception as err:
+                    logger.debug(
+                        "Non-fatal: could not extract link %s -> %s: %s",
+                        link_member.name,
+                        link_member.linkname,
+                        err,
+                    )
     except ArchiveExtractionError:
         raise
     except tarfile.TarError as err:
@@ -444,7 +540,7 @@ class ThemeInstaller:
                     shutil.rmtree(dest_dir)
 
                 target_base_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copytree(source_dir, dest_dir)
+                shutil.copytree(source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True)
                 processed_dirs.add(dir_key)
 
             installed_themes.append(
@@ -574,7 +670,9 @@ class ThemeInstaller:
                         shutil.rmtree(dest_dir)
 
                     target_base_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copytree(source_dir, dest_dir)
+                    shutil.copytree(
+                        source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True
+                    )
                     processed_dirs.add(dir_key)
 
                 installed_themes.append(

@@ -1497,4 +1497,3 @@ class ThemeManager:
                 overwrite=overwrite,
                 target_dir=target_dir,
             )
-

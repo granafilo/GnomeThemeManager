@@ -104,6 +104,31 @@ class TestStoreClientSearch:
         assert call_kwargs["params"]["categories"] == "135"
         assert call_kwargs["params"]["page"] == 0
         assert call_kwargs["params"]["pagesize"] == 10
+        assert call_kwargs["params"]["sortmode"] == "new"
+
+    def test_search_sort_modes_mapping(self, mock_session: MagicMock) -> None:
+        fake_response = MagicMock()
+        fake_response.status_code = 200
+        fake_response.json.return_value = {"status": "ok", "statuscode": 100, "data": []}
+        mock_session.get.return_value = fake_response
+
+        client = StoreClient(session=mock_session)
+
+        # Rating / Score
+        client.search(sort="rating")
+        assert mock_session.get.call_args[1]["params"]["sortmode"] == "high"
+
+        # Downloads
+        client.search(sort="downloads")
+        assert mock_session.get.call_args[1]["params"]["sortmode"] == "down"
+
+        # Alpha
+        client.search(sort="alpha")
+        assert mock_session.get.call_args[1]["params"]["sortmode"] == "alpha"
+
+        # New
+        client.search(sort="new")
+        assert mock_session.get.call_args[1]["params"]["sortmode"] == "new"
 
     def test_search_timeout(self, mock_session: MagicMock) -> None:
         mock_session.get.side_effect = requests.exceptions.Timeout("Connection timed out")
@@ -219,9 +244,7 @@ class TestStoreClientDownload:
     def mock_session(self) -> MagicMock:
         return MagicMock(spec=requests.Session)
 
-    def test_download_success_with_progress(
-        self, mock_session: MagicMock, tmp_path: Path
-    ) -> None:
+    def test_download_success_with_progress(self, mock_session: MagicMock, tmp_path: Path) -> None:
         # 1. Mock details response
         details_response = MagicMock()
         details_response.status_code = 200
@@ -469,3 +492,47 @@ class TestThemeManagerStoreIntegration:
             mock_install.return_value = []
             manager.install_store_item("1", overwrite=True)
             mock_install.assert_called_once()
+
+
+class TestStoreItemInstallable:
+    """Test is_installable detection for supported and unsupported store items."""
+
+    def test_supported_theme_types(self) -> None:
+        gtk_item = StoreItem(id="1", name="Adwaita Dark", type_id=135)
+        assert gtk_item.is_installable is True
+
+        shell_item = StoreItem(id="2", name="Blur Shell", type_id=134)
+        assert shell_item.is_installable is True
+
+        icon_item = StoreItem(id="3", name="Papirus", type_id=386)
+        assert icon_item.is_installable is True
+
+        cursor_item = StoreItem(id="4", name="Bibata", type_id=107)
+        assert cursor_item.is_installable is True
+
+        font_item = StoreItem(id="5", name="Inter Font", type_id=103)
+        assert font_item.is_installable is True
+
+    def test_supported_by_name_or_tags(self) -> None:
+        named_item = StoreItem(id="6", name="Custom Theme", type_name="GNOME Shell Theme")
+        assert named_item.is_installable is True
+
+        tagged_item = StoreItem(id="7", name="Nordic", tags=["gtk3", "dark", "flatpak"])
+        assert tagged_item.is_installable is True
+
+    def test_unsupported_items(self) -> None:
+        wallpaper_item = StoreItem(
+            id="8",
+            name="Mountain 4k",
+            type_name="Wallpaper Other",
+            tags=["wallpaper", "landscape", "cc0"],
+        )
+        assert wallpaper_item.is_installable is False
+
+        sddm_item = StoreItem(
+            id="9",
+            name="Breeze SDDM",
+            type_name="SDDM Themes",
+            tags=["sddm", "login", "plasma"],
+        )
+        assert sddm_item.is_installable is False
