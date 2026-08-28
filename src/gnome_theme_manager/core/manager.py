@@ -39,6 +39,7 @@ from .sandbox_bridge import SandboxBridge
 from .sandbox_theme import SystemThemePreviewSession
 from .scanner import ThemeScanner
 from .shell_editor import ShellThemeForkManager
+from .store_client import StoreCategory, StoreClient, StoreItem
 from .terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
@@ -77,6 +78,7 @@ class ThemeManager:
         theme_forks: ThemeForkManager | None = None,
         editor_drafts: EditorDraftManager | None = None,
         fallback_manager: FallbackManager | None = None,
+        store_client: StoreClient | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -94,6 +96,7 @@ class ThemeManager:
             theme_forks: Custom ThemeForkManager instance (optional).
             editor_drafts: Custom EditorDraftManager instance (optional).
             fallback_manager: Custom FallbackManager instance (optional).
+            store_client: Custom StoreClient instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -102,6 +105,7 @@ class ThemeManager:
         self._sandbox = sandbox_bridge or SandboxBridge()
         self._extensions = extensions or ExtensionsManager()
         self._validator = validator or ThemeValidator()
+        self._store_client = store_client or StoreClient()
         self._theme_preview = SystemThemePreviewSession(
             get_current_themes_fn=self._get_current_themes_safe,
             apply_themes_fn=self.apply_themes,
@@ -134,6 +138,11 @@ class ThemeManager:
         self._shell_forks = ShellThemeForkManager()
         self._editor_drafts = editor_drafts or EditorDraftManager()
         self._wallpaper_colors = WallpaperColorExtractor(gsettings=self._gsettings)
+
+    @property
+    def store_client(self) -> StoreClient:
+        """Return online store API client."""
+        return self._store_client
 
     @property
     def editor_drafts(self) -> EditorDraftManager:
@@ -1382,4 +1391,136 @@ class ThemeManager:
             theme_path=target_path,
             icon_name=resolved_icon_name,
             icon_path=resolved_icon_path,
+        )
+
+    def search_store(
+        self,
+        query: str = "",
+        category: str | StoreCategory | ThemeType | None = None,
+        page: int = 0,
+        page_size: int = 20,
+        sort: str = "new",
+    ) -> list[StoreItem]:
+        """Search themes and icons on the online store (Pling / OpenDesktop).
+
+        Args:
+            query: Keyword search string.
+            category: Filter by category (ThemeType, StoreCategory, or ID string).
+            page: 0-indexed page number.
+            page_size: Max results to return.
+            sort: Sort criteria ("new", "rating", "high", etc.).
+
+        Returns:
+            List of StoreItem objects.
+        """
+        return self._store_client.search(
+            query=query,
+            category=category,
+            page=page,
+            page_size=page_size,
+            sort=sort,
+        )
+
+    def get_store_item_details(self, item_id: str | int) -> StoreItem:
+        """Fetch complete metadata and download files for an online store item.
+
+        Args:
+            item_id: Item identifier.
+
+        Returns:
+            StoreItem instance with full metadata.
+        """
+        return self._store_client.get_details(item_id=item_id)
+
+    def download_store_item(
+        self,
+        item_id: str | int,
+        dest_dir: Path | str,
+        file_index: int = 1,
+        file_name: str | None = None,
+        progress_callback: Any = None,
+    ) -> Path:
+        """Download an item's archive file from the online store.
+
+        Args:
+            item_id: Item identifier.
+            dest_dir: Destination directory.
+            file_index: 1-indexed file number to download.
+            file_name: Optional explicit filename.
+            progress_callback: Optional callback(bytes_downloaded, total_bytes).
+
+        Returns:
+            Path of downloaded file.
+        """
+        return self._store_client.download(
+            item_id=item_id,
+            dest_dir=dest_dir,
+            file_index=file_index,
+            file_name=file_name,
+            progress_callback=progress_callback,
+        )
+
+    def install_store_item(
+        self,
+        item_id: str | int,
+        file_index: int = 1,
+        overwrite: bool = False,
+        target_dir: str | Path | None = None,
+        progress_callback: Any = None,
+    ) -> list[Theme]:
+        """Download and install an online store item in one single operation.
+
+        Downloads the archive to a temporary directory, then extracts, validates,
+        and installs the discovered theme(s) into user theme directories.
+
+        Args:
+            item_id: Item identifier.
+            file_index: 1-indexed file number to install.
+            overwrite: If True, overwrite existing themes with same name.
+            target_dir: Optional destination target ('xdg', 'legacy', or Path).
+            progress_callback: Optional download progress callback.
+
+        Returns:
+            List of installed Theme instances.
+        """
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_download_dir:
+            downloaded_archive = self.download_store_item(
+                item_id=item_id,
+                dest_dir=Path(tmp_download_dir),
+                file_index=file_index,
+                progress_callback=progress_callback,
+            )
+            return self.install_theme(
+                source_path=downloaded_archive,
+                overwrite=overwrite,
+                target_dir=target_dir,
+            )
+
+    def integrate_desktop(
+        self,
+        custom_target_apps_dir: Path | None = None,
+        custom_target_icons_dir: Path | None = None,
+        custom_target_mime_dir: Path | None = None,
+        custom_exec_path: str | None = None,
+    ) -> bool:
+        """Perform desktop integration installing .desktop, MIME type, and hicolor icons.
+
+        Args:
+            custom_target_apps_dir: Optional custom applications target directory.
+            custom_target_icons_dir: Optional custom icons target directory.
+            custom_target_mime_dir: Optional custom MIME target directory.
+            custom_exec_path: Optional custom Exec= path in desktop entry.
+
+        Returns:
+            True if integration succeeded, False otherwise.
+        """
+        from .desktop_integration import integrate_desktop
+
+        return integrate_desktop(
+            custom_target_apps_dir=custom_target_apps_dir,
+            custom_target_icons_dir=custom_target_icons_dir,
+            custom_target_mime_dir=custom_target_mime_dir,
+            custom_exec_path=custom_exec_path,
         )

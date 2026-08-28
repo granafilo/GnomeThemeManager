@@ -7,12 +7,12 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("Gio", "2.0")
-from gi.repository import Adw, Gio
+from gi.repository import Adw, Gio, GLib
 
 from ..core.manager import ThemeManager
-from .window import GnomeThemeWindow
+from .window import GnomeThemeWindow, init_bundled_icon_theme
 
-APPLICATION_ID = "org.gnome.ThemeManager"
+APPLICATION_ID = "io.github.granafilo.ThemeManager"
 
 
 class GnomeThemeApplication(Adw.Application):
@@ -24,6 +24,10 @@ class GnomeThemeApplication(Adw.Application):
         Args:
             manager: Optional ThemeManager coordinator instance.
         """
+        if not GLib.get_prgname():
+            GLib.set_prgname(APPLICATION_ID)
+        if not GLib.get_application_name():
+            GLib.set_application_name("GNOME Theme Manager")
         super().__init__(
             application_id=APPLICATION_ID,
             flags=Gio.ApplicationFlags.FLAGS_NONE,
@@ -31,6 +35,11 @@ class GnomeThemeApplication(Adw.Application):
         self.manager = manager or ThemeManager()
         self.window: GnomeThemeWindow | None = None
         self.connect("shutdown", self._on_shutdown)
+
+    def do_startup(self) -> None:
+        """Handle application startup signal and initialize icon theme search paths."""
+        Adw.Application.do_startup(self)
+        init_bundled_icon_theme()
 
     def do_activate(self) -> None:
         """Handle application activation signal.

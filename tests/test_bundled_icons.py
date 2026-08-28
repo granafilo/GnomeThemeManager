@@ -68,7 +68,9 @@ def test_main_window_initializes_bundled_icons(mock_theme_manager) -> None:
     if not is_gtk_available():
         pytest.skip("GTK4 / Adw not available.")
 
-    app = Gtk.Application()
+    from gi.repository import Adw, Gio
+
+    app = Adw.Application(application_id=None, flags=Gio.ApplicationFlags.NON_UNIQUE)
     win = MainWindow(app=app, manager=mock_theme_manager)
     assert win is not None
     assert BUNDLED_ICONS_DIR.is_dir()

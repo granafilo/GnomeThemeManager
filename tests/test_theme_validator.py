@@ -133,6 +133,11 @@ def test_validate_icon_theme_valid_with_standard_icons(tmp_path: Path) -> None:
 Name=ValidIcons
 Comment=Test icon theme
 Directories=48x48/apps
+
+[48x48/apps]
+Size=48
+Context=Applications
+Type=Fixed
 """
     (icon_dir / "index.theme").write_text(index_theme, encoding="utf-8")
 
@@ -140,6 +145,29 @@ Directories=48x48/apps
     res = validator.validate(icon_dir, ThemeType.ICON)
     assert res.valid is True
     assert len(res.missing_files) == 0
+
+
+def test_validate_icon_theme_malformed_missing_size(tmp_path: Path) -> None:
+    """Validate that an icon theme with Directories declared but no Size field is marked invalid."""
+    icon_dir = tmp_path / "MalformedIcons"
+    icon_dir.mkdir(parents=True)
+    (icon_dir / "48x48" / "apps").mkdir(parents=True)
+
+    index_theme = """[Icon Theme]
+Name=MalformedIcons
+Comment=Malformed icon theme
+Directories=48x48/apps
+
+[48x48/apps]
+Context=Applications
+Type=Fixed
+"""
+    (icon_dir / "index.theme").write_text(index_theme, encoding="utf-8")
+
+    validator = ThemeValidator()
+    res = validator.validate(icon_dir, ThemeType.ICON)
+    assert res.valid is False
+    assert any("Size" in w for w in res.warnings)
 
 
 def test_validate_icon_theme_too_few_icons(tmp_path: Path) -> None:

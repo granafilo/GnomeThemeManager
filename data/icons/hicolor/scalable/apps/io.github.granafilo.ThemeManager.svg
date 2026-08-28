@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Sfondo Gradiente Blu GNOME -->
+    <!-- Gradiente Blu Full-Bleed (Top #3F8AE0 -> Bottom #1C5AA6) -->
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#3584e4"/>
-      <stop offset="100%" stop-color="#1a5fb4"/>
+      <stop offset="0%" stop-color="#3F8AE0"/>
+      <stop offset="100%" stop-color="#1C5AA6"/>
     </linearGradient>
 
-    <!-- Gradiente Palette Colorata -->
+    <!-- Gradienti Palette Colorata -->
     <linearGradient id="accentGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#f6d32d"/>
       <stop offset="100%" stop-color="#ff7800"/>
@@ -22,42 +22,37 @@
 
     <!-- Ombra Soft -->
     <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.25"/>
-    </filter>
-    
-    <filter id="innerShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.2"/>
+      <feDropShadow dx="0" dy="16" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
     </filter>
   </defs>
 
-  <!-- Base App Window Squircle (Stile GNOME Adwaita) -->
-  <rect x="16" y="16" width="224" height="224" rx="48" ry="48" fill="url(#bgGrad)" filter="url(#dropShadow)" />
+  <!-- 1. Sfondo Pieno Full-Bleed (Nessun angolo trasparente o scacchiera) -->
+  <rect width="512" height="512" fill="url(#bgGrad)" />
 
-  <!-- Bordo di Evidenziazione Superiore -->
-  <rect x="17" y="17" width="222" height="222" rx="47" ry="47" fill="none" stroke="#ffffff" stroke-opacity="0.2" stroke-width="2" />
+  <!-- Bordo Superiore di Riflesso Lucido -->
+  <rect x="0" y="0" width="512" height="512" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="4" />
 
-  <!-- Finestra UI Interna / Modello Temi -->
-  <rect x="40" y="44" width="176" height="168" rx="20" ry="20" fill="#ffffff" fill-opacity="0.12" />
-  
-  <!-- Header Bar Finestra -->
-  <path d="M 40 64 C 40 52.95 48.95 44 60 44 L 196 44 C 207.05 44 216 52.95 216 64 L 216 76 L 40 76 Z" fill="#ffffff" fill-opacity="0.18" />
-  <circle cx="58" cy="60" r="5" fill="#ed333b" />
-  <circle cx="74" cy="60" r="5" fill="#f6d32d" />
-  <circle cx="90" cy="60" r="5" fill="#57e389" />
+  <!-- 2. Glifo Finestra UI / Designer Temi -->
+  <rect x="80" y="88" width="352" height="336" rx="40" ry="40" fill="#ffffff" fill-opacity="0.15" />
 
-  <!-- Elementi Grafici Interfaccia / Slider e Swatch -->
-  <!-- Swatch Colori -->
-  <circle cx="72" cy="116" r="16" fill="url(#accentGrad1)" filter="url(#dropShadow)" />
-  <circle cx="128" cy="116" r="16" fill="url(#accentGrad2)" filter="url(#dropShadow)" />
-  <circle cx="184" cy="116" r="16" fill="url(#accentGrad3)" filter="url(#dropShadow)" />
+  <!-- Header Bar Finestra Desktop -->
+  <path d="M 80 128 C 80 105.9 97.9 88 120 88 L 392 88 C 414.1 88 432 105.9 432 128 L 432 152 L 80 152 Z" fill="#ffffff" fill-opacity="0.2" />
+  <circle cx="116" cy="120" r="10" fill="#ed333b" />
+  <circle cx="148" cy="120" r="10" fill="#f6d32d" />
+  <circle cx="180" cy="120" r="10" fill="#57e389" />
 
-  <!-- Barra di regolazione (Slider Temi) 1 -->
-  <rect x="60" y="152" width="136" height="10" rx="5" fill="#ffffff" fill-opacity="0.25" />
-  <rect x="60" y="152" width="80" height="10" rx="5" fill="#ffffff" />
-  <circle cx="140" cy="157" r="9" fill="#ffffff" filter="url(#dropShadow)" />
+  <!-- Palette Swatches Colori -->
+  <circle cx="144" cy="232" r="32" fill="url(#accentGrad1)" filter="url(#dropShadow)" />
+  <circle cx="256" cy="232" r="32" fill="url(#accentGrad2)" filter="url(#dropShadow)" />
+  <circle cx="368" cy="232" r="32" fill="url(#accentGrad3)" filter="url(#dropShadow)" />
 
-  <!-- Barra di regolazione (Slider Temi) 2 -->
-  <rect x="60" y="178" width="136" height="10" rx="5" fill="#ffffff" fill-opacity="0.25" />
-  <rect x="60" y="178" width="105" height="10" rx="5" fill="#ffffff" />
-  <circle cx="165" cy="183" r="9" fill="#ffffff" filter="url(#dropShadow)" />
+  <!-- Barra Slider Temi 1 -->
+  <rect x="120" y="304" width="272" height="20" rx="10" fill="#ffffff" fill-opacity="0.25" />
+  <rect x="120" y="304" width="160" height="20" rx="10" fill="#ffffff" />
+  <circle cx="280" cy="314" r="18" fill="#ffffff" filter="url(#dropShadow)" />
+
+  <!-- Barra Slider Temi 2 -->
+  <rect x="120" y="356" width="272" height="20" rx="10" fill="#ffffff" fill-opacity="0.25" />
+  <rect x="120" y="356" width="210" height="20" rx="10" fill="#ffffff" />
+  <circle cx="330" cy="366" r="18" fill="#ffffff" filter="url(#dropShadow)" />
 </svg>

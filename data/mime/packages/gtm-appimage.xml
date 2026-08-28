@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/vnd.appimage">
+    <comment>GNOME Theme Manager AppImage</comment>
+    <icon name="io.github.granafilo.ThemeManager"/>
+    <generic-icon name="application-vnd.appimage"/>
+    <glob pattern="GNOMEThemeManager-*.AppImage"/>
+    <glob pattern="gnome-theme-manager-*.AppImage"/>
+    <glob pattern="*.AppImage"/>
+    <glob pattern="*.appimage"/>
+  </mime-type>
+</mime-info>

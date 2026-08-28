@@ -12,6 +12,7 @@ Manages the main GTK4 and Libadwaita shell:
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -27,11 +28,13 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
+    ExtensionsPage,
     FontsPage,
     GlobalThemesPage,
     InstallerPage,
     SandboxPage,
     StatusPage,
+    StorePage,
     TerminalPage,
     ThemeEditorPage,
     ThemesPage,
@@ -59,24 +62,44 @@ DEFAULT_WINDOW_HEIGHT: int = 720
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    search_dirs: list[Path] = [BUNDLED_ICONS_DIR]
+    search_dirs: list[Path] = [
+        BUNDLED_ICONS_DIR,
+        BUNDLED_ICONS_DIR / "hicolor",
+        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "apps",
+        BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
+    ]
+
+    # AppImage runtime icon search paths (from $APPDIR)
+    appdir_env = os.environ.get("APPDIR")
+    if appdir_env:
+        appdir_path = Path(appdir_env)
+        for appdir_candidate in [
+            appdir_path / "usr" / "share" / "icons",
+            appdir_path / "usr" / "share" / "icons" / "hicolor",
+            appdir_path / "data" / "icons",
+            appdir_path / "data" / "icons" / "hicolor",
+        ]:
+            if appdir_candidate.is_dir() and appdir_candidate not in search_dirs:
+                search_dirs.append(appdir_candidate)
 
     # Flatpak runtime icon search paths
     for flatpak_dir in [
         Path("/app/share/icons"),
+        Path("/app/share/icons/hicolor"),
         Path("/app/share/gnome-theme-manager/data/icons"),
         Path("/app/share/gnome-theme-manager/icons"),
     ]:
         if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
             search_dirs.append(flatpak_dir)
 
-    # In AppImage runtime or dev source tree, check data and icons directories
-    appdir = Path(__file__).parent.parent.parent.parent
+    # User local and system icon paths
     for candidate in [
-        appdir / "usr" / "share" / "icons",
-        appdir / "data" / "icons",
-        Path("/usr/share/icons"),
+        Path.home() / ".local" / "share" / "icons",
+        Path.home() / ".local" / "share" / "icons" / "hicolor",
         Path("/usr/local/share/icons"),
+        Path("/usr/local/share/icons/hicolor"),
+        Path("/usr/share/icons"),
+        Path("/usr/share/icons/hicolor"),
     ]:
         if candidate.is_dir() and candidate not in search_dirs:
             search_dirs.append(candidate)
@@ -117,6 +140,9 @@ class MainWindow(Adw.ApplicationWindow):
 
         # Initialize bundled icons fallback chain
         init_bundled_icon_theme()
+
+        # Set application window icon name
+        self.set_icon_name("io.github.granafilo.ThemeManager")
 
         # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
         self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
@@ -169,6 +195,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_editor: Gtk.ListBoxRow = self.builder.get_object("row_editor")
         self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
         self.row_terminal: Gtk.ListBoxRow = self.builder.get_object("row_terminal")
+        self.row_store: Gtk.ListBoxRow = self.builder.get_object("row_store")
+        self.row_extensions: Gtk.ListBoxRow = self.builder.get_object("row_extensions")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -183,6 +211,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.editor_page = ThemeEditorPage(manager=self.manager)
         self.fonts_page = FontsPage(manager=self.manager)
         self.terminal_page = TerminalPage(manager=self.manager)
+        self.store_page = StorePage(manager=self.manager)
+        self.extensions_page = ExtensionsPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -197,6 +227,8 @@ class MainWindow(Adw.ApplicationWindow):
             "editor": self.editor_page,
             "fonts": self.fonts_page,
             "terminal": self.terminal_page,
+            "store": self.store_page,
+            "extensions": self.extensions_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -207,6 +239,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.editor_page.get_widget(), "editor")
         self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
         self.content_stack.add_named(self.terminal_page.get_widget(), "terminal")
+        self.content_stack.add_named(self.store_page.get_widget(), "store")
+        self.content_stack.add_named(self.extensions_page.get_widget(), "extensions")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -220,6 +254,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_editor: "editor",
             self.row_fonts: "fonts",
             self.row_terminal: "terminal",
+            self.row_store: "store",
+            self.row_extensions: "extensions",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -233,6 +269,10 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
+
+        # Auto-integrate desktop launcher and icons lazily in background
+        if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
+            GLib.idle_add(self._lazy_desktop_integration)
 
         self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "status", is_l
@@ -255,6 +295,16 @@ class MainWindow(Adw.ApplicationWindow):
         )
         self.fonts_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
         self.terminal_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
+        self.store_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "store", is_l
+        )
+        self.store_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
+        self.extensions_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "extensions", is_l
+        )
+        self.extensions_page.on_notify_message = lambda msg, is_err: self.add_toast(
             msg, is_error=is_err
         )
 
@@ -363,6 +413,75 @@ class MainWindow(Adw.ApplicationWindow):
         .boxed-list {
             margin-top: 6px;
             margin-bottom: 6px;
+        }
+
+        /* Online Store Cards & Banners */
+        .store-hub-category-card {
+            background-color: alpha(@card_bg_color, 0.75);
+            border: 1px solid alpha(@borders, 0.45);
+            border-radius: 16px;
+            padding: 4px;
+            transition: all 200ms ease-in-out;
+        }
+
+        .store-hub-category-card:hover {
+            background-color: alpha(@card_bg_color, 0.95);
+            border-color: alpha(@accent_color, 0.7);
+        }
+
+        .store-theme-card {
+            background-color: alpha(@card_bg_color, 0.75);
+            border: 1px solid alpha(@borders, 0.45);
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .store-theme-card:hover {
+            background-color: alpha(@card_bg_color, 0.95);
+            border-color: alpha(@accent_color, 0.6);
+        }
+
+        .store-banner-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+            border-radius: 12px;
+            min-height: 150px;
+        }
+
+        .store-banner-box picture, .store-banner-box image {
+            border-radius: 12px;
+        }
+
+        .store-detail-preview-frame {
+            background-color: alpha(@window_bg_color, 0.5);
+            border: 1px solid alpha(@borders, 0.3);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .store-thumb-btn {
+            border-radius: 8px;
+            padding: 2px;
+            border: 2px solid transparent;
+        }
+
+        .store-thumb-btn.suggested-action {
+            border-color: @accent_color;
+        }
+
+        .store-lightbox-bg {
+            background-color: #0b0d13;
+            padding: 16px;
+        }
+
+        /* Solid opaque background for status pages and loading stacks to completely prevent bleed-through */
+        adwstatuspage,
+        .solid-loading-page,
+        stack#content_stack,
+        stack#extensions_root,
+        stack#page_root,
+        #loading_page {
+            background-color: @window_bg_color;
+            opacity: 1;
         }
         """
         try:
@@ -553,6 +672,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.fonts_page.refresh()
         elif page_id == "terminal":
             self.terminal_page.refresh()
+        elif page_id == "extensions":
+            self.extensions_page.refresh()
 
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:
@@ -681,6 +802,14 @@ class MainWindow(Adw.ApplicationWindow):
             if timeout > 0:
                 toast.set_timeout(timeout)
             self.toast_overlay.add_toast(toast)
+
+    def _lazy_desktop_integration(self) -> bool:
+        """Run desktop integration in background without blocking UI startup."""
+        try:
+            self.manager.integrate_desktop()
+        except Exception as err:
+            logger.debug("Lazy desktop integration error: %s", err)
+        return GLib.SOURCE_REMOVE
 
 
 # Backward compatibility alias for tests

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <requires lib="libadwaita" version="1.0"/>
+
+  <object class="GtkStack" id="extensions_root">
+    <property name="transition-type">none</property>
+    <property name="vexpand">true</property>
+    <property name="hexpand">true</property>
+
+    <!-- 1. LOADING State (Full Page AdwStatusPage) -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">loading</property>
+        <property name="child">
+          <object class="AdwStatusPage" id="loading_page">
+            <property name="vexpand">true</property>
+            <property name="hexpand">true</property>
+            <property name="icon-name">application-x-addon-symbolic</property>
+            <property name="title" translatable="yes">Loading extensions...</property>
+            <property name="description" translatable="yes">Scanning installed extensions across system and user directories.</property>
+            <style>
+              <class name="solid-loading-page"/>
+              <class name="background"/>
+            </style>
+            <property name="child">
+              <object class="GtkSpinner" id="loading_spinner">
+                <property name="spinning">true</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="width-request">32</property>
+                <property name="height-request">32</property>
+                <property name="margin-top">12</property>
+              </object>
+            </property>
+          </object>
+        </property>
+      </object>
+    </child>
+
+    <!-- 2. READY State -->
+    <child>
+      <object class="GtkStackPage">
+        <property name="name">ready</property>
+        <property name="child">
+          <object class="GtkBox" id="ready_box">
+            <property name="orientation">vertical</property>
+            <property name="spacing">0</property>
+            <property name="hexpand">true</property>
+            <property name="vexpand">true</property>
+            <style>
+              <class name="background"/>
+            </style>
+
+            <child>
+              <object class="GtkScrolledWindow" id="scrolled_window">
+                <property name="hexpand">true</property>
+                <property name="vexpand">true</property>
+                <property name="hscrollbar-policy">never</property>
+
+                <property name="child">
+                  <object class="AdwClamp">
+                    <property name="maximum-size">960</property>
+                    <property name="tightening-threshold">600</property>
+
+                    <property name="child">
+                      <object class="GtkBox" id="main_content_box">
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">20</property>
+                        <property name="margin-top">24</property>
+                        <property name="margin-bottom">24</property>
+                        <property name="margin-start">16</property>
+                        <property name="margin-end">16</property>
+
+                        <!-- Page Header Card / Banner -->
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">16</property>
+                            <property name="valign">center</property>
+                            <child>
+                              <object class="GtkImage">
+                                <property name="icon-name">application-x-addon-symbolic</property>
+                                <property name="pixel-size">48</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">4</property>
+                                <property name="hexpand">true</property>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">GNOME Extensions</property>
+                                    <property name="xalign">0</property>
+                                    <style>
+                                      <class name="title-1"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">Manage, enable, and inspect installed GNOME Shell extensions.</property>
+                                    <property name="xalign">0</property>
+                                    <property name="wrap">true</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                      <class name="body"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">8</property>
+                                <property name="valign">center</property>
+                                <child>
+                                  <object class="GtkButton" id="btn_open_app">
+                                    <property name="label" translatable="yes">Extension Manager</property>
+                                    <property name="icon-name">com.mattjakeman.ExtensionManager-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Open Extension Manager application</property>
+                                    <style>
+                                      <class name="flat"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="btn_browse_portal">
+                                    <property name="label" translatable="yes">Get More Extensions</property>
+                                    <property name="icon-name">web-browser-symbolic</property>
+                                    <property name="tooltip-text" translatable="yes">Open official GNOME Extensions website</property>
+                                    <style>
+                                      <class name="suggested-action"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Toolbar: Search & Refresh -->
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">12</property>
+                            <child>
+                              <object class="GtkSearchEntry" id="search_entry">
+                                <property name="placeholder-text" translatable="yes">Search installed extensions...</property>
+                                <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="btn_refresh">
+                                <property name="icon-name">view-refresh-symbolic</property>
+                                <property name="tooltip-text" translatable="yes">Refresh extension list</property>
+                                <style>
+                                  <class name="flat"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                        <!-- Status Stack (Content Groups / Empty Search) -->
+                        <child>
+                          <object class="GtkStack" id="status_stack">
+                            <property name="transition-type">crossfade</property>
+                            <property name="vexpand">true</property>
+
+                            <!-- Page: Content Groups -->
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">content</property>
+                                <property name="child">
+                                  <object class="GtkBox">
+                                    <property name="orientation">vertical</property>
+                                    <property name="spacing">24</property>
+                                    <child>
+                                      <object class="AdwPreferencesGroup" id="user_extensions_group">
+                                        <property name="title" translatable="yes">User Extensions</property>
+                                        <property name="description" translatable="yes">Extensions installed in your user directory</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="AdwPreferencesGroup" id="system_extensions_group">
+                                        <property name="title" translatable="yes">System and Built-in Extensions</property>
+                                        <property name="description" translatable="yes">Integrated system extensions provided by GNOME Shell or system packages</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+
+                            <!-- Page: Empty Search -->
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">empty</property>
+                                <property name="child">
+                                  <object class="AdwStatusPage" id="empty_status_page">
+                                    <property name="icon-name">application-x-addon-symbolic</property>
+                                    <property name="title" translatable="yes">No Extensions Found</property>
+                                    <property name="description" translatable="yes">No extensions matched your filter or none are installed.</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
+                      </object>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </child>
+          </object>
+        </property>
+      </object>
+    </child>
+
+  </object>
+</interface>

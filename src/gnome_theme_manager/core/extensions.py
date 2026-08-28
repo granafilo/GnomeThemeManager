@@ -2,13 +2,13 @@
 
 """GNOME Shell extensions management module.
 
-Provides inspection and activation of the
-'user-theme@gnome-shell-extensions.gcampax.github.com' extension required
-to apply GNOME Shell themes.
+Provides inspection, listing, enable/disable toggle, and metadata parsing for
+GNOME Shell extensions.
 """
 
 import json
 import logging
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,6 +19,25 @@ from .constants import UI_PREFS_FILE
 logger = logging.getLogger("gnome_theme_manager.core")
 
 USER_THEME_EXTENSION_ID = "user-theme@gnome-shell-extensions.gcampax.github.com"
+DEFAULT_USER_EXTENSIONS_DIR = Path("~/.local/share/gnome-shell/extensions").expanduser()
+DEFAULT_SYSTEM_EXTENSIONS_DIR = Path("/usr/share/gnome-shell/extensions")
+
+
+@dataclass
+class GnomeExtension:
+    """Represents an installed GNOME Shell extension."""
+
+    uuid: str
+    name: str
+    description: str
+    enabled: bool
+    state: str = "INITIALIZED"
+    version: str | None = None
+    url: str | None = None
+    is_user_level: bool = True
+    path: Path | None = None
+    error: str | None = None
+    has_prefs: bool = False
 
 
 @dataclass
@@ -44,14 +63,31 @@ class UIPrefs:
 class ExtensionsManager:
     """Manager for GNOME Shell extensions and extension-related UI preferences."""
 
-    def __init__(self, prefs_file: Path | None = None) -> None:
+    def __init__(
+        self,
+        prefs_file: Path | None = None,
+        user_extensions_dir: Path | None = None,
+        system_extensions_dir: Path | None = None,
+    ) -> None:
         """Initialize ExtensionsManager.
 
         Args:
             prefs_file: Optional Path to ui_prefs.json state file.
+            user_extensions_dir: Optional path to user extensions directory.
+            system_extensions_dir: Optional path to system extensions directory.
         """
         self.prefs_file = (
             Path(prefs_file).expanduser() if prefs_file is not None else UI_PREFS_FILE.expanduser()
+        )
+        self.user_extensions_dir = (
+            Path(user_extensions_dir).expanduser()
+            if user_extensions_dir is not None
+            else DEFAULT_USER_EXTENSIONS_DIR
+        )
+        self.system_extensions_dir = (
+            Path(system_extensions_dir).expanduser()
+            if system_extensions_dir is not None
+            else DEFAULT_SYSTEM_EXTENSIONS_DIR
         )
 
     def get_prefs(self) -> UIPrefs:
@@ -84,12 +120,8 @@ class ExtensionsManager:
         prefs.auto_enable_user_theme = enabled
         self.save_prefs(prefs)
 
-    def is_user_theme_enabled(self) -> bool:
-        """Check if the user-theme extension is enabled on GNOME Shell.
-
-        Returns:
-            True if the extension is active/enabled, False otherwise.
-        """
+    def get_enabled_uuids(self) -> set[str]:
+        """Fetch set of enabled extension UUIDs via 'gnome-extensions list --enabled'."""
         try:
             res = subprocess.run(
                 ["gnome-extensions", "list", "--enabled"],
@@ -98,26 +130,172 @@ class ExtensionsManager:
                 check=False,
             )
             if res.returncode == 0:
-                enabled_list = res.stdout.splitlines()
-                return USER_THEME_EXTENSION_ID in enabled_list
+                return {line.strip() for line in res.stdout.splitlines() if line.strip()}
         except Exception as err:
-            logger.warning("Unable to determine extension status via gnome-extensions: %s", err)
-        return False
+            logger.warning("Failed to query enabled extensions via CLI: %s", err)
+        return set()
+
+    def is_user_theme_enabled(self) -> bool:
+        """Check if the user-theme extension is enabled on GNOME Shell."""
+        return USER_THEME_EXTENSION_ID in self.get_enabled_uuids()
 
     def enable_user_theme(self) -> bool:
-        """Attempt to enable the user-theme extension via 'gnome-extensions enable'.
+        """Attempt to enable the user-theme extension via 'gnome-extensions enable'."""
+        return self.enable_extension(USER_THEME_EXTENSION_ID)
 
-        Returns:
-            True if the command succeeded with exit code 0, False otherwise.
-        """
+    def enable_extension(self, uuid: str) -> bool:
+        """Enable an extension by UUID via 'gnome-extensions enable'."""
         try:
             res = subprocess.run(
-                ["gnome-extensions", "enable", USER_THEME_EXTENSION_ID],
+                ["gnome-extensions", "enable", uuid],
                 capture_output=True,
                 text=True,
                 check=False,
             )
             return res.returncode == 0
         except Exception as err:
-            logger.error("Error enabling user-theme extension: %s", err)
+            logger.error("Error enabling extension %s: %s", uuid, err)
+            return False
+
+    def disable_extension(self, uuid: str) -> bool:
+        """Disable an extension by UUID via 'gnome-extensions disable'."""
+        try:
+            res = subprocess.run(
+                ["gnome-extensions", "disable", uuid],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            return res.returncode == 0
+        except Exception as err:
+            logger.error("Error disabling extension %s: %s", uuid, err)
+            return False
+
+    def toggle_extension(self, uuid: str, enable: bool) -> bool:
+        """Toggle an extension's active status."""
+        return self.enable_extension(uuid) if enable else self.disable_extension(uuid)
+
+    def uninstall_extension(self, uuid: str) -> bool:
+        """Uninstall a user-level extension by UUID."""
+        if not uuid:
+            return False
+        try:
+            res = subprocess.run(
+                ["gnome-extensions", "uninstall", uuid],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if res.returncode == 0:
+                return True
+        except Exception as err:
+            logger.debug("gnome-extensions uninstall failed for %s: %s", uuid, err)
+
+        user_ext_dir = self.user_extensions_dir / uuid
+        if user_ext_dir.is_dir():
+            try:
+                shutil.rmtree(user_ext_dir)
+                return True
+            except Exception as err:
+                logger.error("Failed to delete extension directory %s: %s", user_ext_dir, err)
+        return False
+
+    def list_extensions(self) -> list[GnomeExtension]:
+        """List all installed extensions (user and system)."""
+        enabled_uuids = self.get_enabled_uuids()
+        extensions_by_uuid: dict[str, GnomeExtension] = {}
+
+        # Scan directories: user extensions have precedence over system
+        search_dirs: list[tuple[Path, bool]] = [
+            (self.user_extensions_dir, True),
+            (self.system_extensions_dir, False),
+        ]
+
+        for base_dir, is_user in search_dirs:
+            if not base_dir.is_dir():
+                continue
+            for item in sorted(base_dir.iterdir()):
+                if not item.is_dir():
+                    continue
+                meta_file = item / "metadata.json"
+                if not meta_file.is_file():
+                    continue
+                try:
+                    meta_raw = json.loads(meta_file.read_text(encoding="utf-8"))
+                    if not isinstance(meta_raw, dict):
+                        continue
+                    uuid = str(meta_raw.get("uuid") or item.name)
+                    if uuid in extensions_by_uuid:
+                        continue  # Already processed from higher precedence dir
+
+                    name = str(meta_raw.get("name") or uuid)
+                    desc = str(meta_raw.get("description") or "")
+                    ver_raw = meta_raw.get("version")
+                    version = str(ver_raw) if ver_raw is not None else None
+                    url = str(meta_raw.get("url")) if meta_raw.get("url") else None
+                    is_enabled = uuid in enabled_uuids
+                    has_prefs = (
+                        (item / "prefs.js").is_file()
+                        or (item / "prefs.ui").is_file()
+                        or bool(meta_raw.get("hasPrefs"))
+                    )
+
+                    ext = GnomeExtension(
+                        uuid=uuid,
+                        name=name,
+                        description=desc,
+                        enabled=is_enabled,
+                        state="ACTIVE" if is_enabled else "INITIALIZED",
+                        version=version,
+                        url=url,
+                        is_user_level=is_user,
+                        path=item,
+                        has_prefs=has_prefs,
+                    )
+                    extensions_by_uuid[uuid] = ext
+                except Exception as err:
+                    logger.debug("Failed reading extension metadata in %s: %s", item, err)
+
+        return sorted(extensions_by_uuid.values(), key=lambda e: e.name.lower())
+
+    def get_extension(self, uuid: str) -> GnomeExtension | None:
+        """Find an installed extension by its UUID."""
+        for ext in self.list_extensions():
+            if ext.uuid == uuid:
+                return ext
+        return None
+
+    def get_store_url(self, uuid: str) -> str:
+        """Get the extensions.gnome.org website URL for an extension or the main portal."""
+        if uuid:
+            return f"https://extensions.gnome.org/extension/{uuid}/"
+        return "https://extensions.gnome.org/"
+
+    def open_prefs(self, uuid: str) -> bool:
+        """Launch preferences dialog for an extension using 'gnome-extensions prefs <uuid>'."""
+        if not uuid:
+            return False
+        try:
+            subprocess.Popen(["gnome-extensions", "prefs", uuid])
+            return True
+        except Exception as err:
+            logger.warning("Failed to launch prefs for extension %s: %s", uuid, err)
+            return False
+
+    def open_extensions_app(self) -> bool:
+        """Launch Extension Manager (com.mattjakeman.ExtensionManager) or fallback system app."""
+        for cmd in [
+            ["extension-manager"],
+            ["flatpak", "run", "com.mattjakeman.ExtensionManager"],
+            ["gnome-extensions-app"],
+            ["gnome-shell-extension-prefs"],
+            ["flatpak", "run", "org.gnome.Extensions"],
+        ]:
+            if shutil.which(cmd[0]):
+                try:
+                    subprocess.Popen(cmd)
+                    return True
+                except Exception as err:
+                    logger.debug("Failed launching %s: %s", cmd, err)
+        logger.warning("No Extension Manager app found on the system.")
         return False

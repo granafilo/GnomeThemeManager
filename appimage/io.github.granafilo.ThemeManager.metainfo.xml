@@ -47,6 +47,11 @@
   </provides>
 
   <releases>
+    <release version="1.5.0" date="2026-08-28">
+      <description>
+        <p>Release 1.5.0: Integrated Online Theme Store for OpenDesktop and Pling with 1-click download and installation; full-screen high-definition screenshot viewer; and comprehensive GNOME Shell Extensions manager.</p>
+      </description>
+    </release>
     <release version="1.4.8" date="2026-08-28">
       <description>
         <p>Release 1.4.8: Dynamic system and sandbox theme fallback discovery; 1-click Light/Dark color scheme preference selector across Status, Themes, and Editor; real-time live GSettings desktop synchronization; in-app interactive sandbox guide modal; and asynchronous diagnostics performance optimizations.</p>

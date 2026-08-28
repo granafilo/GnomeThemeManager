@@ -266,10 +266,9 @@ def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> Non
     gtk4_a.mkdir(parents=True)
     (gtk4_a / "gtk.css").write_text("/* theme A css */")
 
-    # Tema B valido come GTK generico ma senza sottocartelle gtk-4.0 o gtk-3.0 per override
+    # Tema B valido come GTK generico ma senza CSS
     theme_b_dir = user_themes / "ThemeWithoutGTK4"
     theme_b_dir.mkdir(parents=True)
-    (theme_b_dir / "gtk.css").write_text("/* theme B root gtk css */")
     (theme_b_dir / "index.theme").write_text("[Desktop Entry]\nName=ThemeWithoutGTK4\n")
 
     theme_a = Theme("ThemeWithGTK4", ThemeType.GTK, theme_a_dir, True)

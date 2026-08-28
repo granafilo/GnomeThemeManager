@@ -22,13 +22,23 @@ from .constants import (
     USER_THEMES_DIRS,
 )
 from .css_extractor import ExtractedColors, extract_theme_colors, parse_css_define_colors
+from .desktop_integration import integrate_desktop
 from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
     GnomeThemeManagerError,
     GSettingsUnavailableError,
+    StoreDownloadError,
+    StoreError,
+    StoreItemNotFoundError,
+    StoreNetworkError,
     ThemeNotFoundError,
     ThemeValidationError,
+)
+from .extensions import (
+    ExtensionsManager,
+    GnomeExtension,
+    UIPrefs,
 )
 from .fallback import (
     FallbackConfig,
@@ -64,6 +74,13 @@ from .shell_editor import (
     ShellThemeForkManager,
     extract_shell_colors,
     generate_shell_css_override,
+)
+from .store_client import (
+    StoreCategory,
+    StoreClient,
+    StoreDownloadFile,
+    StoreItem,
+    theme_type_to_store_category,
 )
 from .terminal_palette import (
     TerminalPalette,
@@ -113,6 +130,7 @@ __all__ = [
     "ArchiveExtractionError",
     "EditorDraft",
     "EditorDraftManager",
+    "ExtensionsManager",
     "ExtractedColors",
     "FallbackConfig",
     "FallbackManager",
@@ -121,6 +139,7 @@ __all__ = [
     "GTK4ThemeLinker",
     "GlobalTheme",
     "GlobalThemeManager",
+    "GnomeExtension",
     "GnomeThemeManagerError",
     "PresetManager",
     "PropagationResult",
@@ -130,6 +149,14 @@ __all__ = [
     "ShellExtractedColors",
     "ShellThemeFork",
     "ShellThemeForkManager",
+    "StoreCategory",
+    "StoreClient",
+    "StoreDownloadError",
+    "StoreDownloadFile",
+    "StoreError",
+    "StoreItem",
+    "StoreItemNotFoundError",
+    "StoreNetworkError",
     "SystemStatus",
     "TerminalPalette",
     "TerminalProfileSummary",
@@ -148,6 +175,7 @@ __all__ = [
     "ThemeValidationError",
     "ThemeValidationResult",
     "ThemeValidator",
+    "UIPrefs",
     "WallpaperColorExtractor",
     "apply_palette_to_gnome_terminal",
     "create_gnome_terminal_profile",
@@ -163,9 +191,11 @@ __all__ = [
     "generate_shell_css_override",
     "import_palette_from_json",
     "inspect_extracted_tree",
+    "integrate_desktop",
     "list_gnome_terminal_profiles",
     "parse_css_define_colors",
     "revert_theme_fork",
     "safe_extract",
     "set_default_gnome_terminal_profile",
+    "theme_type_to_store_category",
 ]

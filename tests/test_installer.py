@@ -3,6 +3,7 @@
 """Test unitari per la gestione sicura degli archivi e per l'installer dei temi."""
 
 import io
+import os
 import tarfile
 import zipfile
 from pathlib import Path
@@ -91,6 +92,30 @@ def test_safe_extract_valid_targz(tmp_path: Path) -> None:
 
     assert result == target_dir
     assert (target_dir / "MyTheme" / "cursors" / "arrow").exists()
+
+
+def test_safe_extract_tar_with_symlinks(tmp_path: Path) -> None:
+    """Verifica l'estrazione di un archivio TAR con symlink e percorsi assoluti (tipici dei pacchetti icone)."""
+    archive_file = tmp_path / "icons_with_symlinks.tar.xz"
+    with tarfile.open(archive_file, "w:xz") as tf:
+        # File reale
+        base_file = tarfile.TarInfo(name="Slot-Dark-Icons/status/32/appointment.svg")
+        base_content = b"<svg>test</svg>"
+        base_file.size = len(base_content)
+        tf.addfile(base_file, io.BytesIO(base_content))
+
+        # Symlink con percorso assoluto / slash iniziale
+        sym_link = tarfile.TarInfo(name="Slot-Dark-Icons/status/32/appointment-symbolic.svg")
+        sym_link.type = tarfile.SYMTYPE
+        sym_link.linkname = "/Slot-Dark-Icons/status/32/appointment.svg"
+        tf.addfile(sym_link)
+
+    target_dir = tmp_path / "extracted_icons"
+    result = safe_extract(archive_file, target_dir)
+
+    assert result == target_dir
+    assert (target_dir / "Slot-Dark-Icons" / "status" / "32" / "appointment.svg").exists()
+    assert (target_dir / "Slot-Dark-Icons" / "status" / "32" / "appointment-symbolic.svg").exists()
 
 
 def test_safe_extract_zip_path_traversal(tmp_path: Path) -> None:
@@ -525,3 +550,23 @@ def test_installer_ensure_user_directories(tmp_path: Path) -> None:
         # Invocazione idempotente
         created_again = installer.ensure_user_directories()
         assert len(created_again) == 4
+
+
+def test_installer_with_dangling_symlinks(tmp_path: Path) -> None:
+    """Verifica che l'installer gestisca senza errori pacchetti con collegamenti simbolici orfani."""
+    user_icons = tmp_path / "icons"
+    installer = ThemeInstaller(user_icons_dir=user_icons)
+
+    # Crea cartella con un symlink verso un file inesistente
+    source_theme = tmp_path / "BrokenIconTheme"
+    (source_theme / "16x16").mkdir(parents=True)
+    (source_theme / "index.theme").write_text("[Icon Theme]\nName=BrokenIconTheme\n")
+    (source_theme / "16x16" / "real.png").write_bytes(b"PNG")
+
+    # Creazione manuale del symlink dangling
+    os.symlink("non_existent_file.png", source_theme / "16x16" / "dangling.png")
+
+    installed = installer.install_directory(source_theme, overwrite=True)
+    assert len(installed) == 1
+    assert (user_icons / "BrokenIconTheme" / "index.theme").exists()
+    assert (user_icons / "BrokenIconTheme" / "16x16" / "real.png").exists()
