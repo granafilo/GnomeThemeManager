@@ -336,6 +336,36 @@
                           </object>
                         </child>
                         <child>
+                          <object class="GtkListBoxRow" id="row_extensions">
+                            <property name="child">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">12</property>
+                                <property name="margin-start">12</property>
+                                <property name="margin-end">12</property>
+                                <property name="margin-top">10</property>
+                                <property name="margin-bottom">10</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">application-x-addon-symbolic</property>
+                                    <property name="pixel-size">20</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="label" translatable="yes">GNOME Extensions</property>
+                                    <property name="xalign">0</property>
+                                    <property name="hexpand">true</property>
+                                    <style>
+                                      <class name="heading"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </property>
+                          </object>
+                        </child>
+                        <child>
                           <object class="GtkListBoxRow" id="row_installer">
                             <property name="child">
                               <object class="GtkBox">
@@ -482,7 +512,7 @@
                 </child>
                 <property name="content">
                   <object class="GtkStack" id="content_stack">
-                    <property name="transition-type">crossfade</property>
+                    <property name="transition-type">none</property>
                     <property name="vexpand">true</property>
                     <property name="hexpand">true</property>
                   </object>

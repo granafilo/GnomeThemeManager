@@ -323,7 +323,7 @@ class StorePage:
         self.sort_dropdown: Gtk.DropDown = self.builder.get_object("sort_dropdown")
         self.search_button: Gtk.Button = self.builder.get_object("search_button")
         self.content_stack: Gtk.Stack = self.builder.get_object("content_stack")
-        self.cards_grid: Gtk.Grid = self.builder.get_object("cards_grid")
+        self.cards_grid: Gtk.FlowBox = self.builder.get_object("cards_grid")
         self.results_count_label: Gtk.Label = self.builder.get_object("results_count_label")
         self.btn_prev_page: Gtk.Button = self.builder.get_object("btn_prev_page")
         self.lbl_page_indicator: Gtk.Label = self.builder.get_object("lbl_page_indicator")
@@ -540,63 +540,23 @@ class StorePage:
         return False
 
     def _populate_grid_cards(self, items: list[StoreItem]) -> None:
-        """Render store cards into the multi-column GtkGrid taking sidebar into account."""
-        self._is_populating = True
-        try:
-            while child := self.cards_grid.get_first_child():
-                self.cards_grid.remove(child)
+        """Render store cards into the responsive flow box container."""
+        while child := self.cards_grid.get_first_child():
+            self.cards_grid.remove(child)
 
-            if not items:
-                return
+        if not items:
+            return
 
-            grid_width = self.cards_grid.get_width()
-            if grid_width <= 0:
-                root = self.widget.get_root()
-                win_width = root.get_width() if isinstance(root, Gtk.Window) else 1000
-                # Account for sidebar ~240px and margins
-                grid_width = max(300, win_width - 280)
-
-            if grid_width >= 860:
-                cols = 4
-            elif grid_width >= 520:
-                cols = 3
-            else:
-                cols = 2
-
-            self._active_cols = cols
-
-            for idx, item in enumerate(items):
-                card = _StoreCardWidget(
-                    item=item,
-                    on_view_details=self.show_item_details,
-                    on_quick_install=self._on_quick_install_item,
-                )
-                row = idx // cols
-                col = idx % cols
-                self.cards_grid.attach(card, col, row, 1, 1)
-        finally:
-            self._is_populating = False
+        for item in items:
+            card = _StoreCardWidget(
+                item=item,
+                on_view_details=self.show_item_details,
+                on_quick_install=self._on_quick_install_item,
+            )
+            self.cards_grid.append(card)
 
     def _on_grid_width_changed(self, *_args: object) -> None:
-        """Handle window width resize considering sidebar width."""
-        if (
-            getattr(self, "_is_populating", False)
-            or not self._current_items
-            or self.widget.get_visible_child_name() != "browse"
-        ):
-            return
-        grid_width = self.cards_grid.get_width()
-        if grid_width <= 0:
-            return
-        if grid_width >= 860:
-            target_cols = 4
-        elif grid_width >= 520:
-            target_cols = 3
-        else:
-            target_cols = 2
-
-        if target_cols != getattr(self, "_active_cols", 0):
-            self._populate_grid_cards(self._current_items)
+        """Handle window width resize adaptation."""
 
     def show_item_details(self, item: StoreItem) -> None:
         """Switch to detailed item view, fetch complete metadata and screenshots."""

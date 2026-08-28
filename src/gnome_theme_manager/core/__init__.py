@@ -34,6 +34,11 @@ from .errors import (
     ThemeNotFoundError,
     ThemeValidationError,
 )
+from .extensions import (
+    ExtensionsManager,
+    GnomeExtension,
+    UIPrefs,
+)
 from .fallback import (
     FallbackConfig,
     FallbackManager,
@@ -124,6 +129,7 @@ __all__ = [
     "ArchiveExtractionError",
     "EditorDraft",
     "EditorDraftManager",
+    "ExtensionsManager",
     "ExtractedColors",
     "FallbackConfig",
     "FallbackManager",
@@ -132,6 +138,7 @@ __all__ = [
     "GTK4ThemeLinker",
     "GlobalTheme",
     "GlobalThemeManager",
+    "GnomeExtension",
     "GnomeThemeManagerError",
     "PresetManager",
     "PropagationResult",
@@ -167,6 +174,7 @@ __all__ = [
     "ThemeValidationError",
     "ThemeValidationResult",
     "ThemeValidator",
+    "UIPrefs",
     "WallpaperColorExtractor",
     "apply_palette_to_gnome_terminal",
     "create_gnome_terminal_profile",

@@ -3209,6 +3209,137 @@ msgstr "Next Page"
 msgid "Page {page}"
 msgstr "Page {page}"
 
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:27
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:47
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:355
+msgid "GNOME Extensions"
+msgstr "GNOME Extensions"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:56
+msgid "Manage, enable, and inspect installed GNOME Shell extensions."
+msgstr "Manage, enable, and inspect installed GNOME Shell extensions."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:78
+msgid "Extension Manager"
+msgstr "Extension Manager"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:80
+msgid "Open Extension Manager application"
+msgstr "Open Extension Manager application"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:66
+msgid "Get More Extensions"
+msgstr "Get More Extensions"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:69
+msgid "Open official GNOME Extensions website"
+msgstr "Open official GNOME Extensions website"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:169
+msgid "Extension Settings"
+msgstr "Extension Settings"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:221
+msgid "Extension Manager application is not installed."
+msgstr "Extension Manager application is not installed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:227
+msgid "Could not open settings for this extension."
+msgstr "Could not open settings for this extension."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:165
+msgid "Description"
+msgstr "Description"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:172
+msgid "Version"
+msgstr "Version"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:183
+msgid "Details"
+msgstr "Details"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:191
+msgid "Remove"
+msgstr "Remove"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:194
+msgid "Uninstall this extension"
+msgstr "Uninstall this extension"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:273
+msgid "Extension '{name}' removed."
+msgstr "Extension '{name}' removed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:278
+msgid "Failed to remove extension '{name}'."
+msgstr "Failed to remove extension '{name}'."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:83
+msgid "Search installed extensions..."
+msgstr "Search installed extensions..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:89
+msgid "Refresh extension list"
+msgstr "Refresh extension list"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:123
+msgid "User Extensions"
+msgstr "User Extensions"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:124
+msgid "Extensions installed in your user directory"
+msgstr "Extensions installed in your user directory"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:146
+msgid "System and Built-in Extensions"
+msgstr "System and Built-in Extensions"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:130
+msgid "Integrated system extensions provided by GNOME Shell or system packages"
+msgstr "Integrated system extensions provided by GNOME Shell or system packages"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:164
+msgid "Loading extensions..."
+msgstr "Loading extensions..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:165
+msgid "Scanning installed extensions across system and user directories."
+msgstr "Scanning installed extensions across system and user directories."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:130
+msgid "Scanning extensions..."
+msgstr "Scanning extensions..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:144
+msgid "No Extensions Found"
+msgstr "No Extensions Found"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:145
+msgid "No extensions matched your filter or none are installed."
+msgstr "No extensions matched your filter or none are installed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:126
+msgid "No description provided."
+msgstr "No description provided."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:140
+msgid "Open extension website"
+msgstr "Open extension website"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:165
+msgid "Extension '{name}' enabled."
+msgstr "Extension '{name}' enabled."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:167
+msgid "Extension '{name}' disabled."
+msgstr "Extension '{name}' disabled."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:172
+msgid "Failed to toggle extension '{name}'."
+msgstr "Failed to toggle extension '{name}'."
+
+
 
 
 

@@ -27,6 +27,7 @@ from gi.repository import Adw, Gdk, GLib, Gtk
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
+    ExtensionsPage,
     FontsPage,
     GlobalThemesPage,
     InstallerPage,
@@ -171,6 +172,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_fonts: Gtk.ListBoxRow = self.builder.get_object("row_fonts")
         self.row_terminal: Gtk.ListBoxRow = self.builder.get_object("row_terminal")
         self.row_store: Gtk.ListBoxRow = self.builder.get_object("row_store")
+        self.row_extensions: Gtk.ListBoxRow = self.builder.get_object("row_extensions")
         self.row_installer: Gtk.ListBoxRow = self.builder.get_object("row_installer")
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
@@ -186,6 +188,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.fonts_page = FontsPage(manager=self.manager)
         self.terminal_page = TerminalPage(manager=self.manager)
         self.store_page = StorePage(manager=self.manager)
+        self.extensions_page = ExtensionsPage(manager=self.manager)
         self.installer_page = InstallerPage(manager=self.manager)
         self.sandbox_page = SandboxPage(manager=self.manager)
 
@@ -201,6 +204,7 @@ class MainWindow(Adw.ApplicationWindow):
             "fonts": self.fonts_page,
             "terminal": self.terminal_page,
             "store": self.store_page,
+            "extensions": self.extensions_page,
             "installer": self.installer_page,
             "sandbox": self.sandbox_page,
         }
@@ -212,6 +216,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.fonts_page.get_widget(), "fonts")
         self.content_stack.add_named(self.terminal_page.get_widget(), "terminal")
         self.content_stack.add_named(self.store_page.get_widget(), "store")
+        self.content_stack.add_named(self.extensions_page.get_widget(), "extensions")
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
@@ -226,6 +231,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.row_fonts: "fonts",
             self.row_terminal: "terminal",
             self.row_store: "store",
+            self.row_extensions: "extensions",
             self.row_installer: "installer",
             self.row_sandbox: "sandbox",
         }
@@ -267,6 +273,12 @@ class MainWindow(Adw.ApplicationWindow):
             "store", is_l
         )
         self.store_page.on_notify_message = lambda msg, is_err: self.add_toast(msg, is_error=is_err)
+        self.extensions_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
+            "extensions", is_l
+        )
+        self.extensions_page.on_notify_message = lambda msg, is_err: self.add_toast(
+            msg, is_error=is_err
+        )
 
         self.editor_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "editor", is_l
@@ -431,6 +443,17 @@ class MainWindow(Adw.ApplicationWindow):
         .store-lightbox-bg {
             background-color: #0b0d13;
             padding: 16px;
+        }
+
+        /* Solid opaque background for status pages and loading stacks to completely prevent bleed-through */
+        adwstatuspage,
+        .solid-loading-page,
+        stack#content_stack,
+        stack#extensions_root,
+        stack#page_root,
+        #loading_page {
+            background-color: @window_bg_color;
+            opacity: 1;
         }
         """
         try:
@@ -621,6 +644,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.fonts_page.refresh()
         elif page_id == "terminal":
             self.terminal_page.refresh()
+        elif page_id == "extensions":
+            self.extensions_page.refresh()
 
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:

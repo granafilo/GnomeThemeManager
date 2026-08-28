@@ -6,7 +6,7 @@
   <requires lib="libadwaita" version="1.0"/>
 
   <object class="GtkStack" id="page_root">
-    <property name="transition-type">crossfade</property>
+    <property name="transition-type">none</property>
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
 
@@ -21,6 +21,10 @@
             <property name="icon-name">preferences-color-symbolic</property>
             <property name="title" translatable="yes">Loading Theme Editor...</property>
             <property name="description" translatable="yes">Discovering installed components and extracting colors.</property>
+            <style>
+              <class name="solid-loading-page"/>
+              <class name="background"/>
+            </style>
             <property name="child">
               <object class="GtkSpinner" id="loading_spinner">
                 <property name="spinning">true</property>

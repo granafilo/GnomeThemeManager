@@ -358,26 +358,24 @@ class TestStorePageUnit:
         items = mock_manager.store_client.search.return_value
         page._on_search_completed(items, None)
 
-        with patch.object(page.cards_grid, "get_width", return_value=900):
-            page._on_grid_width_changed()
-            assert page._active_cols == 4
-
-        with patch.object(page.cards_grid, "get_width", return_value=600):
-            page._on_grid_width_changed()
-            assert page._active_cols == 3
-
-        with patch.object(page.cards_grid, "get_width", return_value=400):
-            page._on_grid_width_changed()
-            assert page._active_cols == 2
+        assert isinstance(page.cards_grid, Gtk.FlowBox)
+        assert page.cards_grid.get_max_children_per_line() == 4
+        assert page.cards_grid.get_min_children_per_line() == 1
+        page._on_grid_width_changed()
 
 
 class TestMainWindowStoreIntegration:
     """Test MainWindow integration and sidebar selection of StorePage."""
 
     def test_main_window_has_store_page(self) -> None:
+        from gi.repository import Gio
+
         from gnome_theme_manager.gui_gtk.window import MainWindow
 
-        app = Adw.Application(application_id="io.github.granafilo.GnomeThemeManagerTestStore")
+        app = Adw.Application(
+            application_id=None,
+            flags=Gio.ApplicationFlags.NON_UNIQUE,
+        )
         mock_mgr = MagicMock(spec=ThemeManager)
         mock_mgr.installer.ensure_user_directories.return_value = []
         mock_mgr.get_system_status.return_value.user_themes_path = Path(

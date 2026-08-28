@@ -3209,6 +3209,137 @@ msgstr "Pagina successiva"
 msgid "Page {page}"
 msgstr "Pagina {page}"
 
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:27
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:47
+#: src/gnome_theme_manager/gui_gtk/ui/window.ui:355
+msgid "GNOME Extensions"
+msgstr "Estensioni GNOME"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:56
+msgid "Manage, enable, and inspect installed GNOME Shell extensions."
+msgstr "Gestisci, abilita e ispeziona le estensioni di GNOME Shell installate."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:78
+msgid "Extension Manager"
+msgstr "Gestore estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:80
+msgid "Open Extension Manager application"
+msgstr "Apri l'applicazione Gestore estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:66
+msgid "Get More Extensions"
+msgstr "Ottieni altre estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:69
+msgid "Open official GNOME Extensions website"
+msgstr "Apri il sito ufficiale di GNOME Extensions"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:169
+msgid "Extension Settings"
+msgstr "Impostazioni estensione"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:221
+msgid "Extension Manager application is not installed."
+msgstr "L'applicazione Gestore estensioni non è installata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:227
+msgid "Could not open settings for this extension."
+msgstr "Impossibile aprire le impostazioni per questa estensione."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:165
+msgid "Description"
+msgstr "Descrizione"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:172
+msgid "Version"
+msgstr "Versione"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:183
+msgid "Details"
+msgstr "Dettagli"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:191
+msgid "Remove"
+msgstr "Rimuovi"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:194
+msgid "Uninstall this extension"
+msgstr "Disinstalla questa estensione"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:273
+msgid "Extension '{name}' removed."
+msgstr "Estensione '{name}' rimossa."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:278
+msgid "Failed to remove extension '{name}'."
+msgstr "Impossibile rimuovere l'estensione '{name}'."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:83
+msgid "Search installed extensions..."
+msgstr "Cerca tra le estensioni installate..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:89
+msgid "Refresh extension list"
+msgstr "Aggiorna elenco estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:123
+msgid "User Extensions"
+msgstr "Estensioni utente"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:124
+msgid "Extensions installed in your user directory"
+msgstr "Estensioni installate nella cartella utente"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:146
+msgid "System and Built-in Extensions"
+msgstr "Estensioni integrate di sistema"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:130
+msgid "Integrated system extensions provided by GNOME Shell or system packages"
+msgstr "Estensioni integrate fornite da GNOME Shell o dai pacchetti di sistema"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:164
+msgid "Loading extensions..."
+msgstr "Caricamento estensioni..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:165
+msgid "Scanning installed extensions across system and user directories."
+msgstr "Scansione delle estensioni installate nelle directory utente e di sistema."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:130
+msgid "Scanning extensions..."
+msgstr "Scansione estensioni in corso..."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:144
+msgid "No Extensions Found"
+msgstr "Nessuna estensione trovata"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui:145
+msgid "No extensions matched your filter or none are installed."
+msgstr "Nessuna estensione corrisponde al filtro o nessuna è installata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:126
+msgid "No description provided."
+msgstr "Nessuna descrizione fornita."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:140
+msgid "Open extension website"
+msgstr "Apri sito web dell'estensione"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:165
+msgid "Extension '{name}' enabled."
+msgstr "Estensione '{name}' abilitata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:167
+msgid "Extension '{name}' disabled."
+msgstr "Estensione '{name}' disabilitata."
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:172
+msgid "Failed to toggle extension '{name}'."
+msgstr "Impossibile modificare lo stato dell'estensione '{name}'."
+
+
 
 
 
