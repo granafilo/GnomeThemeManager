@@ -175,16 +175,28 @@ def integrate_desktop(
         mime_packages_dir = mime_dir / "packages"
         mime_packages_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Install / overwrite .desktop entry
+        changed = False
+
+        # 1. Install / overwrite .desktop entry if changed
         desktop_file = apps_dir / f"{APP_ID}.desktop"
         desktop_content = generate_desktop_entry_content(exec_path=custom_exec_path)
-        desktop_file.write_text(desktop_content, encoding="utf-8")
-        logger.info("Wrote desktop launcher to %s", desktop_file)
+        if (
+            not desktop_file.is_file()
+            or desktop_file.read_text(encoding="utf-8") != desktop_content
+        ):
+            desktop_file.write_text(desktop_content, encoding="utf-8")
+            changed = True
+            logger.info("Wrote desktop launcher to %s", desktop_file)
 
-        # 2. Install / overwrite MIME type definition
+        # 2. Install / overwrite MIME type definition if changed
         mime_xml_file = mime_packages_dir / "gtm-appimage.xml"
-        mime_xml_file.write_text(MIME_XML_CONTENT, encoding="utf-8")
-        logger.info("Wrote AppImage MIME definition to %s", mime_xml_file)
+        if (
+            not mime_xml_file.is_file()
+            or mime_xml_file.read_text(encoding="utf-8") != MIME_XML_CONTENT
+        ):
+            mime_xml_file.write_text(MIME_XML_CONTENT, encoding="utf-8")
+            changed = True
+            logger.info("Wrote AppImage MIME definition to %s", mime_xml_file)
 
         # 3. Clean up any conflicting thumbnailer entries
         thumb_dir = Path.home() / ".local" / "share" / "thumbnailers"
@@ -193,6 +205,7 @@ def integrate_desktop(
             if conflicting_thumb.is_file():
                 try:
                     conflicting_thumb.unlink()
+                    changed = True
                 except OSError:
                     pass
 
@@ -210,15 +223,22 @@ def integrate_desktop(
                     dest_apps_dir = icons_dir / size_dir / "apps"
                     dest_apps_dir.mkdir(parents=True, exist_ok=True)
                     dest_png = dest_apps_dir / f"{APP_ID}.png"
-                    shutil.copy2(src_png, dest_png)
-                    logger.debug("Installed app icon %s to %s", src_png, dest_png)
+                    if not dest_png.is_file() or dest_png.stat().st_size != src_png.stat().st_size:
+                        shutil.copy2(src_png, dest_png)
+                        changed = True
+                        logger.debug("Installed app icon %s to %s", src_png, dest_png)
 
                     # Mimetype icon
                     dest_mime_dir = icons_dir / size_dir / "mimetypes"
                     dest_mime_dir.mkdir(parents=True, exist_ok=True)
                     dest_mime_png = dest_mime_dir / f"{MIME_ICON_NAME}.png"
-                    shutil.copy2(src_png, dest_mime_png)
-                    logger.debug("Installed mimetype icon %s to %s", src_png, dest_mime_png)
+                    if (
+                        not dest_mime_png.is_file()
+                        or dest_mime_png.stat().st_size != src_png.stat().st_size
+                    ):
+                        shutil.copy2(src_png, dest_mime_png)
+                        changed = True
+                        logger.debug("Installed mimetype icon %s to %s", src_png, dest_mime_png)
 
             # Copy Scalable SVG (apps and mimetypes)
             src_svg = assets_hicolor / "scalable" / "apps" / f"{APP_ID}.svg"
@@ -227,52 +247,60 @@ def integrate_desktop(
                 dest_svg_dir = icons_dir / "scalable" / "apps"
                 dest_svg_dir.mkdir(parents=True, exist_ok=True)
                 dest_svg = dest_svg_dir / f"{APP_ID}.svg"
-                shutil.copy2(src_svg, dest_svg)
+                if not dest_svg.is_file() or dest_svg.stat().st_size != src_svg.stat().st_size:
+                    shutil.copy2(src_svg, dest_svg)
+                    changed = True
 
                 # Mimetype SVG
                 dest_mime_svg_dir = icons_dir / "scalable" / "mimetypes"
                 dest_mime_svg_dir.mkdir(parents=True, exist_ok=True)
                 dest_mime_svg = dest_mime_svg_dir / f"{MIME_ICON_NAME}.svg"
-                shutil.copy2(src_svg, dest_mime_svg)
+                if (
+                    not dest_mime_svg.is_file()
+                    or dest_mime_svg.stat().st_size != src_svg.stat().st_size
+                ):
+                    shutil.copy2(src_svg, dest_mime_svg)
+                    changed = True
 
         # 5. Remove any user-level index.theme in hicolor to avoid shadowing system hicolor theme
         user_hicolor_index = icons_dir / "index.theme"
         if user_hicolor_index.is_file():
             try:
                 user_hicolor_index.unlink()
+                changed = True
             except OSError:
                 pass
 
-        # 6. Refresh user MIME database
-        try:
-            subprocess.run(
-                ["update-mime-database", str(mime_dir)],
-                capture_output=True,
-                check=False,
-            )
-        except Exception as err:
-            logger.debug("update-mime-database execution skipped or failed: %s", err)
+        # 6. Refresh databases only if files were created or modified
+        if changed:
+            try:
+                subprocess.run(
+                    ["update-mime-database", str(mime_dir)],
+                    capture_output=True,
+                    check=False,
+                )
+            except Exception as err:
+                logger.debug("update-mime-database execution skipped or failed: %s", err)
 
-        # 7. Refresh user icon cache and desktop database (ignoring exit errors)
-        try:
-            subprocess.run(
-                ["gtk-update-icon-cache", "-f", "-t", str(icons_dir)],
-                capture_output=True,
-                check=False,
-            )
-        except Exception as err:
-            logger.debug("gtk-update-icon-cache execution skipped or failed: %s", err)
+            try:
+                subprocess.run(
+                    ["gtk-update-icon-cache", "-f", "-t", str(icons_dir)],
+                    capture_output=True,
+                    check=False,
+                )
+            except Exception as err:
+                logger.debug("gtk-update-icon-cache execution skipped or failed: %s", err)
 
-        try:
-            subprocess.run(
-                ["update-desktop-database", str(apps_dir)],
-                capture_output=True,
-                check=False,
-            )
-        except Exception as err:
-            logger.debug("update-desktop-database execution skipped or failed: %s", err)
+            try:
+                subprocess.run(
+                    ["update-desktop-database", str(apps_dir)],
+                    capture_output=True,
+                    check=False,
+                )
+            except Exception as err:
+                logger.debug("update-desktop-database execution skipped or failed: %s", err)
 
-        # 8. Pre-generate cached thumbnails if AppImage is executed or path is available
+        # 7. Pre-generate cached thumbnails if AppImage path is available
         appimage_candidate: Path | None = None
         appimage_env = os.environ.get("APPIMAGE")
         if appimage_env and Path(appimage_env).is_file():

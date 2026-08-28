@@ -69,24 +69,37 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
         BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
     ]
 
+    # AppImage runtime icon search paths (from $APPDIR)
+    appdir_env = os.environ.get("APPDIR")
+    if appdir_env:
+        appdir_path = Path(appdir_env)
+        for appdir_candidate in [
+            appdir_path / "usr" / "share" / "icons",
+            appdir_path / "usr" / "share" / "icons" / "hicolor",
+            appdir_path / "data" / "icons",
+            appdir_path / "data" / "icons" / "hicolor",
+        ]:
+            if appdir_candidate.is_dir() and appdir_candidate not in search_dirs:
+                search_dirs.append(appdir_candidate)
+
     # Flatpak runtime icon search paths
     for flatpak_dir in [
         Path("/app/share/icons"),
+        Path("/app/share/icons/hicolor"),
         Path("/app/share/gnome-theme-manager/data/icons"),
         Path("/app/share/gnome-theme-manager/icons"),
     ]:
         if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
             search_dirs.append(flatpak_dir)
 
-    # In AppImage runtime or dev source tree, check data and icons directories
-    appdir = Path(__file__).parent.parent.parent.parent
+    # User local and system icon paths
     for candidate in [
-        appdir / "usr" / "share" / "icons",
-        appdir / "data" / "icons",
-        appdir / "data" / "icons" / "hicolor",
-        Path("/usr/share/icons"),
-        Path("/usr/local/share/icons"),
         Path.home() / ".local" / "share" / "icons",
+        Path.home() / ".local" / "share" / "icons" / "hicolor",
+        Path("/usr/local/share/icons"),
+        Path("/usr/local/share/icons/hicolor"),
+        Path("/usr/share/icons"),
+        Path("/usr/share/icons/hicolor"),
     ]:
         if candidate.is_dir() and candidate not in search_dirs:
             search_dirs.append(candidate)
@@ -257,18 +270,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
-        # Auto-integrate desktop launcher and icons when running inside AppImage
+        # Auto-integrate desktop launcher and icons lazily in background
         if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
-            try:
-                if self.manager.integrate_desktop():
-                    self.add_toast(
-                        _(
-                            "Desktop integration updated. Close and reopen your file manager to see the updated AppImage icon."
-                        ),
-                        timeout=5,
-                    )
-            except Exception as err:
-                logger.warning("Desktop integration error: %s", err)
+            GLib.idle_add(self._lazy_desktop_integration)
 
         self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
             "status", is_l
@@ -798,6 +802,14 @@ class MainWindow(Adw.ApplicationWindow):
             if timeout > 0:
                 toast.set_timeout(timeout)
             self.toast_overlay.add_toast(toast)
+
+    def _lazy_desktop_integration(self) -> bool:
+        """Run desktop integration in background without blocking UI startup."""
+        try:
+            self.manager.integrate_desktop()
+        except Exception as err:
+            logger.debug("Lazy desktop integration error: %s", err)
+        return GLib.SOURCE_REMOVE
 
 
 # Backward compatibility alias for tests
