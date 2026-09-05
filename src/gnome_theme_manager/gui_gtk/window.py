@@ -829,6 +829,8 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _lazy_desktop_integration(self) -> bool:
         """Run desktop integration in background without blocking UI startup."""
+        if Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID"):
+            return GLib.SOURCE_REMOVE
         try:
             self.manager.integrate_desktop()
         except Exception as err:

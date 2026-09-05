@@ -93,6 +93,7 @@ def test_repo_desktop_entry_validity() -> None:
     assert f"Icon={APP_ID}" in content
     assert "Exec=gnome-theme-manager --gui" in content
     assert "Categories=" in content
+    assert "Utility;" in content
     assert "Settings;" in content
     assert "DesktopSettings;" in content
     assert f"StartupWMClass={APP_ID}" in content

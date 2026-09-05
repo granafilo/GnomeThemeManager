@@ -95,6 +95,8 @@ modules:
       - cp -r data/icons/hicolor/* /app/share/icons/hicolor/
       - mkdir -p /app/share/gnome-theme-manager/data/icons
       - cp -r data/icons/* /app/share/gnome-theme-manager/data/icons/
+      - update-desktop-database /app/share/applications
+      - gtk-update-icon-cache -q -t -f /app/share/icons/hicolor
     sources:
       - type: dir
         path: ..

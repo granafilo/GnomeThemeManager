@@ -104,7 +104,7 @@ def generate_desktop_entry_content(exec_path: str | None = None) -> str:
         f"Exec={exec_path}\n"
         f"Icon={APP_ID}\n"
         "Terminal=false\n"
-        "Categories=GTK;Settings;\n"
+        "Categories=Utility;Settings;DesktopSettings;GNOME;GTK;\n"
         "Keywords=theme;gtk;icon;cursor;gnome;settings;\n"
         f"MimeType={MIME_TYPE};\n"
         "StartupNotify=true\n"
@@ -174,6 +174,10 @@ def integrate_desktop(
     Returns:
         bool: True if integration succeeded.
     """
+    if not custom_target_apps_dir and (Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")):
+        logger.debug("Flatpak sandbox detected; skipping AppImage desktop integration")
+        return True
+
     apps_dir = custom_target_apps_dir or get_user_applications_dir()
     icons_dir = custom_target_icons_dir or get_user_icons_dir()
     mime_dir = custom_target_mime_dir or get_user_mime_dir()
