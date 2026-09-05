@@ -26,13 +26,19 @@ echo -e "${BLUE}====================================================${NC}"
 
 cd "$ROOT_DIR"
 
-# 1. Directory e file di build AppImage
-echo -e "\n${YELLOW}[1/4] Rimuovo directory ed artefatti di build AppImage...${NC}"
+# 1. Directory e file di packaging e build (Flatpak & legacy AppImage)
+echo -e "\n${YELLOW}[1/4] Rimuovo directory ed artefatti di build (Flatpak & AppImage)...${NC}"
 rm -rf AppDir/
 rm -rf dist/
 rm -rf squashfs-root/
+rm -rf build-dir/
+rm -rf repo/
+rm -rf .flatpak-builder/
+rm -rf scripts/.flatpak-builder/
 rm -f *.AppImage
 rm -f appimagetool-*.AppImage
+rm -f *.flatpak
+rm -f *.flatpakref
 
 # 2. Cache Python, pytest e ruff
 echo -e "\n${YELLOW}[2/4] Rimuovo cache Python, pytest e ruff...${NC}"

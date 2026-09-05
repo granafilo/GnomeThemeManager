@@ -78,3 +78,47 @@ def test_integrate_desktop_idempotent(tmp_path: Path) -> None:
     assert success_rerun is True
     updated_content = desktop_file.read_text(encoding="utf-8")
     assert "Exec=/opt/gnome-theme-manager-v2.AppImage" in updated_content
+
+
+def test_repo_desktop_entry_validity() -> None:
+    """Verify repository .desktop file meets FreeDesktop standards for app launcher menus."""
+    repo_root = Path(__file__).resolve().parent.parent
+    desktop_path = repo_root / "data" / "desktop" / f"{APP_ID}.desktop"
+    assert desktop_path.is_file(), f"Missing desktop file: {desktop_path}"
+
+    content = desktop_path.read_text(encoding="utf-8")
+    assert "[Desktop Entry]" in content
+    assert "Type=Application" in content
+    assert "Name=GNOME Theme Manager" in content
+    assert f"Icon={APP_ID}" in content
+    assert "Exec=gnome-theme-manager --gui" in content
+    assert "Categories=" in content
+    assert "Settings;" in content
+    assert "DesktopSettings;" in content
+    assert f"StartupWMClass={APP_ID}" in content
+
+
+def test_repo_metainfo_stock_icon_and_launchable() -> None:
+    """Verify repository metainfo.xml contains stock icon and coherent launchable ID."""
+    repo_root = Path(__file__).resolve().parent.parent
+    metainfo_path = repo_root / "data" / "metainfo" / f"{APP_ID}.metainfo.xml"
+    assert metainfo_path.is_file(), f"Missing metainfo file: {metainfo_path}"
+
+    content = metainfo_path.read_text(encoding="utf-8")
+    assert f"<id>{APP_ID}</id>" in content
+    assert f'<icon type="stock">{APP_ID}</icon>' in content
+    assert f'<launchable type="desktop-id">{APP_ID}.desktop</launchable>' in content
+    assert '<release version="1.5.0"' in content
+
+
+def test_repo_hicolor_icons_coverage() -> None:
+    """Verify all standard FreeDesktop icon resolutions exist in data/icons/hicolor/."""
+    repo_root = Path(__file__).resolve().parent.parent
+    hicolor = repo_root / "data" / "icons" / "hicolor"
+
+    for size in ["16x16", "24x24", "32x32", "48x48", "64x64", "128x128", "256x256", "512x512"]:
+        icon_file = hicolor / size / "apps" / f"{APP_ID}.png"
+        assert icon_file.is_file(), f"Missing standard icon PNG {size}: {icon_file}"
+
+    svg_file = hicolor / "scalable" / "apps" / f"{APP_ID}.svg"
+    assert svg_file.is_file(), f"Missing scalable SVG icon: {svg_file}"

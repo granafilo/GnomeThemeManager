@@ -66,25 +66,25 @@ def check_version(root: Path | None = None) -> int:
         return 1
     print(f"  CHANGELOG.md (Prima entry):         [{changelog_ver}] [OK]")
 
-    # 4. scripts/build-appimage.sh
-    build_path = base_dir / "scripts" / "build-appimage.sh"
+    # 4. scripts/build-flatpak.sh
+    build_path = base_dir / "scripts" / "build-flatpak.sh"
     if build_path.is_file():
         build_content = build_path.read_text(encoding="utf-8")
         m_build = re.search(r'^VERSION="([^"]+)"', build_content, re.MULTILINE)
         if not m_build:
-            print("Errore: VERSION non trovata in build-appimage.sh", file=sys.stderr)
+            print("Errore: VERSION non trovata in build-flatpak.sh", file=sys.stderr)
             return 1
         build_ver = m_build.group(1)
         if build_ver != current_ver:
             print(
-                f"Errore: VERSION in build-appimage.sh è '{build_ver}', attesa '{current_ver}'",
+                f"Errore: VERSION in build-flatpak.sh è '{build_ver}', attesa '{current_ver}'",
                 file=sys.stderr,
             )
             return 1
-        print(f"  scripts/build-appimage.sh:          {build_ver} [OK]")
+        print(f"  scripts/build-flatpak.sh:           {build_ver} [OK]")
 
-    # 5. appimage/io.github.granafilo.ThemeManager.metainfo.xml (prima release)
-    xml_path = base_dir / "appimage" / "io.github.granafilo.ThemeManager.metainfo.xml"
+    # 5. data/metainfo/io.github.granafilo.ThemeManager.metainfo.xml (prima release)
+    xml_path = base_dir / "data" / "metainfo" / "io.github.granafilo.ThemeManager.metainfo.xml"
     if xml_path.is_file():
         xml_content = xml_path.read_text(encoding="utf-8")
         m_xml = re.search(r'<release\s+version="([^"]+)"', xml_content)

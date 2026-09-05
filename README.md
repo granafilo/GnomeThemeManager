@@ -51,7 +51,7 @@ To run local helper scripts, custom desktop launchers, or build scripts, ensure 
 
 ```bash
 # Local development and build helper scripts:
-chmod +x build-flatpak.sh scripts/run_app.sh scripts/run_tests.sh scripts/run_cli.sh
+chmod +x scripts/build-flatpak.sh scripts/run_app.sh scripts/run_tests.sh scripts/run_cli.sh
 ```
 
 ### Sandbox Integration (Flatpak & Snap)
@@ -72,15 +72,15 @@ GNOME Theme Manager is distributed primarily via **Flatpak**, offering sandboxed
 #### 🚀 Method 1 (Recommended / Click-to-Install): `.flatpakref`
 Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 - **GUI**: Double-click `GNOMEThemeManager.flatpakref` in Files (Nautilus) or open it with GNOME Software / App Center to install with 1 click.
-- **CLI**:
+- **CLI (senza richiesta di password / User space)**:
   ```bash
-  flatpak install GNOMEThemeManager.flatpakref
+  flatpak install --user GNOMEThemeManager.flatpakref
   ```
 
 #### 📦 Method 2 (Offline / Standalone Single-File): `.flatpak` Bundle
 Download the standalone single-file bundle `GNOMEThemeManager-1.5.0-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-flatpak install --bundle GNOMEThemeManager-1.5.0-x86_64.flatpak
+flatpak install --user --bundle GNOMEThemeManager-1.5.0-x86_64.flatpak
 ```
 
 #### 🌐 Method 3 (Flathub - Future / Upstream)
@@ -99,7 +99,8 @@ flatpak run io.github.granafilo.ThemeManager
 ### 🔨 Build Flatpak Locally
 To build the Flatpak repository, standalone `.flatpak` bundle, and `.flatpakref` on your system:
 ```bash
-./build-flatpak.sh
+chmod +x scripts/build-flatpak.sh
+./scripts/build-flatpak.sh
 ```
 
 ---

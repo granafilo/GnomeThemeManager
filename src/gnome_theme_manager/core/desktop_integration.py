@@ -24,7 +24,16 @@ logger = logging.getLogger("gnome_theme_manager.core.desktop_integration")
 APP_ID: str = "io.github.granafilo.ThemeManager"
 MIME_TYPE: str = "application/vnd.appimage"
 MIME_ICON_NAME: str = "application-vnd.appimage"
-ICON_SIZES: list[str] = ["128x128", "256x256", "512x512"]
+ICON_SIZES: list[str] = [
+    "16x16",
+    "24x24",
+    "32x32",
+    "48x48",
+    "64x64",
+    "128x128",
+    "256x256",
+    "512x512",
+]
 
 MIME_XML_CONTENT: str = """<?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">

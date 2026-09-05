@@ -117,6 +117,7 @@ Comment=Modern GTK4 & Libadwaita theme, icon, cursor and shell manager for GNOME
 Description=Manage GTK, Shell, Icon, and Cursor themes on GNOME seamlessly.
 Icon=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/data/icons/hicolor/512x512/apps/${APP_ID}.png
 Url=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/repo
+SuggestRemoteName=gnomethememanager-repo
 RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
 IsRuntime=false
 EOF
@@ -132,11 +133,12 @@ echo -e "${GREEN}====================================================${NC}"
 echo -e "${BLUE}1. Bundle Offline (singolo file):${NC} $BUNDLE_FILE"
 echo -e "${BLUE}2. File Click-to-Install:${NC}         $FLATPAKREF_FILE"
 echo -e "\n${YELLOW}Come installare ed eseguire l'applicazione:${NC}"
-echo -e "  • ${GREEN}Opzione A (Bundle offline):${NC}"
+echo -e "  • ${GREEN}Installazione Utente (Zero richieste password - Consigliata):${NC}"
+echo -e "    flatpak install --user --bundle $BUNDLE_FILE"
+echo -e "    oppure:"
+echo -e "    flatpak install --user $FLATPAKREF_FILE"
+echo -e "\n  • ${GREEN}Installazione di Sistema:${NC}"
 echo -e "    flatpak install --bundle $BUNDLE_FILE"
-echo -e "\n  • ${GREEN}Opzione B (Flatpakref):${NC}"
-echo -e "    flatpak install $FLATPAKREF_FILE"
-echo -e "    (oppure doppio click sul file dal file manager GNOME/Nautilus)"
 echo -e "\n  • ${GREEN}Esecuzione dell'app:${NC}"
 echo -e "    flatpak run $APP_ID"
 echo -e "${GREEN}====================================================${NC}\n"

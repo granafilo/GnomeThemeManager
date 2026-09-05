@@ -5,6 +5,10 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <name>GNOME Theme Manager</name>
+  <developer id="io.github.granafilo">
+    <name>granafilo</name>
+  </developer>
+  <developer_name>granafilo</developer_name>
   <summary>Modern GTK4 &amp; Libadwaita theme, icon, cursor and shell manager for GNOME</summary>
   
   <description>
@@ -27,6 +31,7 @@
   </description>
 
   <launchable type="desktop-id">io.github.granafilo.ThemeManager.desktop</launchable>
+  <icon type="stock">io.github.granafilo.ThemeManager</icon>
   
   <screenshots>
     <screenshot type="default">

@@ -76,6 +76,7 @@ jobs:
           Description=Manage GTK, Shell, Icon, and Cursor themes on GNOME seamlessly.
           Icon=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/data/icons/hicolor/512x512/apps/io.github.granafilo.ThemeManager.png
           Url=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/repo
+          SuggestRemoteName=gnomethememanager-repo
           RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
           IsRuntime=false
           EOF

@@ -61,28 +61,18 @@ def render_and_distribute() -> bool:
     if not pb_orig.get_has_alpha():
         print("Warning: Source image does not report alpha channel!", file=sys.stderr)
 
-    # Derive 512, 256, 128 cleanly
-    pb_512 = (
-        pb_orig
-        if (pb_orig.get_width() == 512 and pb_orig.get_height() == 512)
-        else pb_orig.scale_simple(512, 512, GdkPixbuf.InterpType.BILINEAR)
-    )
-    pb_256 = pb_orig.scale_simple(256, 256, GdkPixbuf.InterpType.BILINEAR)
-    pb_128 = pb_orig.scale_simple(128, 128, GdkPixbuf.InterpType.BILINEAR)
-
-    if not pb_512 or not pb_256 or not pb_128:
-        print("Error: GdkPixbuf scaling failed!", file=sys.stderr)
-        return False
-
-    # Verify alpha corners
-    for name, pb in [("512x512", pb_512), ("256x256", pb_256), ("128x128", pb_128)]:
-        pixels = pb.get_pixels()
-        nc = pb.get_n_channels()
-        tl_a = pixels[3] if nc >= 4 else 255
-        if tl_a != 0:
-            print(f"Warning: {name} corner alpha is {tl_a} (expected 0)!", file=sys.stderr)
+    # Derive all standard FreeDesktop sizes cleanly
+    standard_sizes = [16, 24, 32, 48, 64, 128, 256, 512]
+    pixbufs: dict[int, GdkPixbuf.Pixbuf] = {}
+    for sz in standard_sizes:
+        if sz == 512 and pb_orig.get_width() == 512 and pb_orig.get_height() == 512:
+            pixbufs[sz] = pb_orig
         else:
-            print(f"✓ {name} alpha corner verified: 0 (True transparent)")
+            scaled = pb_orig.scale_simple(sz, sz, GdkPixbuf.InterpType.BILINEAR)
+            if not scaled:
+                print(f"Error: GdkPixbuf scaling failed for size {sz}!", file=sys.stderr)
+                return False
+            pixbufs[sz] = scaled
 
     # PNG Destinations
     hicolor_user = user_home / ".local" / "share" / "icons" / "hicolor"
@@ -93,39 +83,24 @@ def render_and_distribute() -> bool:
     if invalid_scalable_png.exists():
         invalid_scalable_png.unlink()
 
-    png_destinations: dict[int, list[Path]] = {
-        128: [
-            hicolor_repo / "128x128" / "apps" / f"{APP_ID}.png",
-            hicolor_repo / "128x128" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_repo / "128x128" / "mimetypes" / f"{MIME_NAME}.png",
-            hicolor_user / "128x128" / "apps" / f"{APP_ID}.png",
-            hicolor_user / "128x128" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_user / "128x128" / "mimetypes" / f"{MIME_NAME}.png",
-        ],
-        256: [
-            hicolor_repo / "256x256" / "apps" / f"{APP_ID}.png",
-            hicolor_repo / "256x256" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_repo / "256x256" / "mimetypes" / f"{MIME_NAME}.png",
-            hicolor_user / "256x256" / "apps" / f"{APP_ID}.png",
-            hicolor_user / "256x256" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_user / "256x256" / "mimetypes" / f"{MIME_NAME}.png",
-        ],
-        512: [
-            hicolor_repo / "512x512" / "apps" / f"{APP_ID}.png",
-            hicolor_repo / "512x512" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_repo / "512x512" / "mimetypes" / f"{MIME_NAME}.png",
-            hicolor_user / "512x512" / "apps" / f"{APP_ID}.png",
-            hicolor_user / "512x512" / "apps" / f"{SHORT_NAME}.png",
-            hicolor_user / "512x512" / "mimetypes" / f"{MIME_NAME}.png",
+    png_destinations: dict[int, list[Path]] = {}
+    for sz in standard_sizes:
+        dir_name = f"{sz}x{sz}"
+        png_destinations[sz] = [
+            hicolor_repo / dir_name / "apps" / f"{APP_ID}.png",
+            hicolor_repo / dir_name / "apps" / f"{SHORT_NAME}.png",
+            hicolor_user / dir_name / "apps" / f"{APP_ID}.png",
+            hicolor_user / dir_name / "apps" / f"{SHORT_NAME}.png",
+        ]
+
+    png_destinations[512].extend(
+        [
             repo_root / "data" / "icons" / f"{APP_ID}.png",
             repo_root / "data" / "icons" / f"{SHORT_NAME}.png",
-            repo_root / "appimage" / f"{APP_ID}.png",
             user_home / "Immagini" / f"{APP_ID}.png",
             user_home / "Immagini" / f"{SHORT_NAME}.png",
-        ],
-    }
-
-    pixbufs = {128: pb_128, 256: pb_256, 512: pb_512}
+        ]
+    )
 
     for size, paths in png_destinations.items():
         pb = pixbufs[size]
@@ -141,12 +116,9 @@ def render_and_distribute() -> bool:
     svg_destinations: list[Path] = [
         hicolor_repo / "scalable" / "apps" / f"{APP_ID}.svg",
         hicolor_repo / "scalable" / "apps" / f"{SHORT_NAME}.svg",
-        hicolor_repo / "scalable" / "mimetypes" / f"{MIME_NAME}.svg",
         hicolor_user / "scalable" / "apps" / f"{APP_ID}.svg",
         hicolor_user / "scalable" / "apps" / f"{SHORT_NAME}.svg",
-        hicolor_user / "scalable" / "mimetypes" / f"{MIME_NAME}.svg",
         repo_root / "data" / "icons" / f"{APP_ID}.svg",
-        repo_root / "appimage" / f"{APP_ID}.svg",
     ]
 
     for svg_path in svg_destinations:
