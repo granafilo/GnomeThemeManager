@@ -32,6 +32,14 @@ except (ImportError, ValueError, AttributeError):  # pragma: no cover
 logger = logging.getLogger("gnome_theme_manager.core")
 
 USER_THEME_EXTENSION_ID = "user-theme@gnome-shell-extensions.gcampax.github.com"
+USER_THEMES_IDS: tuple[str, ...] = (
+    "user-theme@gnome-shell-extensions.gcampax.github.com",  # GNOME upstream, Ubuntu, Fedora, Zorin OS
+    "user-theme@gnome-shell-extensions",                     # Debian/variants
+    "user-theme",                                            # Short name / CLI
+    "user-theme@zorin.com",                                  # Legacy Zorin OS identifier
+    "zorin-appearance@zorin.com",                            # Zorin appearance helper
+    "zorin-appearance@zorinos.com",                          # Modern Zorin appearance extension
+)
 DEFAULT_USER_EXTENSIONS_DIR = Path("~/.local/share/gnome-shell/extensions").expanduser()
 DEFAULT_SYSTEM_EXTENSIONS_DIR = Path("/usr/share/gnome-shell/extensions")
 
@@ -204,14 +212,10 @@ class ExtensionsManager:
         """Check if the user-theme extension is enabled on GNOME Shell."""
         enabled_uuids = self.get_enabled_uuids()
 
-        # 1. Exact match on known user-theme UUIDs
-        for cand in [
-            USER_THEME_EXTENSION_ID,
-            "user-theme",
-            "user-theme@zorin.com",
-            "zorin-appearance@zorin.com",
-        ]:
+        # 1. Exact match on supported user-theme UUIDs (fallback chain)
+        for cand in USER_THEMES_IDS:
             if cand in enabled_uuids:
+                logger.debug("User Themes extension detected active with UUID: %s", cand)
                 return True
 
         # 2. Match any enabled extension with 'user-theme' or 'user theme' in UUID/name
@@ -221,9 +225,56 @@ class ExtensionsManager:
                 or "user theme" in ext.name.lower()
                 or "user-theme" in ext.name.lower()
             ):
+                logger.debug(
+                    "User Themes extension matched enabled extension: uuid=%s name=%s",
+                    ext.uuid,
+                    ext.name,
+                )
                 return True
 
-        # 3. GSettings schema availability fallback
+        # 3. Direct DBus query via org.gnome.Shell.Extensions (GetExtensionInfo)
+        if _GIO_AVAILABLE and Gio is not None and GLib is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                for cand in USER_THEMES_IDS:
+                    try:
+                        res = proxy.call_sync(
+                            "GetExtensionInfo",
+                            GLib.Variant("(s)", (cand,)),
+                            Gio.DBusCallFlags.NONE,
+                            1000,
+                            None,
+                        )
+                        if res is not None:
+                            info = res.get_child_value(0).unpack()
+                            if isinstance(info, dict):
+                                state = info.get("state")
+                                if (
+                                    bool(info.get("enabled", False))
+                                    or state == 1.0
+                                    or state == 1
+                                    or str(state) in ("1", "1.0", "ACTIVE")
+                                ):
+                                    logger.debug(
+                                        "User Themes extension detected active via DBus GetExtensionInfo: %s",
+                                        cand,
+                                    )
+                                    return True
+                    except Exception:
+                        continue
+            except Exception as dbus_err:
+                logger.debug("DBus GetExtensionInfo check failed: %s", dbus_err)
+
+        # 4. GSettings schema availability fallback
         if _GIO_AVAILABLE and Gio is not None:
             try:
                 source = Gio.SettingsSchemaSource.get_default()
@@ -231,6 +282,26 @@ class ExtensionsManager:
                     source is not None
                     and source.lookup("org.gnome.shell.extensions.user-theme", True) is not None
                 ):
+                    logger.debug("User Themes schema available in GSettings")
+                    return True
+            except Exception:
+                pass
+
+        # 5. Check if dconf has active shell theme configuration
+        if shutil.which("dconf"):
+            try:
+                res = subprocess.run(
+                    ["dconf", "read", "/org/gnome/shell/extensions/user-theme/name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1,
+                    check=False,
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    logger.debug(
+                        "User Themes dconf configuration detected: %s",
+                        res.stdout.strip(),
+                    )
                     return True
             except Exception:
                 pass
@@ -241,8 +312,12 @@ class ExtensionsManager:
         """Attempt to enable the user-theme extension."""
         for ext in self.list_extensions():
             if "user-theme" in ext.uuid.lower() or "user theme" in ext.name.lower():
-                return self.enable_extension(ext.uuid)
-        return self.enable_extension(USER_THEME_EXTENSION_ID)
+                if self.enable_extension(ext.uuid):
+                    return True
+        for cand in USER_THEMES_IDS:
+            if self.enable_extension(cand):
+                return True
+        return False
 
     def enable_extension(self, uuid: str) -> bool:
         """Enable an extension by UUID via DBus, GSettings, or CLI."""

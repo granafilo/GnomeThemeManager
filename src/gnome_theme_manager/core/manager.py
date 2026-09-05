@@ -393,7 +393,9 @@ class ThemeManager:
             SystemStatus instance containing GSettings, extensions, paths, and sandbox info.
         """
         gsettings_avail = self._gsettings is not None
-        shell_supported = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
+        ext_enabled = bool(self._extensions and self._extensions.is_user_theme_enabled())
+        gsettings_shell = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
+        shell_supported = gsettings_shell or ext_enabled
 
         color_scheme_supported = False
         if (
@@ -692,7 +694,8 @@ class ThemeManager:
             )
 
         # 6. Shell theme support check
-        if shell_to_apply is not None and not client.is_shell_theme_supported:
+        ext_enabled = bool(self._extensions and self._extensions.is_user_theme_enabled())
+        if shell_to_apply is not None and not (client.is_shell_theme_supported or ext_enabled):
             warning_msg = (
                 "Cannot apply GNOME Shell theme: the 'User Themes' extension "
                 "(schema org.gnome.shell.extensions.user-theme) is not installed or active."

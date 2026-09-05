@@ -20,6 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 *.mo
+gschemas.compiled
 
 # Virtual Environments
 .venv/

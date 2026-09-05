@@ -97,6 +97,9 @@ modules:
       - cp -r data/icons/* /app/share/gnome-theme-manager/data/icons/
       - update-desktop-database /app/share/applications
       - gtk-update-icon-cache -q -t -f /app/share/icons/hicolor
+      - mkdir -p /app/share/glib-2.0/schemas
+      - install -Dm644 data/schemas/org.gnome.shell.extensions.user-theme.gschema.xml /app/share/glib-2.0/schemas/
+      - glib-compile-schemas /app/share/glib-2.0/schemas
     sources:
       - type: dir
         path: ..

@@ -9,10 +9,15 @@ This module encapsulates all read and write calls to:
 - `org.gnome.shell.extensions.user-theme` (GNOME Shell theme)
 """
 
+import logging
+import shutil
+import subprocess
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger("gnome_theme_manager.core")
 
 from .constants import (
     GSETTINGS_KEY_COLOR_SCHEME,
@@ -100,7 +105,9 @@ class GSettingsClient:
     @property
     def is_shell_theme_supported(self) -> bool:
         """Indicate whether the User Themes extension is available and Shell theme can be configured."""
-        return self._shell_settings is not None
+        if self._shell_settings is not None:
+            return True
+        return self._is_dconf_shell_available()
 
     def get_wallpaper_path(self) -> Path | None:
         """Get the filesystem path to the currently configured wallpaper image.
@@ -162,21 +169,44 @@ class GSettingsClient:
                 except Exception:
                     pass
 
-        # GNOME extension paths (both user and system)
+        # GNOME extension and schema paths (bundled, user, system, Flatpak, host mounts)
+        bundled_schemas = Path(__file__).resolve().parent.parent.parent.parent / "data" / "schemas"
         search_dirs = list(self.custom_schema_dirs)
+        if bundled_schemas.is_dir():
+            search_dirs.append(bundled_schemas)
         search_dirs.extend(
             [
+                Path("/app/share/glib-2.0/schemas"),
                 Path.home() / ".local" / "share" / "gnome-shell" / "extensions",
                 Path("/usr/share/gnome-shell/extensions"),
                 Path("/usr/local/share/gnome-shell/extensions"),
+                Path("/run/host/usr/share/glib-2.0/schemas"),
+                Path("/run/host/usr/share/gnome-shell/extensions"),
+                Path("/run/host/share/gnome-shell/extensions"),
             ]
         )
 
         for base in search_dirs:
             if not base.is_dir():
                 continue
+
+            # 1. Direct schema directory check (e.g. data/schemas or /app/share/glib-2.0/schemas)
             try:
-                # Scan extension subdirectories for 'schemas' folder
+                custom_source = Gio.SettingsSchemaSource.new_from_directory(
+                    str(base),
+                    schema_source,
+                    False,
+                )
+                schema = custom_source.lookup(target_schema, True)
+                if schema is not None:
+                    if hasattr(Gio.Settings, "new_full"):
+                        return Gio.Settings.new_full(schema, None, None)
+                    return Gio.Settings.new_with_path(target_schema, None)
+            except Exception:
+                pass
+
+            # 2. Scan extension subdirectories for 'schemas' folder
+            try:
                 for entry in base.iterdir():
                     schema_dir = entry / "schemas" if entry.is_dir() else None
                     if schema_dir and schema_dir.is_dir():
@@ -219,7 +249,13 @@ class GSettingsClient:
 
         shell_theme: str | None = None
         if self._shell_settings is not None:
-            shell_theme = self._shell_settings.get_string(GSETTINGS_KEY_SHELL_THEME)
+            try:
+                shell_theme = self._shell_settings.get_string(GSETTINGS_KEY_SHELL_THEME)
+            except Exception as err:
+                logger.debug("Failed to read shell theme via GSettings: %s", err)
+                shell_theme = self._read_dconf_shell_theme()
+        else:
+            shell_theme = self._read_dconf_shell_theme()
 
         return ThemeSet(
             gtk_theme=gtk_theme,
@@ -303,6 +339,60 @@ class GSettingsClient:
         if self._has_key(self._settings, GSETTINGS_KEY_COLOR_SCHEME):
             self._settings.set_string(GSETTINGS_KEY_COLOR_SCHEME, scheme)
 
+    def _is_dconf_shell_available(self) -> bool:
+        """Check if dconf can access /org/gnome/shell/extensions/user-theme/."""
+        if shutil.which("dconf"):
+            try:
+                res = subprocess.run(
+                    ["dconf", "read", "/org/gnome/shell/extensions/user-theme/name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    return True
+            except Exception:
+                pass
+        return False
+
+    def _read_dconf_shell_theme(self) -> str | None:
+        """Read active shell theme from dconf directly."""
+        if shutil.which("dconf"):
+            try:
+                res = subprocess.run(
+                    ["dconf", "read", "/org/gnome/shell/extensions/user-theme/name"],
+                    capture_output=True,
+                    text=True,
+                    timeout=1,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    val = res.stdout.strip().strip("'\"")
+                    return val if val else None
+            except Exception as err:
+                logger.debug("Failed to read shell theme via dconf: %s", err)
+        return None
+
+    def _write_dconf_shell_theme(self, name: str) -> bool:
+        """Write active shell theme to dconf directly."""
+        if shutil.which("dconf"):
+            try:
+                formatted = f"'{name}'" if name else "''"
+                res = subprocess.run(
+                    ["dconf", "write", "/org/gnome/shell/extensions/user-theme/name", formatted],
+                    capture_output=True,
+                    text=True,
+                    timeout=2,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    logger.debug("Successfully wrote shell theme to dconf: %s", name)
+                    return True
+            except Exception as err:
+                logger.debug("Failed to write shell theme via dconf: %s", err)
+        return False
+
     def set_shell_theme(self, name: str) -> None:
         """Set GNOME Shell theme.
 
@@ -312,14 +402,18 @@ class GSettingsClient:
         Raises:
             GSettingsUnavailableError: If the 'User Themes' GNOME extension is not installed.
         """
-        if self._shell_settings is None:
-            raise GSettingsUnavailableError(
-                "Cannot set GNOME Shell theme: the 'User Themes' extension "
-                "(schema org.gnome.shell.extensions.user-theme) is not installed or enabled. "
-                "You can install it on Ubuntu with: sudo apt install gnome-shell-extension-user-theme"
-            )
+        if self._shell_settings is not None:
+            self._shell_settings.set_string(GSETTINGS_KEY_SHELL_THEME, name)
+            return
 
-        self._shell_settings.set_string(GSETTINGS_KEY_SHELL_THEME, name)
+        if self._write_dconf_shell_theme(name):
+            return
+
+        raise GSettingsUnavailableError(
+            "Cannot set GNOME Shell theme: the 'User Themes' extension "
+            "(schema org.gnome.shell.extensions.user-theme) is not installed or enabled. "
+            "You can install it on Ubuntu with: sudo apt install gnome-shell-extension-user-theme"
+        )
 
     # -------------------------------------------------------------------------
     # Font Methods (FASE 4 Task 4.3)
