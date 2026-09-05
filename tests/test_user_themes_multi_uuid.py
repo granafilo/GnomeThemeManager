@@ -3,10 +3,9 @@
 """Unit tests for Multi-UUID User Themes extension detection."""
 
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from gnome_theme_manager.core.extensions import ExtensionsManager, USER_THEMES_IDS
+from gnome_theme_manager.core.extensions import USER_THEMES_IDS, ExtensionsManager
 
 
 class TestUserThemesMultiUuid(unittest.TestCase):
@@ -36,7 +35,9 @@ class TestUserThemesMultiUuid(unittest.TestCase):
     def test_is_user_theme_enabled_negative_case(self) -> None:
         """Verify is_user_theme_enabled returns False when extension is disabled."""
         with (
-            patch.object(self.manager, "get_enabled_uuids", return_value={"dash-to-dock@micxgx.gmail.com"}),
+            patch.object(
+                self.manager, "get_enabled_uuids", return_value={"dash-to-dock@micxgx.gmail.com"}
+            ),
             patch.object(self.manager, "list_extensions", return_value=[]),
             patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
             patch("shutil.which", return_value=None),

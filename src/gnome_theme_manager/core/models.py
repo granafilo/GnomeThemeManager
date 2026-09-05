@@ -171,3 +171,5 @@ class SystemStatus:
     sandbox_status: SandboxStatus | None = None
     gtk4_override_active: bool = False
     gtk4_override_status: "Gtk4OverrideStatus | None" = None
+    gnome_version: str | None = None
+    is_gnome_50_plus: bool = False

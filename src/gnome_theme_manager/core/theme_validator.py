@@ -129,6 +129,12 @@ class ThemeValidator:
         has_gtk4 = (path / "gtk-4.0" / "gtk.css").is_file() or (
             path / "gtk-4.0" / "gtk-dark.css"
         ).is_file()
+        has_libadwaita = (
+            (path / "gtk-4.0" / "libadwaita.css").is_file()
+            or (path / "libadwaita.css").is_file()
+            or (path / "libadwaita" / "libadwaita.css").is_file()
+            or (path / "libadwaita" / "gtk.css").is_file()
+        )
         has_gtk2 = (path / "gtk-2.0" / "gtkrc").is_file()
 
         index_path = path / "index.theme"
@@ -140,17 +146,31 @@ class ThemeValidator:
         else:
             warnings.append("Missing index.theme metadata file.")
 
-        if not (has_gtk3 or has_gtk4):
+        if not (has_gtk3 or has_gtk4 or has_libadwaita):
             missing_files.append("gtk-3.0/gtk.css or gtk-4.0/gtk.css")
             if has_gtk2:
                 warnings.append(
-                    "Legacy GTK 2 theme only (gtk-2.0). Missing modern GTK 3.0 or GTK 4.0 stylesheets."
+                    "Legacy GTK 2 theme only (gtk-2.0). Missing modern GTK 3.0, GTK 4.0, or Libadwaita stylesheets."
                 )
             else:
-                warnings.append("No modern GTK stylesheet (gtk-3.0 or gtk-4.0) detected.")
+                warnings.append("No modern GTK or Libadwaita stylesheet detected.")
             return ThemeValidationResult(
                 valid=False, warnings=warnings, missing_files=missing_files
             )
+
+        from .gnome_version import is_gnome_50_plus
+
+        if is_gnome_50_plus():
+            if not (has_gtk4 or has_libadwaita):
+                warnings.append(
+                    "GNOME 50+ detected: Theme lacks GTK 4.0 / Libadwaita stylesheet (gtk-4.0/gtk.css or libadwaita.css). "
+                    "Theme will not apply to Libadwaita applications."
+                )
+            elif not has_libadwaita:
+                warnings.append(
+                    "GNOME 50+ detected: Theme provides GTK 4.0 CSS but lacks dedicated libadwaita.css. "
+                    "Some Libadwaita UI components may render with default system styling."
+                )
 
         is_valid = len(missing_files) == 0 and not any(
             "failed to parse" in w.lower() for w in warnings

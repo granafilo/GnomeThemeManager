@@ -378,7 +378,9 @@ class GlobalThemeManager:
 
         # Identify active / dominant theme family (e.g. ZorinBlue, Zorin, Yaru, etc.)
         family_prefix = ""
-        current_theme_set = self._current_themes_provider() if self._current_themes_provider else None
+        current_theme_set = (
+            self._current_themes_provider() if self._current_themes_provider else None
+        )
         if current_theme_set and current_theme_set.gtk_theme:
             base = current_theme_set.gtk_theme.split("-")[0]
             if any(t.startswith(base) for t in gtk_themes):

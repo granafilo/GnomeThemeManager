@@ -83,8 +83,9 @@ def test_status_page_ui_structure_and_scrolling() -> None:
         elem for elem in root.iter("object") if elem.attrib.get("id") == "group_sandbox"
     )
     sandbox_props = {p.attrib.get("name"): p.text for p in group_sandbox_obj.findall("property")}
-    assert "&amp;" in sandbox_props.get("title", ""), (
-        "Sandbox title must contain &amp; for Pango markup"
+    assert "&" in sandbox_props.get("title", ""), "Sandbox title must contain '&' character"
+    assert "&amp;" in status_ui_path.read_text(encoding="utf-8"), (
+        "Raw UI XML must encode ampersand as &amp;"
     )
 
 

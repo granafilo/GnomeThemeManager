@@ -192,10 +192,14 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
         client = GSettingsClient()
         # Non trova lo schema shell da nessuna parte
         client._shell_settings = None
-        assert client.is_shell_theme_supported is False
+        with (
+            patch.object(client, "_is_dconf_shell_available", return_value=False),
+            patch.object(client, "_write_dconf_shell_theme", return_value=False),
+        ):
+            assert client.is_shell_theme_supported is False
 
-        with pytest.raises(GSettingsUnavailableError, match="User Themes"):
-            client.set_shell_theme("Nordic")
+            with pytest.raises(GSettingsUnavailableError, match="User Themes"):
+                client.set_shell_theme("Nordic")
 
 
 def test_gsettings_unavailable_when_gio_missing():

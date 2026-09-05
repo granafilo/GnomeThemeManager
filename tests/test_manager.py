@@ -96,6 +96,14 @@ def mock_validator() -> MagicMock:
 
 
 @pytest.fixture
+def mock_extensions() -> MagicMock:
+    """Mock per ExtensionsManager."""
+    ext = MagicMock()
+    ext.is_user_theme_enabled.return_value = False
+    return ext
+
+
+@pytest.fixture
 def manager(
     mock_scanner: MagicMock,
     mock_gsettings: MagicMock,
@@ -104,6 +112,7 @@ def manager(
     mock_presets: MagicMock,
     mock_sandbox: MagicMock,
     mock_validator: MagicMock,
+    mock_extensions: MagicMock,
 ) -> ThemeManager:
     """Istanza di ThemeManager con componenti iniettati (mock)."""
     return ThemeManager(
@@ -114,6 +123,7 @@ def manager(
         presets=mock_presets,
         sandbox_bridge=mock_sandbox,
         validator=mock_validator,
+        extensions=mock_extensions,
     )
 
 

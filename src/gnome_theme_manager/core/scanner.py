@@ -391,22 +391,30 @@ class ThemeScanner:
 
     @staticmethod
     def _is_gtk_theme(path: Path) -> bool:
-        """Check if directory contains a valid modern GTK 3 or GTK 4 theme."""
+        """Check if directory contains a valid modern GTK 3, GTK 4, or Libadwaita theme."""
         # 1. Direct stylesheet in theme root
-        if (path / "gtk.css").is_file():
+        if (path / "gtk.css").is_file() or (path / "libadwaita.css").is_file():
             return True
 
-        # 2. Modern GTK 4.0 or 3.0 subdirectories
-        for subdir_name in ("gtk-4.0", "gtk-3.0", "gtk-3.20"):
+        # 2. Modern GTK 4.0, 3.0, or Libadwaita subdirectories
+        for subdir_name in ("gtk-4.0", "gtk-3.0", "gtk-3.20", "libadwaita"):
             subdir = path / subdir_name
             if subdir.is_dir():
-                if (subdir / "gtk.css").is_file() or (subdir / "gtk-main.css").is_file():
+                return True
+
+        # 3. Check index.theme metadata
+        index_theme = path / "index.theme"
+        if index_theme.is_file():
+            try:
+                content = index_theme.read_text(encoding="utf-8", errors="ignore")
+                if (
+                    "[Desktop Entry]" in content
+                    or "[GtkTheme]" in content
+                    or "[X-GNOME-Metatheme]" in content
+                ):
                     return True
-                try:
-                    if any(f.suffix == ".css" for f in subdir.iterdir() if f.is_file()):
-                        return True
-                except (OSError, PermissionError):
-                    pass
+            except (OSError, UnicodeDecodeError):
+                pass
 
         return False
 
@@ -431,6 +439,7 @@ class ThemeScanner:
                 capture_output=True,
                 text=True,
                 timeout=3,
+                check=False,
             )
             if res.returncode != 0:
                 return []
@@ -452,6 +461,7 @@ class ThemeScanner:
                         ],
                         capture_output=True,
                         timeout=2,
+                        check=False,
                     )
                     if chk.returncode == 0:
                         found_themes.append(
@@ -467,6 +477,7 @@ class ThemeScanner:
                         ["flatpak-spawn", "--host", "test", "-d", f"{host_dir}/{name}/gnome-shell"],
                         capture_output=True,
                         timeout=2,
+                        check=False,
                     )
                     if chk.returncode == 0:
                         found_themes.append(
@@ -482,6 +493,7 @@ class ThemeScanner:
                         ["flatpak-spawn", "--host", "test", "-f", f"{host_dir}/{name}/index.theme"],
                         capture_output=True,
                         timeout=2,
+                        check=False,
                     )
                     if chk.returncode == 0:
                         found_themes.append(
@@ -497,6 +509,7 @@ class ThemeScanner:
                         ["flatpak-spawn", "--host", "test", "-d", f"{host_dir}/{name}/cursors"],
                         capture_output=True,
                         timeout=2,
+                        check=False,
                     )
                     if chk.returncode == 0:
                         found_themes.append(

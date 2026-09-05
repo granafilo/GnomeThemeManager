@@ -264,7 +264,7 @@
                 <!-- Group 6: Sandbox (Flatpak and Snap) -->
                 <child>
                   <object class="AdwPreferencesGroup" id="group_sandbox">
-                    <property name="title" translatable="yes">Sandbox Integration (Snap &amp; Flatpak)</property>
+                    <property name="title" translatable="yes">Sandbox Integration (Snap &amp;amp; Flatpak)</property>
                     <property name="description" translatable="yes">Access status of isolated applications to desktop themes.</property>
                     <child>
                       <object class="AdwActionRow" id="row_flatpak_status">

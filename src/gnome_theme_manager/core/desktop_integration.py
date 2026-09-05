@@ -174,7 +174,9 @@ def integrate_desktop(
     Returns:
         bool: True if integration succeeded.
     """
-    if not custom_target_apps_dir and (Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")):
+    if not custom_target_apps_dir and (
+        Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")
+    ):
         logger.debug("Flatpak sandbox detected; skipping AppImage desktop integration")
         return True
 

@@ -232,16 +232,26 @@ def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
     """
     detected: list[ThemeType] = []
 
-    # 1. Check GTK Theme
-    gtk_subdirs = ["gtk-2.0", "gtk-3.0", "gtk-4.0"]
+    # 1. Check GTK Theme / Libadwaita
+    gtk_subdirs = ["gtk-2.0", "gtk-3.0", "gtk-4.0", "libadwaita"]
     has_gtk_dir = any((theme_dir / sub).is_dir() for sub in gtk_subdirs)
+    has_gtk_file = (
+        (theme_dir / "gtk.css").is_file()
+        or (theme_dir / "libadwaita.css").is_file()
+        or (theme_dir / "gtk-4.0" / "libadwaita.css").is_file()
+        or (theme_dir / "gtk-4.0" / "gtk.css").is_file()
+    )
     index_theme = theme_dir / "index.theme"
 
-    is_gtk = has_gtk_dir
+    is_gtk = has_gtk_dir or has_gtk_file
     if index_theme.is_file() and not is_gtk:
         try:
             content = index_theme.read_text(encoding="utf-8", errors="ignore")
-            if "[Desktop Entry]" in content or "[GtkTheme]" in content:
+            if (
+                "[Desktop Entry]" in content
+                or "[GtkTheme]" in content
+                or "[X-GNOME-Metatheme]" in content
+            ):
                 is_gtk = True
         except (OSError, UnicodeDecodeError):
             pass

@@ -230,10 +230,20 @@ class GTK4ThemeLinker:
         """Apply GTK4 override, safely backing up prior state and rolling back on failure."""
         gtk4_source = theme_path / "gtk-4.0"
         gtk3_source = theme_path / "gtk-3.0"
+        libadwaita_source = theme_path / "libadwaita"
 
         source_dir: Path | None = None
-        if gtk4_source.is_dir() and (gtk4_source / "gtk.css").exists():
+        if gtk4_source.is_dir() and (
+            (gtk4_source / "gtk.css").exists() or (gtk4_source / "libadwaita.css").exists()
+        ):
             source_dir = gtk4_source
+        elif libadwaita_source.is_dir() and (
+            (libadwaita_source / "libadwaita.css").exists()
+            or (libadwaita_source / "gtk.css").exists()
+        ):
+            source_dir = libadwaita_source
+        elif (theme_path / "libadwaita.css").exists() or (theme_path / "gtk.css").exists():
+            source_dir = theme_path
         elif gtk3_source.is_dir() and (gtk3_source / "gtk.css").exists():
             # Ensure GTK3 css is not an obsolete Adwaita stub that fails on GTK4
             try:
@@ -247,6 +257,26 @@ class GTK4ThemeLinker:
             self.remove_override()
             return False
 
+        # Find dedicated libadwaita stylesheet if present
+        libadwaita_file: Path | None = None
+        if (source_dir / "libadwaita.css").exists():
+            libadwaita_file = source_dir / "libadwaita.css"
+        elif (theme_path / "gtk-4.0" / "libadwaita.css").exists():
+            libadwaita_file = theme_path / "gtk-4.0" / "libadwaita.css"
+        elif (theme_path / "libadwaita" / "libadwaita.css").exists():
+            libadwaita_file = theme_path / "libadwaita" / "libadwaita.css"
+        elif (theme_path / "libadwaita.css").exists():
+            libadwaita_file = theme_path / "libadwaita.css"
+        elif (source_dir / "gtk.css").exists():
+            # Link libadwaita.css to gtk.css as well for modern Libadwaita applications
+            libadwaita_file = source_dir / "gtk.css"
+
+        gtk_css_file: Path | None = None
+        if (source_dir / "gtk.css").exists():
+            gtk_css_file = source_dir / "gtk.css"
+        elif libadwaita_file and libadwaita_file.exists():
+            gtk_css_file = libadwaita_file
+
         manifest = self._load_manifest()
         entries = manifest.setdefault("entries", {})
 
@@ -256,11 +286,18 @@ class GTK4ThemeLinker:
             raise ThemeApplyError(f"Cannot create directory {self.config_dir}: {e}") from e
 
         targets_to_process = {
-            "gtk.css": source_dir / "gtk.css",
+            "gtk.css": gtk_css_file,
             "gtk-dark.css": source_dir / "gtk-dark.css"
             if (source_dir / "gtk-dark.css").exists()
-            else None,
-            "assets": source_dir / "assets" if (source_dir / "assets").exists() else None,
+            else (
+                theme_path / "gtk-4.0" / "gtk-dark.css"
+                if (theme_path / "gtk-4.0" / "gtk-dark.css").exists()
+                else None
+            ),
+            "libadwaita.css": libadwaita_file,
+            "assets": source_dir / "assets"
+            if (source_dir / "assets").exists()
+            else (theme_path / "assets" if (theme_path / "assets").exists() else None),
         }
 
         rollback_info: list[tuple[Path, dict[str, Any]]] = []

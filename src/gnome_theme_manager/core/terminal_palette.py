@@ -302,9 +302,18 @@ def _get_settings_instance(schema_id: str, path: str | None = None) -> Any | Non
     if schema_obj is None:
         return None
 
+    is_default_source = source is not None and schema_obj == source.lookup(schema_id, True)
+
     try:
         if path:
+            if is_default_source and hasattr(Gio.Settings, "new_with_path"):
+                return Gio.Settings.new_with_path(schema_id, path)
             return Gio.Settings.new_full(schema_obj, None, path)
+        if is_default_source and callable(Gio.Settings):
+            try:
+                return Gio.Settings(schema_id)
+            except (TypeError, Exception):
+                pass
         return Gio.Settings.new_full(schema_obj, None, None)
     except Exception as err:
         logger.debug("Failed to instantiate Gio.Settings for %s: %s", schema_id, err)

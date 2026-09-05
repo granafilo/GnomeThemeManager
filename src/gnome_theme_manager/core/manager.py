@@ -392,27 +392,35 @@ class ThemeManager:
         Returns:
             SystemStatus instance containing GSettings, extensions, paths, and sandbox info.
         """
-        gsettings_avail = self._gsettings is not None
+        client = None
+        try:
+            client = self.gsettings
+        except GSettingsUnavailableError:
+            pass
+
+        gsettings_avail = client is not None
         ext_enabled = bool(self._extensions and self._extensions.is_user_theme_enabled())
-        gsettings_shell = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
-        shell_supported = gsettings_shell or ext_enabled
+        gsettings_shell = bool(client and client.is_shell_theme_supported)
+        shell_supported = gsettings_avail and (gsettings_shell or ext_enabled)
 
         color_scheme_supported = False
-        if (
-            self._gsettings
-            and hasattr(self._gsettings, "_has_key")
-            and hasattr(self._gsettings, "_settings")
-        ):
-            color_scheme_supported = self._gsettings._has_key(
-                self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME
-            )
+        if client and hasattr(client, "_has_key") and hasattr(client, "_settings"):
+            color_scheme_supported = client._has_key(client._settings, GSETTINGS_KEY_COLOR_SCHEME)
 
         sandbox_stat = self._sandbox.get_sandbox_status()
         gtk4_override_stat = self._gtk4_linker.is_override_active()
 
         override_status = None
-        if self._gsettings:
-            override_status = self._gsettings.detect_gtk4_override()
+        if client:
+            override_status = client.detect_gtk4_override()
+
+        from .gnome_version import (
+            detect_gnome_version_string,
+            is_gnome_50_plus,
+        )
+
+        gnome_ver = detect_gnome_version_string()
+        is_50_plus = is_gnome_50_plus()
 
         return SystemStatus(
             gsettings_available=gsettings_avail,
@@ -423,7 +431,33 @@ class ThemeManager:
             sandbox_status=sandbox_stat,
             gtk4_override_active=gtk4_override_stat,
             gtk4_override_status=override_status,
+            gnome_version=gnome_ver,
+            is_gnome_50_plus=is_50_plus,
         )
+
+    def get_gnome_version(self) -> tuple[int, int] | None:
+        """Detect and return GNOME major and minor version."""
+        from .gnome_version import detect_gnome_version
+
+        return detect_gnome_version()
+
+    def get_gnome_version_string(self) -> str:
+        """Detect and return GNOME version string."""
+        from .gnome_version import detect_gnome_version_string
+
+        return detect_gnome_version_string()
+
+    def is_gnome_50_plus(self) -> bool:
+        """Return True if running on GNOME 50 or higher."""
+        from .gnome_version import is_gnome_50_plus
+
+        return is_gnome_50_plus()
+
+    def get_required_theme_structure(self) -> dict[str, Any]:
+        """Return required theme structure based on detected GNOME version."""
+        from .gnome_version import get_required_theme_structure
+
+        return get_required_theme_structure()
 
     def get_sandbox_status(self) -> SandboxStatus:
         """Return diagnostic status of sandbox runtimes (Flatpak and Snap).
@@ -1215,7 +1249,6 @@ class ThemeManager:
         """
         from .terminal_palette import (
             apply_palette_to_gnome_console,
-            apply_palette_to_gnome_terminal,
             detect_installed_terminal,
         )
 

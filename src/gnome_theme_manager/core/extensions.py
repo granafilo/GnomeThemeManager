@@ -34,11 +34,11 @@ logger = logging.getLogger("gnome_theme_manager.core")
 USER_THEME_EXTENSION_ID = "user-theme@gnome-shell-extensions.gcampax.github.com"
 USER_THEMES_IDS: tuple[str, ...] = (
     "user-theme@gnome-shell-extensions.gcampax.github.com",  # GNOME upstream, Ubuntu, Fedora, Zorin OS
-    "user-theme@gnome-shell-extensions",                     # Debian/variants
-    "user-theme",                                            # Short name / CLI
-    "user-theme@zorin.com",                                  # Legacy Zorin OS identifier
-    "zorin-appearance@zorin.com",                            # Zorin appearance helper
-    "zorin-appearance@zorinos.com",                          # Modern Zorin appearance extension
+    "user-theme@gnome-shell-extensions",  # Debian/variants
+    "user-theme",  # Short name / CLI
+    "user-theme@zorin.com",  # Legacy Zorin OS identifier
+    "zorin-appearance@zorin.com",  # Zorin appearance helper
+    "zorin-appearance@zorinos.com",  # Modern Zorin appearance extension
 )
 DEFAULT_USER_EXTENSIONS_DIR = Path("~/.local/share/gnome-shell/extensions").expanduser()
 DEFAULT_SYSTEM_EXTENSIONS_DIR = Path("/usr/share/gnome-shell/extensions")
@@ -269,7 +269,8 @@ class ExtensionsManager:
                                         cand,
                                     )
                                     return True
-                    except Exception:
+                    except Exception as loop_err:
+                        logger.debug("Error checking candidate %s: %s", cand, loop_err)
                         continue
             except Exception as dbus_err:
                 logger.debug("DBus GetExtensionInfo check failed: %s", dbus_err)
@@ -311,9 +312,10 @@ class ExtensionsManager:
     def enable_user_theme(self) -> bool:
         """Attempt to enable the user-theme extension."""
         for ext in self.list_extensions():
-            if "user-theme" in ext.uuid.lower() or "user theme" in ext.name.lower():
-                if self.enable_extension(ext.uuid):
-                    return True
+            if (
+                "user-theme" in ext.uuid.lower() or "user theme" in ext.name.lower()
+            ) and self.enable_extension(ext.uuid):
+                return True
         for cand in USER_THEMES_IDS:
             if self.enable_extension(cand):
                 return True
@@ -685,9 +687,16 @@ class ExtensionsManager:
             try:
                 # 1. Check if com.mattjakeman.ExtensionManager or org.gnome.Extensions flatpak exists on host
                 res = subprocess.run(
-                    ["flatpak-spawn", "--host", "flatpak", "info", "com.mattjakeman.ExtensionManager"],
+                    [
+                        "flatpak-spawn",
+                        "--host",
+                        "flatpak",
+                        "info",
+                        "com.mattjakeman.ExtensionManager",
+                    ],
                     capture_output=True,
                     timeout=2,
+                    check=False,
                 )
                 if res.returncode == 0:
                     return True
@@ -695,15 +704,21 @@ class ExtensionsManager:
                     ["flatpak-spawn", "--host", "flatpak", "info", "org.gnome.Extensions"],
                     capture_output=True,
                     timeout=2,
+                    check=False,
                 )
                 if res_ext.returncode == 0:
                     return True
                 # 2. Check if host binaries exist
-                for app in ("extension-manager", "gnome-extensions-app", "gnome-shell-extension-prefs"):
+                for app in (
+                    "extension-manager",
+                    "gnome-extensions-app",
+                    "gnome-shell-extension-prefs",
+                ):
                     res_bin = subprocess.run(
                         ["flatpak-spawn", "--host", "which", app],
                         capture_output=True,
                         timeout=2,
+                        check=False,
                     )
                     if res_bin.returncode == 0:
                         return True
@@ -725,6 +740,7 @@ class ExtensionsManager:
                     ["flatpak", "info", "com.mattjakeman.ExtensionManager"],
                     capture_output=True,
                     timeout=2,
+                    check=False,
                 )
                 if res.returncode == 0:
                     return True
@@ -732,6 +748,7 @@ class ExtensionsManager:
                     ["flatpak", "info", "org.gnome.Extensions"],
                     capture_output=True,
                     timeout=2,
+                    check=False,
                 )
                 if res2.returncode == 0:
                     return True
@@ -751,7 +768,13 @@ class ExtensionsManager:
                 ["flatpak-spawn", "--host", "gnome-extensions-app"],
                 ["flatpak-spawn", "--host", "flatpak", "run", "org.gnome.Extensions"],
                 ["flatpak-spawn", "--host", "gnome-shell-extension-prefs"],
-                ["flatpak-spawn", "--host", "gio", "launch", "com.mattjakeman.ExtensionManager.desktop"],
+                [
+                    "flatpak-spawn",
+                    "--host",
+                    "gio",
+                    "launch",
+                    "com.mattjakeman.ExtensionManager.desktop",
+                ],
             ]
             for cmd in spawn_cmds:
                 try:

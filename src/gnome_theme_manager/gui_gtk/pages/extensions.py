@@ -89,9 +89,7 @@ class ExtensionsPage:
             )
 
         if self.btn_browse_portal is not None:
-            self.btn_browse_portal.set_tooltip_text(
-                _("Open official GNOME Extensions website")
-            )
+            self.btn_browse_portal.set_tooltip_text(_("Open official GNOME Extensions website"))
 
         if self.search_entry is not None:
             self.search_entry.set_placeholder_text(_("Search installed extensions..."))

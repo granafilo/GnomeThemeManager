@@ -230,3 +230,27 @@ def extract_theme_colors(theme_dir_or_file: Path) -> ExtractedColors:
                 )
 
     return ExtractedColors()
+
+
+def _is_color_dark(hex_color: str) -> bool:
+    """Determine whether a hex color string represents a dark color (luminance < 128)."""
+    color = hex_color.strip().lstrip("#")
+    if len(color) == 6:
+        try:
+            r = int(color[0:2], 16)
+            g = int(color[2:4], 16)
+            b = int(color[4:6], 16)
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            return luminance < 128
+        except ValueError:
+            pass
+    elif len(color) == 3:
+        try:
+            r = int(color[0] * 2, 16)
+            g = int(color[1] * 2, 16)
+            b = int(color[2] * 2, 16)
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            return luminance < 128
+        except ValueError:
+            pass
+    return True
