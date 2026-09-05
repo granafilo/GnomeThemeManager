@@ -81,7 +81,11 @@ def test_extensions_manager_list_extensions(
     tmp_path: Path, mock_user_extensions_dir: Path, mock_system_extensions_dir: Path
 ) -> None:
     """Test discovering and listing all installed GNOME Shell extensions."""
-    with patch("subprocess.run") as mock_run:
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
+        patch("shutil.which", return_value="/usr/bin/gnome-extensions"),
+        patch("subprocess.run") as mock_run,
+    ):
         # Mock gnome-extensions list --enabled returning user-theme
         mock_run.return_value = MagicMock(
             returncode=0,
@@ -120,8 +124,12 @@ def test_extensions_manager_list_extensions(
 
 
 def test_extensions_manager_enable_and_disable(tmp_path: Path) -> None:
-    """Test enable, disable, and toggle methods."""
-    with patch("subprocess.run") as mock_run:
+    """Test enable, disable, and toggle methods via CLI fallback."""
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
+        patch("shutil.which", return_value="/usr/bin/gnome-extensions"),
+        patch("subprocess.run") as mock_run,
+    ):
         mock_run.return_value = MagicMock(returncode=0)
 
         manager = ExtensionsManager(prefs_file=tmp_path / "ui_prefs.json")
@@ -157,7 +165,11 @@ def test_extensions_manager_get_store_url() -> None:
 def test_extensions_manager_open_prefs_and_app() -> None:
     """Test launching extension preferences and official extensions app."""
     manager = ExtensionsManager()
-    with patch("subprocess.Popen") as mock_popen:
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
+        patch("shutil.which", return_value="/usr/bin/gnome-extensions"),
+        patch("subprocess.Popen") as mock_popen,
+    ):
         assert manager.open_prefs("dash-to-dock@micxgx.gmail.com") is True
         mock_popen.assert_called_with(
             ["gnome-extensions", "prefs", "dash-to-dock@micxgx.gmail.com"]
@@ -184,12 +196,20 @@ def test_extensions_manager_uninstall(tmp_path: Path) -> None:
     )
 
     # 1. CLI success
-    with patch("subprocess.run") as mock_run:
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
+        patch("shutil.which", return_value="/usr/bin/gnome-extensions"),
+        patch("subprocess.run") as mock_run,
+    ):
         mock_run.return_value = MagicMock(returncode=0)
         assert manager.uninstall_extension("test@ext.org") is True
 
     # 2. Direct directory fallback
-    with patch("subprocess.run") as mock_run:
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", False),
+        patch("shutil.which", return_value="/usr/bin/gnome-extensions"),
+        patch("subprocess.run") as mock_run,
+    ):
         mock_run.return_value = MagicMock(returncode=1)
         assert ext_dir.exists()
         assert manager.uninstall_extension("test@ext.org") is True

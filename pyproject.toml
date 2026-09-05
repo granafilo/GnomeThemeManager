@@ -70,6 +70,13 @@ warn_unused_configs = true
 show_error_codes = true
 explicit_package_bases = true
 mypy_path = "src"
+exclude = [
+    '^build-dir',
+    '^\.flatpak-builder',
+    '^repo',
+    '^dist',
+    '^\.venv',
+]
 
 [[tool.mypy.overrides]]
 module = [

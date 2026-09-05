@@ -29,12 +29,17 @@ ENV/
 env.bak/
 venv.bak/
 
-# AppImage & Packaging
+# AppImage, Flatpak & Packaging
 AppDir/
 *.AppImage
 *.appimage
 squashfs-root/
 appimagetool-*.AppImage
+.flatpak-builder/
+build-dir/
+repo/
+*.flatpak
+*.flatpakref
 
 # Testing & Linting
 .pytest_cache/

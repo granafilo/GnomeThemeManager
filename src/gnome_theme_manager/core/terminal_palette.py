@@ -190,13 +190,28 @@ def import_palette_from_json(file_path: Path) -> TerminalPalette:
     return TerminalPalette.from_dict(data)
 
 
+def _is_schema_available(schema_id: str) -> bool:
+    """Safely check if a GSettings schema is installed before instantiating Gio.Settings."""
+    if not _GIO_AVAILABLE or Gio is None:
+        return False
+    try:
+        source = Gio.SettingsSchemaSource.get_default()
+        if source is None:
+            return False
+        return source.lookup(schema_id, True) is not None
+    except Exception:
+        return False
+
+
 def list_gnome_terminal_profiles() -> list[TerminalProfileSummary]:
     """List all available GNOME Terminal profiles and default status.
 
     Returns:
         List of TerminalProfileSummary items.
     """
-    if not _GIO_AVAILABLE or Gio is None:
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+        "org.gnome.Terminal.Legacy.Profile"
+    ):
         return []
 
     try:
@@ -241,7 +256,9 @@ def create_gnome_terminal_profile(
     Returns:
         UUID of the newly created profile, or None on failure.
     """
-    if not _GIO_AVAILABLE or Gio is None:
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+        "org.gnome.Terminal.Legacy.Profile"
+    ):
         return None
 
     try:
@@ -275,7 +292,7 @@ def delete_gnome_terminal_profile(profile_id: str) -> bool:
     Returns:
         True if deleted, False if profile is default or deletion failed.
     """
-    if not _GIO_AVAILABLE or Gio is None:
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList"):
         return False
 
     try:
@@ -307,7 +324,7 @@ def set_default_gnome_terminal_profile(profile_id: str) -> bool:
     Returns:
         True if successful, False otherwise.
     """
-    if not _GIO_AVAILABLE or Gio is None:
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList"):
         return False
 
     try:
@@ -330,7 +347,9 @@ def read_current_gnome_terminal_palette(
     Returns:
         TerminalPalette if found and readable, None otherwise.
     """
-    if not _GIO_AVAILABLE or Gio is None:
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+        "org.gnome.Terminal.Legacy.Profile"
+    ):
         return None
 
     try:
@@ -394,8 +413,10 @@ def apply_palette_to_gnome_terminal(
     Returns:
         True if applied successfully, False if GNOME Terminal schema is unavailable.
     """
-    if not _GIO_AVAILABLE or Gio is None:
-        logger.warning("Gio is unavailable; cannot apply GNOME Terminal palette")
+    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+        "org.gnome.Terminal.Legacy.Profile"
+    ):
+        logger.warning("GNOME Terminal schemas are unavailable; cannot apply palette")
         return False
 
     try:

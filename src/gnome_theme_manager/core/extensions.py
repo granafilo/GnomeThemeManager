@@ -16,6 +16,19 @@ from typing import Any
 
 from .constants import UI_PREFS_FILE
 
+# Try importing Gio and GLib safely
+try:
+    import gi
+
+    gi.require_version("Gio", "2.0")
+    from gi.repository import Gio, GLib
+
+    _GIO_AVAILABLE = True
+except (ImportError, ValueError, AttributeError):  # pragma: no cover
+    Gio = None
+    GLib = None
+    _GIO_AVAILABLE = False
+
 logger = logging.getLogger("gnome_theme_manager.core")
 
 USER_THEME_EXTENSION_ID = "user-theme@gnome-shell-extensions.gcampax.github.com"
@@ -121,18 +134,65 @@ class ExtensionsManager:
         self.save_prefs(prefs)
 
     def get_enabled_uuids(self) -> set[str]:
-        """Fetch set of enabled extension UUIDs via 'gnome-extensions list --enabled'."""
-        try:
-            res = subprocess.run(
-                ["gnome-extensions", "list", "--enabled"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if res.returncode == 0:
-                return {line.strip() for line in res.stdout.splitlines() if line.strip()}
-        except Exception as err:
-            logger.warning("Failed to query enabled extensions via CLI: %s", err)
+        """Fetch set of enabled extension UUIDs via DBus, GSettings, or CLI."""
+        # 1. Primary: DBus org.gnome.Shell.Extensions ListExtensions
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                res = proxy.call_sync(
+                    "ListExtensions",
+                    None,
+                    Gio.DBusCallFlags.NONE,
+                    2000,
+                    None,
+                )
+                if res is not None:
+                    exts_dict = res.get_child_value(0).unpack()
+                    if isinstance(exts_dict, dict) and exts_dict:
+                        return {
+                            str(uuid)
+                            for uuid, info in exts_dict.items()
+                            if isinstance(info, dict)
+                            and (bool(info.get("enabled", False)) or info.get("state") == 1.0)
+                        }
+            except Exception as err:
+                logger.debug("DBus ListExtensions for enabled UUIDs failed: %s", err)
+
+        # 2. GSettings org.gnome.shell enabled-extensions
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                source = Gio.SettingsSchemaSource.get_default()
+                if source is not None and source.lookup("org.gnome.shell", True) is not None:
+                    settings = Gio.Settings(schema_id="org.gnome.shell")
+                    raw = settings.get_strv("enabled-extensions")
+                    if raw is not None:
+                        return set(raw)
+            except Exception as err:
+                logger.debug("GSettings enabled-extensions query failed: %s", err)
+
+        # 3. CLI if gnome-extensions is installed on PATH
+        if shutil.which("gnome-extensions"):
+            try:
+                res = subprocess.run(
+                    ["gnome-extensions", "list", "--enabled"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    return {line.strip() for line in res.stdout.splitlines() if line.strip()}
+            except Exception as err:
+                logger.debug("Failed to query enabled extensions via CLI: %s", err)
+
         return set()
 
     def is_user_theme_enabled(self) -> bool:
@@ -140,57 +200,175 @@ class ExtensionsManager:
         return USER_THEME_EXTENSION_ID in self.get_enabled_uuids()
 
     def enable_user_theme(self) -> bool:
-        """Attempt to enable the user-theme extension via 'gnome-extensions enable'."""
+        """Attempt to enable the user-theme extension."""
         return self.enable_extension(USER_THEME_EXTENSION_ID)
 
     def enable_extension(self, uuid: str) -> bool:
-        """Enable an extension by UUID via 'gnome-extensions enable'."""
-        try:
-            res = subprocess.run(
-                ["gnome-extensions", "enable", uuid],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            return res.returncode == 0
-        except Exception as err:
-            logger.error("Error enabling extension %s: %s", uuid, err)
+        """Enable an extension by UUID via DBus, GSettings, or CLI."""
+        if not uuid:
             return False
 
+        # 1. Try DBus org.gnome.Shell.Extensions
+        if _GIO_AVAILABLE and Gio is not None and GLib is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                proxy.call_sync(
+                    "EnableExtension",
+                    GLib.Variant("(s)", (uuid,)),
+                    Gio.DBusCallFlags.NONE,
+                    2000,
+                    None,
+                )
+                return True
+            except Exception as err:
+                logger.debug("DBus EnableExtension failed for %s: %s", uuid, err)
+
+        # 2. Try GSettings
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                source = Gio.SettingsSchemaSource.get_default()
+                if source is not None and source.lookup("org.gnome.shell", True) is not None:
+                    settings = Gio.Settings(schema_id="org.gnome.shell")
+                    current = list(settings.get_strv("enabled-extensions"))
+                    if uuid not in current:
+                        current.append(uuid)
+                        settings.set_strv("enabled-extensions", current)
+                        return True
+                    return True
+            except Exception as err:
+                logger.debug("GSettings EnableExtension failed for %s: %s", uuid, err)
+
+        # 3. Try CLI if available
+        if shutil.which("gnome-extensions"):
+            try:
+                res = subprocess.run(
+                    ["gnome-extensions", "enable", uuid],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                return res.returncode == 0
+            except Exception as err:
+                logger.debug("CLI enable failed for %s: %s", uuid, err)
+
+        return False
+
     def disable_extension(self, uuid: str) -> bool:
-        """Disable an extension by UUID via 'gnome-extensions disable'."""
-        try:
-            res = subprocess.run(
-                ["gnome-extensions", "disable", uuid],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            return res.returncode == 0
-        except Exception as err:
-            logger.error("Error disabling extension %s: %s", uuid, err)
+        """Disable an extension by UUID via DBus, GSettings, or CLI."""
+        if not uuid:
             return False
+
+        # 1. Try DBus org.gnome.Shell.Extensions
+        if _GIO_AVAILABLE and Gio is not None and GLib is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                proxy.call_sync(
+                    "DisableExtension",
+                    GLib.Variant("(s)", (uuid,)),
+                    Gio.DBusCallFlags.NONE,
+                    2000,
+                    None,
+                )
+                return True
+            except Exception as err:
+                logger.debug("DBus DisableExtension failed for %s: %s", uuid, err)
+
+        # 2. Try GSettings
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                source = Gio.SettingsSchemaSource.get_default()
+                if source is not None and source.lookup("org.gnome.shell", True) is not None:
+                    settings = Gio.Settings(schema_id="org.gnome.shell")
+                    current = list(settings.get_strv("enabled-extensions"))
+                    if uuid in current:
+                        current.remove(uuid)
+                        settings.set_strv("enabled-extensions", current)
+                        return True
+                    return True
+            except Exception as err:
+                logger.debug("GSettings DisableExtension failed for %s: %s", uuid, err)
+
+        # 3. Try CLI if available
+        if shutil.which("gnome-extensions"):
+            try:
+                res = subprocess.run(
+                    ["gnome-extensions", "disable", uuid],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                return res.returncode == 0
+            except Exception as err:
+                logger.debug("CLI disable failed for %s: %s", uuid, err)
+
+        return False
 
     def toggle_extension(self, uuid: str, enable: bool) -> bool:
         """Toggle an extension's active status."""
         return self.enable_extension(uuid) if enable else self.disable_extension(uuid)
 
     def uninstall_extension(self, uuid: str) -> bool:
-        """Uninstall a user-level extension by UUID."""
+        """Uninstall a user-level extension by UUID via DBus, CLI, or filesystem removal."""
         if not uuid:
             return False
-        try:
-            res = subprocess.run(
-                ["gnome-extensions", "uninstall", uuid],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if res.returncode == 0:
-                return True
-        except Exception as err:
-            logger.debug("gnome-extensions uninstall failed for %s: %s", uuid, err)
 
+        # 1. Try DBus org.gnome.Shell.Extensions UninstallExtension
+        if _GIO_AVAILABLE and Gio is not None and GLib is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                proxy.call_sync(
+                    "UninstallExtension",
+                    GLib.Variant("(s)", (uuid,)),
+                    Gio.DBusCallFlags.NONE,
+                    2000,
+                    None,
+                )
+                return True
+            except Exception as err:
+                logger.debug("DBus UninstallExtension failed for %s: %s", uuid, err)
+
+        # 2. Try CLI if available
+        if shutil.which("gnome-extensions"):
+            try:
+                res = subprocess.run(
+                    ["gnome-extensions", "uninstall", uuid],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    return True
+            except Exception as err:
+                logger.debug("gnome-extensions uninstall failed for %s: %s", uuid, err)
+
+        # 3. Fallback: Direct directory deletion
         user_ext_dir = self.user_extensions_dir / uuid
         if user_ext_dir.is_dir():
             try:
@@ -202,6 +380,69 @@ class ExtensionsManager:
 
     def list_extensions(self) -> list[GnomeExtension]:
         """List all installed extensions (user and system)."""
+        # 1. Primary: Query GNOME Shell DBus API
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                res = proxy.call_sync(
+                    "ListExtensions",
+                    None,
+                    Gio.DBusCallFlags.NONE,
+                    2000,
+                    None,
+                )
+                if res is not None:
+                    exts_dict = res.get_child_value(0).unpack()
+                    if isinstance(exts_dict, dict) and exts_dict:
+                        result: list[GnomeExtension] = []
+                        for uuid, info in exts_dict.items():
+                            if not isinstance(info, dict):
+                                continue
+                            enabled_val = bool(info.get("enabled", False))
+                            state_val = info.get("state")
+                            state_str = (
+                                "ACTIVE"
+                                if enabled_val or state_val == 1.0
+                                else ("ERROR" if state_val == 2.0 else "INITIALIZED")
+                            )
+                            is_user = info.get("type") == 2.0 or info.get("type") == 2
+                            path_str = info.get("path")
+                            path_obj = Path(path_str) if path_str else None
+                            ver_raw = info.get("version")
+                            version_str = (
+                                str(int(ver_raw))
+                                if isinstance(ver_raw, float) and ver_raw.is_integer()
+                                else (str(ver_raw) if ver_raw is not None else None)
+                            )
+
+                            ext = GnomeExtension(
+                                uuid=str(uuid),
+                                name=str(info.get("name") or uuid),
+                                description=str(info.get("description") or ""),
+                                enabled=enabled_val or state_val == 1.0,
+                                state=state_str,
+                                version=version_str,
+                                url=str(info.get("url")) if info.get("url") else None,
+                                is_user_level=is_user,
+                                path=path_obj,
+                                error=str(info.get("error")) if info.get("error") else None,
+                                has_prefs=bool(info.get("hasPrefs", False)),
+                            )
+                            result.append(ext)
+                        return sorted(result, key=lambda e: e.name.lower())
+            except Exception as err:
+                logger.debug("DBus ListExtensions query failed: %s", err)
+
+        # 2. Fallback: Directory scanner
         enabled_uuids = self.get_enabled_uuids()
         extensions_by_uuid: dict[str, GnomeExtension] = {}
 
@@ -209,6 +450,7 @@ class ExtensionsManager:
         search_dirs: list[tuple[Path, bool]] = [
             (self.user_extensions_dir, True),
             (self.system_extensions_dir, False),
+            (Path("/run/host/share/gnome-shell/extensions"), False),
         ]
 
         for base_dir, is_user in search_dirs:
@@ -272,15 +514,53 @@ class ExtensionsManager:
         return "https://extensions.gnome.org/"
 
     def open_prefs(self, uuid: str) -> bool:
-        """Launch preferences dialog for an extension using 'gnome-extensions prefs <uuid>'."""
+        """Launch preferences dialog for an extension via DBus or CLI."""
         if not uuid:
             return False
-        try:
-            subprocess.Popen(["gnome-extensions", "prefs", uuid])
-            return True
-        except Exception as err:
-            logger.warning("Failed to launch prefs for extension %s: %s", uuid, err)
-            return False
+
+        # 1. Try DBus org.gnome.Shell.Extensions OpenExtensionPrefs
+        if _GIO_AVAILABLE and Gio is not None and GLib is not None:
+            try:
+                bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                proxy = Gio.DBusProxy.new_sync(
+                    bus,
+                    Gio.DBusProxyFlags.NONE,
+                    None,
+                    "org.gnome.Shell.Extensions",
+                    "/org/gnome/Shell/Extensions",
+                    "org.gnome.Shell.Extensions",
+                    None,
+                )
+                try:
+                    proxy.call_sync(
+                        "OpenExtensionPrefs",
+                        GLib.Variant("(ssa{sv})", (uuid, "", {})),
+                        Gio.DBusCallFlags.NONE,
+                        2000,
+                        None,
+                    )
+                    return True
+                except Exception:
+                    proxy.call_sync(
+                        "OpenExtensionPrefs",
+                        GLib.Variant("(ss)", (uuid, "")),
+                        Gio.DBusCallFlags.NONE,
+                        2000,
+                        None,
+                    )
+                    return True
+            except Exception as err:
+                logger.debug("DBus OpenExtensionPrefs failed for %s: %s", uuid, err)
+
+        # 2. Try CLI if available
+        if shutil.which("gnome-extensions"):
+            try:
+                subprocess.Popen(["gnome-extensions", "prefs", uuid])
+                return True
+            except Exception as err:
+                logger.warning("Failed to launch prefs for extension %s: %s", uuid, err)
+
+        return False
 
     def open_extensions_app(self) -> bool:
         """Launch Extension Manager (com.mattjakeman.ExtensionManager) or fallback system app."""

@@ -479,10 +479,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        if getattr(args, "gui", False) or args.command == "gui":
+        if getattr(args, "gui", False) or args.command == "gui" or not args.command:
             try:
                 from ..gui_gtk import launch_gui as launch_gui_gtk
             except (ImportError, ModuleNotFoundError) as err:
+                if not getattr(args, "gui", False) and args.command != "gui":
+                    parser.print_help()
+                    return 0
                 print(
                     _(
                         "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\n"
@@ -495,10 +498,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             manager = ThemeManager()
             return launch_gui_gtk(manager=manager)
-
-        if not args.command:
-            parser.print_help()
-            return 0
 
         manager = ThemeManager()
 

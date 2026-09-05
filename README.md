@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)
 [![Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
-[![AppImage](https://img.shields.io/badge/AppImage-Portable-blue?logo=appimage&logoColor=white)](https://github.com/granafilo/GnomeThemeManager/releases)
+[![Flatpak](https://img.shields.io/badge/Flatpak-Sandbox-blue?logo=flatpak&logoColor=white)](https://github.com/granafilo/GnomeThemeManager/releases)
 
 A modern, native theme manager and customization suite for the **GNOME Desktop environment** (GTK4 & Libadwaita).
 
@@ -47,14 +47,11 @@ A modern, native theme manager and customization suite for the **GNOME Desktop e
 
 ### Make the launcher executable
 
-To run the standalone AppImage bundle, local helper scripts, or launch the app from a custom desktop launcher, ensure execution permissions are granted:
+To run local helper scripts, custom desktop launchers, or build scripts, ensure execution permissions are granted:
 
 ```bash
-# AppImage bundle:
-chmod +x GNOMEThemeManager-*.AppImage
-
-# Local development helper scripts:
-chmod +x scripts/run_app.sh scripts/run_tests.sh scripts/run_cli.sh
+# Local development and build helper scripts:
+chmod +x build-flatpak.sh scripts/run_app.sh scripts/run_tests.sh scripts/run_cli.sh
 ```
 
 ### Sandbox Integration (Flatpak & Snap)
@@ -68,20 +65,46 @@ For deep-dive details on sandbox integration and snap configuration, see **[docs
 
 ## ⚡ Quick Start
 
-### 1. Portable AppImage (Recommended for Users)
+### 📦 Installation on Linux (Flatpak)
 
-Download the latest `.AppImage` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases) and launch:
+GNOME Theme Manager is distributed primarily via **Flatpak**, offering sandboxed security with full native desktop customization capabilities.
 
+#### 🚀 Method 1 (Recommended / Click-to-Install): `.flatpakref`
+Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+- **GUI**: Double-click `GNOMEThemeManager.flatpakref` in Files (Nautilus) or open it with GNOME Software / App Center to install with 1 click.
+- **CLI**:
+  ```bash
+  flatpak install GNOMEThemeManager.flatpakref
+  ```
+
+#### 📦 Method 2 (Offline / Standalone Single-File): `.flatpak` Bundle
+Download the standalone single-file bundle `GNOMEThemeManager-1.5.0-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-chmod +x GNOMEThemeManager-1.4.1-x86_64.AppImage
-./GNOMEThemeManager-1.4.1-x86_64.AppImage
+flatpak install --bundle GNOMEThemeManager-1.5.0-x86_64.flatpak
 ```
 
-*(See [INSTALL.md](INSTALL.md) for distribution packages and FUSE troubleshooting).*
+#### 🌐 Method 3 (Flathub - Future / Upstream)
+```bash
+flatpak install flathub io.github.granafilo.ThemeManager
+```
+
+#### 🎯 Running the Application
+Once installed, launch the application from the GNOME App Grid or via terminal:
+```bash
+flatpak run io.github.granafilo.ThemeManager
+```
 
 ---
 
-### 2. Run from Source (GUI & CLI)
+### 🔨 Build Flatpak Locally
+To build the Flatpak repository, standalone `.flatpak` bundle, and `.flatpakref` on your system:
+```bash
+./build-flatpak.sh
+```
+
+---
+
+### 💻 Run from Source (GUI & CLI)
 
 Clone the repository and run using the automated launcher scripts:
 

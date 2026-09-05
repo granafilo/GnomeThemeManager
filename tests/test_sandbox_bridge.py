@@ -436,3 +436,38 @@ def test_cli_apply_no_sandbox_flag() -> None:
         mock_apply.assert_called_once()
         _, kwargs = mock_apply.call_args
         assert kwargs.get("propagate_sandbox") is False
+
+
+# =============================================================================
+# 9. Test Sandbox Detection and Propagation inside Flatpak Container
+# =============================================================================
+
+
+def test_sandbox_bridge_in_container(tmp_path: Path) -> None:
+    """Verifica che dentro il sandbox Flatpak vengano rilevati Flatpak e Snap dai file e scritto l'override."""
+    bridge = SandboxBridge()
+    fake_override = tmp_path / ".local" / "share" / "flatpak" / "overrides" / "global"
+    fake_override.parent.mkdir(parents=True, exist_ok=True)
+    fake_override.write_text("[Context]\nfilesystems=~/.local/share/themes:ro;\n")
+
+    fake_snap = tmp_path / "snap"
+    fake_snap.mkdir(parents=True, exist_ok=True)
+
+    with (
+        patch("shutil.which", return_value=None),
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("pathlib.Path.home", return_value=tmp_path),
+    ):
+        assert bridge.is_flatpak_available() is True
+        assert bridge.is_snap_available() is True
+
+        status = bridge.get_sandbox_status()
+        assert status.flatpak_available is True
+        assert status.flatpak_filesystem_override_active is True
+        assert status.snap_available is True
+
+        res = bridge.propagate_to_flatpak(gtk_theme="Nordic", icon_theme="Papirus")
+        assert res.flatpak_success is True
+        assert fake_override.is_file()
+        content = fake_override.read_text()
+        assert "GTK_THEME = Nordic" in content or "gtk_theme = Nordic" in content

@@ -1,0 +1,105 @@
+name: Build and Release Flatpak
+
+on:
+  push:
+    branches: ["main", "feature/**"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["main"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-flatpak:
+    name: Build Flatpak Bundle & Flatpakref
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Flatpak Builder State
+        uses: actions/cache@v4
+        with:
+          path: |
+            .flatpak-builder/cache
+            .flatpak-builder/downloads
+          key: flatpak-builder-${{ runner.os }}-${{ hashFiles('flatpak/io.github.granafilo.ThemeManager.yml') }}
+          restore-keys: |
+            flatpak-builder-${{ runner.os }}-
+
+      - name: Install Flatpak and flatpak-builder
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder elfutils appstream
+
+      - name: Setup Flathub Remote & GNOME 46 Runtime
+        run: |
+          set -euxo pipefail
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user -y flathub org.gnome.Platform//46 org.gnome.Sdk//46
+
+      - name: Compile Gettext Translations
+        run: |
+          python3 scripts/compile_translations.py
+
+      - name: Build Flatpak Repository
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+          flatpak-builder --force-clean \
+            --user \
+            --install-deps-from=flathub \
+            --default-branch=stable \
+            --repo=repo \
+            build-dir \
+            flatpak/io.github.granafilo.ThemeManager.yml
+
+      - name: Export Flatpak Bundle (.flatpak)
+        run: |
+          set -euxo pipefail
+          flatpak build-bundle repo dist/GNOMEThemeManager-1.5.0-x86_64.flatpak io.github.granafilo.ThemeManager stable
+
+      - name: Generate Flatpakref (Click-to-Install)
+        run: |
+          cat << 'EOF' > dist/GNOMEThemeManager.flatpakref
+          [Flatpak Ref]
+          Name=io.github.granafilo.ThemeManager
+          Branch=stable
+          Title=GNOME Theme Manager
+          Comment=Modern GTK4 & Libadwaita theme, icon, cursor and shell manager for GNOME
+          Description=Manage GTK, Shell, Icon, and Cursor themes on GNOME seamlessly.
+          Icon=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/data/icons/hicolor/512x512/apps/io.github.granafilo.ThemeManager.png
+          Url=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/repo
+          RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
+          IsRuntime=false
+          EOF
+
+      - name: Generate SHA-256 Checksums
+        run: |
+          cd dist
+          sha256sum GNOMEThemeManager-1.5.0-x86_64.flatpak GNOMEThemeManager.flatpakref > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-dist
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Publish GitHub Release Assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/GNOMEThemeManager-1.5.0-x86_64.flatpak
+            dist/GNOMEThemeManager.flatpakref
+            dist/SHA256SUMS
+          generate_release_notes: true

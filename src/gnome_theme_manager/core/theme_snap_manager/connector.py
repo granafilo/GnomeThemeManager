@@ -8,6 +8,7 @@ import json
 import logging
 import shutil
 import subprocess
+from pathlib import Path
 
 from .exceptions import SnapPermissionError
 
@@ -41,89 +42,169 @@ class SnapConnector:
     def get_installed_snaps(self) -> list[str]:
         """Query and return list of installed snap names."""
         snap_bin = shutil.which("snap")
-        if not snap_bin:
-            logger.warning("snap binary not available on system.")
-            return []
+        if snap_bin:
+            # Attempt structured JSON output first
+            res = self._run_cmd([snap_bin, "list", "--json"])
+            if res.returncode == 0 and res.stdout.strip():
+                try:
+                    data = json.loads(res.stdout)
+                    if isinstance(data, list):
+                        return [
+                            str(item["name"])
+                            for item in data
+                            if isinstance(item, dict) and item.get("name") is not None
+                        ]
+                except Exception as err:
+                    logger.debug("Failed parsing 'snap list --json': %s", err)
 
-        # Attempt structured JSON output first
-        res = self._run_cmd([snap_bin, "list", "--json"])
-        if res.returncode == 0 and res.stdout.strip():
+            # Fallback to standard textual listing
+            res_text = self._run_cmd([snap_bin, "list"])
+            if res_text.returncode == 0:
+                snaps: list[str] = []
+                for line in res_text.stdout.splitlines()[1:]:
+                    parts = line.split()
+                    if parts:
+                        snaps.append(parts[0])
+                if snaps:
+                    return snaps
+
+        # Filesystem discovery (fallback / sandbox mode)
+        ignored = {
+            "bin",
+            "README",
+            "core",
+            "core18",
+            "core20",
+            "core22",
+            "core24",
+            "core26",
+            "bare",
+            "snapd",
+        }
+        found_snaps: set[str] = set()
+        snap_dir = Path("/snap")
+        if snap_dir.is_dir():
             try:
-                data = json.loads(res.stdout)
-                if isinstance(data, list):
-                    return [
-                        str(item["name"])
-                        for item in data
-                        if isinstance(item, dict) and item.get("name") is not None
-                    ]
-            except Exception as err:
-                logger.debug("Failed parsing 'snap list --json': %s", err)
+                for child in snap_dir.iterdir():
+                    if (
+                        child.is_dir()
+                        and child.name not in ignored
+                        and not child.name.startswith(".")
+                    ):
+                        found_snaps.add(child.name)
+            except OSError:
+                pass
 
-        # Fallback to standard textual listing
-        res_text = self._run_cmd([snap_bin, "list"])
-        if res_text.returncode != 0:
-            return []
+        snaps_archive_dir = Path("/var/lib/snapd/snaps")
+        if snaps_archive_dir.is_dir():
+            try:
+                for snap_file in snaps_archive_dir.glob("*.snap"):
+                    name = snap_file.stem.split("_")[0]
+                    if name and name not in ignored:
+                        found_snaps.add(name)
+            except OSError:
+                pass
 
-        snaps: list[str] = []
-        for line in res_text.stdout.splitlines()[1:]:
-            parts = line.split()
-            if parts:
-                snaps.append(parts[0])
-        return snaps
+        return sorted(found_snaps)
 
     def get_snaps_using_common_themes(self) -> set[str]:
         """Identify installed snap applications that consume gtk-common-themes."""
         snap_bin = shutil.which("snap")
-        if not snap_bin:
-            return set()
+        if snap_bin:
+            target_snaps: set[str] = set()
 
-        target_snaps: set[str] = set()
+            def _parse_lines(output: str) -> None:
+                for line in output.splitlines():
+                    if "gtk-common-themes" in line or (
+                        self.content_snap_name and self.content_snap_name in line
+                    ):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            for part in parts:
+                                if ":" in part:
+                                    app = part.split(":", 1)[0]
+                                    if app not in (
+                                        "core",
+                                        "core20",
+                                        "core22",
+                                        "snapd",
+                                        "bare",
+                                        "gtk-common-themes",
+                                    ):
+                                        target_snaps.add(app)
 
-        def _parse_lines(output: str) -> None:
-            for line in output.splitlines():
-                if "gtk-common-themes" in line:
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        for part in parts:
-                            if ":" in part:
-                                app = part.split(":", 1)[0]
-                                if app not in (
-                                    "core",
-                                    "core20",
-                                    "core22",
-                                    "snapd",
-                                    "bare",
-                                    "gtk-common-themes",
+            # 1. Single command query for gtk-common-themes slot/plug
+            res = self._run_cmd([snap_bin, "connections", "gtk-common-themes"])
+            if res.returncode == 0 and res.stdout.strip():
+                _parse_lines(res.stdout)
+                if target_snaps:
+                    logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
+                    return target_snaps
+
+            # 2. General connections query
+            res_gen = self._run_cmd([snap_bin, "connections"])
+            if res_gen.returncode == 0 and res_gen.stdout.strip():
+                _parse_lines(res_gen.stdout)
+                if target_snaps:
+                    logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
+                    return target_snaps
+
+            # 3. Fallback per installed snap (useful if snapd restricts batch queries)
+            installed = self.get_installed_snaps()
+            for snap_name in installed:
+                if snap_name in ("core", "core20", "core22", "snapd", "bare", "gtk-common-themes"):
+                    continue
+                res_ind = self._run_cmd([snap_bin, "connections", snap_name])
+                if res_ind.returncode == 0 and (
+                    "gtk-common-themes" in res_ind.stdout
+                    or self.content_snap_name in res_ind.stdout
+                ):
+                    target_snaps.add(snap_name)
+
+            if target_snaps:
+                logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
+                return target_snaps
+
+        # Filesystem fallback for sandbox / no CLI
+        mount_dir = Path("/var/lib/snapd/mount")
+        target_snaps_fs: set[str] = set()
+        if mount_dir.is_dir():
+            try:
+                for fstab_file in mount_dir.glob("snap.*.fstab"):
+                    parts = fstab_file.name.split(".")
+                    if len(parts) >= 3 and parts[0] == "snap" and parts[-1] == "fstab":
+                        app_name = parts[1]
+                        if app_name not in (
+                            "core",
+                            "core18",
+                            "core20",
+                            "core22",
+                            "core24",
+                            "core26",
+                            "snapd",
+                            "bare",
+                            "gtk-common-themes",
+                            "cups",
+                        ):
+                            try:
+                                content = fstab_file.read_text(
+                                    encoding="utf-8", errors="ignore"
+                                ).lower()
+                                if (
+                                    "theme" in content
+                                    or "gtk-common-themes" in content
+                                    or (
+                                        self.content_snap_name
+                                        and self.content_snap_name.lower() in content
+                                    )
                                 ):
-                                    target_snaps.add(app)
+                                    target_snaps_fs.add(app_name)
+                            except OSError:
+                                pass
+            except OSError:
+                pass
 
-        # 1. Single command query for gtk-common-themes slot/plug
-        res = self._run_cmd([snap_bin, "connections", "gtk-common-themes"])
-        if res.returncode == 0 and res.stdout.strip():
-            _parse_lines(res.stdout)
-            if target_snaps:
-                logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
-                return target_snaps
-
-        # 2. General connections query
-        res_gen = self._run_cmd([snap_bin, "connections"])
-        if res_gen.returncode == 0 and res_gen.stdout.strip():
-            _parse_lines(res_gen.stdout)
-            if target_snaps:
-                logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
-                return target_snaps
-
-        # 3. Fallback per installed snap (useful if snapd restricts batch queries)
-        installed = self.get_installed_snaps()
-        for snap_name in installed:
-            if snap_name in ("core", "core20", "core22", "snapd", "bare", "gtk-common-themes"):
-                continue
-            res_ind = self._run_cmd([snap_bin, "connections", snap_name])
-            if res_ind.returncode == 0 and "gtk-common-themes" in res_ind.stdout:
-                target_snaps.add(snap_name)
-
-        logger.debug("Snaps using gtk-common-themes: %s", target_snaps)
-        return target_snaps
+        return target_snaps_fs
 
     def _connect_slot(self, snap_name: str, slot: str) -> bool:
         """Connect a specific slot from content snap to target application."""

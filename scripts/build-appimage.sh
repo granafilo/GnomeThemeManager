@@ -146,13 +146,12 @@ elif [ -f "$ROOT_DIR/appimage/$APP_ID.svg" ]; then
 fi
 
 # Copia icone bundled dell'applicazione
-if [ -d "$ROOT_DIR/data" ]; then
-    mkdir -p "$APP_DIR/data"
-    cp -r "$ROOT_DIR/data"/* "$APP_DIR/data/"
+if [ -d "$ROOT_DIR/data/icons" ]; then
     mkdir -p "$APP_DIR/usr/share/icons"
-    if [ -d "$ROOT_DIR/data/icons" ]; then
-        cp -r "$ROOT_DIR/data/icons"/* "$APP_DIR/usr/share/icons/"
-    fi
+    cp -r "$ROOT_DIR/data/icons"/* "$APP_DIR/usr/share/icons/"
+    # Link simbolico per compatibilità percorsi senza duplicazione byte
+    mkdir -p "$APP_DIR/data"
+    ln -sfn "../usr/share/icons" "$APP_DIR/data/icons"
 fi
 
 # ------------------------------------------------------------------------------
@@ -197,6 +196,10 @@ EOF
 chmod +x "$APP_DIR/AppRun"
 
 echo -e "${GREEN}✓ AppRun e wrapper binari creati con successo.${NC}"
+
+# Pulizia file cache temporanei prima del packaging per minimizzare la dimensione dell'AppImage
+find "$APP_DIR" -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find "$APP_DIR" -type f -name "*.pyc" -delete 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
 # 5. Generazione file AppImage con appimagetool

@@ -92,10 +92,17 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
         if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
             search_dirs.append(flatpak_dir)
 
-    # User local and system icon paths
+    # User local and system icon paths (including Flatpak host mounts)
     for candidate in [
         Path.home() / ".local" / "share" / "icons",
         Path.home() / ".local" / "share" / "icons" / "hicolor",
+        Path.home() / ".icons",
+        Path.home() / ".icons" / "hicolor",
+        Path("/run/host/share/icons"),
+        Path("/run/host/share/icons/hicolor"),
+        Path("/run/host/usr/share/icons"),
+        Path("/run/host/usr/share/icons/hicolor"),
+        Path("/run/host/user-share/icons"),
         Path("/usr/local/share/icons"),
         Path("/usr/local/share/icons/hicolor"),
         Path("/usr/share/icons"),
@@ -393,6 +400,23 @@ class MainWindow(Adw.ApplicationWindow):
 
         dropdown > button label {
             font-weight: 500;
+        }
+
+        /* Standard input / entry text colors adhering to current Libadwaita theme */
+        entry,
+        searchentry,
+        editable,
+        entry text,
+        searchentry text,
+        entry > text,
+        searchentry > text,
+        entry.numeric {
+            color: @window_fg_color;
+        }
+
+        entry:focus-within,
+        searchentry:focus-within {
+            color: @window_fg_color;
         }
 
         /* Popover list styling for dropdown menus */

@@ -7,14 +7,25 @@ On modern Linux distributions (particularly Ubuntu), many applications
 managed by Flatpak or Snap.
 """
 
+import configparser
 import logging
+import os
 import shutil
 import subprocess
+from pathlib import Path
 
 from .errors import ThemeValidationError
 from .models import PropagationResult, SandboxStatus
 
 logger = logging.getLogger("gnome_theme_manager.core")
+
+
+class _CaseSensitiveConfigParser(configparser.ConfigParser):
+    """ConfigParser that preserves case sensitivity of option keys."""
+
+    def optionxform(self, optionstr: str) -> str:
+        return optionstr
+
 
 KNOWN_SNAP_COMMON_THEMES: frozenset[str] = frozenset(
     {
@@ -66,6 +77,11 @@ def validate_theme_name(name: str) -> str:
     return name
 
 
+def is_in_flatpak_sandbox() -> bool:
+    """Check if the current process is running inside a Flatpak sandbox."""
+    return Path("/.flatpak-info").exists() or bool(os.environ.get("FLATPAK_ID"))
+
+
 class SandboxBridge:
     """Propagates GNOME themes to sandboxed applications managed by Snap and Flatpak."""
 
@@ -74,12 +90,22 @@ class SandboxBridge:
         logger.debug("Initializing SandboxBridge for Snap and Flatpak")
 
     def is_snap_available(self) -> bool:
-        """Check if `snap` executable is available in system $PATH."""
-        return shutil.which("snap") is not None
+        """Check if `snap` runtime or executable is available on system."""
+        if shutil.which("snap") is not None:
+            return True
+        if is_in_flatpak_sandbox():
+            return (
+                (Path.home() / "snap").exists()
+                or Path("/var/lib/snapd").exists()
+                or Path("/snap").exists()
+            )
+        return False
 
     def is_flatpak_available(self) -> bool:
-        """Check if `flatpak` executable is available in system $PATH."""
-        return shutil.which("flatpak") is not None
+        """Check if `flatpak` runtime or executable is available on system."""
+        if shutil.which("flatpak") is not None:
+            return True
+        return is_in_flatpak_sandbox()
 
     def get_sandbox_status(self) -> SandboxStatus:
         """Retrieve diagnostic status of detected sandbox runtimes."""
@@ -89,33 +115,53 @@ class SandboxBridge:
         flatpak_override_active = False
 
         if snap_avail:
-            try:
-                res = subprocess.run(
-                    ["snap", "list", "gtk-common-themes"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
+            if shutil.which("snap") is not None:
+                try:
+                    res = subprocess.run(
+                        ["snap", "list", "gtk-common-themes"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=False,
+                    )
+                    snap_gtk_common_installed = res.returncode == 0
+                except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                    snap_gtk_common_installed = False
+            elif is_in_flatpak_sandbox():
+                snap_gtk_common_installed = (
+                    Path("/snap/gtk-common-themes").exists()
+                    or (Path.home() / "snap/gtk-common-themes").exists()
+                    or bool(
+                        list(Path("/var/lib/snapd/snaps").glob("gtk-common-themes*"))
+                        if Path("/var/lib/snapd/snaps").is_dir()
+                        else []
+                    )
                 )
-                snap_gtk_common_installed = res.returncode == 0
-            except (subprocess.SubprocessError, FileNotFoundError, OSError):
-                snap_gtk_common_installed = False
 
         if flatpak_avail:
-            try:
-                res = subprocess.run(
-                    ["flatpak", "override", "--user", "--show"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
-                out_lower = res.stdout.lower()
-                flatpak_override_active = res.returncode == 0 and (
-                    "themes" in out_lower or "icons" in out_lower
-                )
-            except (subprocess.SubprocessError, FileNotFoundError, OSError):
-                flatpak_override_active = False
+            if shutil.which("flatpak") is not None:
+                try:
+                    res = subprocess.run(
+                        ["flatpak", "override", "--user", "--show"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=False,
+                    )
+                    out_lower = res.stdout.lower()
+                    flatpak_override_active = res.returncode == 0 and (
+                        "themes" in out_lower or "icons" in out_lower
+                    )
+                except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                    flatpak_override_active = False
+            elif is_in_flatpak_sandbox():
+                override_file = Path.home() / ".local/share/flatpak/overrides/global"
+                if override_file.is_file():
+                    try:
+                        content = override_file.read_text(encoding="utf-8", errors="ignore").lower()
+                        flatpak_override_active = "themes" in content or "icons" in content
+                    except OSError:
+                        flatpak_override_active = False
 
         return SandboxStatus(
             snap_available=snap_avail,
@@ -149,6 +195,50 @@ class SandboxBridge:
         """Construct snap command argument list."""
         return ["snap", "list", app_name]
 
+    def _write_flatpak_global_override(
+        self,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+    ) -> None:
+        """Write or update ~/.local/share/flatpak/overrides/global directly."""
+        override_dir = Path.home() / ".local/share" / "flatpak" / "overrides"
+        override_dir.mkdir(parents=True, exist_ok=True)
+        override_file = override_dir / "global"
+
+        parser = _CaseSensitiveConfigParser(interpolation=None)
+        if override_file.is_file():
+            try:
+                parser.read(override_file, encoding="utf-8")
+            except Exception:
+                pass
+
+        if not parser.has_section("Context"):
+            parser.add_section("Context")
+
+        existing_fs = parser.get("Context", "filesystems", fallback="")
+        fs_list = [f.strip() for f in existing_fs.split(";") if f.strip()]
+        for req in [
+            "~/.local/share/themes:ro",
+            "~/.themes:ro",
+            "~/.local/share/icons:ro",
+            "~/.icons:ro",
+        ]:
+            if req not in fs_list:
+                fs_list.append(req)
+
+        parser.set("Context", "filesystems", ";".join(fs_list) + ";")
+
+        if gtk_theme or icon_theme:
+            if not parser.has_section("Environment"):
+                parser.add_section("Environment")
+            if gtk_theme:
+                parser.set("Environment", "GTK_THEME", gtk_theme)
+            if icon_theme:
+                parser.set("Environment", "ICON_THEME", icon_theme)
+
+        with open(override_file, "w", encoding="utf-8") as f:
+            parser.write(f)
+
     def propagate_to_flatpak(
         self,
         gtk_theme: str | None = None,
@@ -171,61 +261,80 @@ class SandboxBridge:
         if icon_theme:
             validate_theme_name(icon_theme)
 
-        base_commands: list[list[str]] = [
-            ["flatpak", "override", "--user", "--filesystem=~/.local/share/themes:ro"],
-            ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"],
-            ["flatpak", "override", "--user", "--filesystem=~/.local/share/icons:ro"],
-            ["flatpak", "override", "--user", "--filesystem=~/.icons:ro"],
-        ]
+        if shutil.which("flatpak") is not None:
+            base_commands: list[list[str]] = [
+                ["flatpak", "override", "--user", "--filesystem=~/.local/share/themes:ro"],
+                ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"],
+                ["flatpak", "override", "--user", "--filesystem=~/.local/share/icons:ro"],
+                ["flatpak", "override", "--user", "--filesystem=~/.icons:ro"],
+            ]
 
-        if gtk_theme:
-            base_commands.append(self.build_flatpak_command(None, gtk_theme, None))
-        if icon_theme:
-            base_commands.append(self.build_flatpak_command(None, None, icon_theme))
+            if gtk_theme:
+                base_commands.append(self.build_flatpak_command(None, gtk_theme, None))
+            if icon_theme:
+                base_commands.append(self.build_flatpak_command(None, None, icon_theme))
 
-        messages: list[str] = []
-        warnings: list[str] = []
-        has_error = False
+            messages: list[str] = []
+            warnings: list[str] = []
+            has_error = False
 
-        for cmd in base_commands:
-            try:
-                subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=True,
+            for cmd in base_commands:
+                try:
+                    subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=True,
+                    )
+                except subprocess.TimeoutExpired:
+                    warn_msg = "Timeout while executing Flatpak command."
+                    logger.warning(warn_msg)
+                    warnings.append(warn_msg)
+                    has_error = True
+                    break
+                except subprocess.CalledProcessError as err:
+                    err_msg = err.stderr.strip() if err.stderr else str(err)
+                    warn_msg = f"Error during Flatpak override: {err_msg}"
+                    logger.warning(warn_msg)
+                    warnings.append(warn_msg)
+                    has_error = True
+                    break
+                except (FileNotFoundError, OSError):
+                    warn_msg = "Unable to execute Flatpak command."
+                    logger.warning(warn_msg)
+                    warnings.append(warn_msg)
+                    has_error = True
+                    break
+
+            if not has_error:
+                messages.append(
+                    "Flatpak filesystem overrides and environment variables configured successfully."
                 )
-            except subprocess.TimeoutExpired:
-                warn_msg = "Timeout while executing Flatpak command."
-                logger.warning(warn_msg)
-                warnings.append(warn_msg)
-                has_error = True
-                break
-            except subprocess.CalledProcessError as err:
-                err_msg = err.stderr.strip() if err.stderr else str(err)
-                warn_msg = f"Error during Flatpak override: {err_msg}"
-                logger.warning(warn_msg)
-                warnings.append(warn_msg)
-                has_error = True
-                break
-            except (FileNotFoundError, OSError):
-                warn_msg = "Unable to execute Flatpak command."
-                logger.warning(warn_msg)
-                warnings.append(warn_msg)
-                has_error = True
-                break
 
-        if not has_error:
-            messages.append(
-                "Flatpak filesystem overrides and environment variables configured successfully."
+            return PropagationResult(
+                flatpak_success=not has_error,
+                flatpak_messages=messages,
+                warnings=warnings,
             )
 
-        return PropagationResult(
-            flatpak_success=not has_error,
-            flatpak_messages=messages,
-            warnings=warnings,
-        )
+        # Container fallback (when running inside Flatpak sandbox without flatpak CLI)
+        try:
+            self._write_flatpak_global_override(gtk_theme=gtk_theme, icon_theme=icon_theme)
+            return PropagationResult(
+                flatpak_success=True,
+                flatpak_messages=[
+                    "Flatpak filesystem overrides and environment variables configured successfully."
+                ],
+                warnings=[],
+            )
+        except Exception as err:
+            logger.warning("Error writing Flatpak override file: %s", err)
+            return PropagationResult(
+                flatpak_success=False,
+                flatpak_messages=[],
+                warnings=[f"Error during Flatpak override: {err}"],
+            )
 
     def propagate_to_snap(
         self,
