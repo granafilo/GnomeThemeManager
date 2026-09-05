@@ -97,7 +97,7 @@
                         <child>
                           <object class="AdwActionRow" id="active_icon_row">
                             <property name="subtitle-lines">2</property>
-                            <property name="title" translatable="yes">Icon &amp;amp; Cursor Theme</property>
+                            <property name="title" translatable="yes">Icon &amp; Cursor Theme</property>
                             <property name="subtitle" translatable="yes">-</property>
                             <child type="prefix">
                               <object class="GtkImage" id="active_icon_icon">

@@ -86,6 +86,12 @@ def test_gtk_builder_uses_translation_domain():
         "src/gnome_theme_manager/gui_gtk/pages/status.py",
         "src/gnome_theme_manager/gui_gtk/pages/themes.py",
         "src/gnome_theme_manager/gui_gtk/pages/global_themes.py",
+        "src/gnome_theme_manager/gui_gtk/pages/extensions.py",
+        "src/gnome_theme_manager/gui_gtk/pages/terminal.py",
+        "src/gnome_theme_manager/gui_gtk/pages/fonts.py",
+        "src/gnome_theme_manager/gui_gtk/pages/editor_view.py",
+        "src/gnome_theme_manager/gui_gtk/pages/sandbox.py",
+        "src/gnome_theme_manager/gui_gtk/pages/store.py",
     ]:
         source = (ROOT_DIR / relative_path).read_text(encoding="utf-8")
         assert 'set_translation_domain("gnomethememanager")' in source

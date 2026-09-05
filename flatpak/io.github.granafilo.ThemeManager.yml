@@ -91,7 +91,7 @@ modules:
     buildsystem: simple
     build-commands:
       - python3 scripts/compile_translations.py
-      - pip3 install --no-deps --no-build-isolation --prefix=/app .
+      - pip3 install --no-cache-dir --no-deps --no-build-isolation --prefix=/app .
       - install -Dm644 data/desktop/io.github.granafilo.ThemeManager.desktop /app/share/applications/io.github.granafilo.ThemeManager.desktop
       - install -Dm644 data/metainfo/io.github.granafilo.ThemeManager.metainfo.xml /app/share/metainfo/io.github.granafilo.ThemeManager.metainfo.xml
       - mkdir -p /app/share/icons/hicolor

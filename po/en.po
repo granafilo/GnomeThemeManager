@@ -3153,3 +3153,63 @@ msgstr "Failed to apply terminal theme: {error}"
 #: src/gnome_theme_manager/gui_gtk/pages/terminal.py
 msgid "Terminal preferences applied successfully."
 msgstr "Terminal preferences applied successfully."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Background"
+msgstr "Background"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py
+msgid "Content Snap is active. Click to rebuild and re-sync if theme files changed."
+msgstr "Content Snap is active. Click to rebuild and re-sync if theme files changed."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Editing Global Theme '{name}'."
+msgstr "Editing Global Theme '{name}'."
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
+msgid "Generate and connect a local Content Snap to allow Snap apps to use this custom theme."
+msgstr "Generate and connect a local Content Snap to allow Snap apps to use this custom theme."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Only user-created Global Themes can be edited."
+msgstr "Only user-created Global Themes can be edited."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Panel Text"
+msgstr "Panel Text"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui
+msgid "Panel Text and Icons"
+msgstr "Panel Text and Icons"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui
+msgid "Save current editor mix as a Global Theme"
+msgstr "Save current editor mix as a Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Shell Accent"
+msgstr "Shell Accent"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
+msgid "Snap apps use themes bundled in gtk-common-themes or local Content Snaps generated for custom themes."
+msgstr "Snap apps use themes bundled in gtk-common-themes or local Content Snaps generated for custom themes."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui
+msgid "Standard and bright 16-color ANSI palette for terminal applications."
+msgstr "Standard and bright 16-color ANSI palette for terminal applications."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Update Global Theme"
+msgstr "Update Global Theme"
+
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui
+msgid "Valid"
+msgstr "Valid"
+
+#: src/gnome_theme_manager/core/global_themes.py
+msgid "Cohesive light style using verified system themes."
+msgstr "Cohesive light style using verified system themes."
+
+#: src/gnome_theme_manager/core/global_themes.py
+msgid "User created global theme"
+msgstr "User created global theme"

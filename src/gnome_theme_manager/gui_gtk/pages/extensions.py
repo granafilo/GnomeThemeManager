@@ -18,32 +18,43 @@ from gi.repository import Adw, Gio, GLib, Gtk
 from ...core.extensions import GnomeExtension
 from ...core.manager import ThemeManager
 
-logger = logging.getLogger("gnome_theme_manager.gui_gtk.pages.extensions")
+logger = logging.getLogger("gnome_theme_manager.gui_gtk")
+
+UI_FILE = Path(__file__).parent.parent / "ui" / "extensions_page.ui"
 
 
 class ExtensionsPage:
     """Controller for GNOME Shell Extensions management page."""
 
-    def __init__(self, manager: ThemeManager) -> None:
+    PAGE_ID: str = "extensions"
+    ICON_NAME: str = "application-x-addon-symbolic"
+
+    def __init__(self, manager: "ThemeManager | None" = None) -> None:
         """Initialize ExtensionsPage controller.
 
         Args:
             manager: Application ThemeManager instance.
         """
-        self.manager = manager
-        self.page_id = "extensions"
-        self.title = _("GNOME Extensions")
-        self.icon_name = "application-x-addon-symbolic"
+        self.page_id: str = self.PAGE_ID
+        self.title: str = _("GNOME Extensions")
+        self.icon_name: str = self.ICON_NAME
+        self.manager: ThemeManager = manager or ThemeManager()
 
         # Notification & status callbacks
         self.on_loading_changed: Callable[[bool], None] | None = None
         self.on_notify_message: Callable[[str, bool], None] | None = None
 
-        # Load UI
-        ui_path = Path(__file__).parent.parent / "ui" / "extensions_page.ui"
-        self.builder = Gtk.Builder.new_from_file(str(ui_path))
+        if not UI_FILE.is_file():
+            raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
 
-        self.widget: Gtk.Stack = self.builder.get_object("extensions_root")
+        self.builder = Gtk.Builder()
+        self.builder.set_translation_domain("gnomethememanager")
+        self.builder.add_from_file(str(UI_FILE))
+
+        self.widget: Gtk.Stack = self.builder.get_object("page_root")
+        self.loading_page: Adw.StatusPage | None = self.builder.get_object("loading_page")
+        self.header_title: Gtk.Label | None = self.builder.get_object("header_title")
+        self.header_subtitle: Gtk.Label | None = self.builder.get_object("header_subtitle")
         self.btn_open_app: Gtk.Button = self.builder.get_object("btn_open_app")
         self.btn_browse_portal: Gtk.Button = self.builder.get_object("btn_browse_portal")
         self.search_entry: Gtk.SearchEntry = self.builder.get_object("search_entry")
@@ -57,6 +68,55 @@ class ExtensionsPage:
         )
         self.empty_status_page: Adw.StatusPage = self.builder.get_object("empty_status_page")
 
+        # Explicitly apply localized strings to all widgets
+        if self.loading_page is not None:
+            self.loading_page.set_title(_("Loading extensions..."))
+            self.loading_page.set_description(
+                _("Scanning installed extensions across system and user directories.")
+            )
+
+        if self.header_title is not None:
+            self.header_title.set_text(_("GNOME Extensions"))
+        if self.header_subtitle is not None:
+            self.header_subtitle.set_text(
+                _("Manage, enable, and inspect installed GNOME Shell extensions.")
+            )
+
+        if self.btn_open_app is not None:
+            self.btn_open_app.set_label(_("Open Extension Manager"))
+            self.btn_open_app.set_tooltip_text(
+                _("Open GNOME Extensions application to manage installed extensions")
+            )
+
+        if self.btn_browse_portal is not None:
+            self.btn_browse_portal.set_tooltip_text(
+                _("Open official GNOME Extensions website")
+            )
+
+        if self.search_entry is not None:
+            self.search_entry.set_placeholder_text(_("Search installed extensions..."))
+
+        if self.btn_refresh is not None:
+            self.btn_refresh.set_tooltip_text(_("Refresh extension list"))
+
+        if self.user_extensions_group is not None:
+            self.user_extensions_group.set_title(_("User Extensions"))
+            self.user_extensions_group.set_description(
+                _("Extensions installed in your user directory")
+            )
+
+        if self.system_extensions_group is not None:
+            self.system_extensions_group.set_title(_("System and Built-in Extensions"))
+            self.system_extensions_group.set_description(
+                _("Integrated system extensions provided by GNOME Shell or system packages")
+            )
+
+        if self.empty_status_page is not None:
+            self.empty_status_page.set_title(_("No Extensions Found"))
+            self.empty_status_page.set_description(
+                _("No extensions matched your filter or none are installed.")
+            )
+
         self._extensions: list[GnomeExtension] = []
         self._filtered_extensions: list[GnomeExtension] = []
         self._is_loading: bool = False
@@ -65,7 +125,12 @@ class ExtensionsPage:
         self.widget.set_visible_child_name("loading")
         self._connect_signals()
 
-    def get_widget(self) -> Gtk.Widget:
+    @property
+    def is_loading(self) -> bool:
+        """Return whether extension loading is active."""
+        return self._is_loading
+
+    def get_widget(self) -> Gtk.Stack:
         """Return root widget container."""
         return self.widget
 

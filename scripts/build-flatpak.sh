@@ -67,7 +67,7 @@ echo -e "\n${YELLOW}[2/5] Pulizia cache e directory di build...${NC}"
 if [ -d "$ROOT_DIR/.flatpak-builder/rofiles" ]; then
     for rof in "$ROOT_DIR/.flatpak-builder/rofiles"/*; do
         if [ -d "$rof" ]; then
-            fusermount -u "$rof" 2>/dev/null || true
+            fusermount -u -z "$rof" 2>/dev/null || true
         fi
     done
 fi
@@ -85,6 +85,7 @@ fi
 echo -e "\n${YELLOW}[3/5] Esecuzione flatpak-builder (download SDK/Runtime se necessario)...${NC}"
 
 flatpak-builder --force-clean \
+    --disable-cache \
     --user \
     --install-deps-from=flathub \
     --default-branch=stable \

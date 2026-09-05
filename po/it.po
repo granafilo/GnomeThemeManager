@@ -3153,3 +3153,63 @@ msgstr "Impossibile applicare il tema al terminale: {error}"
 #: src/gnome_theme_manager/gui_gtk/pages/terminal.py
 msgid "Terminal preferences applied successfully."
 msgstr "Preferenze del terminale applicate con successo."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Background"
+msgstr "Sfondo"
+
+#: src/gnome_theme_manager/gui_gtk/pages/sandbox.py
+msgid "Content Snap is active. Click to rebuild and re-sync if theme files changed."
+msgstr "Il Content Snap è attivo. Clicca per ricostruire e risincronizzare se i file del tema sono cambiati."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Editing Global Theme '{name}'."
+msgstr "Modifica del Tema Globale '{name}'."
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
+msgid "Generate and connect a local Content Snap to allow Snap apps to use this custom theme."
+msgstr "Genera e connetti un Content Snap locale per consentire alle app Snap di usare questo tema personalizzato."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Only user-created Global Themes can be edited."
+msgstr "È possibile modificare solo i Temi Globali creati dall'utente."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Panel Text"
+msgstr "Testo del pannello"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui
+msgid "Panel Text and Icons"
+msgstr "Testo e icone del pannello"
+
+#: src/gnome_theme_manager/gui_gtk/ui/editor_page.ui
+msgid "Save current editor mix as a Global Theme"
+msgstr "Salva la combinazione corrente dell'editor come Tema Globale"
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Shell Accent"
+msgstr "Accento Shell"
+
+#: src/gnome_theme_manager/gui_gtk/ui/sandbox_page.ui
+msgid "Snap apps use themes bundled in gtk-common-themes or local Content Snaps generated for custom themes."
+msgstr "Le app Snap usano i temi inclusi in gtk-common-themes o Content Snap locali generati per i temi personalizzati."
+
+#: src/gnome_theme_manager/gui_gtk/ui/terminal_page.ui
+msgid "Standard and bright 16-color ANSI palette for terminal applications."
+msgstr "Palette ANSI a 16 colori standard e luminosi per applicazioni terminale."
+
+#: src/gnome_theme_manager/gui_gtk/pages/editor_view.py
+msgid "Update Global Theme"
+msgstr "Aggiorna Tema Globale"
+
+#: src/gnome_theme_manager/gui_gtk/ui/installer_page.ui
+msgid "Valid"
+msgstr "Valido"
+
+#: src/gnome_theme_manager/core/global_themes.py
+msgid "Cohesive light style using verified system themes."
+msgstr "Stile chiaro coerente basato sui temi di sistema verificati."
+
+#: src/gnome_theme_manager/core/global_themes.py
+msgid "User created global theme"
+msgstr "Tema globale creato dall'utente"
