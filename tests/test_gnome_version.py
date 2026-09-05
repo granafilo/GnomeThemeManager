@@ -214,3 +214,61 @@ def test_theme_manager_gnome_version_integration(tmp_path: Path) -> None:
         status = manager.get_system_status()
         assert status.gnome_version == "50.2"
         assert status.is_gnome_50_plus is True
+
+
+def test_installer_symlinks_libadwaita_into_gtk4(tmp_path: Path) -> None:
+    """Verify ThemeInstaller automatically creates gtk-4.0/ symlinks for Libadwaita stylesheets."""
+    from gnome_theme_manager.core.installer import ThemeInstaller
+
+    src_theme = tmp_path / "SourceTheme"
+    src_theme.mkdir()
+    (src_theme / "libadwaita.css").write_text("/* libadwaita */")
+    (src_theme / "libadwaita-dark.css").write_text("/* libadwaita dark */")
+
+    user_themes = tmp_path / "installed_themes"
+    installer = ThemeInstaller(user_themes_dir=user_themes)
+
+    with patch.dict("os.environ", {"GNOME_VERSION": "50.0"}):
+        installed = installer.install_directory(src_theme)
+        assert len(installed) >= 1
+        dest = installed[0].path
+        assert (dest / "gtk-4.0").is_dir()
+        assert (dest / "gtk-4.0" / "libadwaita.css").is_symlink()
+        assert (dest / "gtk-4.0" / "libadwaita-dark.css").is_symlink()
+        assert (dest / "gtk-4.0" / "gtk.css").is_symlink()
+
+
+def test_installer_symlinks_libadwaita_from_gtk4_css_on_gnome_50(tmp_path: Path) -> None:
+    """Verify ThemeInstaller links libadwaita.css to gtk.css on GNOME 50+ if only gtk.css exists."""
+    from gnome_theme_manager.core.installer import ThemeInstaller
+
+    src_theme = tmp_path / "GTK4Theme"
+    (src_theme / "gtk-4.0").mkdir(parents=True)
+    (src_theme / "gtk-4.0" / "gtk.css").write_text("/* gtk4 */")
+
+    user_themes = tmp_path / "installed_themes"
+    installer = ThemeInstaller(user_themes_dir=user_themes)
+
+    with patch.dict("os.environ", {"GNOME_VERSION": "50.0"}):
+        installed = installer.install_directory(src_theme)
+        dest = installed[0].path
+        assert (dest / "gtk-4.0" / "libadwaita.css").is_symlink()
+        assert (dest / "gtk-4.0" / "libadwaita.css").resolve() == (dest / "gtk-4.0" / "gtk.css").resolve()
+
+
+def test_gtk4_linker_links_libadwaita_dark_css(tmp_path: Path) -> None:
+    """Verify GTK4ThemeLinker symlinks libadwaita-dark.css into config directory."""
+    theme_dir = tmp_path / "DarkAdwTheme"
+    gtk4_dir = theme_dir / "gtk-4.0"
+    gtk4_dir.mkdir(parents=True)
+    (gtk4_dir / "gtk.css").write_text("/* gtk */")
+    (gtk4_dir / "libadwaita-dark.css").write_text("/* libadw dark */")
+
+    config_dest = tmp_path / "config_gtk4"
+    linker = GTK4ThemeLinker(config_dir=config_dest)
+
+    success = linker.apply_override(theme_dir)
+    assert success is True
+    assert (config_dest / "libadwaita-dark.css").is_symlink()
+    assert (config_dest / "libadwaita-dark.css").resolve() == (gtk4_dir / "libadwaita-dark.css").resolve()
+

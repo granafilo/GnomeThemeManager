@@ -271,6 +271,18 @@ class GTK4ThemeLinker:
             # Link libadwaita.css to gtk.css as well for modern Libadwaita applications
             libadwaita_file = source_dir / "gtk.css"
 
+        libadwaita_dark_file: Path | None = None
+        if (source_dir / "libadwaita-dark.css").exists():
+            libadwaita_dark_file = source_dir / "libadwaita-dark.css"
+        elif (theme_path / "gtk-4.0" / "libadwaita-dark.css").exists():
+            libadwaita_dark_file = theme_path / "gtk-4.0" / "libadwaita-dark.css"
+        elif (theme_path / "libadwaita" / "libadwaita-dark.css").exists():
+            libadwaita_dark_file = theme_path / "libadwaita" / "libadwaita-dark.css"
+        elif (theme_path / "libadwaita-dark.css").exists():
+            libadwaita_dark_file = theme_path / "libadwaita-dark.css"
+        elif (source_dir / "gtk-dark.css").exists():
+            libadwaita_dark_file = source_dir / "gtk-dark.css"
+
         gtk_css_file: Path | None = None
         if (source_dir / "gtk.css").exists():
             gtk_css_file = source_dir / "gtk.css"
@@ -295,6 +307,7 @@ class GTK4ThemeLinker:
                 else None
             ),
             "libadwaita.css": libadwaita_file,
+            "libadwaita-dark.css": libadwaita_dark_file,
             "assets": source_dir / "assets"
             if (source_dir / "assets").exists()
             else (theme_path / "assets" if (theme_path / "assets").exists() else None),

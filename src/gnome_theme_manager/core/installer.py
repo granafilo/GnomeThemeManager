@@ -551,6 +551,8 @@ class ThemeInstaller:
 
                 target_base_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True)
+                if t_type == ThemeType.GTK:
+                    self._ensure_gtk4_libadwaita_symlinks(dest_dir)
                 processed_dirs.add(dir_key)
 
             installed_themes.append(
@@ -563,6 +565,94 @@ class ThemeInstaller:
             )
 
         return installed_themes
+
+    @staticmethod
+    def _ensure_gtk4_libadwaita_symlinks(dest_dir: Path) -> None:
+        """Ensure libadwaita files are symlinked into gtk-4.0 folder if required by the OS.
+
+        If running on GNOME 50+ or GNOME 42+ and Libadwaita stylesheets exist in the theme
+        (such as libadwaita.css, libadwaita/, etc.), ensure they are placed as symlinks
+        inside <theme>/gtk-4.0/ alongside standard GTK4 stylesheets.
+        """
+        from .gnome_version import detect_gnome_version, is_gnome_50_plus
+
+        ver = detect_gnome_version()
+        requires_libadwaita = is_gnome_50_plus(ver) or (ver is not None and ver[0] >= 42)
+        if not requires_libadwaita:
+            return
+
+        # Check for any libadwaita files in the theme
+        has_libadw_root = (dest_dir / "libadwaita.css").is_file()
+        has_libadw_dir_css = (dest_dir / "libadwaita" / "libadwaita.css").is_file()
+        has_libadw_dir_gtk = (dest_dir / "libadwaita" / "gtk.css").is_file()
+        has_libadw_dark_root = (dest_dir / "libadwaita-dark.css").is_file()
+        has_libadw_dir_dark = (dest_dir / "libadwaita" / "libadwaita-dark.css").is_file()
+        has_libadw_dir_gtk_dark = (dest_dir / "libadwaita" / "gtk-dark.css").is_file()
+
+        has_any_libadwaita = (
+            has_libadw_root
+            or has_libadw_dir_css
+            or has_libadw_dir_gtk
+            or has_libadw_dark_root
+            or has_libadw_dir_dark
+            or has_libadw_dir_gtk_dark
+        )
+
+        gtk4_dir = dest_dir / "gtk-4.0"
+
+        if has_any_libadwaita:
+            gtk4_dir.mkdir(parents=True, exist_ok=True)
+
+            # 1. Symlink libadwaita.css into gtk-4.0/ if not already present
+            dest_libadw = gtk4_dir / "libadwaita.css"
+            if not dest_libadw.exists():
+                try:
+                    if has_libadw_root:
+                        dest_libadw.symlink_to("../libadwaita.css")
+                    elif has_libadw_dir_css:
+                        dest_libadw.symlink_to("../libadwaita/libadwaita.css")
+                    elif has_libadw_dir_gtk:
+                        dest_libadw.symlink_to("../libadwaita/gtk.css")
+                except OSError as exc:
+                    logger.debug("Failed creating libadwaita.css symlink in %s: %s", gtk4_dir, exc)
+
+            # 2. Symlink libadwaita-dark.css into gtk-4.0/ if not already present
+            dest_libadw_dark = gtk4_dir / "libadwaita-dark.css"
+            if not dest_libadw_dark.exists():
+                try:
+                    if has_libadw_dark_root:
+                        dest_libadw_dark.symlink_to("../libadwaita-dark.css")
+                    elif has_libadw_dir_dark:
+                        dest_libadw_dark.symlink_to("../libadwaita/libadwaita-dark.css")
+                    elif has_libadw_dir_gtk_dark:
+                        dest_libadw_dark.symlink_to("../libadwaita/gtk-dark.css")
+                except OSError as exc:
+                    logger.debug("Failed creating libadwaita-dark.css symlink in %s: %s", gtk4_dir, exc)
+
+            # 3. If gtk-4.0/gtk.css is missing, point it to libadwaita.css
+            dest_gtk = gtk4_dir / "gtk.css"
+            if not dest_gtk.exists() and dest_libadw.exists():
+                try:
+                    dest_gtk.symlink_to("libadwaita.css")
+                except OSError:
+                    pass
+
+        # 4. If GNOME 50+ and theme has gtk-4.0/gtk.css but no libadwaita.css, create symlink
+        if is_gnome_50_plus(ver) and gtk4_dir.is_dir():
+            dest_libadw = gtk4_dir / "libadwaita.css"
+            dest_gtk = gtk4_dir / "gtk.css"
+            if dest_gtk.exists() and not dest_libadw.exists():
+                try:
+                    dest_libadw.symlink_to("gtk.css")
+                except OSError:
+                    pass
+            dest_libadw_dark = gtk4_dir / "libadwaita-dark.css"
+            dest_gtk_dark = gtk4_dir / "gtk-dark.css"
+            if dest_gtk_dark.exists() and not dest_libadw_dark.exists():
+                try:
+                    dest_libadw_dark.symlink_to("gtk-dark.css")
+                except OSError:
+                    pass
 
     def install(
         self,
