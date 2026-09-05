@@ -162,7 +162,12 @@ class ExtensionsManager:
                             str(uuid)
                             for uuid, info in exts_dict.items()
                             if isinstance(info, dict)
-                            and (bool(info.get("enabled", False)) or info.get("state") == 1.0)
+                            and (
+                                bool(info.get("enabled", False))
+                                or info.get("state") == 1.0
+                                or info.get("state") == 1
+                                or str(info.get("state")) in ("1", "1.0", "ACTIVE")
+                            )
                         }
             except Exception as err:
                 logger.debug("DBus ListExtensions for enabled UUIDs failed: %s", err)
@@ -197,10 +202,46 @@ class ExtensionsManager:
 
     def is_user_theme_enabled(self) -> bool:
         """Check if the user-theme extension is enabled on GNOME Shell."""
-        return USER_THEME_EXTENSION_ID in self.get_enabled_uuids()
+        enabled_uuids = self.get_enabled_uuids()
+
+        # 1. Exact match on known user-theme UUIDs
+        for cand in [
+            USER_THEME_EXTENSION_ID,
+            "user-theme",
+            "user-theme@zorin.com",
+            "zorin-appearance@zorin.com",
+        ]:
+            if cand in enabled_uuids:
+                return True
+
+        # 2. Match any enabled extension with 'user-theme' or 'user theme' in UUID/name
+        for ext in self.list_extensions():
+            if ext.enabled and (
+                "user-theme" in ext.uuid.lower()
+                or "user theme" in ext.name.lower()
+                or "user-theme" in ext.name.lower()
+            ):
+                return True
+
+        # 3. GSettings schema availability fallback
+        if _GIO_AVAILABLE and Gio is not None:
+            try:
+                source = Gio.SettingsSchemaSource.get_default()
+                if (
+                    source is not None
+                    and source.lookup("org.gnome.shell.extensions.user-theme", True) is not None
+                ):
+                    return True
+            except Exception:
+                pass
+
+        return False
 
     def enable_user_theme(self) -> bool:
         """Attempt to enable the user-theme extension."""
+        for ext in self.list_extensions():
+            if "user-theme" in ext.uuid.lower() or "user theme" in ext.name.lower():
+                return self.enable_extension(ext.uuid)
         return self.enable_extension(USER_THEME_EXTENSION_ID)
 
     def enable_extension(self, uuid: str) -> bool:

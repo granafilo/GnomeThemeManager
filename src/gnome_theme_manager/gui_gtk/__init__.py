@@ -50,8 +50,13 @@ def launch_gui(
         )
         return 1
 
+    from gi.repository import GLib
+
     from ..core.manager import ThemeManager
     from .app import GnomeThemeApplication
+
+    GLib.set_prgname("io.github.granafilo.ThemeManager")
+    GLib.set_application_name("GNOME Theme Manager")
 
     theme_mgr = manager if isinstance(manager, ThemeManager) else ThemeManager()
     app = GnomeThemeApplication(manager=theme_mgr)

@@ -24,8 +24,7 @@ class GnomeThemeApplication(Adw.Application):
         Args:
             manager: Optional ThemeManager coordinator instance.
         """
-        if not GLib.get_prgname():
-            GLib.set_prgname(APPLICATION_ID)
+        GLib.set_prgname(APPLICATION_ID)
         if not GLib.get_application_name():
             GLib.set_application_name("GNOME Theme Manager")
         super().__init__(
