@@ -507,6 +507,29 @@ class MainWindow(Adw.ApplicationWindow):
             background-color: @window_bg_color;
             opacity: 1;
         }
+
+        /* Zorin OS & Custom Theme compatibility: Reset unwanted box-shadow, border and background on AdwPreferencesGroup headers */
+        preferencesgroup > box > box,
+        preferencesgroup > box > box.header,
+        preferencesgroup > box > .labels {
+            box-shadow: none;
+            border: none;
+            background: transparent;
+            background-color: transparent;
+        }
+
+        /* Ensure boxed-list rows do not show contrasting background boxes when insensitive/disabled */
+        list.boxed-list > row,
+        list.boxed-list > row:disabled,
+        preferencesgroup list > row,
+        preferencesgroup list > row:disabled {
+            background-color: transparent;
+        }
+
+        .card,
+        list.boxed-list {
+            background-color: @card_bg_color;
+        }
         """
         try:
             if hasattr(css_provider, "load_from_string"):
@@ -518,7 +541,7 @@ class MainWindow(Adw.ApplicationWindow):
                 Gtk.StyleContext.add_provider_for_display(
                     display,
                     css_provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+                    Gtk.STYLE_PROVIDER_PRIORITY_USER + 1,
                 )
         except Exception as err:
             logger.debug("Failed to apply custom CSS styling: %s", err)
