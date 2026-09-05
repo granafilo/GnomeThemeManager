@@ -89,47 +89,62 @@ def get_user_icons_dirs() -> list[Path]:
 
 
 def get_system_themes_dirs() -> list[Path]:
-    """Return system theme directories ($XDG_DATA_DIRS/themes and standard paths)."""
+    """Return system theme directories prioritizing host directories over container runtimes."""
+    host_dirs = [
+        Path("/run/host/usr/share/themes"),
+        Path("/run/host/usr/local/share/themes"),
+        Path("/run/host/share/themes"),
+        Path("/run/host/user-share/themes"),
+    ]
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
-        dirs = [Path(p).expanduser() / "themes" for p in xdg_dirs.split(":") if p.strip()]
+        # Exclude flatpak internal runtime compatibility shims from high-priority system themes
+        parsed_dirs = [
+            Path(p).expanduser() / "themes"
+            for p in xdg_dirs.split(":")
+            if p.strip() and "/runtime/" not in p
+        ]
     else:
-        dirs = [Path("/usr/share/themes"), Path("/usr/local/share/themes")]
+        parsed_dirs = [Path("/usr/share/themes"), Path("/usr/local/share/themes")]
 
-    # Flatpak host mounts and standard system fallbacks
-    for default_path in [
-        Path("/run/host/share/themes"),
-        Path("/run/host/usr/share/themes"),
-        Path("/run/host/user-share/themes"),
+    fallback_dirs = [
+        Path("/app/share/themes"),
         Path("/usr/local/share/themes"),
         Path("/usr/share/themes"),
-    ]:
-        if default_path not in dirs:
-            dirs.append(default_path)
+        Path("/usr/share/runtime/share/themes"),
+    ]
 
-    return list(dict.fromkeys(dirs))
+    all_dirs = host_dirs + parsed_dirs + fallback_dirs
+    return list(dict.fromkeys(all_dirs))
 
 
 def get_system_icons_dirs() -> list[Path]:
-    """Return system icon and cursor directories ($XDG_DATA_DIRS/icons and standard paths)."""
+    """Return system icon and cursor directories prioritizing host directories over container runtimes."""
+    host_dirs = [
+        Path("/run/host/usr/share/icons"),
+        Path("/run/host/usr/local/share/icons"),
+        Path("/run/host/share/icons"),
+        Path("/run/host/user-share/icons"),
+    ]
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
-        dirs = [Path(p).expanduser() / "icons" for p in xdg_dirs.split(":") if p.strip()]
+        parsed_dirs = [
+            Path(p).expanduser() / "icons"
+            for p in xdg_dirs.split(":")
+            if p.strip() and "/runtime/" not in p
+        ]
     else:
-        dirs = [Path("/usr/share/icons"), Path("/usr/local/share/icons")]
+        parsed_dirs = [Path("/usr/share/icons"), Path("/usr/local/share/icons")]
 
-    # Flatpak host mounts and standard system fallbacks
-    for default_path in [
-        Path("/run/host/share/icons"),
-        Path("/run/host/usr/share/icons"),
-        Path("/run/host/user-share/icons"),
+    fallback_dirs = [
+        Path("/app/share/icons"),
         Path("/usr/local/share/icons"),
         Path("/usr/share/icons"),
-    ]:
-        if default_path not in dirs:
-            dirs.append(default_path)
+        Path("/usr/share/runtime/share/icons"),
+    ]
 
-    return list(dict.fromkeys(dirs))
+    all_dirs = host_dirs + parsed_dirs + fallback_dirs
+    return list(dict.fromkeys(all_dirs))
 
 
 # Exported lists for backward compatibility

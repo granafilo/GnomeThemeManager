@@ -11,6 +11,9 @@ Provides functionality to:
 
 import json
 import logging
+import os
+import shutil
+import subprocess
 import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -53,6 +56,18 @@ DEFAULT_ANSI_PALETTE = [
     "#33c7de",  # Bright Cyan
     "#ffffff",  # Bright White
 ]
+
+
+@dataclass(frozen=True)
+class DetectedTerminal:
+    """Represents a detected system terminal emulator."""
+
+    terminal_type: str  # "gnome-terminal", "kgx", "konsole", "xfce4-terminal"
+    display_name: str  # "GNOME Terminal", "GNOME Console", "Konsole", "XFCE Terminal"
+    binary_path: Path | None
+    schema_id: str | None
+    supports_gsettings: bool
+    schema_accessible: bool
 
 
 @dataclass(frozen=True)
@@ -190,16 +205,218 @@ def import_palette_from_json(file_path: Path) -> TerminalPalette:
     return TerminalPalette.from_dict(data)
 
 
-def _is_schema_available(schema_id: str) -> bool:
-    """Safely check if a GSettings schema is installed before instantiating Gio.Settings."""
-    if not _GIO_AVAILABLE or Gio is None:
-        return False
+def schema_exists(schema_name: str) -> bool:
+    """Safely check if a GSettings schema is installed and accessible (Fix 2)."""
+    if _GIO_AVAILABLE and Gio is not None:
+        try:
+            source = Gio.SettingsSchemaSource.get_default()
+            if source is not None and source.lookup(schema_name, True) is not None:
+                return True
+        except Exception:
+            pass
+
+        for host_schema_dir in [
+            Path("/run/host/usr/share/glib-2.0/schemas"),
+            Path("/run/host/usr/local/share/glib-2.0/schemas"),
+            Path("/run/host/share/glib-2.0/schemas"),
+        ]:
+            if (host_schema_dir / "gschemas.compiled").is_file():
+                try:
+                    src = Gio.SettingsSchemaSource.new_from_directory(
+                        str(host_schema_dir),
+                        Gio.SettingsSchemaSource.get_default(),
+                        False,
+                    )
+                    if src.lookup(schema_name, True) is not None:
+                        return True
+                except Exception:
+                    pass
+
     try:
-        source = Gio.SettingsSchemaSource.get_default()
-        if source is None:
-            return False
-        return source.lookup(schema_id, True) is not None
+        res = subprocess.run(
+            ["gsettings", "list-keys", schema_name],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        if res.returncode == 0:
+            return True
     except Exception:
+        pass
+
+    return False
+
+
+def _is_schema_available(schema_id: str) -> bool:
+    """Backward-compatible alias for schema_exists."""
+    return schema_exists(schema_id)
+
+
+def _find_terminal_binary(name: str) -> Path | None:
+    """Search for a terminal binary within container or mounted host directories."""
+    bin_path = shutil.which(name)
+    if bin_path:
+        return Path(bin_path)
+
+    for prefix in [
+        Path("/run/host/usr/bin"),
+        Path("/run/host/bin"),
+        Path("/run/host/usr/local/bin"),
+    ]:
+        cand = prefix / name
+        if cand.is_file() and os.access(cand, os.X_OK):
+            return cand
+    return None
+
+
+def _get_settings_instance(schema_id: str, path: str | None = None) -> Any | None:
+    """Instantiate Gio.Settings safely using default or host schema sources."""
+    if not _GIO_AVAILABLE or Gio is None:
+        return None
+
+    source = Gio.SettingsSchemaSource.get_default()
+    schema_obj = None
+    if source is not None:
+        schema_obj = source.lookup(schema_id, True)
+
+    if schema_obj is None:
+        for host_schema_dir in [
+            Path("/run/host/usr/share/glib-2.0/schemas"),
+            Path("/run/host/usr/local/share/glib-2.0/schemas"),
+            Path("/run/host/share/glib-2.0/schemas"),
+        ]:
+            if (host_schema_dir / "gschemas.compiled").is_file():
+                try:
+                    src = Gio.SettingsSchemaSource.new_from_directory(
+                        str(host_schema_dir),
+                        source,
+                        False,
+                    )
+                    schema_obj = src.lookup(schema_id, True)
+                    if schema_obj is not None:
+                        break
+                except Exception:
+                    pass
+
+    if schema_obj is None:
+        return None
+
+    try:
+        if path:
+            return Gio.Settings.new_full(schema_obj, None, path)
+        return Gio.Settings.new_full(schema_obj, None, None)
+    except Exception as err:
+        logger.debug("Failed to instantiate Gio.Settings for %s: %s", schema_id, err)
+        return None
+
+
+def detect_installed_terminal() -> DetectedTerminal | None:
+    """Detect available terminal emulator and its GSettings capabilities (Fix 1).
+
+    Checks for supported terminals in order of preference:
+    1. GNOME Terminal (gnome-terminal) -> org.gnome.Terminal.Legacy.Profile
+    2. GNOME Console (kgx) -> org.gnome.Console
+    3. Konsole (konsole) -> file-based configuration (no GSettings)
+    4. XFCE Terminal (xfce4-terminal) -> org.xfce.terminal
+
+    Returns:
+        DetectedTerminal instance, or None if no supported terminal is installed.
+    """
+    # 1. GNOME Terminal
+    gt_bin = _find_terminal_binary("gnome-terminal")
+    if gt_bin is not None:
+        has_schema = schema_exists("org.gnome.Terminal.Legacy.Profile") and schema_exists(
+            "org.gnome.Terminal.ProfilesList"
+        )
+        return DetectedTerminal(
+            terminal_type="gnome-terminal",
+            display_name="GNOME Terminal",
+            binary_path=gt_bin,
+            schema_id="org.gnome.Terminal.Legacy.Profile",
+            supports_gsettings=True,
+            schema_accessible=has_schema,
+        )
+
+    # 2. GNOME Console (kgx)
+    kgx_bin = _find_terminal_binary("kgx") or _find_terminal_binary("gnome-console")
+    if kgx_bin is not None:
+        has_schema = schema_exists("org.gnome.Console")
+        return DetectedTerminal(
+            terminal_type="kgx",
+            display_name="GNOME Console",
+            binary_path=kgx_bin,
+            schema_id="org.gnome.Console",
+            supports_gsettings=True,
+            schema_accessible=has_schema,
+        )
+
+    # 3. Konsole
+    konsole_bin = _find_terminal_binary("konsole")
+    if konsole_bin is not None:
+        return DetectedTerminal(
+            terminal_type="konsole",
+            display_name="Konsole",
+            binary_path=konsole_bin,
+            schema_id=None,
+            supports_gsettings=False,
+            schema_accessible=False,
+        )
+
+    # 4. XFCE Terminal
+    xfce_bin = _find_terminal_binary("xfce4-terminal")
+    if xfce_bin is not None:
+        has_schema = schema_exists("org.xfce.terminal")
+        return DetectedTerminal(
+            terminal_type="xfce4-terminal",
+            display_name="XFCE Terminal",
+            binary_path=xfce_bin,
+            schema_id="org.xfce.terminal" if has_schema else None,
+            supports_gsettings=has_schema,
+            schema_accessible=has_schema,
+        )
+
+    return None
+
+
+def apply_palette_to_gnome_console(palette: TerminalPalette) -> bool:
+    """Apply compatible preferences to GNOME Console (Fix 5).
+
+    Schema: `org.gnome.Console`
+
+    Args:
+        palette: TerminalPalette containing font, bell, and color preferences.
+
+    Returns:
+        True if applied successfully, False if schema is unavailable.
+    """
+    if not schema_exists("org.gnome.Console"):
+        logger.warning("GNOME Console schema is unavailable")
+        return False
+
+    settings = _get_settings_instance("org.gnome.Console")
+    if settings is None:
+        return False
+
+    try:
+        schema_obj = settings.get_property("settings-schema")
+        keys = schema_obj.list_keys() if schema_obj else []
+
+        if "use-system-font" in keys:
+            settings.set_boolean("use-system-font", palette.use_system_font)
+        if "custom-font" in keys and palette.font:
+            settings.set_string("custom-font", palette.font)
+        if "audible-bell" in keys:
+            settings.set_boolean("audible-bell", palette.audible_bell)
+        if "theme" in keys:
+            from .css_extractor import _is_color_dark
+
+            is_dark = _is_color_dark(palette.background_color)
+            settings.set_string("theme", "dark" if is_dark else "light")
+
+        return True
+    except Exception as err:
+        logger.warning("Failed to apply settings to GNOME Console: %s", err)
         return False
 
 
@@ -209,13 +426,15 @@ def list_gnome_terminal_profiles() -> list[TerminalProfileSummary]:
     Returns:
         List of TerminalProfileSummary items.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+    if not schema_exists("org.gnome.Terminal.ProfilesList") or not schema_exists(
         "org.gnome.Terminal.Legacy.Profile"
     ):
         return []
 
     try:
-        profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+        profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+        if profiles_settings is None:
+            return []
         default_id = profiles_settings.get_string("default")
         profile_ids = list(profiles_settings.get_strv("list"))
 
@@ -223,10 +442,12 @@ def list_gnome_terminal_profiles() -> list[TerminalProfileSummary]:
         for pid in profile_ids:
             path = f"/org/gnome/terminal/legacy/profiles:/:{pid}/"
             try:
-                prof_settings = Gio.Settings.new_with_path(
-                    "org.gnome.Terminal.Legacy.Profile", path
-                )
-                visible_name = prof_settings.get_string("visible-name") or "Unnamed Profile"
+                prof_settings = _get_settings_instance("org.gnome.Terminal.Legacy.Profile", path)
+                visible_name = (
+                    prof_settings.get_string("visible-name")
+                    if prof_settings is not None
+                    else "Unnamed Profile"
+                ) or "Unnamed Profile"
             except Exception:
                 visible_name = pid
 
@@ -256,14 +477,16 @@ def create_gnome_terminal_profile(
     Returns:
         UUID of the newly created profile, or None on failure.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+    if not schema_exists("org.gnome.Terminal.ProfilesList") or not schema_exists(
         "org.gnome.Terminal.Legacy.Profile"
     ):
         return None
 
     try:
         new_id = str(uuid.uuid4())
-        profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+        profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+        if profiles_settings is None:
+            return None
         current_list = list(profiles_settings.get_strv("list"))
 
         if new_id not in current_list:
@@ -271,8 +494,9 @@ def create_gnome_terminal_profile(
             profiles_settings.set_strv("list", current_list)
 
         path = f"/org/gnome/terminal/legacy/profiles:/:{new_id}/"
-        prof_settings = Gio.Settings.new_with_path("org.gnome.Terminal.Legacy.Profile", path)
-        prof_settings.set_string("visible-name", name)
+        prof_settings = _get_settings_instance("org.gnome.Terminal.Legacy.Profile", path)
+        if prof_settings is not None:
+            prof_settings.set_string("visible-name", name)
 
         if palette:
             apply_palette_to_gnome_terminal(palette, profile_id=new_id)
@@ -292,11 +516,13 @@ def delete_gnome_terminal_profile(profile_id: str) -> bool:
     Returns:
         True if deleted, False if profile is default or deletion failed.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList"):
+    if not schema_exists("org.gnome.Terminal.ProfilesList"):
         return False
 
     try:
-        profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+        profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+        if profiles_settings is None:
+            return False
         default_id = profiles_settings.get_string("default")
 
         # Guard: Never delete the active/default profile
@@ -324,11 +550,13 @@ def set_default_gnome_terminal_profile(profile_id: str) -> bool:
     Returns:
         True if successful, False otherwise.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList"):
+    if not schema_exists("org.gnome.Terminal.ProfilesList"):
         return False
 
     try:
-        profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+        profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+        if profiles_settings is None:
+            return False
         profiles_settings.set_string("default", profile_id)
         return True
     except Exception as err:
@@ -347,24 +575,25 @@ def read_current_gnome_terminal_palette(
     Returns:
         TerminalPalette if found and readable, None otherwise.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+    if not schema_exists("org.gnome.Terminal.ProfilesList") or not schema_exists(
         "org.gnome.Terminal.Legacy.Profile"
     ):
         return None
 
     try:
         if profile_id is None:
-            profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+            profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+            if profiles_settings is None:
+                return None
             profile_id = profiles_settings.get_string("default")
 
         if not profile_id:
             return None
 
         path = f"/org/gnome/terminal/legacy/profiles:/:{profile_id}/"
-        profile = Gio.Settings.new_with_path(
-            "org.gnome.Terminal.Legacy.Profile",
-            path,
-        )
+        profile = _get_settings_instance("org.gnome.Terminal.Legacy.Profile", path)
+        if profile is None:
+            return None
 
         name = profile.get_string("visible-name") or "GNOME Terminal"
         fg = profile.get_string("foreground-color") or "#d0d0d0"
@@ -413,7 +642,7 @@ def apply_palette_to_gnome_terminal(
     Returns:
         True if applied successfully, False if GNOME Terminal schema is unavailable.
     """
-    if not _is_schema_available("org.gnome.Terminal.ProfilesList") or not _is_schema_available(
+    if not schema_exists("org.gnome.Terminal.ProfilesList") or not schema_exists(
         "org.gnome.Terminal.Legacy.Profile"
     ):
         logger.warning("GNOME Terminal schemas are unavailable; cannot apply palette")
@@ -422,7 +651,9 @@ def apply_palette_to_gnome_terminal(
     try:
         if profile_id is None:
             # Query default profile UUID from legacy settings
-            profiles_settings = Gio.Settings(schema_id="org.gnome.Terminal.ProfilesList")
+            profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+            if profiles_settings is None:
+                return False
             profile_id = profiles_settings.get_string("default")
 
         if not profile_id:
@@ -430,10 +661,9 @@ def apply_palette_to_gnome_terminal(
             return False
 
         path = f"/org/gnome/terminal/legacy/profiles:/:{profile_id}/"
-        profile = Gio.Settings.new_with_path(
-            "org.gnome.Terminal.Legacy.Profile",
-            path,
-        )
+        profile = _get_settings_instance("org.gnome.Terminal.Legacy.Profile", path)
+        if profile is None:
+            return False
 
         profile.set_boolean("use-theme-colors", False)
         profile.set_string("foreground-color", palette.foreground_color)

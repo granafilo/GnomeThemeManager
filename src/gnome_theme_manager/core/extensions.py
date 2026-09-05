@@ -678,8 +678,90 @@ class ExtensionsManager:
 
         return False
 
+    def is_extensions_app_installed(self) -> bool:
+        """Check if official GNOME Extensions or Extension Manager app is available on the system."""
+        is_flatpak = Path("/.flatpak-info").exists()
+        if is_flatpak and shutil.which("flatpak-spawn"):
+            try:
+                # 1. Check if com.mattjakeman.ExtensionManager or org.gnome.Extensions flatpak exists on host
+                res = subprocess.run(
+                    ["flatpak-spawn", "--host", "flatpak", "info", "com.mattjakeman.ExtensionManager"],
+                    capture_output=True,
+                    timeout=2,
+                )
+                if res.returncode == 0:
+                    return True
+                res_ext = subprocess.run(
+                    ["flatpak-spawn", "--host", "flatpak", "info", "org.gnome.Extensions"],
+                    capture_output=True,
+                    timeout=2,
+                )
+                if res_ext.returncode == 0:
+                    return True
+                # 2. Check if host binaries exist
+                for app in ("extension-manager", "gnome-extensions-app", "gnome-shell-extension-prefs"):
+                    res_bin = subprocess.run(
+                        ["flatpak-spawn", "--host", "which", app],
+                        capture_output=True,
+                        timeout=2,
+                    )
+                    if res_bin.returncode == 0:
+                        return True
+            except Exception as err:
+                logger.debug("Failed checking extension app via flatpak-spawn: %s", err)
+
+        # Host checks
+        for cmd in (
+            "extension-manager",
+            "gnome-extensions-app",
+            "gnome-shell-extension-prefs",
+        ):
+            if shutil.which(cmd):
+                return True
+
+        if shutil.which("flatpak"):
+            try:
+                res = subprocess.run(
+                    ["flatpak", "info", "com.mattjakeman.ExtensionManager"],
+                    capture_output=True,
+                    timeout=2,
+                )
+                if res.returncode == 0:
+                    return True
+                res2 = subprocess.run(
+                    ["flatpak", "info", "org.gnome.Extensions"],
+                    capture_output=True,
+                    timeout=2,
+                )
+                if res2.returncode == 0:
+                    return True
+            except Exception:
+                pass
+
+        return False
+
     def open_extensions_app(self) -> bool:
         """Launch Extension Manager (com.mattjakeman.ExtensionManager) or fallback system app."""
+        is_flatpak = Path("/.flatpak-info").exists()
+
+        if is_flatpak and shutil.which("flatpak-spawn"):
+            spawn_cmds = [
+                ["flatpak-spawn", "--host", "flatpak", "run", "com.mattjakeman.ExtensionManager"],
+                ["flatpak-spawn", "--host", "extension-manager"],
+                ["flatpak-spawn", "--host", "gnome-extensions-app"],
+                ["flatpak-spawn", "--host", "flatpak", "run", "org.gnome.Extensions"],
+                ["flatpak-spawn", "--host", "gnome-shell-extension-prefs"],
+                ["flatpak-spawn", "--host", "gio", "launch", "com.mattjakeman.ExtensionManager.desktop"],
+            ]
+            for cmd in spawn_cmds:
+                try:
+                    subprocess.Popen(cmd)
+                    logger.info("Launched extension manager via flatpak-spawn: %s", cmd)
+                    return True
+                except Exception as err:
+                    logger.debug("Failed flatpak-spawn launch %s: %s", cmd, err)
+
+        # Host / non-flatpak execution
         for cmd in [
             ["extension-manager"],
             ["flatpak", "run", "com.mattjakeman.ExtensionManager"],
@@ -690,8 +772,10 @@ class ExtensionsManager:
             if shutil.which(cmd[0]):
                 try:
                     subprocess.Popen(cmd)
+                    logger.info("Launched extension manager via: %s", cmd)
                     return True
                 except Exception as err:
                     logger.debug("Failed launching %s: %s", cmd, err)
+
         logger.warning("No Extension Manager app found on the system.")
         return False

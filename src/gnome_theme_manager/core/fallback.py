@@ -204,9 +204,15 @@ class ThemeAvailabilityChecker:
             return first_valid
 
         # Known common system fallback candidates dynamically checked
-        for candidate in ("Yaru-dark", "Yaru", "Adwaita-dark", "Adwaita"):
+        for candidate in ("Adwaita-dark", "Adwaita", "Default", "default"):
             if self.check(candidate, theme_type, target=target):
                 return candidate
+
+        # Dynamically find any valid theme available for this target
+        available = self._scanner._scan_themes_by_type(theme_type, user_only=False)
+        for t in available:
+            if not t.invalid and self.check(t.name, theme_type, target=target):
+                return t.name
 
         return fallback_theme or theme_name
 

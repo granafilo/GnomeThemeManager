@@ -3097,3 +3097,59 @@ msgstr "  Riavvia l'applicazione (o effettua logout/login) per visualizzare l'ic
 #: src/gnome_theme_manager/cli/main.py:549
 msgid "\nError: Desktop integration failed."
 msgstr "\nErrore: Integrazione desktop fallita."
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui
+msgid "Open Extension Manager"
+msgstr "Apri Gestore Estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui
+msgid "Open Extensions Manager"
+msgstr "Apri Gestore Estensioni"
+
+#: src/gnome_theme_manager/gui_gtk/ui/extensions_page.ui
+msgid "Open GNOME Extensions application to manage installed extensions"
+msgstr "Apre l'applicazione GNOME Extensions per gestire le estensioni installate"
+
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py
+msgid "To manage extensions, install the 'Extension Manager' or 'gnome-extensions-app' package."
+msgstr "Per gestire le estensioni, installa l'applicazione 'Extension Manager' o 'gnome-extensions-app'."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "No supported terminal found"
+msgstr "Nessun terminale supportato trovato"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "No supported terminal found. Install GNOME Terminal or GNOME Console to apply terminal themes."
+msgstr "Nessun terminale supportato trovato. Installa GNOME Terminal o GNOME Console per applicare temi al terminale."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "GSettings not supported"
+msgstr "GSettings non supportato"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "{terminal} does not use GSettings for configuration. Configure the theme manually from terminal preferences."
+msgstr "{terminal} non usa GSettings per la configurazione. Configura il tema manualmente dalle preferenze del terminale."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "GSettings schema unavailable"
+msgstr "Schema GSettings non disponibile"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "The terminal GSettings schema is not accessible. Check application permissions."
+msgstr "Lo schema GSettings del terminale non è accessibile. Verifica i permessi dell'applicazione."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Error applying theme"
+msgstr "Errore applicazione tema"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Could not apply preferences to {terminal}."
+msgstr "Impossibile applicare le preferenze a {terminal}."
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Failed to apply terminal theme: {error}"
+msgstr "Impossibile applicare il tema al terminale: {error}"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py
+msgid "Terminal preferences applied successfully."
+msgstr "Preferenze del terminale applicate con successo."

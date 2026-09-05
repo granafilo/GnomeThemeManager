@@ -300,6 +300,7 @@ class ThemesPage:
                 if self.manager is None:
                     raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
+                self.manager.invalidate_themes_cache()
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
                 presentation_items: list[ThemeItemPresentation] = []
                 for t in themes_list:

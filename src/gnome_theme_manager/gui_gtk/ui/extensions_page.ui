@@ -119,11 +119,11 @@
                                 <property name="valign">center</property>
                                 <child>
                                   <object class="GtkButton" id="btn_open_app">
-                                    <property name="label" translatable="yes">Extension Manager</property>
-                                    <property name="icon-name">com.mattjakeman.ExtensionManager-symbolic</property>
-                                    <property name="tooltip-text" translatable="yes">Open Extension Manager application</property>
+                                    <property name="label" translatable="yes">Open Extension Manager</property>
+                                    <property name="tooltip-text" translatable="yes">Open GNOME Extensions application to manage installed extensions</property>
+                                    <property name="accessible-role">button</property>
                                     <style>
-                                      <class name="flat"/>
+                                      <class name="suggested-action"/>
                                     </style>
                                   </object>
                                 </child>
@@ -133,7 +133,8 @@
                                     <property name="icon-name">web-browser-symbolic</property>
                                     <property name="tooltip-text" translatable="yes">Open official GNOME Extensions website</property>
                                     <style>
-                                      <class name="suggested-action"/>
+                                      <class name="flat"/>
+                                      <class name="pill"/>
                                     </style>
                                   </object>
                                 </child>

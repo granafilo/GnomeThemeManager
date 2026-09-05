@@ -11,6 +11,16 @@ import os
 
 __version__ = "1.5.0"
 
+# In Flatpak sandbox, ensure host schemas and data directories are included in XDG_DATA_DIRS
+if os.path.exists("/.flatpak-info") or os.environ.get("FLATPAK_ID"):
+    for _host_dir in ("/run/host/usr/share", "/run/host/usr/local/share", "/run/host/share"):
+        if os.path.isdir(_host_dir):
+            _current_xdg = os.environ.get("XDG_DATA_DIRS", "")
+            _dirs = [p for p in _current_xdg.split(":") if p]
+            if _host_dir not in _dirs:
+                _dirs.append(_host_dir)
+                os.environ["XDG_DATA_DIRS"] = ":".join(_dirs)
+
 # Path to compiled translations (.mo)
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locale")
 DOMAIN = "gnomethememanager"

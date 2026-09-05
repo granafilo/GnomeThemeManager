@@ -490,6 +490,11 @@ class ThemeManager:
 
         return sorted(themes, key=lambda t: (t.theme_type.value, t.name.lower()))
 
+    def invalidate_themes_cache(self) -> None:
+        """Invalidate scanner cache so next theme list call rescans the filesystem."""
+        if hasattr(self._scanner, "invalidate_cache"):
+            self._scanner.invalidate_cache()
+
     def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
         """Find a specific theme by name and type on the filesystem.
 
@@ -1190,10 +1195,16 @@ class ThemeManager:
 
         return set_default_gnome_terminal_profile(profile_id)
 
+    def detect_terminal(self) -> Any:
+        """Detect installed terminal emulator and its GSettings capability."""
+        from .terminal_palette import detect_installed_terminal
+
+        return detect_installed_terminal()
+
     def apply_terminal_palette(
         self, palette: TerminalPalette, profile_id: str | None = None
     ) -> bool:
-        """Apply terminal palette to GNOME Terminal (Task 4.4).
+        """Apply terminal palette to the detected terminal emulator.
 
         Args:
             palette: TerminalPalette to apply.
@@ -1202,6 +1213,15 @@ class ThemeManager:
         Returns:
             True if applied successfully, False otherwise.
         """
+        from .terminal_palette import (
+            apply_palette_to_gnome_console,
+            apply_palette_to_gnome_terminal,
+            detect_installed_terminal,
+        )
+
+        term = detect_installed_terminal()
+        if term is not None and term.terminal_type == "kgx":
+            return apply_palette_to_gnome_console(palette)
         return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
 
     # -------------------------------------------------------------------------

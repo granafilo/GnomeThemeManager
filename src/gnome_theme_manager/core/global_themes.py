@@ -376,34 +376,47 @@ class GlobalThemeManager:
                 return pool[0]
             return fallback
 
+        # Identify active / dominant theme family (e.g. ZorinBlue, Zorin, Yaru, etc.)
+        family_prefix = ""
+        current_theme_set = self._current_themes_provider() if self._current_themes_provider else None
+        if current_theme_set and current_theme_set.gtk_theme:
+            base = current_theme_set.gtk_theme.split("-")[0]
+            if any(t.startswith(base) for t in gtk_themes):
+                family_prefix = base
+
+        if not family_prefix:
+            for candidate in ("ZorinBlue", "ZorinGrey", "Zorin", "Yaru"):
+                if any(t.startswith(candidate) for t in gtk_themes):
+                    family_prefix = candidate
+                    break
+
         # 2. Dark theme suite (composed strictly from valid system themes)
+        dark_kw = (
+            [f"{family_prefix.lower()}-dark", f"{family_prefix.lower()}dark"]
+            if family_prefix
+            else []
+        )
+        dark_kw.extend(["dark", "night", "black"])
+
         dark_gtk = pick_match(
             gtk_themes,
-            ["yaru-dark", "adwaita-dark", "dark", "night", "black"],
-            fallback="Yaru-dark"
-            if "Yaru-dark" in gtk_themes
-            else (gtk_themes[0] if gtk_themes else None),
+            dark_kw,
+            fallback=gtk_themes[0] if gtk_themes else None,
         )
         dark_icon = pick_match(
             icon_themes,
-            ["yaru-dark", "papirus-dark", "humanity-dark", "ubuntu-mono-dark", "dark"],
-            fallback="Yaru-dark"
-            if "Yaru-dark" in icon_themes
-            else (icon_themes[0] if icon_themes else None),
+            dark_kw,
+            fallback=icon_themes[0] if icon_themes else None,
         )
-        dark_cursor = pick_match(
-            cursor_themes,
-            ["dmz-black", "yaru", "adwaita", "dark"],
-            fallback="Yaru"
-            if "Yaru" in cursor_themes
-            else (cursor_themes[0] if cursor_themes else None),
+        dark_cursor = (
+            "Adwaita"
+            if "Adwaita" in cursor_themes
+            else (cursor_themes[0] if cursor_themes else None)
         )
         dark_shell = pick_match(
             shell_themes,
-            ["yaru-dark", "yaru", "default", "dark"],
-            fallback="Yaru-dark"
-            if "Yaru-dark" in shell_themes
-            else (shell_themes[0] if shell_themes else None),
+            dark_kw,
+            fallback=shell_themes[0] if shell_themes else None,
         )
 
         if dark_gtk or dark_icon:
@@ -425,28 +438,37 @@ class GlobalThemeManager:
             generated.append(dark_theme)
 
         # 3. Light / Modern theme suite (composed strictly from valid system themes)
-        def pick_light(pool: list[str]) -> str | None:
-            for exact in ("Yaru", "Adwaita"):
-                if exact in pool:
-                    return exact
-            for kw in ("light", "yaru", "adwaita"):
-                for item in pool:
-                    if kw.lower() in item.lower() and "dark" not in item.lower():
-                        return item
-            return pool[0] if pool else None
+        light_kw = (
+            [f"{family_prefix.lower()}-light", f"{family_prefix.lower()}light"]
+            if family_prefix
+            else []
+        )
+        light_kw.extend(["light", "default"])
 
-        light_gtk = pick_light(gtk_themes)
-        light_icon = pick_light(icon_themes)
+        non_dark_gtk = [t for t in gtk_themes if "dark" not in t.lower()] or gtk_themes
+        non_dark_icons = [t for t in icon_themes if "dark" not in t.lower()] or icon_themes
+        non_dark_shells = [t for t in shell_themes if "dark" not in t.lower()] or shell_themes
+
+        light_gtk = pick_match(
+            non_dark_gtk,
+            light_kw,
+            fallback=non_dark_gtk[0] if non_dark_gtk else None,
+        )
+        light_icon = pick_match(
+            non_dark_icons,
+            light_kw,
+            fallback=non_dark_icons[0] if non_dark_icons else None,
+        )
         light_cursor = (
             "Adwaita"
             if "Adwaita" in cursor_themes
-            else (
-                "Yaru"
-                if "Yaru" in cursor_themes
-                else pick_match(cursor_themes, ["dmz-white", "light"])
-            )
+            else (cursor_themes[0] if cursor_themes else None)
         )
-        light_shell = pick_light(shell_themes)
+        light_shell = pick_match(
+            non_dark_shells,
+            light_kw,
+            fallback=non_dark_shells[0] if non_dark_shells else None,
+        )
 
         if light_gtk or light_icon:
             light_theme = GlobalTheme(

@@ -161,18 +161,94 @@ class TerminalPage:
         except Exception as err:
             logger.warning("Failed to load terminal palette: %s", err)
 
-    def on_apply_button_clicked(self, _btn: Gtk.Button) -> None:
-        """Apply current terminal palette and preferences to GNOME Terminal."""
-        palette = self._build_current_palette()
-        target_pid = self._selected_profile_id
-        success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
-        if success:
-            self._notify(_("Terminal preferences applied to GNOME Terminal."), is_error=False)
+    def _show_error_dialog(self, heading: str, body: str) -> None:
+        """Present an informational error dialogue to the user (Fix 4)."""
+        win = self.widget.get_root()
+        if hasattr(Adw, "AlertDialog"):
+            dialog = Adw.AlertDialog.new(heading=heading, body=body)
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+            dialog.present(win if isinstance(win, Gtk.Widget) else None)
+        elif hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(
+                win if isinstance(win, Gtk.Window) else None,
+                heading,
+                body,
+            )
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+            dialog.present()
         else:
+            self._notify(f"{heading}: {body}", is_error=True)
+
+    def on_apply_button_clicked(self, _btn: Gtk.Button) -> None:
+        """Apply current terminal palette and preferences with comprehensive validation (Fix 4)."""
+        term_info = self.manager.detect_terminal()
+
+        # Scenario A - No supported terminal installed
+        if term_info is None:
+            self._show_error_dialog(
+                _("No supported terminal found"),
+                _(
+                    "No supported terminal found. Install GNOME Terminal or GNOME Console to apply terminal themes."
+                ),
+            )
             self._notify(
-                _("Could not apply to GNOME Terminal profile (GSettings schema unavailable)."),
+                _(
+                    "No supported terminal found. Install GNOME Terminal or GNOME Console to apply terminal themes."
+                ),
                 is_error=True,
             )
+            return
+
+        # Scenario C - Terminal found but doesn't use GSettings (e.g. Konsole)
+        if not term_info.supports_gsettings:
+            msg = _(
+                "{terminal} does not use GSettings for configuration. Configure the theme manually from terminal preferences."
+            ).format(terminal=term_info.display_name)
+            self._show_error_dialog(_("GSettings not supported"), msg)
+            self._notify(msg, is_error=True)
+            return
+
+        # Scenario B - Terminal found but schema not accessible (e.g. inside sandbox without access)
+        if not term_info.schema_accessible:
+            self._show_error_dialog(
+                _("GSettings schema unavailable"),
+                _(
+                    "The terminal GSettings schema is not accessible. Check application permissions."
+                ),
+            )
+            self._notify(
+                _(
+                    "The terminal GSettings schema is not accessible. Check application permissions."
+                ),
+                is_error=True,
+            )
+            return
+
+        palette = self._build_current_palette()
+        target_pid = self._selected_profile_id
+        try:
+            success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
+            if success:
+                self._notify(
+                    _("Terminal preferences applied successfully."),
+                    is_error=False,
+                )
+            else:
+                # Scenario D - Generic application error
+                fail_msg = _("Could not apply preferences to {terminal}.").format(
+                    terminal=term_info.display_name
+                )
+                self._show_error_dialog(_("Error applying theme"), fail_msg)
+                self._notify(fail_msg, is_error=True)
+        except Exception as err:
+            # Scenario D - Detailed exception error
+            err_msg = _("Failed to apply terminal theme: {error}").format(error=str(err))
+            self._show_error_dialog(_("Error applying theme"), err_msg)
+            self._notify(err_msg, is_error=True)
 
     # ------------------------------------------------------------------
     # Profiles Management

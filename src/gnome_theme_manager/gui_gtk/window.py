@@ -519,9 +519,7 @@ class MainWindow(Adw.ApplicationWindow):
         }
 
         /* Ensure boxed-list rows do not show contrasting background boxes when insensitive/disabled */
-        list.boxed-list > row,
         list.boxed-list > row:disabled,
-        preferencesgroup list > row,
         preferencesgroup list > row:disabled {
             background-color: transparent;
         }
@@ -529,6 +527,40 @@ class MainWindow(Adw.ApplicationWindow):
         .card,
         list.boxed-list {
             background-color: @card_bg_color;
+        }
+
+        /* High-contrast, theme-adaptive selection states (Fix 2) */
+        list.boxed-list > row:selected,
+        list.boxed-list > row.activatable:selected,
+        list.boxed-list > row:focus:selected,
+        .navigation-sidebar row:selected {
+            background-color: @accent_bg_color;
+            color: @accent_fg_color;
+        }
+
+        list.boxed-list > row:selected label,
+        list.boxed-list > row:selected image,
+        list.boxed-list > row:selected .title,
+        list.boxed-list > row:selected .subtitle {
+            color: @accent_fg_color;
+        }
+
+        list.boxed-list > row:selected .dim-label,
+        list.boxed-list > row:selected .caption {
+            color: alpha(@accent_fg_color, 0.85);
+        }
+
+        list.boxed-list > row.activatable:hover:not(:selected) {
+            background-color: alpha(@accent_bg_color, 0.12);
+        }
+
+        list.boxed-list > row.activatable:active {
+            background-color: alpha(@accent_bg_color, 0.24);
+        }
+
+        list.boxed-list > row:focus-visible {
+            outline: 2px solid @accent_color;
+            outline-offset: -2px;
         }
         """
         try:

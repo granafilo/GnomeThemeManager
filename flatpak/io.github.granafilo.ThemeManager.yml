@@ -16,14 +16,17 @@ finish-args:
 
   # D-Bus & Settings Synchronization (GSettings / dconf / GNOME Shell)
   - --filesystem=xdg-run/dconf
-  - --filesystem=xdg-config/dconf
-  - --filesystem=~/.config/dconf
+  - --filesystem=xdg-config/dconf:rw
+  - --filesystem=~/.config/dconf:rw
   - --talk-name=ca.desrt.dconf
   - --talk-name=org.gnome.Shell.Extensions
   - --talk-name=org.gnome.Shell
+  - --talk-name=org.freedesktop.Flatpak
   - --env=GIO_EXTRA_MODULES=/app/lib/gio/modules
+  - --env=XDG_DATA_DIRS=/app/share:/usr/share:/usr/share/runtime/share:/run/host/user-share:/run/host/share:/run/host/usr/share
 
-  # Scoped Theme & Desktop File System Permissions
+  # Host and Scoped Theme & Desktop File System Permissions
+  - --filesystem=host:ro
   - --filesystem=xdg-data/themes:create
   - --filesystem=xdg-data/icons:create
   - --filesystem=~/.themes:create

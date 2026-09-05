@@ -62,6 +62,11 @@ class ThemeScanner:
         self.system_icon_dirs = (
             system_icon_dirs if system_icon_dirs is not None else get_system_icons_dirs()
         )
+        self._cache: dict[tuple[ThemeType | None, bool], list[Theme]] = {}
+
+    def invalidate_cache(self) -> None:
+        """Clear cached scan results to force fresh directory inspection."""
+        self._cache.clear()
 
     # -------------------------------------------------------------------------
     # Public Scan Methods
@@ -121,10 +126,15 @@ class ThemeScanner:
             Full list of detected Theme objects.
         """
         all_themes: list[Theme] = []
+        cache_key = (None, user_only)
+        if cache_key in self._cache:
+            return list(self._cache[cache_key])
+
         all_themes.extend(self.scan_gtk_themes(user_only=user_only))
         all_themes.extend(self.scan_icon_themes(user_only=user_only))
         all_themes.extend(self.scan_cursor_themes(user_only=user_only))
         all_themes.extend(self.scan_shell_themes(user_only=user_only))
+        self._cache[cache_key] = list(all_themes)
         return all_themes
 
     def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
@@ -166,6 +176,10 @@ class ThemeScanner:
         Returns:
             List of unique Theme objects for the specified type.
         """
+        cache_key = (target_type, user_only)
+        if cache_key in self._cache:
+            return list(self._cache[cache_key])
+
         themes: list[Theme] = []
         seen_names: set[str] = set()
 
@@ -192,6 +206,14 @@ class ThemeScanner:
                         seen_names.add(theme.name)
                         themes.append(theme)
 
+            # 3. Flatpak fallback: if no system themes were found, query host via flatpak-spawn
+            if not any(not t.is_user_level for t in themes):
+                for host_theme in self._scan_flatpak_host_fallback(target_type):
+                    if host_theme.name not in seen_names:
+                        seen_names.add(host_theme.name)
+                        themes.append(host_theme)
+
+        self._cache[cache_key] = list(themes)
         return themes
 
     def _scan_directory(self, directory: Path, is_user_level: bool) -> list[Theme]:
@@ -369,13 +391,125 @@ class ThemeScanner:
 
     @staticmethod
     def _is_gtk_theme(path: Path) -> bool:
-        """Check if directory contains a valid GTK theme."""
-        gtk_subdirs = ["gtk-4.0", "gtk-3.0", "gtk-3.20"]
-        for subdir in gtk_subdirs:
-            if (path / subdir).is_dir():
-                return True
+        """Check if directory contains a valid modern GTK 3 or GTK 4 theme."""
+        # 1. Direct stylesheet in theme root
+        if (path / "gtk.css").is_file():
+            return True
 
-        return (path / "gtk.css").is_file()
+        # 2. Modern GTK 4.0 or 3.0 subdirectories
+        for subdir_name in ("gtk-4.0", "gtk-3.0", "gtk-3.20"):
+            subdir = path / subdir_name
+            if subdir.is_dir():
+                if (subdir / "gtk.css").is_file() or (subdir / "gtk-main.css").is_file():
+                    return True
+                try:
+                    if any(f.suffix == ".css" for f in subdir.iterdir() if f.is_file()):
+                        return True
+                except (OSError, PermissionError):
+                    pass
+
+        return False
+
+    def _scan_flatpak_host_fallback(self, target_type: ThemeType) -> list[Theme]:
+        """Query host filesystem for themes via flatpak-spawn if host mount is not directly accessible."""
+        if not Path("/.flatpak-info").exists():
+            return []
+        import shutil
+        import subprocess
+
+        if not shutil.which("flatpak-spawn"):
+            return []
+
+        host_dir = (
+            "/usr/share/themes"
+            if target_type in (ThemeType.GTK, ThemeType.SHELL)
+            else "/usr/share/icons"
+        )
+        try:
+            res = subprocess.run(
+                ["flatpak-spawn", "--host", "ls", "-1", host_dir],
+                capture_output=True,
+                text=True,
+                timeout=3,
+            )
+            if res.returncode != 0:
+                return []
+
+            found_themes: list[Theme] = []
+            for name in res.stdout.splitlines():
+                name = name.strip()
+                if not name or name in ("Default", "Emacs"):
+                    continue
+
+                if target_type == ThemeType.GTK:
+                    chk = subprocess.run(
+                        [
+                            "flatpak-spawn",
+                            "--host",
+                            "sh",
+                            "-c",
+                            f"test -d '{host_dir}/{name}/gtk-3.0' || test -d '{host_dir}/{name}/gtk-4.0' || test -f '{host_dir}/{name}/gtk.css'",
+                        ],
+                        capture_output=True,
+                        timeout=2,
+                    )
+                    if chk.returncode == 0:
+                        found_themes.append(
+                            Theme(
+                                name=name,
+                                theme_type=ThemeType.GTK,
+                                path=Path(f"/run/host{host_dir}/{name}"),
+                                is_user_level=False,
+                            )
+                        )
+                elif target_type == ThemeType.SHELL:
+                    chk = subprocess.run(
+                        ["flatpak-spawn", "--host", "test", "-d", f"{host_dir}/{name}/gnome-shell"],
+                        capture_output=True,
+                        timeout=2,
+                    )
+                    if chk.returncode == 0:
+                        found_themes.append(
+                            Theme(
+                                name=name,
+                                theme_type=ThemeType.SHELL,
+                                path=Path(f"/run/host{host_dir}/{name}"),
+                                is_user_level=False,
+                            )
+                        )
+                elif target_type == ThemeType.ICON:
+                    chk = subprocess.run(
+                        ["flatpak-spawn", "--host", "test", "-f", f"{host_dir}/{name}/index.theme"],
+                        capture_output=True,
+                        timeout=2,
+                    )
+                    if chk.returncode == 0:
+                        found_themes.append(
+                            Theme(
+                                name=name,
+                                theme_type=ThemeType.ICON,
+                                path=Path(f"/run/host{host_dir}/{name}"),
+                                is_user_level=False,
+                            )
+                        )
+                elif target_type == ThemeType.CURSOR:
+                    chk = subprocess.run(
+                        ["flatpak-spawn", "--host", "test", "-d", f"{host_dir}/{name}/cursors"],
+                        capture_output=True,
+                        timeout=2,
+                    )
+                    if chk.returncode == 0:
+                        found_themes.append(
+                            Theme(
+                                name=name,
+                                theme_type=ThemeType.CURSOR,
+                                path=Path(f"/run/host{host_dir}/{name}"),
+                                is_user_level=False,
+                            )
+                        )
+            return found_themes
+        except Exception:
+            return []
 
     @staticmethod
     def _is_shell_theme(path: Path) -> bool:

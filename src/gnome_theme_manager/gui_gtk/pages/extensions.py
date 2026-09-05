@@ -247,12 +247,17 @@ class ExtensionsPage:
                 self.on_notify_message(msg, True)
 
     def _open_app(self) -> None:
-        """Launch official GNOME Extensions app."""
+        """Launch official GNOME Extensions or Extension Manager app."""
         if not self.manager.extensions:
             return
         ok = self.manager.extensions.open_extensions_app()
         if not ok and self.on_notify_message:
-            self.on_notify_message(_("Extension Manager application is not installed."), True)
+            self.on_notify_message(
+                _(
+                    "To manage extensions, install the 'Extension Manager' or 'gnome-extensions-app' package."
+                ),
+                True,
+            )
 
     def _open_prefs(self, uuid: str) -> None:
         """Launch preferences dialog for an extension."""
