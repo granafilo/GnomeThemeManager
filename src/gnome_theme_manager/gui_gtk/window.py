@@ -54,12 +54,12 @@ BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons
 COLLAPSE_BREAKPOINT_WIDTH: int = 0
 
 # Main window minimum geometry to keep sidebar + content fully usable
-MIN_WINDOW_WIDTH: int = 980
-MIN_WINDOW_HEIGHT: int = 680
+MIN_WINDOW_WIDTH: int = 1060
+MIN_WINDOW_HEIGHT: int = 700
 
 # Main window default geometry at startup
-DEFAULT_WINDOW_WIDTH: int = 1080
-DEFAULT_WINDOW_HEIGHT: int = 720
+DEFAULT_WINDOW_WIDTH: int = 1120
+DEFAULT_WINDOW_HEIGHT: int = 740
 
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
@@ -260,8 +260,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
-        # Auto-integrate desktop launcher and icons lazily in background when not running in Flatpak
-        if not (Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")):
+        # Auto-integrate desktop launcher and icons lazily in background for AppImage
+        if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
             GLib.idle_add(self._lazy_desktop_integration)
 
         self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
@@ -985,7 +985,7 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _lazy_desktop_integration(self) -> bool:
         """Run desktop integration in background without blocking UI startup."""
-        if Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID"):
+        if not (os.environ.get("APPIMAGE") or os.environ.get("APPDIR")):
             return GLib.SOURCE_REMOVE
         try:
             self.manager.integrate_desktop()

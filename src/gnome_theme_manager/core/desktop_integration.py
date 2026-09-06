@@ -93,6 +93,13 @@ def generate_desktop_entry_content(exec_path: str | None = None) -> str:
         appimage_env = os.environ.get("APPIMAGE")
         if appimage_env and Path(appimage_env).is_file():
             exec_path = f'"{appimage_env}"'
+        elif shutil.which("gnome-theme-manager"):
+            exec_path = "gnome-theme-manager --gui"
+        elif shutil.which("flatpak") and (
+            Path(f"/var/lib/flatpak/app/{APP_ID}").is_dir()
+            or (Path.home() / ".local" / "share" / "flatpak" / "app" / APP_ID).is_dir()
+        ):
+            exec_path = f"/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=gnome-theme-manager {APP_ID} --gui"
         else:
             exec_path = "gnome-theme-manager --gui"
 
