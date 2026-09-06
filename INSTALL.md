@@ -55,7 +55,7 @@ The script will automatically build using the GNOME 46 runtime, generate a local
 
 If running the Python code directly from source outside of Flatpak:
 
-### Ubuntu 22.04 LTS / 24.04 LTS and Debian 12+
+### Ubuntu 22.04 LTS / 24.04 LTS, Zorin OS, and Debian 12+
 
 ```bash
 sudo apt update
@@ -67,6 +67,22 @@ sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 ```bash
 sudo dnf install -y python3-gobject gtk4 libadwaita
 ```
+
+### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S python-gobject gtk4 libadwaita
+```
+
+---
+
+## 🖥️ Tested Environments
+
+The application has been verified and tested on the following platforms:
+- **Ubuntu 24.04 LTS** with **GNOME 46** (Standard reference target)
+- **Zorin OS 17+** with **GNOME 46** (Tested with custom desktop layouts and `zorin-appearance` extensions)
+- **Fedora 44** with **GNOME 50** (Tested with upstream GNOME 50 stack)
+- **CachyOS** with **GNOME 50** (Tested on cutting-edge rolling release with native Libadwaita stylesheets)
 
 ---
 

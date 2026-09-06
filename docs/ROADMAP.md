@@ -143,7 +143,8 @@ gsettings get org.gnome.desktop.interface.accent-color
 #### Goals
 - [ ] Create manifest `io.github.<username>.ThemeManager.yml`
 - [ ] Configure build with `flatpak-builder`
-- [ ] Test on Ubuntu 22.04+, Fedora 38+
+- [x] Test on Ubuntu 24.04 (GNOME 46), Zorin OS 17+ (GNOME 46), Fedora 44 (GNOME 50), CachyOS (GNOME 50)
+- [ ] Test on Debian 12+
 - [ ] Publish on Flathub (optional)
 
 #### Implementation Details

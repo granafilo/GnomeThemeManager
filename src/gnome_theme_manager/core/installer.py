@@ -627,7 +627,9 @@ class ThemeInstaller:
                     elif has_libadw_dir_gtk_dark:
                         dest_libadw_dark.symlink_to("../libadwaita/gtk-dark.css")
                 except OSError as exc:
-                    logger.debug("Failed creating libadwaita-dark.css symlink in %s: %s", gtk4_dir, exc)
+                    logger.debug(
+                        "Failed creating libadwaita-dark.css symlink in %s: %s", gtk4_dir, exc
+                    )
 
             # 3. If gtk-4.0/gtk.css is missing, point it to libadwaita.css
             dest_gtk = gtk4_dir / "gtk.css"

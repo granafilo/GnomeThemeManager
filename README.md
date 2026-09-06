@@ -43,6 +43,19 @@ A modern, native theme manager and customization suite for the **GNOME Desktop e
 
 ---
 
+## 🖥️ Compatibility & Tested Environments
+
+GNOME Theme Manager is designed for modern GNOME desktop environments (GNOME 42+) and is actively tested on:
+
+| Distribution | GNOME Version | Status | Notes |
+| :--- | :--- | :--- | :--- |
+| **Ubuntu 24.04 LTS** | GNOME 46 | ✅ Verified | Primary reference target; full Libadwaita & GSettings integration |
+| **Zorin OS 17+** | GNOME 46 | ✅ Verified | Custom appearance extensions & layout compatibility |
+| **Fedora 44** | GNOME 50 | ✅ Verified | Upstream GNOME stack & Libadwaita stylesheets |
+| **CachyOS** | GNOME 50 | ✅ Verified | Cutting-edge rolling release; full GNOME 50+ Libadwaita CSS stylesheets support |
+
+---
+
 ## Prerequisites
 
 ### Make the launcher executable

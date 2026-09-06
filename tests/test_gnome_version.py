@@ -253,7 +253,9 @@ def test_installer_symlinks_libadwaita_from_gtk4_css_on_gnome_50(tmp_path: Path)
         installed = installer.install_directory(src_theme)
         dest = installed[0].path
         assert (dest / "gtk-4.0" / "libadwaita.css").is_symlink()
-        assert (dest / "gtk-4.0" / "libadwaita.css").resolve() == (dest / "gtk-4.0" / "gtk.css").resolve()
+        assert (dest / "gtk-4.0" / "libadwaita.css").resolve() == (
+            dest / "gtk-4.0" / "gtk.css"
+        ).resolve()
 
 
 def test_gtk4_linker_links_libadwaita_dark_css(tmp_path: Path) -> None:
@@ -270,5 +272,6 @@ def test_gtk4_linker_links_libadwaita_dark_css(tmp_path: Path) -> None:
     success = linker.apply_override(theme_dir)
     assert success is True
     assert (config_dest / "libadwaita-dark.css").is_symlink()
-    assert (config_dest / "libadwaita-dark.css").resolve() == (gtk4_dir / "libadwaita-dark.css").resolve()
-
+    assert (config_dest / "libadwaita-dark.css").resolve() == (
+        gtk4_dir / "libadwaita-dark.css"
+    ).resolve()
