@@ -29,11 +29,13 @@ gi.require_version("GLib", "2.0")
 gi.require_version("Pango", "1.0")
 from gi.repository import Adw, Gdk, GLib, Gtk, Pango
 
+from ...core.constants import STATE_DIR
 from ...core.models import Theme, ThemeType
 from ...core.store_client import (
     StoreCategory,
     StoreClient,
     StoreItem,
+    safe_encode_url,
 )
 
 if TYPE_CHECKING:
@@ -42,7 +44,58 @@ if TYPE_CHECKING:
 logger = logging.getLogger("gnome_theme_manager.gui_gtk.pages.store")
 
 UI_FILE = Path(__file__).parent.parent / "ui" / "store_page.ui"
-THUMBNAILS_CACHE_DIR = Path.home() / ".cache" / "gnome-theme-manager" / "store_thumbnails"
+THUMBNAILS_CACHE_DIR = STATE_DIR / "store_thumbnails"
+
+
+def _get_image_cache_path(img_url: str, prefix: str = "thumb") -> Path:
+    """Compute a deterministic cache file path for an image URL."""
+    url_hash = hashlib.sha256(img_url.encode("utf-8")).hexdigest()[:24]
+    ext = Path(urlparse(img_url).path).suffix.lower()
+    if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
+        ext = ".png"
+    return THUMBNAILS_CACHE_DIR / f"{prefix}_{url_hash}{ext}"
+
+
+def _download_image_bytes(img_url: str, timeout: float = 15.0) -> bytes | None:
+    """Download image bytes with high-res fallback and requests/urllib support."""
+    if not img_url:
+        return None
+
+    high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
+    urls_to_try = [high_res_url] if high_res_url != img_url else [img_url]
+    if img_url not in urls_to_try:
+        urls_to_try.append(img_url)
+
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
+
+    for url in urls_to_try:
+        encoded_url = safe_encode_url(url)
+        # Try requests if installed
+        try:
+            import requests
+
+            res = requests.get(encoded_url, headers=headers, timeout=timeout)
+            if res.status_code == 200 and len(res.content) > 0:
+                return res.content
+        except (ImportError, ModuleNotFoundError):
+            pass
+        except Exception as err:
+            logger.debug("Failed downloading %s via requests: %s", encoded_url, err)
+
+        # Fallback to standard library urllib.request
+        try:
+            import urllib.request
+
+            req = urllib.request.Request(encoded_url, headers=headers)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    data = resp.read()
+                    if len(data) > 0:
+                        return data
+        except Exception as err:
+            logger.debug("Failed downloading %s via urllib: %s", encoded_url, err)
+
+    return None
 
 
 def _clean_html_description(raw_html: str) -> str:
@@ -239,23 +292,12 @@ class _StoreCardWidget(Gtk.Box):
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
-                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
-                ext = Path(urlparse(high_res_url).path).suffix.lower()
-                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
-                    ext = ".png"
-                cached_path = THUMBNAILS_CACHE_DIR / f"thumb_{url_hash}{ext}"
+                cached_path = _get_image_cache_path(img_url, prefix="thumb")
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
-                    import requests
-
-                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
-                    res = requests.get(high_res_url, headers=headers, timeout=15)
-                    if res.status_code != 200 or len(res.content) == 0:
-                        res = requests.get(img_url, headers=headers, timeout=15)
-
-                    if res.status_code == 200 and len(res.content) > 0:
-                        cached_path.write_bytes(res.content)
+                    content = _download_image_bytes(img_url, timeout=15.0)
+                    if content:
+                        cached_path.write_bytes(content)
 
                 if cached_path.is_file() and cached_path.stat().st_size > 0:
                     GLib.idle_add(self._apply_thumbnail, str(cached_path))
@@ -754,23 +796,12 @@ class StorePage:
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
-                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
-                ext = Path(urlparse(high_res_url).path).suffix.lower()
-                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
-                    ext = ".png"
-                cached_path = THUMBNAILS_CACHE_DIR / f"gthumb_{url_hash}{ext}"
+                cached_path = _get_image_cache_path(img_url, prefix="gthumb")
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
-                    import requests
-
-                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
-                    res = requests.get(high_res_url, headers=headers, timeout=15)
-                    if res.status_code != 200 or len(res.content) == 0:
-                        res = requests.get(img_url, headers=headers, timeout=15)
-
-                    if res.status_code == 200 and len(res.content) > 0:
-                        cached_path.write_bytes(res.content)
+                    content = _download_image_bytes(img_url, timeout=15.0)
+                    if content:
+                        cached_path.write_bytes(content)
 
                 if cached_path.is_file() and cached_path.stat().st_size > 0:
                     GLib.idle_add(pic_widget.set_filename, str(cached_path))
@@ -787,23 +818,12 @@ class StorePage:
         def worker() -> None:
             try:
                 THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-                high_res_url = re.sub(r"/cache/[^/]+/", "/", img_url)
-                url_hash = hashlib.sha256(high_res_url.encode("utf-8")).hexdigest()[:24]
-                ext = Path(urlparse(high_res_url).path).suffix.lower()
-                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
-                    ext = ".png"
-                cached_path = THUMBNAILS_CACHE_DIR / f"full_{url_hash}{ext}"
+                cached_path = _get_image_cache_path(img_url, prefix="full")
 
                 if not cached_path.is_file() or cached_path.stat().st_size == 0:
-                    import requests
-
-                    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
-                    res = requests.get(high_res_url, headers=headers, timeout=20)
-                    if res.status_code != 200 or len(res.content) == 0:
-                        res = requests.get(img_url, headers=headers, timeout=20)
-
-                    if res.status_code == 200 and len(res.content) > 0:
-                        cached_path.write_bytes(res.content)
+                    content = _download_image_bytes(img_url, timeout=20.0)
+                    if content:
+                        cached_path.write_bytes(content)
 
                 if cached_path.is_file() and cached_path.stat().st_size > 0:
                     file_path_str = str(cached_path)
@@ -887,11 +907,7 @@ class StorePage:
             title_widget.set_subtitle(counter)
             self._set_active_screenshot_index(current_idx[0])
 
-            url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()[:24]
-            ext = Path(urlparse(url).path).suffix.lower()
-            if ext not in (".png", ".jpg", ".jpeg", ".webp", ".svg", ".bmp"):
-                ext = ".png"
-            cached_path = THUMBNAILS_CACHE_DIR / f"full_{url_hash}{ext}"
+            cached_path = _get_image_cache_path(url, prefix="full")
             if cached_path.is_file() and cached_path.stat().st_size > 0:
                 picture.set_filename(str(cached_path))
             else:

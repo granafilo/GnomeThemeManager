@@ -536,3 +536,91 @@ class TestStoreItemInstallable:
             tags=["sddm", "login", "plasma"],
         )
         assert sddm_item.is_installable is False
+
+
+class TestSafeEncodeUrl:
+    """Test URL safe percent-encoding utility."""
+
+    def test_encode_unicode_in_path(self) -> None:
+        from gnome_theme_manager.core.store_client import safe_encode_url
+
+        url = "https://www.pling.com/img/sem-título.png"
+        encoded = safe_encode_url(url)
+        assert "%C3%AD" in encoded
+        assert "sem-t%C3%ADtulo.png" in encoded
+        assert encoded.startswith("https://www.pling.com/img/")
+
+    def test_encode_spaces_and_special_chars(self) -> None:
+        from gnome_theme_manager.core.store_client import safe_encode_url
+
+        url = "https://cdn.example.com/files/My Theme & Preview.png"
+        encoded = safe_encode_url(url)
+        assert "%20" in encoded
+        assert encoded.startswith("https://cdn.example.com/files/")
+
+    def test_preserve_ascii_url(self) -> None:
+        from gnome_theme_manager.core.store_client import safe_encode_url
+
+        url = "https://example.com/path/to/image.png?size=100&format=webp"
+        assert safe_encode_url(url) == url
+
+    def test_empty_or_none(self) -> None:
+        from gnome_theme_manager.core.store_client import safe_encode_url
+
+        assert safe_encode_url("") == ""
+
+
+class TestStoreClientUrllibFallback:
+    """Test StoreClient functionality when requests is unavailable."""
+
+    def test_search_with_urllib(self) -> None:
+        fake_json = b'{"status": "ok", "statuscode": 100, "data": [{"id": "99", "name": "Urllib Theme", "typename": "GTK3 Themes"}]}'
+
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.read.return_value = fake_json
+        mock_resp.__enter__.return_value = mock_resp
+
+        with (
+            patch("gnome_theme_manager.core.store_client._REQUESTS_AVAILABLE", False),
+            patch("urllib.request.urlopen", return_value=mock_resp),
+        ):
+            client = StoreClient()
+            assert client._session is None
+            items = client.search(query="Urllib")
+            assert len(items) == 1
+            assert items[0].name == "Urllib Theme"
+
+    def test_download_with_urllib(self, tmp_path: Path) -> None:
+        chunk_data = b"PK\x03\x04testpayload"
+
+        mock_resp = MagicMock()
+        mock_resp.status = 200
+        mock_resp.headers = {"Content-Length": str(len(chunk_data))}
+        mock_resp.read.side_effect = [chunk_data, b""]
+        mock_resp.__enter__.return_value = mock_resp
+
+        with (
+            patch("gnome_theme_manager.core.store_client._REQUESTS_AVAILABLE", False),
+            patch("urllib.request.urlopen", return_value=mock_resp),
+        ):
+            client = StoreClient()
+            client.get_details = MagicMock(  # type: ignore[method-assign]
+                return_value=StoreItem(
+                    id="99",
+                    name="Urllib Theme",
+                    files=[
+                        StoreDownloadFile(
+                            file_index=1,
+                            name="test.tar.xz",
+                            download_url="https://example.com/test.tar.xz",
+                        )
+                    ],
+                )
+            )
+            out_file = client.download(
+                item_id="99",
+                dest_dir=tmp_path,
+            )
+            assert out_file == tmp_path / "test.tar.xz"
+            assert out_file.read_bytes() == chunk_data

@@ -153,6 +153,12 @@ DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
         "pacman": "rxvt-unicode",
         "zypper": "rxvt-unicode",
     },
+    "requests": {
+        "apt": "python3-requests",
+        "dnf": "python3-requests",
+        "pacman": "python-requests",
+        "zypper": "python3-requests",
+    },
 }
 
 

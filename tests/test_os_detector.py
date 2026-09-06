@@ -475,3 +475,18 @@ def test_get_extension_manager_install_options_distros() -> None:
     # Unknown / fallback
     unknown_opts = get_extension_manager_install_options(package_manager="unknown")
     assert len(unknown_opts) == 3
+
+
+def test_requests_dependency_mapping() -> None:
+    """Verify requests mapping is defined for all supported package managers."""
+    from gnome_theme_manager.core.os_detector import DEPENDENCY_PACKAGE_MAP, get_os_install_commands
+
+    assert "requests" in DEPENDENCY_PACKAGE_MAP
+    assert DEPENDENCY_PACKAGE_MAP["requests"]["apt"] == "python3-requests"
+    assert DEPENDENCY_PACKAGE_MAP["requests"]["pacman"] == "python-requests"
+    assert DEPENDENCY_PACKAGE_MAP["requests"]["dnf"] == "python3-requests"
+    assert DEPENDENCY_PACKAGE_MAP["requests"]["zypper"] == "python3-requests"
+
+    commands = get_os_install_commands("requests")
+    assert "arch" in commands
+    assert commands["arch"] == "sudo pacman -S --noconfirm python-requests"
