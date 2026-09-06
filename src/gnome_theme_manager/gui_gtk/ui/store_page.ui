@@ -806,9 +806,56 @@
                               </object>
                             </child>
 
+                            <!-- Download Progress Bar & Status (Positioned prominently ABOVE buttons) -->
+                            <child>
+                              <object class="GtkBox" id="detail_progress_box">
+                                <property name="orientation">vertical</property>
+                                <property name="spacing">8</property>
+                                <property name="visible">false</property>
+                                <property name="margin-top">8</property>
+                                <property name="margin-bottom">8</property>
+                                <style>
+                                  <class name="card"/>
+                                </style>
+                                <child>
+                                  <object class="GtkBox">
+                                    <property name="orientation">horizontal</property>
+                                    <property name="spacing">10</property>
+                                    <property name="margin-start">12</property>
+                                    <property name="margin-end">12</property>
+                                    <property name="margin-top">10</property>
+                                    <child>
+                                      <object class="GtkSpinner" id="detail_progress_spinner">
+                                        <property name="spinning">true</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkLabel" id="detail_progress_label">
+                                        <property name="label" translatable="yes">Downloading package...</property>
+                                        <property name="xalign">0</property>
+                                        <property name="hexpand">true</property>
+                                        <style>
+                                          <class name="heading"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkProgressBar" id="detail_progress_bar">
+                                    <property name="fraction">0.0</property>
+                                    <property name="show-text">true</property>
+                                    <property name="margin-start">12</property>
+                                    <property name="margin-end">12</property>
+                                    <property name="margin-bottom">12</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
                             <!-- Action Buttons -->
                             <child>
-                              <object class="GtkBox">
+                              <object class="GtkBox" id="detail_action_buttons_box">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
                                 <property name="halign">end</property>
@@ -826,31 +873,6 @@
                                     <property name="label" translatable="yes">Install &amp; Apply</property>
                                     <style>
                                       <class name="pill"/>
-                                    </style>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-
-                            <!-- Download Progress Bar & Status -->
-                            <child>
-                              <object class="GtkBox" id="detail_progress_box">
-                                <property name="orientation">vertical</property>
-                                <property name="spacing">4</property>
-                                <property name="visible">false</property>
-                                <child>
-                                  <object class="GtkProgressBar" id="detail_progress_bar">
-                                    <property name="fraction">0.0</property>
-                                    <property name="show-text">true</property>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="detail_progress_label">
-                                    <property name="label" translatable="yes">Downloading package...</property>
-                                    <property name="xalign">0</property>
-                                    <style>
-                                      <class name="dim-label"/>
-                                      <class name="caption"/>
                                     </style>
                                   </object>
                                 </child>

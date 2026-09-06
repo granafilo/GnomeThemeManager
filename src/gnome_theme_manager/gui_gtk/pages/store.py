@@ -381,6 +381,9 @@ class StorePage:
         self.error_retry_button: Gtk.Button = self.builder.get_object("error_retry_button")
 
         # Detail View Widgets
+        self.detail_scrolled_window: Gtk.ScrolledWindow = self.builder.get_object(
+            "detail_scrolled_window"
+        )
         self.detail_back_button: Gtk.Button = self.builder.get_object("detail_back_button")
         self.detail_icon_image: Gtk.Image = self.builder.get_object("detail_icon_image")
         self.detail_title_label: Gtk.Label = self.builder.get_object("detail_title_label")
@@ -418,6 +421,9 @@ class StorePage:
             "detail_install_apply_button"
         )
         self.detail_progress_box: Gtk.Box = self.builder.get_object("detail_progress_box")
+        self.detail_progress_spinner: Gtk.Spinner = self.builder.get_object(
+            "detail_progress_spinner"
+        )
         self.detail_progress_bar: Gtk.ProgressBar = self.builder.get_object("detail_progress_bar")
         self.detail_progress_label: Gtk.Label = self.builder.get_object("detail_progress_label")
 
@@ -1000,9 +1006,20 @@ class StorePage:
         self._is_installing = True
         self.detail_install_button.set_sensitive(False)
         self.detail_install_apply_button.set_sensitive(False)
+        if apply_after:
+            self.detail_install_apply_button.set_label(_("Installing & applying..."))
+        else:
+            self.detail_install_button.set_label(_("Installing..."))
+
         self.detail_progress_box.set_visible(True)
+        self.detail_progress_spinner.set_spinning(True)
         self.detail_progress_bar.set_fraction(0.0)
+        self.detail_progress_bar.pulse()
         self.detail_progress_label.set_text(_("Connecting and downloading..."))
+
+        vadj = self.detail_scrolled_window.get_vadjustment()
+        if vadj:
+            GLib.idle_add(lambda: vadj.set_value(vadj.get_upper()) or False)
 
         item = self._selected_item
         selected_file_index = 1
@@ -1022,14 +1039,15 @@ class StorePage:
             last_update_time = now
 
             if total and total > 0:
-                frac = min(1.0, downloaded / total)
+                raw_frac = min(1.0, downloaded / total)
+                frac = 0.05 + (raw_frac * 0.80)
                 mb_dl = downloaded / (1024 * 1024)
                 mb_tot = total / (1024 * 1024)
                 text = _("Downloading: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)").format(
-                    dl=mb_dl, tot=mb_tot, pct=frac * 100
+                    dl=mb_dl, tot=mb_tot, pct=raw_frac * 100
                 )
             else:
-                frac = 0.5
+                frac = 0.4
                 text = _("Downloading: {dl:.1f} MB").format(dl=downloaded / (1024 * 1024))
 
             GLib.idle_add(self._update_progress_ui, frac, text)
@@ -1046,7 +1064,7 @@ class StorePage:
                     )
 
                     GLib.idle_add(
-                        self._update_progress_ui, 0.9, _("Extracting and installing theme...")
+                        self._update_progress_ui, 0.90, _("Extracting and installing theme...")
                     )
 
                     if self.manager is not None:
@@ -1065,6 +1083,7 @@ class StorePage:
                     # Optional Apply
                     applied_names: list[str] = []
                     if apply_after and installed and self.manager is not None:
+                        GLib.idle_add(self._update_progress_ui, 0.96, _("Applying theme..."))
                         for th in installed:
                             try:
                                 if th.theme_type in (
@@ -1092,6 +1111,8 @@ class StorePage:
         """Update progress bar fraction and label safely on main thread."""
         self.detail_progress_bar.set_fraction(fraction)
         self.detail_progress_label.set_text(text)
+        if fraction <= 0.05 or fraction >= 0.88:
+            self.detail_progress_bar.pulse()
         return False
 
     def _on_install_finished(
@@ -1101,14 +1122,21 @@ class StorePage:
         self._is_installing = False
         self.detail_install_button.set_sensitive(True)
         self.detail_install_apply_button.set_sensitive(True)
-        self.detail_progress_box.set_visible(False)
+        self.detail_install_button.set_label(_("Install Theme"))
+        self.detail_install_apply_button.set_label(_("Install & Apply"))
+        self.detail_progress_spinner.set_spinning(False)
 
         if error is not None:
+            self.detail_progress_box.set_visible(False)
             logger.error("Installation failed for store item: %s", error)
             msg = _("Installation failed: {error}").format(error=str(error))
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
             return False
+
+        self.detail_progress_bar.set_fraction(1.0)
+        self.detail_progress_label.set_text(_("Installation complete!"))
+        GLib.timeout_add(1500, lambda: self.detail_progress_box.set_visible(False) or False)
 
         theme_names = ", ".join(t.name for t in installed) or (
             self._selected_item.name if self._selected_item else "Theme"

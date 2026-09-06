@@ -3004,3 +3004,141 @@ msgstr "GNOME Extensions (di base)"
 msgid "Launch standard GNOME Extensions utility"
 msgstr "Avvia l'utility standard GNOME Extensions"
 
+
+msgid "← Back to Store"
+msgstr "← Torna allo Store"
+
+msgid "Install Theme"
+msgstr "Installa Tema"
+
+msgid "Install & Apply"
+msgstr "Installa e applica"
+
+msgid "Package / Variant:"
+msgstr "Pacchetto / Variante:"
+
+msgid "Image {cur} of {tot}"
+msgstr "Immagine {cur} di {tot}"
+
+msgid "Installation failed: {error}"
+msgstr "Installazione non riuscita: {error}"
+
+msgid "Successfully installed and applied '{name}'!"
+msgstr "'{name}' installato e applicato con successo!"
+
+msgid "Successfully installed '{name}'!"
+msgstr "'{name}' installato con successo!"
+
+msgid "Choose a category to explore community creations from Pling & GNOME-Look."
+msgstr "Scegli una categoria per esplorare le creazioni della community da Pling e GNOME-Look."
+
+msgid "GTK3/4 & GNOME Shell Themes"
+msgstr "Temi GTK3/4 e GNOME Shell"
+
+msgid "Application window themes, Libadwaita overrides, and GNOME Shell interface themes"
+msgstr "Temi per finestre applicazioni, override Libadwaita e interfaccia GNOME Shell"
+
+msgid "Full Icon Themes"
+msgstr "Temi Icone Completi"
+
+msgid "Icon sets for applications, folders, files, and system status"
+msgstr "Set di icone per applicazioni, cartelle, file e stato di sistema"
+
+msgid "Mouse pointers, click styles, and animated cursor sets"
+msgstr "Puntatori del mouse, stili di selezione e set di cursori animati"
+
+msgid "All Categories"
+msgstr "Tutte le Categorie"
+
+msgid "Search in this category..."
+msgstr "Cerca in questa categoria..."
+
+msgid "Sort results"
+msgstr "Ordina i risultati"
+
+msgid "Found items"
+msgstr "Elementi trovati"
+
+msgid "Previous Page"
+msgstr "Pagina precedente"
+
+msgid "Next Page"
+msgstr "Pagina successiva"
+
+msgid "Connecting and loading themes..."
+msgstr "Connessione e caricamento temi in corso..."
+
+msgid "No Items Found"
+msgstr "Nessun elemento trovato"
+
+msgid "Try adjusting your keywords."
+msgstr "Prova a modificare i termini di ricerca."
+
+msgid "Clear Search"
+msgstr "Cancella ricerca"
+
+msgid "Unable to Connect to Store"
+msgstr "Impossibile connettersi allo Store"
+
+msgid "Check your internet connection and retry."
+msgstr "Verifica la connessione a Internet e riprova."
+
+msgid "Previous Screenshot"
+msgstr "Screenshot precedente"
+
+msgid "Next Screenshot"
+msgstr "Screenshot successivo"
+
+msgid "View Fullscreen"
+msgstr "Visualizza a schermo intero"
+
+msgid "Toggle Fullscreen"
+msgstr "Schermo intero"
+
+msgid "This item is not a supported GNOME theme (GTK, Shell, Icon, Cursor, Font) and cannot be installed automatically."
+msgstr "Questo elemento non è un tema GNOME supportato (GTK, Shell, Icone, Cursori, Font) e non può essere installato automaticamente."
+
+msgid "Downloading package..."
+msgstr "Download pacchetto in corso..."
+
+msgid "by {author}"
+msgstr "di {author}"
+
+msgid "by {author} • Version {ver}"
+msgstr "di {author} • Versione {ver}"
+
+msgid "No items found."
+msgstr "Nessun elemento trovato."
+
+msgid "{count} items found"
+msgstr "{count} elementi trovati"
+
+msgid "Page {page}"
+msgstr "Pagina {page}"
+
+msgid "Default Package"
+msgstr "Pacchetto predefinito"
+
+msgid "Connecting and downloading..."
+msgstr "Connessione e download in corso..."
+
+msgid "Downloading: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)"
+msgstr "Download in corso: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)"
+
+msgid "Downloading: {dl:.1f} MB"
+msgstr "Download in corso: {dl:.1f} MB"
+
+msgid "Extracting and installing theme..."
+msgstr "Estrazione e installazione tema in corso..."
+
+msgid "Installing & applying..."
+msgstr "Installazione e applicazione in corso..."
+
+msgid "Installing..."
+msgstr "Installazione in corso..."
+
+msgid "Applying theme..."
+msgstr "Applicazione tema in corso..."
+
+msgid "Installation complete!"
+msgstr "Installazione completata!"

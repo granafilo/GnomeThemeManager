@@ -133,13 +133,20 @@ echo -e "${GREEN}  ✓ FLATPAK PACKAGES CREATED SUCCESSFULLY!${NC}"
 echo -e "${GREEN}====================================================${NC}"
 echo -e "${BLUE}1. Offline Bundle (single file):${NC} $BUNDLE_FILE"
 echo -e "${BLUE}2. Click-to-Install File:${NC}         $FLATPAKREF_FILE"
-echo -e "\n${YELLOW}How to install and run the application:${NC}"
-echo -e "  • ${GREEN}User Installation (Passwordless - Recommended):${NC}"
-echo -e "    flatpak install --user --bundle $BUNDLE_FILE"
-echo -e "    or:"
-echo -e "    flatpak install --user $FLATPAKREF_FILE"
-echo -e "\n  • ${GREEN}System Installation:${NC}"
-echo -e "    flatpak install --bundle $BUNDLE_FILE"
+echo -e "\n${YELLOW}How to install/update and run the application:${NC}"
+echo -e "  • ${GREEN}Quick Update / Reinstall (Passwordless):${NC}"
+echo -e "    flatpak install --user --reinstall -y $BUNDLE_FILE"
+echo -e "    flatpak override --user --filesystem=~/.local/share/icons:rw --filesystem=~/.local/share/themes:rw --filesystem=~/.icons:rw --filesystem=~/.themes:rw $APP_ID"
 echo -e "\n  • ${GREEN}Run the application:${NC}"
 echo -e "    flatpak run $APP_ID"
 echo -e "${GREEN}====================================================${NC}\n"
+
+# If --install or -i flag was passed, reinstall immediately
+if [[ "$*" == *"--install"* ]] || [[ "$*" == *"-i"* ]]; then
+    echo -e "${YELLOW}Updating/reinstalling Flatpak user package...${NC}"
+    flatpak install --user --reinstall -y "$BUNDLE_FILE"
+    echo -e "${YELLOW}Configuring user theme & icon read-write permissions...${NC}"
+    flatpak override --user --filesystem=~/.local/share/icons:rw --filesystem=~/.local/share/themes:rw --filesystem=~/.icons:rw --filesystem=~/.themes:rw "$APP_ID"
+    echo -e "${GREEN}✓ Flatpak updated and permissions configured successfully! Launch it with: flatpak run $APP_ID${NC}\n"
+fi
+

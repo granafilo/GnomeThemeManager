@@ -570,3 +570,45 @@ def test_installer_with_dangling_symlinks(tmp_path: Path) -> None:
     assert len(installed) == 1
     assert (user_icons / "BrokenIconTheme" / "index.theme").exists()
     assert (user_icons / "BrokenIconTheme" / "16x16" / "real.png").exists()
+
+
+def test_get_writable_dir_fallback(tmp_path: Path) -> None:
+    """Verify that ThemeInstaller falls back to a writable directory if preferred is read-only."""
+    from gnome_theme_manager.core.installer import _get_writable_dir, _is_dir_writable
+
+    ro_dir = tmp_path / "ro_icons"
+    ro_dir.mkdir(parents=True)
+    ro_dir.chmod(0o555)
+
+    writable_dir = tmp_path / "fallback_icons"
+
+    try:
+        assert not _is_dir_writable(ro_dir)
+        chosen = _get_writable_dir(ro_dir, [ro_dir, writable_dir])
+        assert chosen == writable_dir
+        assert _is_dir_writable(chosen)
+    finally:
+        ro_dir.chmod(0o755)
+
+
+def test_installer_handles_readonly_preferred_dir(tmp_path: Path) -> None:
+    """Verify that ThemeInstaller installs into fallback directory when default is read-only."""
+    ro_icons = tmp_path / "ro_user_icons"
+    ro_icons.mkdir(parents=True)
+    ro_icons.chmod(0o555)
+
+    fallback_icons = tmp_path / "fallback_user_icons"
+
+    try:
+        installer = ThemeInstaller(user_icons_dir=fallback_icons)
+
+        source_theme = tmp_path / "FallbackTestTheme"
+        (source_theme / "16x16").mkdir(parents=True)
+        (source_theme / "index.theme").write_text("[Icon Theme]\nName=FallbackTestTheme\n")
+        (source_theme / "16x16" / "real.png").write_bytes(b"PNG")
+
+        installed = installer.install_directory(source_theme, overwrite=True)
+        assert len(installed) == 1
+        assert (fallback_icons / "FallbackTestTheme" / "index.theme").exists()
+    finally:
+        ro_icons.chmod(0o755)

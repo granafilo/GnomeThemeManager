@@ -361,6 +361,34 @@ def inspect_extracted_tree(
     return targets
 
 
+def _is_dir_writable(path: Path) -> bool:
+    """Check if a directory exists and is writable, or can be created as writable."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test_file = path / f".write_test_{os.getpid()}"
+        test_file.touch(exist_ok=True)
+        test_file.unlink(missing_ok=True)
+        return True
+    except (OSError, PermissionError):
+        return False
+
+
+def _get_writable_dir(preferred: Path, fallbacks: list[Path]) -> Path:
+    """Return preferred path if writable, otherwise the first writable fallback."""
+    if _is_dir_writable(preferred):
+        return preferred
+    for fb in fallbacks:
+        expanded = fb.expanduser()
+        if expanded != preferred and _is_dir_writable(expanded):
+            logger.warning(
+                "Preferred theme directory '%s' is not writable; falling back to '%s'",
+                preferred,
+                expanded,
+            )
+            return expanded
+    return preferred
+
+
 class ThemeInstaller:
     """Manages safe installation and uninstallation of user themes."""
 
@@ -376,10 +404,14 @@ class ThemeInstaller:
             user_icons_dir: User directory for Icon and Cursor themes (default: ~/.local/share/icons).
         """
         self.user_themes_dir = (
-            Path(user_themes_dir).expanduser() if user_themes_dir else USER_THEMES_DIRS[0]
+            Path(user_themes_dir).expanduser()
+            if user_themes_dir
+            else _get_writable_dir(USER_THEMES_DIRS[0], USER_THEMES_DIRS)
         )
         self.user_icons_dir = (
-            Path(user_icons_dir).expanduser() if user_icons_dir else USER_ICONS_DIRS[0]
+            Path(user_icons_dir).expanduser()
+            if user_icons_dir
+            else _get_writable_dir(USER_ICONS_DIRS[0], USER_ICONS_DIRS)
         )
 
     def ensure_user_directories(self) -> list[Path]:
@@ -404,7 +436,10 @@ class ThemeInstaller:
                 dirs_to_ensure.append(expanded)
 
         for directory in dirs_to_ensure:
-            directory.mkdir(parents=True, exist_ok=True)
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+            except (OSError, PermissionError) as err:
+                logger.debug("Could not create directory %s: %s", directory, err)
 
         return dirs_to_ensure
 
@@ -501,15 +536,15 @@ class ThemeInstaller:
         # Determine target base directories (XDG vs Legacy)
         self.ensure_user_directories()
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = USER_THEMES_DIRS[1]
-            base_icons_dir = USER_ICONS_DIRS[1]
+            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
         elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
             custom_path = Path(target_dir).expanduser()
             base_themes_dir = custom_path
             base_icons_dir = custom_path
         else:
-            base_themes_dir = self.user_themes_dir
-            base_icons_dir = self.user_icons_dir
+            base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
 
         # Pass 1: Conflict pre-validation across all components
         if not overwrite:
@@ -705,15 +740,15 @@ class ThemeInstaller:
 
         # Determine target base directories (XDG vs Legacy)
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = USER_THEMES_DIRS[1]
-            base_icons_dir = USER_ICONS_DIRS[1]
+            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
         elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
             custom_path = Path(target_dir).expanduser()
             base_themes_dir = custom_path
             base_icons_dir = custom_path
         else:
-            base_themes_dir = self.user_themes_dir
-            base_icons_dir = self.user_icons_dir
+            base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
 
         with tempfile.TemporaryDirectory() as tmp_dir_str:
             tmp_dir = Path(tmp_dir_str)
