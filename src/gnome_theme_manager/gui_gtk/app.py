@@ -10,6 +10,7 @@ gi.require_version("Gio", "2.0")
 from gi.repository import Adw, Gio, GLib
 
 from ..core.manager import ThemeManager
+from .widgets.font_utils import install_glib_font_dialog_filter
 from .window import GnomeThemeWindow, init_bundled_icon_theme
 
 APPLICATION_ID = "io.github.granafilo.ThemeManager"
@@ -38,6 +39,7 @@ class GnomeThemeApplication(Adw.Application):
     def do_startup(self) -> None:
         """Handle application startup signal and initialize icon theme search paths."""
         Adw.Application.do_startup(self)
+        install_glib_font_dialog_filter()
         init_bundled_icon_theme()
 
     def do_activate(self) -> None:

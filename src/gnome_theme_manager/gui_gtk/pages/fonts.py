@@ -27,6 +27,7 @@ from ...core.fonts import (
     DEFAULT_MONOSPACE_FONT,
     FontConfig,
 )
+from ..widgets.font_utils import safe_set_font_desc
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -138,10 +139,10 @@ class FontsPage:
         spec = (font_str or default).strip()
         try:
             desc = Pango.FontDescription.from_string(spec)
-            btn.set_font_desc(desc)
+            safe_set_font_desc(btn, desc)
         except Exception as err:
             logger.warning("Failed to parse font spec '%s': %s", spec, err)
-            btn.set_font_desc(Pango.FontDescription.from_string(default))
+            safe_set_font_desc(btn, Pango.FontDescription.from_string(default))
 
     def _load_current(self) -> None:
         """Populate the form from the active system font configuration."""

@@ -137,7 +137,34 @@ def mock_theme_manager() -> MagicMock:
     mgr.installer.ensure_user_directories.return_value = []
     mgr.store_client.search.return_value = []
     from gnome_theme_manager.core.extensions import UIPrefs
+    from gnome_theme_manager.core.os_detector import OSInfo
+    from gnome_theme_manager.core.terminal_detector import TerminalInfo
+    from gnome_theme_manager.core.terminal_profile import get_terminal_profile
 
     mgr.extensions.get_prefs.return_value = UIPrefs(auto_enable_user_theme=False)
     mgr.extensions.list_extensions.return_value = []
+
+    mgr.detect_os.return_value = OSInfo(
+        distro="ubuntu",
+        version="24.04",
+        package_manager="apt",
+        pretty_name="Ubuntu 24.04 LTS",
+    )
+    term_info = TerminalInfo(
+        terminal_id="gnome-terminal",
+        terminal_name="GNOME Terminal",
+        binary="gnome-terminal",
+        desktop_file="org.gnome.Terminal.desktop",
+        detection_method="which",
+        is_installed=True,
+        is_default=True,
+        supports_gsettings=True,
+        schema_id="org.gnome.Terminal.Legacy.Profile",
+        schema_accessible=True,
+    )
+    mgr.detect_terminal.return_value = term_info
+    mgr.detect_default_terminal.return_value = term_info
+    mgr.get_terminal_profile.side_effect = lambda tid=None: get_terminal_profile(
+        tid or "gnome-terminal", os_info=mgr.detect_os.return_value
+    )
     return mgr

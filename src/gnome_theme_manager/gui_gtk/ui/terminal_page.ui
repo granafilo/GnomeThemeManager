@@ -52,9 +52,67 @@ Linux 6.8.0-generic x86_64 GNU/Linux
                       </object>
                     </child>
 
+                    <!-- Terminal Environment Group -->
+                    <child>
+                      <object class="AdwPreferencesGroup" id="terminal_environment_group">
+                        <property name="title" translatable="yes">Terminal Environment</property>
+                        <property name="description" translatable="yes">Active or default terminal emulator and launch parameters.</property>
+                        <child>
+                          <object class="AdwComboRow" id="terminal_selector_row">
+                            <property name="title" translatable="yes">Target Terminal</property>
+                            <property name="subtitle" translatable="yes">Auto-detecting terminal...</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="terminal_icon_image">
+                                <property name="icon-name">utilities-terminal-symbolic</property>
+                                <property name="pixel-size">24</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkLabel" id="terminal_status_badge">
+                                <property name="label" translatable="yes">Default</property>
+                                <property name="valign">center</property>
+                                <style>
+                                  <class name="accent"/>
+                                  <class name="caption"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="terminal_command_row">
+                            <property name="title" translatable="yes">Launch Command</property>
+                            <property name="subtitle"></property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">system-run-symbolic</property>
+                                <property name="pixel-size">20</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwActionRow" id="terminal_warning_row">
+                            <property name="visible">false</property>
+                            <property name="title" translatable="yes">Terminal Not Installed</property>
+                            <property name="subtitle"></property>
+                            <child type="prefix">
+                              <object class="GtkImage">
+                                <property name="icon-name">dialog-warning-symbolic</property>
+                                <property name="pixel-size">20</property>
+                                <property name="valign">center</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
                     <!-- Profiles Management Group -->
                     <child>
-                      <object class="AdwPreferencesGroup">
+                      <object class="AdwPreferencesGroup" id="profiles_group">
                         <property name="title" translatable="yes">Profiles</property>
                         <property name="description" translatable="yes">Manage, create, and switch GNOME Terminal profiles.</property>
                         <child>

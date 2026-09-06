@@ -64,6 +64,7 @@ from .models import (
     ThemeSet,
     ThemeType,
 )
+from .os_detector import OSInfo, detect_os
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
@@ -82,6 +83,11 @@ from .store_client import (
     StoreItem,
     theme_type_to_store_category,
 )
+from .terminal_detector import (
+    TerminalInfo,
+    detect_default_terminal,
+    detect_terminal,
+)
 from .terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
@@ -93,6 +99,10 @@ from .terminal_palette import (
     import_palette_from_json,
     list_gnome_terminal_profiles,
     set_default_gnome_terminal_profile,
+)
+from .terminal_profile import (
+    TerminalProfile,
+    get_terminal_profile,
 )
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import (
@@ -141,6 +151,7 @@ __all__ = [
     "GlobalThemeManager",
     "GnomeExtension",
     "GnomeThemeManagerError",
+    "OSInfo",
     "PresetManager",
     "PropagationResult",
     "SandboxBridge",
@@ -158,7 +169,9 @@ __all__ = [
     "StoreItemNotFoundError",
     "StoreNetworkError",
     "SystemStatus",
+    "TerminalInfo",
     "TerminalPalette",
+    "TerminalProfile",
     "TerminalProfileSummary",
     "Theme",
     "ThemeAvailabilityChecker",
@@ -182,6 +195,9 @@ __all__ = [
     "create_theme_fork",
     "delete_gnome_terminal_profile",
     "derive_terminal_palette_from_colors",
+    "detect_default_terminal",
+    "detect_os",
+    "detect_terminal",
     "detect_theme_types",
     "export_palette_to_json",
     "extract_dominant_colors_from_image",
@@ -189,6 +205,7 @@ __all__ = [
     "extract_theme_colors",
     "extract_wallpaper_palette",
     "generate_shell_css_override",
+    "get_terminal_profile",
     "import_palette_from_json",
     "inspect_extracted_tree",
     "integrate_desktop",

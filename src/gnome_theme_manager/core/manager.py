@@ -1229,11 +1229,41 @@ class ThemeManager:
 
         return set_default_gnome_terminal_profile(profile_id)
 
-    def detect_terminal(self) -> Any:
-        """Detect installed terminal emulator and its GSettings capability."""
-        from .terminal_palette import detect_installed_terminal
+    def detect_os(self) -> Any:
+        """Detect host Linux distribution, version, and default package manager."""
+        from .os_detector import detect_os
 
-        return detect_installed_terminal()
+        return detect_os()
+
+    def detect_terminal(self) -> Any:
+        """Detect active terminal or default terminal emulator."""
+        from .terminal_detector import detect_terminal
+
+        return detect_terminal()
+
+    def detect_default_terminal(self) -> Any:
+        """Detect the system default terminal emulator."""
+        from .terminal_detector import detect_default_terminal
+
+        return detect_default_terminal()
+
+    def get_terminal_profile(self, terminal_id: str | None = None) -> Any:
+        """Retrieve the capability profile and commands for a given or detected terminal.
+
+        Args:
+            terminal_id: Optional terminal identifier. If None, uses detected terminal.
+
+        Returns:
+            TerminalProfile instance.
+        """
+        from .terminal_profile import get_terminal_profile
+
+        if terminal_id is None:
+            detected = self.detect_terminal()
+            terminal_id = getattr(detected, "terminal_id", "unknown")
+
+        os_info = self.detect_os()
+        return get_terminal_profile(terminal_id=terminal_id, os_info=os_info)
 
     def apply_terminal_palette(
         self, palette: TerminalPalette, profile_id: str | None = None
