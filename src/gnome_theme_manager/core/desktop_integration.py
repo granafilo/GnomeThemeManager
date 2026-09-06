@@ -100,14 +100,16 @@ def generate_desktop_entry_content(exec_path: str | None = None) -> str:
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=GNOME Theme Manager\n"
+        "GenericName=Theme Manager\n"
         "Comment=Manage GTK, Shell, Icon, and Cursor themes on GNOME\n"
         f"Exec={exec_path}\n"
         f"Icon={APP_ID}\n"
         "Terminal=false\n"
         "Categories=Utility;Settings;DesktopSettings;GNOME;GTK;\n"
-        "Keywords=theme;gtk;icon;cursor;gnome;settings;\n"
+        "Keywords=theme;gtk;icon;cursor;gnome;settings;customization;appearance;\n"
         f"MimeType={MIME_TYPE};\n"
         "StartupNotify=true\n"
+        f"StartupWMClass={APP_ID}\n"
     )
 
 
@@ -277,14 +279,26 @@ def integrate_desktop(
                     shutil.copy2(src_svg, dest_mime_svg)
                     changed = True
 
-        # 5. Remove any user-level index.theme in hicolor to avoid shadowing system hicolor theme
+        # 5. Ensure user-level index.theme in hicolor so gtk-update-icon-cache can build cache
         user_hicolor_index = icons_dir / "index.theme"
-        if user_hicolor_index.is_file():
-            try:
-                user_hicolor_index.unlink()
-                changed = True
-            except OSError:
-                pass
+        if not user_hicolor_index.is_file():
+            sys_hicolor_index = Path("/usr/share/icons/hicolor/index.theme")
+            if sys_hicolor_index.is_file():
+                try:
+                    shutil.copy2(sys_hicolor_index, user_hicolor_index)
+                    changed = True
+                except OSError:
+                    pass
+            else:
+                try:
+                    user_hicolor_index.write_text(
+                        "[Icon Theme]\nName=Hicolor\nComment=Fallback icon theme\nHidden=true\n"
+                        "Directories=16x16/apps,24x24/apps,32x32/apps,48x48/apps,64x64/apps,128x128/apps,256x256/apps,512x512/apps,scalable/apps\n",
+                        encoding="utf-8",
+                    )
+                    changed = True
+                except OSError:
+                    pass
 
         # 6. Refresh databases only if files were created or modified
         if changed:

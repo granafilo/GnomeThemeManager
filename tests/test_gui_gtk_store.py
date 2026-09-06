@@ -362,6 +362,76 @@ class TestStorePageUnit:
         assert page.cards_grid.get_column_homogeneous() is True
         page._on_grid_width_changed()
 
+    def test_store_page_install_finished_applied(self, mock_manager: MagicMock) -> None:
+        page = StorePage(manager=mock_manager)
+        applied_called = False
+        installed_called = False
+        notified_msg: list[str] = []
+
+        page.on_theme_applied = lambda: nonlocal_applied()
+        page.on_theme_installed = lambda: nonlocal_installed()
+        page.on_notify_message = lambda msg, is_err: notified_msg.append(msg)
+
+        def nonlocal_applied() -> None:
+            nonlocal applied_called
+            applied_called = True
+
+        def nonlocal_installed() -> None:
+            nonlocal installed_called
+            installed_called = True
+
+        from gnome_theme_manager.core.models import Theme, ThemeType
+
+        test_themes = [
+            Theme(
+                name="Fluent-dark",
+                theme_type=ThemeType.ICON,
+                path=Path("/tmp/Fluent-dark"),
+                is_user_level=True,
+            )
+        ]
+        page._on_install_finished(test_themes, ["Fluent-dark"], None, apply_after=True)
+
+        assert applied_called is True
+        assert installed_called is False
+        assert len(notified_msg) == 1
+        assert "Fluent-dark" in notified_msg[0]
+
+    def test_store_page_install_finished_only_installed(self, mock_manager: MagicMock) -> None:
+        page = StorePage(manager=mock_manager)
+        applied_called = False
+        installed_called = False
+        notified_msg: list[str] = []
+
+        page.on_theme_applied = lambda: nonlocal_applied()
+        page.on_theme_installed = lambda: nonlocal_installed()
+        page.on_notify_message = lambda msg, is_err: notified_msg.append(msg)
+
+        def nonlocal_applied() -> None:
+            nonlocal applied_called
+            applied_called = True
+
+        def nonlocal_installed() -> None:
+            nonlocal installed_called
+            installed_called = True
+
+        from gnome_theme_manager.core.models import Theme, ThemeType
+
+        test_themes = [
+            Theme(
+                name="Fluent-dark",
+                theme_type=ThemeType.ICON,
+                path=Path("/tmp/Fluent-dark"),
+                is_user_level=True,
+            )
+        ]
+        page._on_install_finished(test_themes, [], None, apply_after=False)
+
+        assert applied_called is False
+        assert installed_called is True
+        assert len(notified_msg) == 1
+        assert "Fluent-dark" in notified_msg[0]
+
 
 class TestMainWindowStoreIntegration:
     """Test MainWindow integration and sidebar selection of StorePage."""
@@ -397,6 +467,8 @@ class TestMainWindowStoreIntegration:
         # Select store page
         window.select_page("store")
         assert window.content_stack.get_visible_child_name() == "store"
+        assert callable(window.store_page.on_theme_applied)
+        assert callable(window.store_page.on_theme_installed)
 
 
 class TestStoreImageLoading:

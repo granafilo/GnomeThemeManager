@@ -1399,13 +1399,15 @@ class ThemeManager:
         logger.info(
             "Theme directory installation requested: %s (target_dir=%s)", directory_path, target_dir
         )
-        return self._installer.install_directory(
+        res = self._installer.install_directory(
             directory_path=Path(directory_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def install_theme_archive(
         self,
@@ -1430,13 +1432,15 @@ class ThemeManager:
         logger.info(
             "Theme archive installation requested: %s (target_dir=%s)", archive_path, target_dir
         )
-        return self._installer.install(
+        res = self._installer.install(
             archive_path=Path(archive_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def install_theme(
         self,
@@ -1463,13 +1467,15 @@ class ThemeManager:
         logger.info(
             "Theme installation requested from source: %s (target_dir=%s)", source_path, target_dir
         )
-        return self._installer.install(
+        res = self._installer.install(
             archive_path=Path(source_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def uninstall_theme(self, name: str, theme_type: ThemeType) -> bool:
         """Uninstall a specific theme from user directories.
@@ -1485,7 +1491,9 @@ class ThemeManager:
             ThemeNotFoundError: If theme is not found in user directories.
         """
         logger.info("Theme uninstallation requested: '%s' (%s)", name, theme_type)
-        return self._installer.uninstall(theme_name=name, theme_type=theme_type)
+        res = self._installer.uninstall(theme_name=name, theme_type=theme_type)
+        self._scanner.invalidate_cache()
+        return res
 
     def apply_custom_theme_to_snap(
         self,

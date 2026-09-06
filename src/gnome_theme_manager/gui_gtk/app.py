@@ -7,7 +7,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 gi.require_version("Gio", "2.0")
-from gi.repository import Adw, Gio, GLib
+from gi.repository import Adw, Gio, GLib, Gtk
 
 from ..core.manager import ThemeManager
 from .widgets.font_utils import install_glib_font_dialog_filter
@@ -41,6 +41,8 @@ class GnomeThemeApplication(Adw.Application):
         Adw.Application.do_startup(self)
         install_glib_font_dialog_filter()
         init_bundled_icon_theme()
+        if hasattr(Gtk.Window, "set_default_icon_name"):
+            Gtk.Window.set_default_icon_name(APPLICATION_ID)
 
     def do_activate(self) -> None:
         """Handle application activation signal.

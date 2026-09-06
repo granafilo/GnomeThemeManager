@@ -344,6 +344,8 @@ class StorePage:
 
         self.on_loading_changed: Callable[[bool], None] | None = None
         self.on_notify_message: Callable[[str, bool], None] | None = None
+        self.on_theme_applied: Callable[[], None] | None = None
+        self.on_theme_installed: Callable[[], None] | None = None
 
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
@@ -1023,10 +1025,12 @@ class StorePage:
 
         item = self._selected_item
         selected_file_index = 1
+        selected_file_name = ""
         if item.files:
             idx = self.detail_file_dropdown.get_selected()
             if 0 <= idx < len(item.files):
                 selected_file_index = item.files[idx].file_index
+                selected_file_name = item.files[idx].name
 
         last_update_time = 0.0
 
@@ -1043,9 +1047,7 @@ class StorePage:
                 frac = 0.05 + (raw_frac * 0.80)
                 mb_dl = downloaded / (1024 * 1024)
                 mb_tot = total / (1024 * 1024)
-                text = _("Downloading: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)").format(
-                    dl=mb_dl, tot=mb_tot, pct=raw_frac * 100
-                )
+                text = _("Downloading: {dl:.1f} MB / {tot:.1f} MB").format(dl=mb_dl, tot=mb_tot)
             else:
                 frac = 0.4
                 text = _("Downloading: {dl:.1f} MB").format(dl=downloaded / (1024 * 1024))
@@ -1083,27 +1085,58 @@ class StorePage:
                     # Optional Apply
                     applied_names: list[str] = []
                     if apply_after and installed and self.manager is not None:
+                        self.manager._scanner.invalidate_cache()
                         GLib.idle_add(self._update_progress_ui, 0.96, _("Applying theme..."))
+
+                        # Group installed themes by theme_type
+                        by_type: dict[ThemeType, list[Theme]] = {}
                         for th in installed:
-                            try:
-                                if th.theme_type in (
-                                    ThemeType.GTK,
-                                    ThemeType.SHELL,
-                                    ThemeType.ICON,
-                                    ThemeType.CURSOR,
+                            if th.theme_type in (
+                                ThemeType.GTK,
+                                ThemeType.SHELL,
+                                ThemeType.ICON,
+                                ThemeType.CURSOR,
+                            ):
+                                by_type.setdefault(th.theme_type, []).append(th)
+
+                        clean_fn = (
+                            Path(selected_file_name).stem.lower() if selected_file_name else ""
+                        )
+                        item_clean = item.name.lower()
+
+                        for comp_type, candidates in by_type.items():
+                            best_th = candidates[0]
+                            for cand in candidates:
+                                cand_lower = cand.name.lower()
+                                if clean_fn and (
+                                    cand_lower == clean_fn
+                                    or cand_lower in clean_fn
+                                    or clean_fn in cand_lower
                                 ):
-                                    self.manager.apply_component(th.theme_type, th.name)
-                                    applied_names.append(th.name)
+                                    best_th = cand
+                                    break
+                                elif (
+                                    cand_lower == item_clean
+                                    or cand_lower in item_clean
+                                    or item_clean in cand_lower
+                                ):
+                                    best_th = cand
+
+                            try:
+                                self.manager.apply_component(comp_type, best_th.name, force=True)
+                                applied_names.append(best_th.name)
                             except Exception as apply_err:
                                 logger.warning(
                                     "Could not automatically apply installed theme '%s': %s",
-                                    th.name,
+                                    best_th.name,
                                     apply_err,
                                 )
 
-                    GLib.idle_add(self._on_install_finished, installed, applied_names, None)
+                    GLib.idle_add(
+                        self._on_install_finished, installed, applied_names, None, apply_after
+                    )
             except Exception as err:
-                GLib.idle_add(self._on_install_finished, [], [], err)
+                GLib.idle_add(self._on_install_finished, [], [], err, apply_after)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -1116,7 +1149,11 @@ class StorePage:
         return False
 
     def _on_install_finished(
-        self, installed: list[Theme], applied: list[str], error: Exception | None
+        self,
+        installed: list[Theme],
+        applied: list[str],
+        error: Exception | None,
+        apply_after: bool = False,
     ) -> bool:
         """Handle install completion on the main GTK loop."""
         self._is_installing = False
@@ -1142,9 +1179,16 @@ class StorePage:
             self._selected_item.name if self._selected_item else "Theme"
         )
         if applied:
-            msg = _("Successfully installed and applied '{name}'!").format(name=theme_names)
+            unique_applied = list(dict.fromkeys(applied))
+            msg = _("Successfully installed and applied '{name}'!").format(
+                name=", ".join(unique_applied)
+            )
+            if self.on_theme_applied:
+                self.on_theme_applied()
         else:
             msg = _("Successfully installed '{name}'!").format(name=theme_names)
+            if self.on_theme_installed:
+                self.on_theme_installed()
 
         if self.on_notify_message:
             self.on_notify_message(msg, False)

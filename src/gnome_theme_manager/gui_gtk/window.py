@@ -13,6 +13,7 @@ Manages the main GTK4 and Libadwaita shell:
 
 import logging
 import os
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +26,7 @@ gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
 from gi.repository import Adw, Gdk, GLib, Gtk
 
-from ..core.icon_fallback import resolve_icon
+from ..core.icon_fallback import find_bundled_icon_dirs, resolve_icon
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
@@ -63,42 +64,13 @@ DEFAULT_WINDOW_HEIGHT: int = 720
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    search_dirs: list[Path] = [
-        BUNDLED_ICONS_DIR,
-        BUNDLED_ICONS_DIR / "hicolor",
-        BUNDLED_ICONS_DIR / "hicolor" / "scalable",
-        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "actions",
-        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "apps",
-        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "mimetypes",
-        BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
-    ]
-    if BUNDLED_ICONS_DIR.is_dir():
-        for sub_dir in BUNDLED_ICONS_DIR.rglob("*"):
-            if sub_dir.is_dir() and sub_dir not in search_dirs:
-                search_dirs.append(sub_dir)
-
-    # AppImage runtime icon search paths (from $APPDIR)
-    appdir_env = os.environ.get("APPDIR")
-    if appdir_env:
-        appdir_path = Path(appdir_env)
-        for appdir_candidate in [
-            appdir_path / "usr" / "share" / "icons",
-            appdir_path / "usr" / "share" / "icons" / "hicolor",
-            appdir_path / "data" / "icons",
-            appdir_path / "data" / "icons" / "hicolor",
-        ]:
-            if appdir_candidate.is_dir() and appdir_candidate not in search_dirs:
-                search_dirs.append(appdir_candidate)
-
-    # Flatpak runtime icon search paths
-    for flatpak_dir in [
-        Path("/app/share/icons"),
-        Path("/app/share/icons/hicolor"),
-        Path("/app/share/gnome-theme-manager/data/icons"),
-        Path("/app/share/gnome-theme-manager/icons"),
-    ]:
-        if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
-            search_dirs.append(flatpak_dir)
+    search_dirs: list[Path] = []
+    for b_dir in find_bundled_icon_dirs():
+        if b_dir.is_dir() and b_dir not in search_dirs:
+            search_dirs.append(b_dir)
+            for sub_dir in b_dir.rglob("*"):
+                if sub_dir.is_dir() and sub_dir not in search_dirs:
+                    search_dirs.append(sub_dir)
 
     # User local and system icon paths (including Flatpak host mounts)
     for candidate in [
@@ -217,9 +189,6 @@ class MainWindow(Adw.ApplicationWindow):
 
         self.set_content(self.toast_overlay)
 
-        # Apply multi-OS cascading icon fallback resolution to UI elements
-        self._apply_icon_fallbacks(self.toast_overlay)
-
         self._setup_breakpoint()
 
         # Page controllers
@@ -262,6 +231,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
+        # Apply multi-OS cascading icon fallback resolution to UI elements and all attached pages
+        self._apply_icon_fallbacks(self.toast_overlay)
+
         self._row_to_page_id: dict[Gtk.ListBoxRow, str] = {
             self.row_status: "status",
             self.row_themes_shell: "themes_shell",
@@ -288,8 +260,8 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
-        # Auto-integrate desktop launcher and icons lazily in background
-        if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
+        # Auto-integrate desktop launcher and icons lazily in background when not running in Flatpak
+        if not (Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")):
             GLib.idle_add(self._lazy_desktop_integration)
 
         self.status_page.on_loading_changed = lambda is_l: self._on_page_loading_changed(
@@ -352,6 +324,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.themes_page.refresh()
 
         self.installer_page.on_theme_installed = _on_theme_installed_callback
+        self.store_page.on_theme_installed = _on_theme_installed_callback
 
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
@@ -359,6 +332,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
+        self.store_page.on_theme_applied = _on_theme_installed_and_applied_callback
 
         def _on_sandbox_propagated_callback() -> None:
             self.status_page.refresh()
@@ -735,12 +709,24 @@ class MainWindow(Adw.ApplicationWindow):
                             w.set_from_file(str(res.file_path))
                         else:
                             w.set_from_icon_name(res.resolved_name)
-            elif isinstance(w, Gtk.Button):
-                btn_icon = w.get_icon_name()
-                if btn_icon:
-                    res = resolve_icon(btn_icon, icon_theme=icon_theme)
+            elif hasattr(w, "get_icon_name") and hasattr(w, "set_icon_name"):
+                target: Any = w
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", DeprecationWarning)
+                        current_icon = target.get_icon_name()
+                except Exception:
+                    current_icon = None
+
+                if current_icon and isinstance(current_icon, str):
+                    res = resolve_icon(current_icon, icon_theme=icon_theme)
                     if res.is_fallback:
-                        w.set_icon_name(res.resolved_name)
+                        try:
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore", DeprecationWarning)
+                                target.set_icon_name(res.resolved_name)
+                        except Exception:
+                            pass
 
             child = w.get_first_child()
             while child is not None:
@@ -868,6 +854,10 @@ class MainWindow(Adw.ApplicationWindow):
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:
             self.sidebar_list_box.select_row(target_row)
+
+        visible_child = self.content_stack.get_visible_child()
+        if visible_child is not None:
+            self._apply_icon_fallbacks(visible_child)
 
         if self.split_view.get_collapsed():
             self.split_view.set_show_content(True)

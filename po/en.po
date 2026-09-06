@@ -3122,8 +3122,8 @@ msgstr "Default Package"
 msgid "Connecting and downloading..."
 msgstr "Connecting and downloading..."
 
-msgid "Downloading: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)"
-msgstr "Downloading: {dl:.1f} MB / {tot:.1f} MB ({pct:.0f}%)"
+msgid "Downloading: {dl:.1f} MB / {tot:.1f} MB"
+msgstr "Downloading: {dl:.1f} MB / {tot:.1f} MB"
 
 msgid "Downloading: {dl:.1f} MB"
 msgstr "Downloading: {dl:.1f} MB"

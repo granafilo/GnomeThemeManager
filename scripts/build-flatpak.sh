@@ -147,6 +147,9 @@ if [[ "$*" == *"--install"* ]] || [[ "$*" == *"-i"* ]]; then
     flatpak install --user --reinstall -y "$BUNDLE_FILE"
     echo -e "${YELLOW}Configuring user theme & icon read-write permissions...${NC}"
     flatpak override --user --filesystem=~/.local/share/icons:rw --filesystem=~/.local/share/themes:rw --filesystem=~/.icons:rw --filesystem=~/.themes:rw "$APP_ID"
+    echo -e "${YELLOW}Refreshing desktop database and icon cache...${NC}"
+    gtk-update-icon-cache -q -f -t "$HOME/.local/share/flatpak/exports/share/icons/hicolor" 2>/dev/null || true
+    update-desktop-database "$HOME/.local/share/flatpak/exports/share/applications" 2>/dev/null || true
     echo -e "${GREEN}✓ Flatpak updated and permissions configured successfully! Launch it with: flatpak run $APP_ID${NC}\n"
 fi
 

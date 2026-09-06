@@ -14,14 +14,81 @@ Implements a 3-level cascading fallback resolution:
 from __future__ import annotations
 
 import logging
+import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
+
+def find_bundled_icon_dirs() -> list[Path]:
+    """Discover all existing bundled icon directories across development, flatpak, and system installs."""
+    candidates: list[Path | None] = []
+
+    # 1. Source tree / Git checkout
+    try:
+        candidates.append(Path(__file__).resolve().parents[3] / "data" / "icons")
+    except IndexError:
+        pass
+
+    # 2. AppImage runtime
+    appdir = os.environ.get("APPDIR")
+    if appdir:
+        candidates.extend(
+            [
+                Path(appdir) / "usr" / "share" / "icons",
+                Path(appdir) / "data" / "icons",
+                Path(appdir) / "data" / "icons" / "hicolor",
+            ]
+        )
+
+    # 3. Flatpak runtime
+    candidates.extend(
+        [
+            Path("/app/share/gnome-theme-manager/data/icons"),
+            Path("/app/share/icons"),
+            Path("/app/share/icons/hicolor"),
+        ]
+    )
+
+    # 4. sys.prefix (pip, pipx, virtualenvs, local prefix)
+    candidates.extend(
+        [
+            Path(sys.prefix) / "share" / "gnome-theme-manager" / "data" / "icons",
+            Path(sys.prefix) / "share" / "icons",
+            Path(sys.prefix) / "share" / "icons" / "hicolor",
+        ]
+    )
+
+    # 5. System directories (/usr, /usr/local)
+    candidates.extend(
+        [
+            Path("/usr/share/gnome-theme-manager/data/icons"),
+            Path("/usr/local/share/gnome-theme-manager/data/icons"),
+        ]
+    )
+
+    found: list[Path] = []
+    for c in candidates:
+        if c is not None and c.is_dir() and c not in found:
+            found.append(c)
+    return found
+
+
+def _get_default_bundled_icons_dir() -> Path:
+    dirs = find_bundled_icon_dirs()
+    if dirs:
+        return dirs[0]
+    try:
+        return Path(__file__).resolve().parents[3] / "data" / "icons"
+    except IndexError:
+        return Path("/usr/share/icons")
+
+
 # Base path to application bundled icons
-BUNDLED_ICONS_DIR: Path = Path(__file__).resolve().parents[3] / "data" / "icons"
+BUNDLED_ICONS_DIR: Path = _get_default_bundled_icons_dir()
 
 # Standard icon directories checked for system themes
 STANDARD_SYSTEM_ICON_DIRS: tuple[Path, ...] = (
@@ -121,6 +188,100 @@ ICON_FALLBACK_CHAINS: dict[str, tuple[str, ...]] = {
         "system-search",
         "edit-find",
     ),
+    # Starred / favorites symbolic (absent in vanilla Adwaita 46)
+    "starred-symbolic": (
+        "emblem-favorite-symbolic",
+        "bookmark-new-symbolic",
+        "starred",
+    ),
+    # Dark mode weather icon
+    "weather-clear-night-symbolic": (
+        "night-light-symbolic",
+        "display-brightness-symbolic",
+        "weather-clear-symbolic",
+        "weather-clear",
+    ),
+    # Photos / Wallpaper emblem
+    "emblem-photos-symbolic": (
+        "image-x-generic-symbolic",
+        "folder-pictures-symbolic",
+        "applications-graphics-symbolic",
+        "image-x-generic",
+    ),
+    # System monitor
+    "utilities-system-monitor-symbolic": (
+        "org.gnome.SystemMonitor-symbolic",
+        "system-run-symbolic",
+        "utilities-system-monitor",
+    ),
+    # System users
+    "system-users-symbolic": (
+        "avatar-default-symbolic",
+        "user-info-symbolic",
+        "user-home-symbolic",
+        "contact-new-symbolic",
+        "system-users",
+    ),
+    # Mouse / Cursors
+    "input-mouse-symbolic": (
+        "preferences-desktop-peripherals-symbolic",
+        "input-touchpad-symbolic",
+        "input-mouse",
+    ),
+    # Remote folder
+    "folder-remote-symbolic": (
+        "folder-symbolic",
+        "network-server-symbolic",
+        "folder",
+    ),
+    # Security
+    "security-high-symbolic": (
+        "changes-allow-symbolic",
+        "dialog-password-symbolic",
+        "dialog-information-symbolic",
+        "security-high",
+    ),
+    # Dialogs & feedback
+    "dialog-error-symbolic": (
+        "dialog-error",
+        "error-symbolic",
+    ),
+    "dialog-warning-symbolic": (
+        "dialog-warning",
+        "emblem-important-symbolic",
+    ),
+    "dialog-information-symbolic": (
+        "dialog-information",
+        "dialog-info-symbolic",
+        "dialog-info",
+    ),
+    "emblem-ok-symbolic": (
+        "object-select-symbolic",
+        "emblem-default-symbolic",
+        "emblem-ok",
+    ),
+    "edit-delete-symbolic": (
+        "user-trash-symbolic",
+        "edit-delete",
+    ),
+    "preferences-color-symbolic": (
+        "applications-graphics-symbolic",
+        "style-symbolic",
+        "preferences-desktop-theme-symbolic",
+    ),
+    "view-refresh-symbolic": (
+        "emblem-synchronizing-symbolic",
+        "view-refresh",
+    ),
+    "edit-copy-symbolic": (
+        "edit-copy",
+        "edit-paste-symbolic",
+    ),
+    "web-browser-symbolic": (
+        "applications-internet-symbolic",
+        "web-browser",
+        "applications-internet",
+    ),
 }
 
 
@@ -165,12 +326,20 @@ class IconFallbackResolver:
             return self._bundled_cache
 
         index: dict[str, Path] = {}
+        search_dirs: list[Path] = []
         if self.bundled_icons_dir.is_dir():
-            for file_path in self.bundled_icons_dir.rglob("*"):
-                if file_path.is_file() and file_path.suffix.lower() in (".svg", ".png"):
-                    stem = file_path.stem
-                    if stem not in index:
-                        index[stem] = file_path
+            search_dirs.append(self.bundled_icons_dir)
+        for extra_dir in find_bundled_icon_dirs():
+            if extra_dir not in search_dirs:
+                search_dirs.append(extra_dir)
+
+        for b_dir in search_dirs:
+            if b_dir.is_dir():
+                for file_path in b_dir.rglob("*"):
+                    if file_path.is_file() and file_path.suffix.lower() in (".svg", ".png"):
+                        stem = file_path.stem
+                        if stem not in index:
+                            index[stem] = file_path
 
         self._bundled_cache = index
         return index
@@ -411,6 +580,7 @@ __all__ = [
     "STANDARD_SYSTEM_ICON_DIRS",
     "IconFallbackResolver",
     "IconResolutionResult",
+    "find_bundled_icon_dirs",
     "get_fallback_icon_name",
     "resolve_icon",
 ]
