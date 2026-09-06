@@ -64,7 +64,16 @@ from .models import (
     ThemeSet,
     ThemeType,
 )
-from .os_detector import OSInfo, detect_os
+from .os_detector import (
+    DEPENDENCY_PACKAGE_MAP,
+    PACKAGE_MANAGER_INSTALL_TEMPLATES,
+    OSInfo,
+    detect_os,
+    get_extension_manager_install_options,
+    get_install_command,
+    get_missing_dependency_hint,
+    get_os_install_commands,
+)
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
 from .scanner import ThemeScanner
@@ -119,6 +128,7 @@ from .wallpaper_color import (
 )
 
 __all__ = [
+    "DEPENDENCY_PACKAGE_MAP",
     "FALLBACKS_FILE",
     "GLOBAL_THEMES_FILE",
     "GSETTINGS_COLOR_SCHEMES",
@@ -130,6 +140,7 @@ __all__ = [
     "GSETTINGS_SCHEMA_INTERFACE",
     "GSETTINGS_SCHEMA_USER_THEME",
     "GTK4_CONFIG_DIR",
+    "PACKAGE_MANAGER_INSTALL_TEMPLATES",
     "PRESETS_DIR",
     "STATE_DIR",
     "SYSTEM_ICONS_DIRS",
@@ -205,6 +216,10 @@ __all__ = [
     "extract_theme_colors",
     "extract_wallpaper_palette",
     "generate_shell_css_override",
+    "get_extension_manager_install_options",
+    "get_install_command",
+    "get_missing_dependency_hint",
+    "get_os_install_commands",
     "get_terminal_profile",
     "import_palette_from_json",
     "inspect_extracted_tree",

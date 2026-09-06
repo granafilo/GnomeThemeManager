@@ -71,6 +71,90 @@ DISTRO_PM_MAP: dict[str, str] = {
     "sled": "zypper",
 }
 
+# Command installation templates by package manager
+PACKAGE_MANAGER_INSTALL_TEMPLATES: dict[str, str] = {
+    "apt": "sudo apt install -y {packages}",
+    "dnf": "sudo dnf install -y {packages}",
+    "pacman": "sudo pacman -S --noconfirm {packages}",
+    "zypper": "sudo zypper install -y {packages}",
+}
+
+# Mapping: dependency_id -> { package_manager: package_names }
+DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
+    "gtk4": {
+        "apt": "python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1",
+        "dnf": "python3-gobject gtk4 libadwaita",
+        "pacman": "python-gobject gtk4 libadwaita",
+        "zypper": "python3-gobject typelib-1_0-Gtk-4_0 typelib-1_0-Adw-1",
+    },
+    "user-theme": {
+        "apt": "gnome-shell-extension-user-theme",
+        "dnf": "gnome-shell-extension-user-theme",
+        "pacman": "gnome-shell-extensions",
+        "zypper": "gnome-shell-extension-user-theme",
+    },
+    "extension-manager": {
+        "apt": "gnome-shell-extension-manager",
+        "dnf": "extension-manager",
+        "pacman": "extension-manager",
+        "zypper": "extension-manager",
+    },
+    "gnome-extensions-app": {
+        "apt": "gnome-shell-extension-prefs",
+        "dnf": "gnome-extensions-app",
+        "pacman": "gnome-shell-extensions",
+        "zypper": "gnome-shell-extensions-common",
+    },
+    "snap-tools": {
+        "apt": "snapd squashfs-tools",
+        "dnf": "snapd squashfs-tools",
+        "pacman": "snapd squashfs-tools",
+        "zypper": "snapd squashfs-tools",
+    },
+    "ptyxis": {
+        "apt": "ptyxis",
+        "dnf": "ptyxis",
+        "pacman": "ptyxis",
+        "zypper": "ptyxis",
+    },
+    "gnome-terminal": {
+        "apt": "gnome-terminal",
+        "dnf": "gnome-terminal",
+        "pacman": "gnome-terminal",
+        "zypper": "gnome-terminal",
+    },
+    "kgx": {
+        "apt": "gnome-console",
+        "dnf": "gnome-console",
+        "pacman": "gnome-console",
+        "zypper": "gnome-console",
+    },
+    "tilix": {
+        "apt": "tilix",
+        "dnf": "tilix",
+        "pacman": "tilix",
+        "zypper": "tilix",
+    },
+    "terminator": {
+        "apt": "terminator",
+        "dnf": "terminator",
+        "pacman": "terminator",
+        "zypper": "terminator",
+    },
+    "warp": {
+        "apt": "warp-terminal",
+        "dnf": "warp-terminal",
+        "pacman": "warp-terminal",
+        "zypper": "warp-terminal",
+    },
+    "urxvt": {
+        "apt": "rxvt-unicode",
+        "dnf": "rxvt-unicode",
+        "pacman": "rxvt-unicode",
+        "zypper": "rxvt-unicode",
+    },
+}
+
 
 @dataclass(frozen=True)
 class OSInfo:
@@ -321,3 +405,153 @@ def detect_os(
         )
 
     return uname_result
+
+
+def get_install_command(
+    dependency: str,
+    package_manager: str | None = None,
+    distro: str | None = None,
+    os_info: OSInfo | None = None,
+) -> str:
+    """Generate the exact distribution-specific installation command for a dependency.
+
+    Resolves the package manager via explicit parameter, distribution name,
+    provided OSInfo, or automatic runtime system detection, and generates
+    the corresponding terminal installation command.
+
+    Args:
+        dependency: Identifier or name of the dependency (e.g. 'gtk4', 'user-theme', 'ptyxis').
+        package_manager: Optional package manager override ('apt', 'dnf', 'pacman', 'zypper').
+        distro: Optional Linux distribution name or ID (e.g. 'fedora', 'arch', 'ubuntu').
+        os_info: Optional OSInfo instance. If None and no pm/distro provided, auto-detected.
+
+    Returns:
+        Exact shell command string (e.g. 'sudo dnf install -y gnome-shell-extension-user-theme').
+    """
+    clean_dep = dependency.strip().lower()
+    target_pm = "unknown"
+
+    if package_manager and package_manager.strip():
+        target_pm = package_manager.strip().lower()
+    elif distro and distro.strip():
+        target_pm = _resolve_package_manager(distro)
+    elif os_info is not None:
+        target_pm = os_info.package_manager.strip().lower()
+    else:
+        detected = detect_os()
+        target_pm = detected.package_manager.strip().lower()
+
+    # Determine package specification for this package manager
+    pkg_spec = DEPENDENCY_PACKAGE_MAP.get(clean_dep, {}).get(target_pm, dependency.strip())
+
+    if target_pm in PACKAGE_MANAGER_INSTALL_TEMPLATES:
+        template = PACKAGE_MANAGER_INSTALL_TEMPLATES[target_pm]
+        return template.format(packages=pkg_spec)
+
+    return f"sudo {target_pm} install {pkg_spec}"
+
+
+def get_os_install_commands(dependency: str) -> dict[str, str]:
+    """Return a mapping of major distributions and package managers to install commands.
+
+    Args:
+        dependency: Identifier of the dependency (e.g. 'gtk4', 'user-theme', 'ptyxis').
+
+    Returns:
+        Dictionary mapping distribution identifiers ('ubuntu', 'fedora', 'arch', 'opensuse')
+        to their exact shell install command strings.
+    """
+    return {
+        "ubuntu": get_install_command(dependency, distro="ubuntu"),
+        "fedora": get_install_command(dependency, distro="fedora"),
+        "arch": get_install_command(dependency, distro="arch"),
+        "opensuse": get_install_command(dependency, distro="opensuse"),
+    }
+
+
+def get_missing_dependency_hint(
+    dependency: str,
+    os_info: OSInfo | None = None,
+) -> str:
+    """Generate a formatted hint showing the exact installation command for the detected OS.
+
+    Args:
+        dependency: Identifier of the missing dependency.
+        os_info: Optional OSInfo instance.
+
+    Returns:
+        Formatted hint string (e.g. 'Install with: sudo dnf install -y ...').
+    """
+    cmd = get_install_command(dependency, os_info=os_info)
+    return f"Install with: {cmd}"
+
+
+def get_extension_manager_install_options(
+    distro: str | None = None,
+    package_manager: str | None = None,
+    os_info: OSInfo | None = None,
+) -> list[dict[str, str]]:
+    """Return multiple installation options for Extension Manager across package formats.
+
+    Provides a choice between:
+    1. Distribution native package manager (APT/DNF/Pacman/Zypper)
+    2. Flatpak via Flathub (universal sandbox)
+    3. Standalone Extension Manager native package
+
+    Args:
+        distro: Optional Linux distribution name.
+        package_manager: Optional package manager override.
+        os_info: Optional OSInfo instance.
+
+    Returns:
+        List of dictionaries with 'id', 'name', 'command', and 'description'.
+    """
+    clean_pm = "unknown"
+    if package_manager and package_manager.strip():
+        clean_pm = package_manager.strip().lower()
+    elif distro and distro.strip():
+        clean_pm = _resolve_package_manager(distro)
+    elif os_info is not None:
+        clean_pm = os_info.package_manager.strip().lower()
+    else:
+        clean_pm = detect_os().package_manager.strip().lower()
+
+    ext_mgr_cmd = get_install_command("extension-manager", package_manager=clean_pm)
+    basic_cmd = get_install_command("gnome-extensions-app", package_manager=clean_pm)
+
+    return [
+        {
+            "id": "system",
+            "name": f"Extension Manager ({clean_pm.upper()})",
+            "command": ext_mgr_cmd,
+            "description": "Recommended native package for Extension Manager.",
+        },
+        {
+            "id": "flatpak",
+            "name": "Extension Manager (Flatpak Flathub)",
+            "command": "flatpak install flathub com.mattjakeman.ExtensionManager",
+            "description": "Official Extension Manager release in sandbox from Flathub.",
+        },
+        {
+            "id": "gnome-extensions-app",
+            "name": f"GNOME Extensions Basic ({clean_pm.upper()})",
+            "command": basic_cmd,
+            "description": "Basic GNOME Extensions utility without online extension browsing.",
+        },
+    ]
+
+
+__all__ = [
+    "DEFAULT_OS_RELEASE_PATHS",
+    "DEPENDENCY_PACKAGE_MAP",
+    "DISTRO_PM_MAP",
+    "PACKAGE_MANAGER_INSTALL_TEMPLATES",
+    "SUPPORTED_PACKAGE_MANAGERS",
+    "OSInfo",
+    "detect_os",
+    "get_extension_manager_install_options",
+    "get_install_command",
+    "get_missing_dependency_hint",
+    "get_os_install_commands",
+    "parse_os_release_text",
+]

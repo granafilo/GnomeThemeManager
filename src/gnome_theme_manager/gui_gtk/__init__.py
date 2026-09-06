@@ -42,10 +42,13 @@ def launch_gui(
         Application exit code (0 for success, 1 if GTK4 is not available).
     """
     if not is_gtk_available():
+        from ..core.os_detector import get_install_command
+
+        install_cmd = get_install_command("gtk4")
         print(
             "\n[GUI ERROR] Unable to start GTK4/Libadwaita graphical interface.\n"
             "Ensure you are running in a compatible desktop environment with the required packages installed:\n"
-            "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n",
+            f"    {install_cmd}\n",
             file=sys.stderr,
         )
         return 1

@@ -1235,6 +1235,42 @@ class ThemeManager:
 
         return detect_os()
 
+    def get_install_command(self, dependency: str) -> str:
+        """Return the distribution-specific installation command for a dependency.
+
+        Args:
+            dependency: Identifier or name of the dependency.
+
+        Returns:
+            Exact shell installation command for the detected host OS.
+        """
+        from .os_detector import get_install_command
+
+        return get_install_command(dependency, os_info=self.detect_os())
+
+    def get_os_install_commands(self, dependency: str) -> dict[str, str]:
+        """Return installation commands for a dependency across major Linux distributions.
+
+        Args:
+            dependency: Identifier or name of the dependency.
+
+        Returns:
+            Dictionary mapping distribution names to their shell installation commands.
+        """
+        from .os_detector import get_os_install_commands
+
+        return get_os_install_commands(dependency)
+
+    def get_extension_manager_install_options(self) -> list[dict[str, str]]:
+        """Return available installation options for Extension Manager across package systems.
+
+        Returns:
+            List of dictionaries with 'id', 'name', 'command', and 'description'.
+        """
+        from .os_detector import get_extension_manager_install_options
+
+        return get_extension_manager_install_options(os_info=self.detect_os())
+
     def detect_terminal(self) -> Any:
         """Detect active terminal or default terminal emulator."""
         from .terminal_detector import detect_terminal

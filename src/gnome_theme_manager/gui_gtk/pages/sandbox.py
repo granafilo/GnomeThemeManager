@@ -608,10 +608,10 @@ class SandboxPage:
         flatpak_cmd_row = Adw.ActionRow()
         flatpak_cmd_row.set_title(_("Manual Terminal Commands"))
         flatpak_cmd_row.set_subtitle(
-            "flatpak override --user --filesystem=xdg-data/themes:ro\n"
-            "flatpak override --user --filesystem=xdg-data/icons:ro"
+            "flatpak override --user --filesystem=xdg-config/gtk-4.0:ro --filesystem=xdg-config/gtk-3.0:ro\n"
+            "flatpak override --user --filesystem=xdg-data/themes:ro --filesystem=xdg-data/icons:ro"
         )
-        flatpak_cmd_row.set_subtitle_lines(3)
+        flatpak_cmd_row.set_subtitle_lines(4)
         flatpak_group.add(flatpak_cmd_row)
 
         flatpak_note_row = Adw.ActionRow()

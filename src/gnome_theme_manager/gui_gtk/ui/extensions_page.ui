@@ -141,6 +141,67 @@
                           </object>
                         </child>
 
+                        <!-- Banner: Install Extension Manager if not present -->
+                        <child>
+                          <object class="AdwBanner" id="install_banner">
+                            <property name="revealed">false</property>
+                            <property name="title" translatable="yes">Extension Manager is not installed.</property>
+                            <property name="button-label" translatable="yes">Copy Command</property>
+                          </object>
+                        </child>
+
+                        <!-- Installation Options Group -->
+                        <child>
+                          <object class="AdwPreferencesGroup" id="group_install_manager">
+                            <property name="title" translatable="yes">Extension Manager</property>
+                            <property name="description" translatable="yes">Options and commands to install or manage GNOME Extension Manager.</property>
+                            <child>
+                              <object class="AdwExpanderRow" id="expander_install_options">
+                                <property name="title" translatable="yes">Installation Options</property>
+                                <property name="subtitle" translatable="yes">View installation commands for Flatpak or system packages</property>
+                                <property name="expanded">false</property>
+                                <child>
+                                  <object class="AdwComboRow" id="combo_install_method">
+                                    <property name="title" translatable="yes">Installation Method</property>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="AdwActionRow" id="row_install_command">
+                                    <property name="title" translatable="yes">Terminal Command</property>
+                                    <property name="subtitle-selectable">true</property>
+                                    <child>
+                                      <object class="GtkButton" id="btn_copy_install_command">
+                                        <property name="icon-name">edit-copy-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Copy installation command</property>
+                                        <property name="valign">center</property>
+                                        <style>
+                                          <class name="flat"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="AdwActionRow" id="row_basic_app">
+                                    <property name="title" translatable="yes">GNOME Extensions (Basic)</property>
+                                    <property name="subtitle" translatable="yes">Launch standard GNOME Extensions utility</property>
+                                    <property name="visible">false</property>
+                                    <child>
+                                      <object class="GtkButton" id="btn_open_basic_app">
+                                        <property name="label" translatable="yes">Open</property>
+                                        <property name="valign">center</property>
+                                        <style>
+                                          <class name="flat"/>
+                                        </style>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+
                         <!-- Toolbar: Search & Refresh -->
                         <child>
                           <object class="GtkBox">

@@ -409,10 +409,13 @@ class GSettingsClient:
         if self._write_dconf_shell_theme(name):
             return
 
+        from .os_detector import get_install_command
+
+        install_cmd = get_install_command("user-theme")
         raise GSettingsUnavailableError(
             "Cannot set GNOME Shell theme: the 'User Themes' extension "
             "(schema org.gnome.shell.extensions.user-theme) is not installed or enabled. "
-            "You can install it on Ubuntu with: sudo apt install gnome-shell-extension-user-theme"
+            f"You can install it with: {install_cmd}"
         )
 
     # -------------------------------------------------------------------------

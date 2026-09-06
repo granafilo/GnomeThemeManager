@@ -72,7 +72,10 @@ def test_case_a_ptyxis_installed_and_default() -> None:
 
     with patch.dict("os.environ", {}, clear=True):
         with patch("subprocess.run", return_value=mock_run):
-            with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+            with patch(
+                "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                return_value=True,
+            ):
                 info = detect_default_terminal()
                 assert info.terminal_id == "ptyxis"
                 assert info.terminal_name == "Ptyxis"
@@ -84,16 +87,22 @@ def test_case_a_ptyxis_installed_and_default() -> None:
 
 def test_case_b_gnome_terminal_no_ptyxis() -> None:
     """Mock Case B: Environment with GNOME Terminal installed, but no Ptyxis."""
+
     # xdg-terminal-exec not available
     def mock_installed(binary: str, desktop_file: str = "") -> bool:
         return binary == "gnome-terminal"
 
     with patch.dict("os.environ", {}, clear=True):
         with patch("subprocess.run", side_effect=FileNotFoundError):
-            with patch("gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False):
+            with patch(
+                "gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False
+            ):
                 with patch("pathlib.Path.is_symlink", return_value=False):
                     with patch("pathlib.Path.is_file", return_value=False):
-                        with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", side_effect=mock_installed):
+                        with patch(
+                            "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                            side_effect=mock_installed,
+                        ):
                             info = detect_default_terminal()
                             assert info.terminal_id == "gnome-terminal"
                             assert info.terminal_name == "GNOME Terminal"
@@ -107,10 +116,15 @@ def test_case_c_headless_no_terminals() -> None:
     """Mock Case C: Headless server with no terminal installed or detectable."""
     with patch.dict("os.environ", {}, clear=True):
         with patch("subprocess.run", side_effect=FileNotFoundError):
-            with patch("gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False):
+            with patch(
+                "gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False
+            ):
                 with patch("pathlib.Path.is_symlink", return_value=False):
                     with patch("pathlib.Path.is_file", return_value=False):
-                        with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=False):
+                        with patch(
+                            "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                            return_value=False,
+                        ):
                             info = detect_terminal()
                             assert info.terminal_id == "unknown"
                             assert info.terminal_name == "Unknown Terminal"
@@ -124,7 +138,9 @@ def test_case_c_headless_no_terminals() -> None:
 def test_env_ptyxis_detection() -> None:
     """Verify active session detected via PTYXIS_VERSION env var."""
     with patch.dict("os.environ", {"PTYXIS_VERSION": "47.0"}):
-        with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+        with patch(
+            "gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True
+        ):
             info = _detect_from_environment()
             assert info is not None
             assert info.terminal_id == "ptyxis"
@@ -134,7 +150,9 @@ def test_env_ptyxis_detection() -> None:
 def test_env_term_program_detection() -> None:
     """Verify active session detected via TERM_PROGRAM env var."""
     with patch.dict("os.environ", {"TERM_PROGRAM": "WezTerm"}):
-        with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+        with patch(
+            "gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True
+        ):
             info = _detect_from_environment()
             assert info is not None
             assert info.terminal_id == "wezterm"
@@ -144,7 +162,9 @@ def test_env_term_program_detection() -> None:
 def test_env_custom_terminal_detection() -> None:
     """Verify active session detected via $TERMINAL env var."""
     with patch.dict("os.environ", {"TERMINAL": "alacritty"}):
-        with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+        with patch(
+            "gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True
+        ):
             info = _detect_from_environment()
             assert info is not None
             assert info.terminal_id == "alacritty"
@@ -163,7 +183,10 @@ def test_process_tree_detection(tmp_path: Path) -> None:
             "gnome_theme_manager.core.terminal_detector.Path",
             side_effect=lambda p: fake_pid_dir if "12345" in str(p) else Path(p),
         ):
-            with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+            with patch(
+                "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                return_value=True,
+            ):
                 info = _detect_from_process_tree()
                 assert info is not None
                 assert info.terminal_id == "ptyxis"
@@ -179,7 +202,10 @@ def test_gsettings_default_terminal() -> None:
     with patch.dict("os.environ", {}, clear=True):
         with patch("gnome_theme_manager.core.terminal_detector._schema_exists", return_value=True):
             with patch("subprocess.run", return_value=mock_run):
-                with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+                with patch(
+                    "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                    return_value=True,
+                ):
                     info = detect_default_terminal()
                     assert info.terminal_id == "tilix"
                     assert info.detection_method == "gsettings"
@@ -194,12 +220,17 @@ def test_alternatives_default_terminal() -> None:
 
     with patch.dict("os.environ", {}, clear=True):
         with patch("subprocess.run", side_effect=FileNotFoundError):
-            with patch("gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False):
+            with patch(
+                "gnome_theme_manager.core.terminal_detector._schema_exists", return_value=False
+            ):
                 with patch(
                     "gnome_theme_manager.core.terminal_detector.Path",
                     side_effect=lambda p: fake_path if "x-terminal-emulator" in str(p) else Path(p),
                 ):
-                    with patch("gnome_theme_manager.core.terminal_detector.is_terminal_installed", return_value=True):
+                    with patch(
+                        "gnome_theme_manager.core.terminal_detector.is_terminal_installed",
+                        return_value=True,
+                    ):
                         info = detect_default_terminal()
                         assert info.terminal_id == "xfce4-terminal"
                         assert info.detection_method == "alternatives"
@@ -219,14 +250,24 @@ def test_theme_manager_terminal_methods() -> None:
     )
     with patch(
         "gnome_theme_manager.core.terminal_detector.detect_terminal",
-        return_value=TerminalInfo("ptyxis", "Ptyxis", "ptyxis", "org.gnome.Ptyxis.desktop", "which", True, True),
+        return_value=TerminalInfo(
+            "ptyxis", "Ptyxis", "ptyxis", "org.gnome.Ptyxis.desktop", "which", True, True
+        ),
     ):
         info = tm.detect_terminal()
         assert info.terminal_id == "ptyxis"
 
     with patch(
         "gnome_theme_manager.core.terminal_detector.detect_default_terminal",
-        return_value=TerminalInfo("gnome-terminal", "GNOME Terminal", "gnome-terminal", "org.gnome.Terminal.desktop", "which", True, True),
+        return_value=TerminalInfo(
+            "gnome-terminal",
+            "GNOME Terminal",
+            "gnome-terminal",
+            "org.gnome.Terminal.desktop",
+            "which",
+            True,
+            True,
+        ),
     ):
         info_def = tm.detect_default_terminal()
         assert info_def.terminal_id == "gnome-terminal"

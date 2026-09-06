@@ -61,6 +61,17 @@ KNOWN_SNAP_COMMON_THEMES: frozenset[str] = frozenset(
     }
 )
 
+DEFAULT_FLATPAK_FILESYSTEM_OVERRIDES: tuple[str, ...] = (
+    "xdg-config/gtk-4.0:ro",
+    "xdg-config/gtk-3.0:ro",
+    "xdg-data/themes:ro",
+    "xdg-data/icons:ro",
+    "~/.local/share/themes:ro",
+    "~/.local/share/icons:ro",
+    "~/.themes:ro",
+    "~/.icons:ro",
+)
+
 
 def validate_theme_name(name: str) -> str:
     """Validate theme name according to security guidelines."""
@@ -150,7 +161,7 @@ class SandboxBridge:
                     )
                     out_lower = res.stdout.lower()
                     flatpak_override_active = res.returncode == 0 and (
-                        "themes" in out_lower or "icons" in out_lower
+                        "gtk-4.0" in out_lower or "themes" in out_lower or "icons" in out_lower
                     )
                 except (subprocess.SubprocessError, FileNotFoundError, OSError):
                     flatpak_override_active = False
@@ -159,7 +170,9 @@ class SandboxBridge:
                 if override_file.is_file():
                     try:
                         content = override_file.read_text(encoding="utf-8", errors="ignore").lower()
-                        flatpak_override_active = "themes" in content or "icons" in content
+                        flatpak_override_active = (
+                            "gtk-4.0" in content or "themes" in content or "icons" in content
+                        )
                     except OSError:
                         flatpak_override_active = False
 
@@ -172,12 +185,16 @@ class SandboxBridge:
 
     def build_flatpak_command(
         self,
-        app_id: str | None,
-        gtk_theme: str | None,
-        icon_theme: str | None,
+        app_id: str | None = None,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+        filesystems: list[str] | tuple[str, ...] | None = None,
     ) -> list[str]:
-        """Construct flatpak command argument list."""
+        """Construct flatpak override command argument list."""
         cmd = ["flatpak", "override", "--user"]
+        if filesystems:
+            for fs in filesystems:
+                cmd.append(f"--filesystem={fs}")
         if gtk_theme:
             cmd.append(f"--env=GTK_THEME={gtk_theme}")
         if icon_theme:
@@ -217,12 +234,7 @@ class SandboxBridge:
 
         existing_fs = parser.get("Context", "filesystems", fallback="")
         fs_list = [f.strip() for f in existing_fs.split(";") if f.strip()]
-        for req in [
-            "~/.local/share/themes:ro",
-            "~/.themes:ro",
-            "~/.local/share/icons:ro",
-            "~/.icons:ro",
-        ]:
+        for req in DEFAULT_FLATPAK_FILESYSTEM_OVERRIDES:
             if req not in fs_list:
                 fs_list.append(req)
 
@@ -262,50 +274,40 @@ class SandboxBridge:
             validate_theme_name(icon_theme)
 
         if shutil.which("flatpak") is not None:
-            base_commands: list[list[str]] = [
-                ["flatpak", "override", "--user", "--filesystem=~/.local/share/themes:ro"],
-                ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"],
-                ["flatpak", "override", "--user", "--filesystem=~/.local/share/icons:ro"],
-                ["flatpak", "override", "--user", "--filesystem=~/.icons:ro"],
-            ]
-
-            if gtk_theme:
-                base_commands.append(self.build_flatpak_command(None, gtk_theme, None))
-            if icon_theme:
-                base_commands.append(self.build_flatpak_command(None, None, icon_theme))
+            cmd = self.build_flatpak_command(
+                filesystems=DEFAULT_FLATPAK_FILESYSTEM_OVERRIDES,
+                gtk_theme=gtk_theme,
+                icon_theme=icon_theme,
+            )
 
             messages: list[str] = []
             warnings: list[str] = []
             has_error = False
 
-            for cmd in base_commands:
-                try:
-                    subprocess.run(
-                        cmd,
-                        capture_output=True,
-                        text=True,
-                        timeout=10,
-                        check=True,
-                    )
-                except subprocess.TimeoutExpired:
-                    warn_msg = "Timeout while executing Flatpak command."
-                    logger.warning(warn_msg)
-                    warnings.append(warn_msg)
-                    has_error = True
-                    break
-                except subprocess.CalledProcessError as err:
-                    err_msg = err.stderr.strip() if err.stderr else str(err)
-                    warn_msg = f"Error during Flatpak override: {err_msg}"
-                    logger.warning(warn_msg)
-                    warnings.append(warn_msg)
-                    has_error = True
-                    break
-                except (FileNotFoundError, OSError):
-                    warn_msg = "Unable to execute Flatpak command."
-                    logger.warning(warn_msg)
-                    warnings.append(warn_msg)
-                    has_error = True
-                    break
+            try:
+                subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=True,
+                )
+            except subprocess.TimeoutExpired:
+                warn_msg = "Timeout while executing Flatpak command."
+                logger.warning(warn_msg)
+                warnings.append(warn_msg)
+                has_error = True
+            except subprocess.CalledProcessError as err:
+                err_msg = err.stderr.strip() if err.stderr else str(err)
+                warn_msg = f"Error during Flatpak override: {err_msg}"
+                logger.warning(warn_msg)
+                warnings.append(warn_msg)
+                has_error = True
+            except (FileNotFoundError, OSError):
+                warn_msg = "Unable to execute Flatpak command."
+                logger.warning(warn_msg)
+                warnings.append(warn_msg)
+                has_error = True
 
             if not has_error:
                 messages.append(

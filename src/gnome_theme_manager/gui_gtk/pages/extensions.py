@@ -67,6 +67,24 @@ class ExtensionsPage:
             "system_extensions_group"
         )
         self.empty_status_page: Adw.StatusPage = self.builder.get_object("empty_status_page")
+        self.install_banner: Adw.Banner | None = self.builder.get_object("install_banner")
+        self.group_install_manager: Adw.PreferencesGroup | None = self.builder.get_object(
+            "group_install_manager"
+        )
+        self.expander_install_options: Adw.ExpanderRow | None = self.builder.get_object(
+            "expander_install_options"
+        )
+        self.combo_install_method: Adw.ComboRow | None = self.builder.get_object(
+            "combo_install_method"
+        )
+        self.row_install_command: Adw.ActionRow | None = self.builder.get_object(
+            "row_install_command"
+        )
+        self.row_basic_app: Adw.ActionRow | None = self.builder.get_object("row_basic_app")
+        self.btn_open_basic_app: Gtk.Button | None = self.builder.get_object("btn_open_basic_app")
+        self.btn_copy_install_command: Gtk.Button | None = self.builder.get_object(
+            "btn_copy_install_command"
+        )
 
         # Explicitly apply localized strings to all widgets
         if self.loading_page is not None:
@@ -80,12 +98,6 @@ class ExtensionsPage:
         if self.header_subtitle is not None:
             self.header_subtitle.set_text(
                 _("Manage, enable, and inspect installed GNOME Shell extensions.")
-            )
-
-        if self.btn_open_app is not None:
-            self.btn_open_app.set_label(_("Open Extension Manager"))
-            self.btn_open_app.set_tooltip_text(
-                _("Open GNOME Extensions application to manage installed extensions")
             )
 
         if self.btn_browse_portal is not None:
@@ -115,13 +127,38 @@ class ExtensionsPage:
                 _("No extensions matched your filter or none are installed.")
             )
 
+        if self.group_install_manager is not None:
+            self.group_install_manager.set_title(_("Extension Manager"))
+            self.group_install_manager.set_description(
+                _("Options and commands to install or manage GNOME Extension Manager.")
+            )
+
+        if self.row_install_command is not None:
+            self.row_install_command.set_title(_("Terminal Command"))
+
+        if self.row_basic_app is not None:
+            self.row_basic_app.set_title(_("GNOME Extensions (Basic)"))
+            self.row_basic_app.set_subtitle(_("Launch standard GNOME Extensions utility"))
+
+        if self.btn_open_basic_app is not None:
+            self.btn_open_basic_app.set_label(_("Open"))
+
+        if self.combo_install_method is not None:
+            self.combo_install_method.set_title(_("Installation Method"))
+
+        if self.btn_copy_install_command is not None:
+            self.btn_copy_install_command.set_tooltip_text(_("Copy installation command"))
+
         self._extensions: list[GnomeExtension] = []
         self._filtered_extensions: list[GnomeExtension] = []
+        self._install_options: list[dict[str, str]] = []
         self._is_loading: bool = False
         self._row_widgets: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
 
         self.widget.set_visible_child_name("loading")
+        self._init_install_options()
         self._connect_signals()
+        self._update_app_status()
 
     @property
     def is_loading(self) -> bool:
@@ -135,9 +172,90 @@ class ExtensionsPage:
     def _connect_signals(self) -> None:
         """Connect UI widget signals."""
         self.btn_refresh.connect("clicked", lambda _: self.refresh())
-        self.btn_open_app.connect("clicked", lambda _: self._open_app())
+        self.btn_open_app.connect("clicked", lambda _: self._on_app_button_clicked())
+        if self.btn_open_basic_app is not None:
+            self.btn_open_basic_app.connect("clicked", lambda _: self._open_basic_app())
+        if self.install_banner is not None:
+            self.install_banner.connect("button-clicked", self._on_copy_install_command)
+        if self.combo_install_method is not None:
+            self.combo_install_method.connect(
+                "notify::selected", lambda *_: self._on_install_method_changed()
+            )
+        if self.btn_copy_install_command is not None:
+            self.btn_copy_install_command.connect(
+                "clicked", lambda *_: self._on_copy_install_command()
+            )
         self.btn_browse_portal.connect("clicked", lambda _: self._open_portal())
         self.search_entry.connect("search-changed", self._on_search_changed)
+
+    def _init_install_options(self) -> None:
+        """Initialize installation choices in the combo dropdown."""
+        self._install_options = []
+        if hasattr(self.manager, "get_extension_manager_install_options"):
+            try:
+                self._install_options = self.manager.get_extension_manager_install_options()
+            except Exception as err:
+                logger.debug("Failed to get extension manager options: %s", err)
+
+        if not self._install_options:
+            cmd = self.manager.get_install_command("extension-manager")
+            self._install_options = [
+                {
+                    "id": "system",
+                    "name": _("Extension Manager (System Package)"),
+                    "command": cmd,
+                    "description": _("Recommended native package for Extension Manager."),
+                }
+            ]
+
+        if self.combo_install_method is not None:
+            names: list[str] = []
+            for opt in self._install_options:
+                opt_id = opt.get("id", "")
+                name = opt.get("name", opt_id)
+                if opt_id == "system":
+                    name = _("Extension Manager (System Package)")
+                elif opt_id == "flatpak":
+                    name = _("Extension Manager (Flatpak Flathub)")
+                elif opt_id == "gnome-extensions-app":
+                    name = _("GNOME Extensions Basic (without online browsing)")
+                names.append(name)
+
+            self.combo_install_method.set_model(Gtk.StringList.new(names))
+            self.combo_install_method.set_selected(0)
+            self._on_install_method_changed()
+
+    def _on_install_method_changed(self) -> None:
+        """Update displayed terminal command and subtitle when installation method changes."""
+        if not self.combo_install_method or not self._install_options:
+            return
+        idx = self.combo_install_method.get_selected()
+        if 0 <= idx < len(self._install_options):
+            opt = self._install_options[idx]
+            cmd = opt.get("command", "")
+            desc = opt.get("description", "")
+            opt_id = opt.get("id", "")
+            if opt_id == "system":
+                desc = _("Recommended native package for Extension Manager.")
+            elif opt_id == "flatpak":
+                desc = _("Official Extension Manager release in sandbox from Flathub.")
+            elif opt_id == "gnome-extensions-app":
+                desc = _("Basic GNOME Extensions utility without online extension browsing.")
+
+            if self.row_install_command is not None:
+                self.row_install_command.set_subtitle(cmd)
+            if self.combo_install_method is not None and desc:
+                self.combo_install_method.set_subtitle(desc)
+
+    def _get_active_install_command(self) -> str:
+        """Return the currently selected installation command from options."""
+        if self._install_options:
+            idx = 0
+            if self.combo_install_method is not None:
+                idx = self.combo_install_method.get_selected()
+            if 0 <= idx < len(self._install_options):
+                return self._install_options[idx].get("command", "")
+        return self.manager.get_install_command("extension-manager")
 
     def refresh(self) -> None:
         """Reload installed extensions asynchronously."""
@@ -169,6 +287,7 @@ class ExtensionsPage:
 
         self._extensions = extensions
         self._filter_extensions(self.search_entry.get_text().strip())
+        self._update_app_status()
         self.widget.set_visible_child_name("ready")
         return False
 
@@ -309,18 +428,125 @@ class ExtensionsPage:
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
 
+    def _update_app_status(self) -> None:
+        """Update header button, banner, and expander based on Extension Manager status."""
+        is_mgr_installed = False
+        is_basic_installed = False
+        if self.manager.extensions:
+            try:
+                if hasattr(self.manager.extensions, "is_extension_manager_installed"):
+                    is_mgr_installed = self.manager.extensions.is_extension_manager_installed()
+                    is_basic_installed = self.manager.extensions.is_gnome_extensions_installed()
+                else:
+                    is_mgr_installed = self.manager.extensions.is_extensions_app_installed()
+            except Exception as err:
+                logger.debug("Error checking extensions app: %s", err)
+
+        cmd = self._get_active_install_command()
+
+        if self.install_banner is not None:
+            if not is_mgr_installed:
+                self.install_banner.set_title(
+                    _("Extension Manager is not installed. Install with: {cmd}").format(cmd=cmd)
+                )
+                self.install_banner.set_button_label(_("Copy Command"))
+                self.install_banner.set_revealed(True)
+            else:
+                self.install_banner.set_revealed(False)
+
+        if self.expander_install_options is not None:
+            if not is_mgr_installed:
+                self.expander_install_options.set_title(_("Install Extension Manager"))
+                self.expander_install_options.set_subtitle(
+                    _("Extension Manager is not installed. Select an installation method.")
+                )
+                self.expander_install_options.set_expanded(True)
+            else:
+                self.expander_install_options.set_title(_("Installation Options"))
+                self.expander_install_options.set_subtitle(
+                    _(
+                        "Extension Manager is installed. View alternatives (Flatpak, native package)."
+                    )
+                )
+                self.expander_install_options.set_expanded(False)
+
+        if self.row_basic_app is not None:
+            self.row_basic_app.set_visible(is_basic_installed and not is_mgr_installed)
+
+        if self.btn_open_app is not None:
+            if is_mgr_installed:
+                self.btn_open_app.set_label(_("Open Extension Manager"))
+                self.btn_open_app.set_tooltip_text(
+                    _("Open GNOME Extensions application to manage installed extensions")
+                )
+                self.btn_open_app.remove_css_class("accent")
+                self.btn_open_app.add_css_class("suggested-action")
+            else:
+                self.btn_open_app.set_label(_("Install Extension Manager"))
+                self.btn_open_app.set_tooltip_text(
+                    _("Extension Manager is not installed. Click to copy install command.")
+                )
+                self.btn_open_app.remove_css_class("suggested-action")
+                self.btn_open_app.add_css_class("accent")
+
+    def _on_app_button_clicked(self) -> None:
+        """Handle header button click: open if installed, copy command if not."""
+        is_mgr_installed = False
+        if self.manager.extensions:
+            try:
+                if hasattr(self.manager.extensions, "is_extension_manager_installed"):
+                    is_mgr_installed = self.manager.extensions.is_extension_manager_installed()
+                else:
+                    is_mgr_installed = self.manager.extensions.is_extensions_app_installed()
+            except Exception as err:
+                logger.debug("Error checking extensions app: %s", err)
+
+        if is_mgr_installed:
+            self._open_app()
+        else:
+            self._on_copy_install_command()
+
+    def _on_copy_install_command(self, _btn: object | None = None) -> None:
+        """Copy the installation command for Extension Manager to clipboard."""
+        cmd = self._get_active_install_command()
+        try:
+            from gi.repository import Gdk
+
+            display = Gdk.Display.get_default()
+            if display:
+                clipboard = display.get_clipboard()
+                clipboard.set(cmd)
+        except Exception as err:
+            logger.debug("Failed to set clipboard: %s", err)
+
+        if self.on_notify_message:
+            self.on_notify_message(
+                _("Installation command copied to clipboard: {cmd}").format(cmd=cmd),
+                False,
+            )
+
     def _open_app(self) -> None:
-        """Launch official GNOME Extensions or Extension Manager app."""
+        """Launch specifically Extension Manager app."""
         if not self.manager.extensions:
             return
-        ok = self.manager.extensions.open_extensions_app()
-        if not ok and self.on_notify_message:
-            self.on_notify_message(
-                _(
-                    "To manage extensions, install the 'Extension Manager' or 'gnome-extensions-app' package."
-                ),
-                True,
-            )
+        if hasattr(self.manager.extensions, "open_extension_manager"):
+            ok = self.manager.extensions.open_extension_manager()
+        else:
+            ok = self.manager.extensions.open_extensions_app(fallback_to_basic=False)
+        if not ok:
+            self._update_app_status()
+            if self.expander_install_options is not None:
+                self.expander_install_options.set_expanded(True)
+            self._on_copy_install_command()
+
+    def _open_basic_app(self) -> None:
+        """Launch standard basic GNOME Extensions app."""
+        if not self.manager.extensions:
+            return
+        if hasattr(self.manager.extensions, "open_gnome_extensions_app"):
+            self.manager.extensions.open_gnome_extensions_app()
+        else:
+            self.manager.extensions.open_extensions_app(fallback_to_basic=True)
 
     def _open_prefs(self, uuid: str) -> None:
         """Launch preferences dialog for an extension."""

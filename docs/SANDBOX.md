@@ -16,10 +16,13 @@ When you apply a theme in GNOME Theme Manager or click **Propagate Theme to Sand
 
 ```bash
 # Handled automatically by GNOME Theme Manager:
-flatpak override --user --filesystem=xdg-data/themes:ro
-flatpak override --user --filesystem=xdg-data/icons:ro
-flatpak override --user --filesystem=~/.themes:ro
-flatpak override --user --filesystem=~/.icons:ro
+flatpak override --user \
+  --filesystem=xdg-config/gtk-4.0:ro \
+  --filesystem=xdg-config/gtk-3.0:ro \
+  --filesystem=xdg-data/themes:ro \
+  --filesystem=xdg-data/icons:ro \
+  --filesystem=~/.themes:ro \
+  --filesystem=~/.icons:ro
 ```
 
 ### Manual Configuration Guide
@@ -29,17 +32,23 @@ If you need to configure Flatpak overrides manually via terminal:
 #### 1. User-Level Global Overrides (Applies to all Flatpak apps)
 Run the following commands in your terminal:
 ```bash
-# Grant read-only access to standard user theme and icon folders
-flatpak override --user --filesystem=xdg-data/themes:ro
-flatpak override --user --filesystem=xdg-data/icons:ro
-flatpak override --user --filesystem=~/.themes:ro
-flatpak override --user --filesystem=~/.icons:ro
+# Grant read-only access to user themes, icons, and GTK 3/4 config
+flatpak override --user \
+  --filesystem=xdg-config/gtk-4.0:ro \
+  --filesystem=xdg-config/gtk-3.0:ro \
+  --filesystem=xdg-data/themes:ro \
+  --filesystem=xdg-data/icons:ro \
+  --filesystem=~/.themes:ro \
+  --filesystem=~/.icons:ro
 ```
 
 #### 2. System-Wide Global Overrides (Optional, requires root)
 ```bash
-sudo flatpak override --filesystem=xdg-data/themes:ro
-sudo flatpak override --filesystem=xdg-data/icons:ro
+sudo flatpak override \
+  --filesystem=xdg-config/gtk-4.0:ro \
+  --filesystem=xdg-config/gtk-3.0:ro \
+  --filesystem=xdg-data/themes:ro \
+  --filesystem=xdg-data/icons:ro
 ```
 
 #### 3. Single Application Override

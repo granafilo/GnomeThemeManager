@@ -115,7 +115,9 @@ def test_terminal_page_gui_dynamic_adaptation(monkeypatch: pytest.MonkeyPatch) -
     ]
     mock_mgr.get_current_terminal_palette.return_value = TerminalPalette()
 
-    with patch("gnome_theme_manager.gui_gtk.pages.terminal.is_terminal_installed", return_value=True):
+    with patch(
+        "gnome_theme_manager.gui_gtk.pages.terminal.is_terminal_installed", return_value=True
+    ):
         page = TerminalPage(mock_mgr)
         page.refresh()
 
@@ -162,7 +164,9 @@ def test_terminal_page_not_installed_warning() -> None:
     mock_mgr.list_terminal_profiles.return_value = []
     mock_mgr.get_current_terminal_palette.return_value = TerminalPalette()
 
-    with patch("gnome_theme_manager.gui_gtk.pages.terminal.is_terminal_installed", return_value=False):
+    with patch(
+        "gnome_theme_manager.gui_gtk.pages.terminal.is_terminal_installed", return_value=False
+    ):
         page = TerminalPage(mock_mgr)
         page.refresh()
 

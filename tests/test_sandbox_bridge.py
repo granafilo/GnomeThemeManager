@@ -121,23 +121,17 @@ def test_propagate_to_flatpak_success() -> None:
         assert result.flatpak_success is True
         assert len(result.warnings) == 0
         assert len(result.flatpak_messages) > 0
-        # Verify that all override commands and environment variables were executed
-        assert [
-            "flatpak",
-            "override",
-            "--user",
-            "--filesystem=~/.local/share/themes:ro",
-        ] in executed_commands
-        assert ["flatpak", "override", "--user", "--filesystem=~/.themes:ro"] in executed_commands
-        assert [
-            "flatpak",
-            "override",
-            "--user",
-            "--filesystem=~/.local/share/icons:ro",
-        ] in executed_commands
-        assert ["flatpak", "override", "--user", "--filesystem=~/.icons:ro"] in executed_commands
-        assert ["flatpak", "override", "--user", "--env=GTK_THEME=Nordic"] in executed_commands
-        assert ["flatpak", "override", "--user", "--env=ICON_THEME=Papirus"] in executed_commands
+        assert len(executed_commands) == 1
+        cmd = executed_commands[0]
+        assert cmd[:3] == ["flatpak", "override", "--user"]
+        assert "--filesystem=xdg-config/gtk-4.0:ro" in cmd
+        assert "--filesystem=xdg-config/gtk-3.0:ro" in cmd
+        assert "--filesystem=xdg-data/themes:ro" in cmd
+        assert "--filesystem=xdg-data/icons:ro" in cmd
+        assert "--filesystem=~/.themes:ro" in cmd
+        assert "--filesystem=~/.icons:ro" in cmd
+        assert "--env=GTK_THEME=Nordic" in cmd
+        assert "--env=ICON_THEME=Papirus" in cmd
 
 
 def test_propagate_to_flatpak_not_installed() -> None:
@@ -470,4 +464,5 @@ def test_sandbox_bridge_in_container(tmp_path: Path) -> None:
         assert res.flatpak_success is True
         assert fake_override.is_file()
         content = fake_override.read_text()
+        assert "xdg-config/gtk-4.0:ro" in content
         assert "GTK_THEME = Nordic" in content or "gtk_theme = Nordic" in content

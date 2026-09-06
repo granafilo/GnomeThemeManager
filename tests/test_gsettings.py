@@ -201,6 +201,37 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
             with pytest.raises(GSettingsUnavailableError, match="User Themes"):
                 client.set_shell_theme("Nordic")
 
+        # Verify OS-specific installation suggestions
+        from gnome_theme_manager.core.os_detector import OSInfo
+
+        with (
+            patch.object(client, "_is_dconf_shell_available", return_value=False),
+            patch.object(client, "_write_dconf_shell_theme", return_value=False),
+            patch(
+                "gnome_theme_manager.core.os_detector.detect_os",
+                return_value=OSInfo("fedora", "40", "dnf", "Fedora 40"),
+            ),
+        ):
+            with pytest.raises(
+                GSettingsUnavailableError,
+                match="sudo dnf install -y gnome-shell-extension-user-theme",
+            ):
+                client.set_shell_theme("Nordic")
+
+        with (
+            patch.object(client, "_is_dconf_shell_available", return_value=False),
+            patch.object(client, "_write_dconf_shell_theme", return_value=False),
+            patch(
+                "gnome_theme_manager.core.os_detector.detect_os",
+                return_value=OSInfo("arch", "rolling", "pacman", "Arch Linux"),
+            ),
+        ):
+            with pytest.raises(
+                GSettingsUnavailableError,
+                match=r"sudo pacman -S --noconfirm gnome-shell-extensions",
+            ):
+                client.set_shell_theme("Nordic")
+
 
 def test_gsettings_unavailable_when_gio_missing():
     """Verify that GSettingsUnavailableError is raised if PyGObject is not installed."""

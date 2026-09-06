@@ -1,7 +1,12 @@
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from gi.repository import Gio, GLib  # noqa: F401
 
 import gnome_theme_manager
 

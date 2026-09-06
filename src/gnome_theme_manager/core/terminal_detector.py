@@ -410,12 +410,25 @@ def _match_terminal_token(token: str) -> str | None:
 def _detect_from_environment() -> TerminalInfo | None:
     """Check environment variables for an active terminal session."""
     # 1. Check specific terminal indicator env vars
-    for term_id in ("ptyxis", "kitty", "alacritty", "tilix", "kgx", "gnome-terminal", "konsole", "mate-terminal", "wezterm", "xterm"):
+    for term_id in (
+        "ptyxis",
+        "kitty",
+        "alacritty",
+        "tilix",
+        "kgx",
+        "gnome-terminal",
+        "konsole",
+        "mate-terminal",
+        "wezterm",
+        "xterm",
+    ):
         spec = KNOWN_TERMINALS[term_id]
         for var in spec.get("env_vars", ()):
             val = os.environ.get(var)
             if val:
-                logger.debug("Terminal detected via environment variable %s=%s: %s", var, val, term_id)
+                logger.debug(
+                    "Terminal detected via environment variable %s=%s: %s", var, val, term_id
+                )
                 return _build_terminal_info(term_id, detection_method="env")
 
     # 2. Check TERM_PROGRAM
@@ -459,7 +472,12 @@ def _detect_from_process_tree(max_depth: int = 6) -> TerminalInfo | None:
         if comm:
             matched = _match_terminal_token(comm)
             if matched:
-                logger.debug("Terminal detected via process tree (PID %d, comm '%s'): %s", curr_pid, comm, matched)
+                logger.debug(
+                    "Terminal detected via process tree (PID %d, comm '%s'): %s",
+                    curr_pid,
+                    comm,
+                    matched,
+                )
                 return _build_terminal_info(matched, detection_method="proc_tree")
 
         # Read parent PID from /proc/{curr_pid}/status
@@ -500,7 +518,9 @@ def detect_default_terminal() -> TerminalInfo:
             matched = _match_terminal_token(target)
             if matched:
                 logger.debug("Default terminal detected via xdg-terminal-exec: %s", matched)
-                return _build_terminal_info(matched, detection_method="xdg-terminal-exec", is_default=True)
+                return _build_terminal_info(
+                    matched, detection_method="xdg-terminal-exec", is_default=True
+                )
     except Exception as exc:
         logger.debug("xdg-terminal-exec detection skipped or failed: %s", exc)
 
@@ -519,7 +539,9 @@ def detect_default_terminal() -> TerminalInfo:
                 matched = _match_terminal_token(raw)
                 if matched:
                     logger.debug("Default terminal detected via GNOME GSettings: %s", matched)
-                    return _build_terminal_info(matched, detection_method="gsettings", is_default=True)
+                    return _build_terminal_info(
+                        matched, detection_method="gsettings", is_default=True
+                    )
         except Exception as exc:
             logger.debug("GSettings default terminal check failed: %s", exc)
 
@@ -531,7 +553,9 @@ def detect_default_terminal() -> TerminalInfo:
             matched = _match_terminal_token(target)
             if matched:
                 logger.debug("Default terminal detected via /etc/alternatives: %s", matched)
-                return _build_terminal_info(matched, detection_method="alternatives", is_default=True)
+                return _build_terminal_info(
+                    matched, detection_method="alternatives", is_default=True
+                )
         except Exception as exc:
             logger.debug("Resolving /etc/alternatives/x-terminal-emulator failed: %s", exc)
 

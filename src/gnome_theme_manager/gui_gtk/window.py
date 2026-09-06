@@ -392,6 +392,12 @@ class MainWindow(Adw.ApplicationWindow):
             padding: 4px 14px;
             border-radius: 8px;
             font-weight: 500;
+            color: @window_fg_color;
+        }
+
+        dropdown > button:hover {
+            color: @window_fg_color;
+            background-color: alpha(@window_fg_color, 0.08);
         }
 
         dropdown > button image {
@@ -400,6 +406,49 @@ class MainWindow(Adw.ApplicationWindow):
 
         dropdown > button label {
             font-weight: 500;
+            color: @window_fg_color;
+        }
+
+        dropdown > button:hover label {
+            color: @window_fg_color;
+        }
+
+        /* Fix .warning contrast on rows, combo rows, and dropdown buttons on hover */
+        row.warning,
+        adw-combo-row.warning {
+            background-color: alpha(@warning_color, 0.08);
+        }
+
+        row.warning:hover,
+        adw-combo-row.warning:hover {
+            background-color: alpha(@warning_color, 0.16);
+        }
+
+        row.warning label,
+        row.warning:hover label,
+        adw-combo-row.warning label,
+        adw-combo-row.warning:hover label {
+            color: @window_fg_color;
+        }
+
+        row.warning .subtitle,
+        adw-combo-row.warning .subtitle {
+            color: alpha(@window_fg_color, 0.75);
+        }
+
+        row.warning dropdown > button,
+        row.warning dropdown > button:hover,
+        adw-combo-row.warning dropdown > button,
+        adw-combo-row.warning dropdown > button:hover {
+            color: @window_fg_color;
+            background-color: alpha(@window_fg_color, 0.10);
+        }
+
+        row.warning dropdown > button label,
+        row.warning dropdown > button:hover label,
+        adw-combo-row.warning dropdown > button label,
+        adw-combo-row.warning dropdown > button:hover label {
+            color: @window_fg_color;
         }
 
         /* Standard input / entry text colors adhering to current Libadwaita theme */
@@ -420,9 +469,24 @@ class MainWindow(Adw.ApplicationWindow):
         }
 
         /* Popover list styling for dropdown menus */
-        popover.menu listview row, popover.menu listview > row {
+        popover listview row,
+        popover.menu listview row,
+        popover.menu listview > row {
             min-height: 38px;
             padding: 6px 12px;
+            color: @window_fg_color;
+        }
+
+        popover listview row:hover,
+        popover listview > row:hover,
+        popover.menu listview row:hover,
+        popover.menu listview > row:hover,
+        popover listview row:selected,
+        popover listview > row:selected,
+        popover.menu listview row:selected,
+        popover.menu listview > row:selected {
+            background-color: @theme_selected_bg_color;
+            color: @theme_selected_fg_color;
         }
 
         /* Color picker HEX entries & buttons */

@@ -63,6 +63,9 @@ def mock_manager(sample_extensions: list[GnomeExtension]) -> MagicMock:
     manager.extensions.disable_extension.return_value = True
     manager.extensions.open_prefs.return_value = True
     manager.extensions.open_extensions_app.return_value = True
+    manager.extensions.open_extension_manager.return_value = True
+    manager.extensions.is_extension_manager_installed.return_value = True
+    manager.extensions.is_gnome_extensions_installed.return_value = True
     manager.extensions.get_store_url.side_effect = lambda uuid: (
         f"https://extensions.gnome.org/extension/{uuid}/"
     )
@@ -126,7 +129,7 @@ def test_extensions_page_toggle_extension(
 
     # Test opening app
     page._open_app()
-    mock_manager.extensions.open_extensions_app.assert_called_once()
+    mock_manager.extensions.open_extension_manager.assert_called_once()
 
     # Test removing user extension
     mock_manager.extensions.uninstall_extension.return_value = True
@@ -136,6 +139,70 @@ def test_extensions_page_toggle_extension(
             "dash-to-dock@micxgx.gmail.com"
         )
         mock_refresh.assert_called_once()
+
+    # Test _open_app failure displaying OS-tailored install command and copying to clipboard
+    mock_manager.extensions.open_extension_manager.return_value = False
+    mock_manager.extensions.is_extension_manager_installed.return_value = False
+    mock_manager.get_install_command.return_value = "sudo dnf install -y extension-manager"
+    notify_mock = MagicMock()
+    page.on_notify_message = notify_mock
+    page._open_app()
+    notify_mock.assert_called_once()
+    msg, is_err = notify_mock.call_args[0]
+    assert "sudo dnf install -y extension-manager" in msg
+    assert is_err is False
+    assert page.btn_open_app.get_label() in (
+        "Install Extension Manager",
+        "Installa Extension Manager",
+    )
+    assert page.install_banner.get_revealed() is True
+    assert page.expander_install_options.get_expanded() is True
+
+
+def test_extensions_page_install_options_select(mock_manager: MagicMock) -> None:
+    """Test switching installation options in combo row updates command and copies correctly."""
+    mock_manager.get_extension_manager_install_options.return_value = [
+        {
+            "id": "system",
+            "name": "System Package (APT)",
+            "command": "sudo apt install -y gnome-extensions-app",
+            "description": "Recommended native package provided by distribution repositories.",
+        },
+        {
+            "id": "flatpak",
+            "name": "Flatpak (Flathub)",
+            "command": "flatpak install flathub com.mattjakeman.ExtensionManager",
+            "description": "Modern Extension Manager in isolated sandbox from Flathub.",
+        },
+    ]
+    mock_manager.extensions.is_extensions_app_installed.return_value = False
+
+    page = ExtensionsPage(manager=mock_manager)
+
+    assert page.combo_install_method is not None
+    assert page.row_install_command is not None
+    assert page.expander_install_options is not None
+
+    # First option selected by default (System Package)
+    assert page.combo_install_method.get_selected() == 0
+    assert page.row_install_command.get_subtitle() == "sudo apt install -y gnome-extensions-app"
+
+    # Switch to second option (Flatpak)
+    page.combo_install_method.set_selected(1)
+    page._on_install_method_changed()
+    assert (
+        page.row_install_command.get_subtitle()
+        == "flatpak install flathub com.mattjakeman.ExtensionManager"
+    )
+
+    # Test copy button with Flatpak option selected
+    notify_mock = MagicMock()
+    page.on_notify_message = notify_mock
+    page._on_copy_install_command()
+    notify_mock.assert_called_once()
+    msg, is_err = notify_mock.call_args[0]
+    assert "flatpak install flathub com.mattjakeman.ExtensionManager" in msg
+    assert is_err is False
 
 
 class TestMainWindowExtensionsIntegration:

@@ -258,14 +258,12 @@ class TerminalPage:
                 from ...core.terminal_profile import get_terminal_profile
 
                 profile = get_terminal_profile(self._selected_terminal_id)
-            installed = is_terminal_installed(
-                profile.terminal_id, f"{profile.icon_name}.desktop"
-            )
+            installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
             if not installed:
                 self._notify(
-                    _(
-                        "The terminal '{name}' is not installed. Install with: {cmd}"
-                    ).format(name=profile.terminal_name, cmd=profile.install_command),
+                    _("The terminal '{name}' is not installed. Install with: {cmd}").format(
+                        name=profile.terminal_name, cmd=profile.install_command
+                    ),
                     is_error=True,
                 )
 
@@ -280,15 +278,9 @@ class TerminalPage:
         detected = self.manager.detect_terminal()
         default_term = self.manager.detect_default_terminal()
 
-        is_detected_active = (
-            getattr(detected, "terminal_id", "") == self._selected_terminal_id
-        )
-        is_default = (
-            getattr(default_term, "terminal_id", "") == self._selected_terminal_id
-        )
-        installed = is_terminal_installed(
-            profile.terminal_id, f"{profile.icon_name}.desktop"
-        )
+        is_detected_active = getattr(detected, "terminal_id", "") == self._selected_terminal_id
+        is_default = getattr(default_term, "terminal_id", "") == self._selected_terminal_id
+        installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
 
         # 1. Update Subtitle
         if self.terminal_selector_row:
@@ -345,9 +337,7 @@ class TerminalPage:
 
         # 5. Update Warning row
         if self.terminal_warning_row:
-            installed = is_terminal_installed(
-                profile.terminal_id, f"{profile.icon_name}.desktop"
-            )
+            installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
             if not installed:
                 self.terminal_warning_row.set_visible(True)
                 self.terminal_warning_row.set_title(_("Terminal Not Installed"))
@@ -360,9 +350,9 @@ class TerminalPage:
                 self.terminal_warning_row.set_visible(True)
                 self.terminal_warning_row.set_title(_("Configuration Notice"))
                 self.terminal_warning_row.set_subtitle(
-                    _("{name} uses file configuration instead of GSettings. Config path: {path}").format(
-                        name=profile.terminal_name, path=profile.config_file_path
-                    )
+                    _(
+                        "{name} uses file configuration instead of GSettings. Config path: {path}"
+                    ).format(name=profile.terminal_name, path=profile.config_file_path)
                 )
             else:
                 self.terminal_warning_row.set_visible(False)
@@ -376,7 +366,7 @@ class TerminalPage:
             markup = (
                 f"<tt><b>user@gnome</b>:<b>~</b>$ uname -a\n"
                 f"Linux 6.8.0-generic x86_64 GNU/Linux\n"
-                f"<b>user@gnome</b>:<b>~</b>$ echo \"{profile.terminal_name} Palette Theme\"\n"
+                f'<b>user@gnome</b>:<b>~</b>$ echo "{profile.terminal_name} Palette Theme"\n'
                 f'<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> '
                 f'<span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> '
                 f'<span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span></tt>'
@@ -413,9 +403,7 @@ class TerminalPage:
 
             profile = get_terminal_profile(self._selected_terminal_id)
 
-        installed = is_terminal_installed(
-            profile.terminal_id, f"{profile.icon_name}.desktop"
-        )
+        installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
 
         # Scenario A - Target terminal not installed
         if not installed:

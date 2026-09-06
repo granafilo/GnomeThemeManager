@@ -2802,3 +2802,205 @@ msgstr "👁️ Anteprima Desktop Live Attiva"
 msgid "👁️ Preview on Desktop"
 msgstr "👁️ Anteprima sul desktop"
 
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:320
+msgid "To manage extensions, install Extension Manager with: {cmd}"
+msgstr "Per gestire le estensioni, installa Extension Manager con: {cmd}"
+
+#: src/gnome_theme_manager/core/gsettings.py:416
+msgid "Cannot set GNOME Shell theme: the 'User Themes' extension (schema org.gnome.shell.extensions.user-theme) is not installed or enabled. You can install it with: {cmd}"
+msgstr "Impossibile impostare il tema GNOME Shell: l'estensione 'User Themes' (schema org.gnome.shell.extensions.user-theme) non è installata o abilitata. Puoi installarla con: {cmd}"
+
+#: src/gnome_theme_manager/cli/main.py:491
+msgid ""
+"\n"
+"[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\n"
+"Install required dependencies with:\n"
+"    {install_cmd}\n"
+""
+msgstr ""
+"\n"
+"[ERRORE GUI GTK4] GTK4/Libadwaita è richiesto per avviare l'interfaccia grafica. Dettagli: {err}\n"
+"Installa le dipendenze richieste con:\n"
+"    {install_cmd}\n"
+""
+
+msgid "Loading extensions..."
+msgstr "Caricamento estensioni in corso..."
+
+msgid "Scanning installed extensions across system and user directories."
+msgstr "Scansione delle estensioni installate nelle directory di sistema e utente."
+
+msgid "Manage, enable, and inspect installed GNOME Shell extensions."
+msgstr "Gestisci, abilita e ispeziona le estensioni GNOME Shell installate."
+
+msgid "Open Extension Manager"
+msgstr "Apri Extension Manager"
+
+msgid "Install Extension Manager"
+msgstr "Installa Extension Manager"
+
+msgid "Open GNOME Extensions application to manage installed extensions"
+msgstr "Apri l'applicazione Estensioni GNOME per gestire le estensioni installate"
+
+msgid "Extension Manager is not installed."
+msgstr "Extension Manager non è installato."
+
+msgid "Extension Manager is not installed. Click to copy install command."
+msgstr "Extension Manager non è installato. Fai clic per copiare il comando di installazione."
+
+msgid "Extension Manager is not installed. Install with: {cmd}"
+msgstr "Extension Manager non è installato. Installa con: {cmd}"
+
+msgid "Installation command copied to clipboard: {cmd}"
+msgstr "Comando di installazione copiato negli appunti: {cmd}"
+
+msgid "Copy Command"
+msgstr "Copia comando"
+
+msgid "Open official GNOME Extensions website"
+msgstr "Apri il sito ufficiale delle Estensioni GNOME"
+
+msgid "Search installed extensions..."
+msgstr "Cerca tra le estensioni installate..."
+
+msgid "Refresh extension list"
+msgstr "Aggiorna l'elenco delle estensioni"
+
+msgid "User Extensions"
+msgstr "Estensioni Utente"
+
+msgid "Extensions installed in your user directory"
+msgstr "Estensioni installate nella tua cartella utente"
+
+msgid "System and Built-in Extensions"
+msgstr "Estensioni di Sistema e Predefinite"
+
+msgid "Integrated system extensions provided by GNOME Shell or system packages"
+msgstr "Estensioni integrate fornite da GNOME Shell o pacchetti di sistema"
+
+msgid "No Extensions Found"
+msgstr "Nessuna estensione trovata"
+
+msgid "No extensions matched your filter or none are installed."
+msgstr "Nessuna estensione corrisponde al filtro o nessuna risulta installata."
+
+msgid "Extension Settings"
+msgstr "Impostazioni estensione"
+
+msgid "Description"
+msgstr "Descrizione"
+
+msgid "No description provided."
+msgstr "Nessuna descrizione fornita."
+
+msgid "Version"
+msgstr "Versione"
+
+msgid "Unknown"
+msgstr "Sconosciuta"
+
+msgid "Details"
+msgstr "Dettagli"
+
+msgid "Open extension website"
+msgstr "Apri il sito dell'estensione"
+
+msgid "Remove"
+msgstr "Rimuovi"
+
+msgid "Uninstall this extension"
+msgstr "Disinstalla questa estensione"
+
+msgid "Extension '{name}' enabled."
+msgstr "Estensione '{name}' abilitata."
+
+msgid "Extension '{name}' disabled."
+msgstr "Estensione '{name}' disabilitata."
+
+msgid "Failed to toggle extension '{name}'."
+msgstr "Impossibile modificare lo stato dell'estensione '{name}'."
+
+msgid "Could not open settings for this extension."
+msgstr "Impossibile aprire le impostazioni per questa estensione."
+
+msgid "Extension '{name}' removed."
+msgstr "Estensione '{name}' rimossa."
+
+msgid "Failed to remove extension '{name}'."
+msgstr "Impossibile rimuovere l'estensione '{name}'."
+
+msgid "Extension Manager"
+msgstr "Extension Manager"
+
+msgid "Options and commands to install or manage GNOME Extension Manager."
+msgstr "Opzioni e comandi per installare o gestire GNOME Extension Manager."
+
+msgid "Installation Options"
+msgstr "Opzioni di installazione"
+
+msgid "View installation commands for Flatpak or system packages"
+msgstr "Visualizza comandi di installazione per Flatpak o pacchetti di sistema"
+
+msgid "Installation Method"
+msgstr "Metodo di installazione"
+
+msgid "Terminal Command"
+msgstr "Comando da terminale"
+
+msgid "Copy installation command"
+msgstr "Copia comando di installazione"
+
+msgid "System Package"
+msgstr "Pacchetto di sistema"
+
+msgid "System Package (APT/DNF/Pacman)"
+msgstr "Pacchetto di sistema (APT/DNF/Pacman)"
+
+msgid "Flatpak (Flathub)"
+msgstr "Flatpak (Flathub)"
+
+msgid "Extension Manager (Native)"
+msgstr "Extension Manager (nativo)"
+
+msgid "Recommended native package provided by distribution repositories."
+msgstr "Pacchetto nativo raccomandato fornito dai repository della distribuzione."
+
+msgid "Modern Extension Manager in isolated sandbox from Flathub."
+msgstr "Extension Manager moderno in sandbox isolata da Flathub."
+
+msgid "Standalone Extension Manager utility if packaged in distro repos."
+msgstr "Utility autonoma Extension Manager se presente nei repo della distribuzione."
+
+msgid "Native package provided by distribution repositories."
+msgstr "Pacchetto nativo fornito dai repository della distribuzione."
+
+msgid "Extension Manager is not installed. Select an installation method."
+msgstr "Extension Manager non è installato. Seleziona un metodo di installazione."
+
+msgid "Extension Manager is installed. View alternatives (Flatpak, native package)."
+msgstr "Extension Manager è installato. Visualizza alternative (Flatpak, pacchetto nativo)."
+
+msgid "Extension Manager (System Package)"
+msgstr "Extension Manager (pacchetto di sistema)"
+
+msgid "Extension Manager (Flatpak Flathub)"
+msgstr "Extension Manager (Flatpak Flathub)"
+
+msgid "GNOME Extensions Basic (without online browsing)"
+msgstr "GNOME Extensions di base (senza navigazione online)"
+
+msgid "Recommended native package for Extension Manager."
+msgstr "Pacchetto nativo raccomandato per Extension Manager."
+
+msgid "Official Extension Manager release in sandbox from Flathub."
+msgstr "Release ufficiale di Extension Manager in sandbox da Flathub."
+
+msgid "Basic GNOME Extensions utility without online extension browsing."
+msgstr "Utility di base GNOME Extensions senza navigazione online delle estensioni."
+
+msgid "GNOME Extensions (Basic)"
+msgstr "GNOME Extensions (di base)"
+
+msgid "Launch standard GNOME Extensions utility"
+msgstr "Avvia l'utility standard GNOME Extensions"
+

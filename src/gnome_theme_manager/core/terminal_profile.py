@@ -12,7 +12,7 @@ import logging
 from dataclasses import asdict, dataclass
 from typing import Any
 
-from .os_detector import OSInfo, detect_os
+from .os_detector import OSInfo, detect_os, get_install_command
 
 logger = logging.getLogger(__name__)
 
@@ -232,20 +232,9 @@ def synthesize_install_command(
         package_manager: Detected package manager ('apt', 'dnf', 'pacman', 'zypper').
 
     Returns:
-        Shell command string (e.g. 'sudo dnf install ptyxis').
+        Shell command string (e.g. 'sudo dnf install -y ptyxis').
     """
-    pkg_name = PACKAGE_MAP.get(terminal_id, {}).get(package_manager, terminal_id)
-
-    if package_manager == "apt":
-        return f"sudo apt install -y {pkg_name}"
-    if package_manager == "dnf":
-        return f"sudo dnf install -y {pkg_name}"
-    if package_manager == "pacman":
-        return f"sudo pacman -S --noconfirm {pkg_name}"
-    if package_manager == "zypper":
-        return f"sudo zypper install -y {pkg_name}"
-
-    return f"sudo {package_manager} install {pkg_name}"
+    return get_install_command(terminal_id, package_manager=package_manager)
 
 
 def get_terminal_profile(

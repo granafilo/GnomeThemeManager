@@ -12,6 +12,9 @@ from gnome_theme_manager.core.os_detector import (
     _detect_from_uname,
     _resolve_package_manager,
     detect_os,
+    get_install_command,
+    get_missing_dependency_hint,
+    get_os_install_commands,
     parse_os_release_text,
 )
 
@@ -219,9 +222,7 @@ def test_detect_from_lsb_release() -> None:
     """Test lsb_release command fallback parser."""
     mock_run = MagicMock()
     mock_run.returncode = 0
-    mock_run.stdout = (
-        "Distributor ID:\tUbuntu\nDescription:\tUbuntu 24.04 LTS\nRelease:\t24.04\nCodename:\tnoble\n"
-    )
+    mock_run.stdout = "Distributor ID:\tUbuntu\nDescription:\tUbuntu 24.04 LTS\nRelease:\t24.04\nCodename:\tnoble\n"
 
     with patch("subprocess.run", return_value=mock_run):
         info = _detect_from_lsb_release()
@@ -285,3 +286,192 @@ def test_theme_manager_detect_os() -> None:
         assert info.distro == "ubuntu"
         assert info.version == "24.04"
         assert info.package_manager == "apt"
+
+
+def test_get_install_command_multi_os() -> None:
+    """Verify exact installation commands generated for apt, dnf, pacman, and zypper."""
+    # 1. Ubuntu (apt)
+    assert (
+        get_install_command("gtk4", distro="ubuntu")
+        == "sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1"
+    )
+    assert (
+        get_install_command("user-theme", distro="ubuntu")
+        == "sudo apt install -y gnome-shell-extension-user-theme"
+    )
+    assert (
+        get_install_command("gnome-extensions-app", distro="ubuntu")
+        == "sudo apt install -y gnome-shell-extension-prefs"
+    )
+    assert (
+        get_install_command("snap-tools", distro="ubuntu")
+        == "sudo apt install -y snapd squashfs-tools"
+    )
+    assert get_install_command("ptyxis", distro="ubuntu") == "sudo apt install -y ptyxis"
+
+    # 2. Fedora (dnf)
+    assert (
+        get_install_command("gtk4", distro="fedora")
+        == "sudo dnf install -y python3-gobject gtk4 libadwaita"
+    )
+    assert (
+        get_install_command("user-theme", distro="fedora")
+        == "sudo dnf install -y gnome-shell-extension-user-theme"
+    )
+    assert (
+        get_install_command("gnome-extensions-app", distro="fedora")
+        == "sudo dnf install -y gnome-extensions-app"
+    )
+    assert (
+        get_install_command("snap-tools", distro="fedora")
+        == "sudo dnf install -y snapd squashfs-tools"
+    )
+    assert get_install_command("ptyxis", distro="fedora") == "sudo dnf install -y ptyxis"
+
+    # 3. Arch Linux (pacman)
+    assert (
+        get_install_command("gtk4", distro="arch")
+        == "sudo pacman -S --noconfirm python-gobject gtk4 libadwaita"
+    )
+    assert (
+        get_install_command("user-theme", distro="arch")
+        == "sudo pacman -S --noconfirm gnome-shell-extensions"
+    )
+    assert (
+        get_install_command("gnome-extensions-app", distro="arch")
+        == "sudo pacman -S --noconfirm gnome-shell-extensions"
+    )
+    assert (
+        get_install_command("snap-tools", distro="arch")
+        == "sudo pacman -S --noconfirm snapd squashfs-tools"
+    )
+    assert get_install_command("ptyxis", distro="arch") == "sudo pacman -S --noconfirm ptyxis"
+
+    # 4. openSUSE (zypper)
+    assert (
+        get_install_command("gtk4", distro="opensuse")
+        == "sudo zypper install -y python3-gobject typelib-1_0-Gtk-4_0 typelib-1_0-Adw-1"
+    )
+    assert (
+        get_install_command("user-theme", distro="opensuse")
+        == "sudo zypper install -y gnome-shell-extension-user-theme"
+    )
+    assert (
+        get_install_command("gnome-extensions-app", distro="opensuse")
+        == "sudo zypper install -y gnome-shell-extensions-common"
+    )
+    assert (
+        get_install_command("snap-tools", distro="opensuse")
+        == "sudo zypper install -y snapd squashfs-tools"
+    )
+    assert get_install_command("ptyxis", distro="opensuse") == "sudo zypper install -y ptyxis"
+
+
+def test_get_install_command_with_os_info() -> None:
+    """Verify get_install_command uses OSInfo instance."""
+    fedora_info = OSInfo("fedora", "40", "dnf", "Fedora 40")
+    arch_info = OSInfo("arch", "rolling", "pacman", "Arch Linux")
+
+    assert (
+        get_install_command("user-theme", os_info=fedora_info)
+        == "sudo dnf install -y gnome-shell-extension-user-theme"
+    )
+    assert (
+        get_install_command("user-theme", os_info=arch_info)
+        == "sudo pacman -S --noconfirm gnome-shell-extensions"
+    )
+
+
+def test_get_install_command_fallback_and_custom() -> None:
+    """Verify unmapped dependency and unknown package manager fallback."""
+    # Arbitrary package with known package manager
+    assert get_install_command("htop", package_manager="apt") == "sudo apt install -y htop"
+    assert get_install_command("htop", package_manager="dnf") == "sudo dnf install -y htop"
+    assert (
+        get_install_command("htop", package_manager="pacman") == "sudo pacman -S --noconfirm htop"
+    )
+    assert get_install_command("htop", package_manager="zypper") == "sudo zypper install -y htop"
+
+    # Unknown package manager
+    assert get_install_command("htop", package_manager="brew") == "sudo brew install htop"
+
+
+def test_get_os_install_commands() -> None:
+    """Verify dictionary map OS -> install command."""
+    commands = get_os_install_commands("user-theme")
+    assert "ubuntu" in commands
+    assert "fedora" in commands
+    assert "arch" in commands
+    assert "opensuse" in commands
+    assert commands["ubuntu"] == "sudo apt install -y gnome-shell-extension-user-theme"
+    assert commands["fedora"] == "sudo dnf install -y gnome-shell-extension-user-theme"
+    assert commands["arch"] == "sudo pacman -S --noconfirm gnome-shell-extensions"
+    assert commands["opensuse"] == "sudo zypper install -y gnome-shell-extension-user-theme"
+
+
+def test_get_missing_dependency_hint() -> None:
+    """Verify missing dependency hint string."""
+    fedora_info = OSInfo("fedora", "40", "dnf", "Fedora 40")
+    hint = get_missing_dependency_hint("ptyxis", os_info=fedora_info)
+    assert hint == "Install with: sudo dnf install -y ptyxis"
+
+
+def test_theme_manager_install_command_methods() -> None:
+    """Verify ThemeManager facade provides install command helpers."""
+    tm = ThemeManager(
+        scanner=MagicMock(),
+        gsettings=MagicMock(),
+        gtk4_linker=MagicMock(),
+        installer=MagicMock(),
+        presets=MagicMock(),
+        sandbox_bridge=MagicMock(),
+        validator=MagicMock(),
+        extensions=MagicMock(),
+    )
+    with patch(
+        "gnome_theme_manager.core.os_detector.detect_os",
+        return_value=OSInfo("fedora", "40", "dnf", "Fedora 40"),
+    ):
+        cmd = tm.get_install_command("user-theme")
+        assert cmd == "sudo dnf install -y gnome-shell-extension-user-theme"
+
+    os_cmds = tm.get_os_install_commands("gtk4")
+    assert "fedora" in os_cmds
+    assert os_cmds["fedora"] == "sudo dnf install -y python3-gobject gtk4 libadwaita"
+
+    with patch(
+        "gnome_theme_manager.core.os_detector.detect_os",
+        return_value=OSInfo("ubuntu", "24.04", "apt", "Ubuntu 24.04 LTS"),
+    ):
+        ext_opts = tm.get_extension_manager_install_options()
+        assert len(ext_opts) == 3
+        ids = [opt["id"] for opt in ext_opts]
+        assert "system" in ids
+        assert "flatpak" in ids
+        assert "gnome-extensions-app" in ids
+
+
+def test_get_extension_manager_install_options_distros() -> None:
+    """Verify multiple install options generated across distributions."""
+    from gnome_theme_manager.core.os_detector import get_extension_manager_install_options
+
+    # Ubuntu
+    ubuntu_opts = get_extension_manager_install_options(distro="ubuntu")
+    assert any("apt" in opt["command"] for opt in ubuntu_opts)
+    assert any("flatpak" in opt["command"] for opt in ubuntu_opts)
+
+    # Fedora
+    fedora_opts = get_extension_manager_install_options(distro="fedora")
+    assert any("dnf" in opt["command"] for opt in fedora_opts)
+
+    # Arch
+    arch_opts = get_extension_manager_install_options(distro="arch")
+    assert any("pacman" in opt["command"] for opt in arch_opts)
+
+    # openSUSE
+    opensuse_opts = get_extension_manager_install_options(distro="opensuse")
+    assert any("zypper" in opt["command"] for opt in opensuse_opts)
+
+    # Unknown / fallback
+    unknown_opts = get_extension_manager_install_options(package_manager="unknown")
+    assert len(unknown_opts) == 3
