@@ -40,7 +40,16 @@ def test_bundled_icons_directory_and_assets_exist() -> None:
         "dialog-error-symbolic.svg",
         "dialog-warning-symbolic.svg",
         "emblem-ok-symbolic.svg",
+        "emblem-synchronizing-symbolic.svg",
         "flatpak-symbolic.svg",
+        "software-store-symbolic.svg",
+        "changes-allow-symbolic.svg",
+        "utilities-terminal-symbolic.svg",
+        "preferences-desktop-font-symbolic.svg",
+        "user-desktop-symbolic.svg",
+        "application-x-addon-symbolic.svg",
+        "network-error-symbolic.svg",
+        "system-search-symbolic.svg",
     ]
 
     for icon in required_icons:

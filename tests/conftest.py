@@ -169,7 +169,12 @@ def mock_theme_manager() -> MagicMock:
     )
     mgr.detect_terminal.return_value = term_info
     mgr.detect_default_terminal.return_value = term_info
+    from gnome_theme_manager.core.terminal_palette import TerminalPalette
+
     mgr.get_terminal_profile.side_effect = lambda tid=None: get_terminal_profile(
         tid or "gnome-terminal", os_info=mgr.detect_os.return_value
     )
+    mgr.get_current_terminal_palette.return_value = TerminalPalette()
+    mgr.get_derived_terminal_palette.return_value = TerminalPalette()
+    mgr.list_terminal_profiles.return_value = []
     return mgr

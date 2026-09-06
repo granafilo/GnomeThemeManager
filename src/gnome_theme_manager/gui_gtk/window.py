@@ -25,6 +25,7 @@ gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
 from gi.repository import Adw, Gdk, GLib, Gtk
 
+from ..core.icon_fallback import resolve_icon
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
@@ -65,9 +66,16 @@ def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     search_dirs: list[Path] = [
         BUNDLED_ICONS_DIR,
         BUNDLED_ICONS_DIR / "hicolor",
+        BUNDLED_ICONS_DIR / "hicolor" / "scalable",
+        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "actions",
         BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "apps",
+        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "mimetypes",
         BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
     ]
+    if BUNDLED_ICONS_DIR.is_dir():
+        for sub_dir in BUNDLED_ICONS_DIR.rglob("*"):
+            if sub_dir.is_dir() and sub_dir not in search_dirs:
+                search_dirs.append(sub_dir)
 
     # AppImage runtime icon search paths (from $APPDIR)
     appdir_env = os.environ.get("APPDIR")
@@ -208,6 +216,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.row_sandbox: Gtk.ListBoxRow = self.builder.get_object("row_sandbox")
 
         self.set_content(self.toast_overlay)
+
+        # Apply multi-OS cascading icon fallback resolution to UI elements
+        self._apply_icon_fallbacks(self.toast_overlay)
 
         self._setup_breakpoint()
 
@@ -704,6 +715,42 @@ class MainWindow(Adw.ApplicationWindow):
                 "Unable to register Adw.Breakpoint: %s",
                 err,
             )
+
+    def _apply_icon_fallbacks(self, root_widget: Gtk.Widget) -> None:
+        """Recursively inspect widgets and resolve fallback icons if missing in active theme."""
+        display = Gdk.Display.get_default()
+        icon_theme = Gtk.IconTheme.get_for_display(display) if display else None
+
+        def visit(w: Gtk.Widget) -> None:
+            if isinstance(w, Gtk.Image):
+                icon_name = w.get_icon_name()
+                if icon_name:
+                    res = resolve_icon(icon_name, icon_theme=icon_theme)
+                    if res.is_fallback:
+                        if (
+                            res.file_path
+                            and res.file_path.is_file()
+                            and (icon_theme is None or not icon_theme.has_icon(res.resolved_name))
+                        ):
+                            w.set_from_file(str(res.file_path))
+                        else:
+                            w.set_from_icon_name(res.resolved_name)
+            elif isinstance(w, Gtk.Button):
+                btn_icon = w.get_icon_name()
+                if btn_icon:
+                    res = resolve_icon(btn_icon, icon_theme=icon_theme)
+                    if res.is_fallback:
+                        w.set_icon_name(res.resolved_name)
+
+            child = w.get_first_child()
+            while child is not None:
+                visit(child)
+                child = child.get_next_sibling()
+
+        try:
+            visit(root_widget)
+        except Exception as exc:
+            logger.debug("Error during icon fallback traversal: %s", exc)
 
     def _on_sidebar_row_selected(self, list_box: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         """Handle 'row-selected' signal on sidebar list box."""

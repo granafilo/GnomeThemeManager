@@ -48,6 +48,15 @@ from .fallback import (
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
+from .icon_fallback import (
+    BUNDLED_ICONS_DIR,
+    ICON_FALLBACK_CHAINS,
+    STANDARD_SYSTEM_ICON_DIRS,
+    IconFallbackResolver,
+    IconResolutionResult,
+    get_fallback_icon_name,
+    resolve_icon,
+)
 from .installer import (
     ThemeInstaller,
     detect_theme_types,
@@ -128,6 +137,7 @@ from .wallpaper_color import (
 )
 
 __all__ = [
+    "BUNDLED_ICONS_DIR",
     "DEPENDENCY_PACKAGE_MAP",
     "FALLBACKS_FILE",
     "GLOBAL_THEMES_FILE",
@@ -140,8 +150,10 @@ __all__ = [
     "GSETTINGS_SCHEMA_INTERFACE",
     "GSETTINGS_SCHEMA_USER_THEME",
     "GTK4_CONFIG_DIR",
+    "ICON_FALLBACK_CHAINS",
     "PACKAGE_MANAGER_INSTALL_TEMPLATES",
     "PRESETS_DIR",
+    "STANDARD_SYSTEM_ICON_DIRS",
     "STATE_DIR",
     "SYSTEM_ICONS_DIRS",
     "SYSTEM_THEMES_DIRS",
@@ -162,6 +174,8 @@ __all__ = [
     "GlobalThemeManager",
     "GnomeExtension",
     "GnomeThemeManagerError",
+    "IconFallbackResolver",
+    "IconResolutionResult",
     "OSInfo",
     "PresetManager",
     "PropagationResult",
@@ -217,6 +231,7 @@ __all__ = [
     "extract_wallpaper_palette",
     "generate_shell_css_override",
     "get_extension_manager_install_options",
+    "get_fallback_icon_name",
     "get_install_command",
     "get_missing_dependency_hint",
     "get_os_install_commands",
@@ -226,6 +241,7 @@ __all__ = [
     "integrate_desktop",
     "list_gnome_terminal_profiles",
     "parse_css_define_colors",
+    "resolve_icon",
     "revert_theme_fork",
     "safe_extract",
     "set_default_gnome_terminal_profile",

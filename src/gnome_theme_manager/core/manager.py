@@ -24,6 +24,7 @@ from .fonts import FontConfig
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
+from .icon_fallback import IconFallbackResolver, IconResolutionResult
 from .installer import ThemeInstaller
 from .models import (
     ApplyResult,
@@ -79,6 +80,7 @@ class ThemeManager:
         editor_drafts: EditorDraftManager | None = None,
         fallback_manager: FallbackManager | None = None,
         store_client: StoreClient | None = None,
+        icon_resolver: IconFallbackResolver | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -97,6 +99,7 @@ class ThemeManager:
             editor_drafts: Custom EditorDraftManager instance (optional).
             fallback_manager: Custom FallbackManager instance (optional).
             store_client: Custom StoreClient instance (optional).
+            icon_resolver: Custom IconFallbackResolver instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -106,6 +109,7 @@ class ThemeManager:
         self._extensions = extensions or ExtensionsManager()
         self._validator = validator or ThemeValidator()
         self._store_client = store_client or StoreClient()
+        self._icon_resolver = icon_resolver or IconFallbackResolver()
         self._theme_preview = SystemThemePreviewSession(
             get_current_themes_fn=self._get_current_themes_safe,
             apply_themes_fn=self.apply_themes,
@@ -342,6 +346,29 @@ class ThemeManager:
     def validator(self) -> ThemeValidator:
         """Return associated theme validator."""
         return self._validator
+
+    @property
+    def icon_resolver(self) -> IconFallbackResolver:
+        """Return associated cascading icon fallback resolver."""
+        return self._icon_resolver
+
+    def resolve_icon(
+        self,
+        icon_name: str,
+        icon_theme: Any = None,
+        theme_name: str | None = None,
+    ) -> IconResolutionResult:
+        """Resolve an icon using the 3-level cascading fallback system.
+
+        Args:
+            icon_name: Name of requested icon.
+            icon_theme: Optional Gtk.IconTheme instance.
+            theme_name: Optional icon theme name.
+
+        Returns:
+            IconResolutionResult with resolved icon and resolution level.
+        """
+        return self._icon_resolver.resolve(icon_name, icon_theme=icon_theme, theme_name=theme_name)
 
     def validate_theme(self, theme_path: Path, theme_type: ThemeType) -> ThemeValidationResult:
         """Validate structural integrity and compliance of a theme.
