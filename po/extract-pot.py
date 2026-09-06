@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Script Python per estrarre le stringhe tradotte e generare il file modello .pot.
+# Python script to extract translatable strings and generate .pot template.
 
 import os
 import re
@@ -8,23 +8,23 @@ import sys
 
 def extract_strings():
     if not os.path.exists("po/POTFILES.in"):
-        print("Errore: po/POTFILES.in non trovato")
+        print("Error: po/POTFILES.in not found")
         sys.exit(1)
 
     with open("po/POTFILES.in", "r", encoding="utf-8") as f:
         files = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
-    extracted = {}  # msgid -> lista di (file, riga)
+    extracted = {}  # msgid -> list of (file, line)
 
-    # Regex per Python: _("...") o _('...')
+    # Regex for Python: _("...") or _('...')
     py_re = re.compile(r'_\(\s*("(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')\s*\)')
 
-    # Regex per file UI/XML: <property name="..." translatable="yes">...</property>
+    # Regex for UI/XML files: <property name="..." translatable="yes">...</property>
     ui_re = re.compile(r'<property\s+[^>]*translatable="yes"[^>]*>([^<]*)</property>')
 
     for filepath in files:
         if not os.path.exists(filepath):
-            print(f"Avviso: file {filepath} non trovato")
+            print(f"Warning: file {filepath} not found")
             continue
 
         with open(filepath, "r", encoding="utf-8") as f:
@@ -71,11 +71,11 @@ def extract_strings():
             f.write(f'msgid "{escaped_msgid}"\n')
             f.write('msgstr ""\n\n')
 
-    print(f"Estratte {len(extracted)} stringhe in po/gnomethememanager.pot")
+    print(f"Extracted {len(extracted)} strings into po/gnomethememanager.pot")
 
 
 if __name__ == "__main__":
-    # Assicurati di essere nella root del progetto
+    # Ensure current directory is project root
     if os.path.basename(os.getcwd()) == "po":
         os.chdir("..")
     extract_strings()

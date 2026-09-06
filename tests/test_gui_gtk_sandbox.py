@@ -14,9 +14,9 @@ from gnome_theme_manager.gui_gtk.pages.sandbox import SandboxPage
 
 
 def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -> None:
-    """Verifica che SandboxPage configuri etichette e icone native per tutti i pulsanti."""
+    """Verify that SandboxPage configures native labels and icons for all buttons."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = SandboxPage(manager=mock_theme_manager)
 
@@ -28,14 +28,14 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     ]
 
     for btn, expected_label, expected_icon in buttons:
-        assert btn.get_label() == expected_label, f"Etichetta errata: {expected_label}"
-        assert btn.get_icon_name() == expected_icon, f"Icona errata: {expected_icon}"
+        assert btn.get_label() == expected_label, f"Incorrect label: {expected_label}"
+        assert btn.get_icon_name() == expected_icon, f"Incorrect icon: {expected_icon}"
 
 
 def test_sandbox_page_refresh_flatpak_and_snap_available(mock_theme_manager: MagicMock) -> None:
-    """Verifica la corretta presentazione della diagnostica quando Flatpak e Snap sono disponibili."""
+    """Verify correct diagnostics presentation when Flatpak and Snap are available."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         snap_available=True,
@@ -60,9 +60,9 @@ def test_sandbox_page_refresh_flatpak_and_snap_available(mock_theme_manager: Mag
 def test_sandbox_page_refresh_neither_available_disables_propagate(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che se né Flatpak né Snap sono disponibili, il pulsante di propagazione sia disabilitato."""
+    """Verify that if neither Flatpak nor Snap is available, propagation button is disabled."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         snap_available=False,
@@ -82,9 +82,9 @@ def test_sandbox_page_refresh_neither_available_disables_propagate(
 
 
 def test_sandbox_page_snap_custom_theme_warning(mock_theme_manager: MagicMock) -> None:
-    """Verifica l'avviso per tema personalizzato non compreso in gtk-common-themes."""
+    """Verify warning for custom theme not included in gtk-common-themes."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         snap_available=True,
@@ -107,9 +107,9 @@ def test_sandbox_page_snap_custom_theme_warning(mock_theme_manager: MagicMock) -
 
 
 def test_sandbox_page_snap_missing_gtk_common_themes(mock_theme_manager: MagicMock) -> None:
-    """Verifica la segnalazione quando gtk-common-themes non è installato in Snap."""
+    """Verify reporting when gtk-common-themes is not installed in Snap."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         snap_available=True,
@@ -127,9 +127,9 @@ def test_sandbox_page_snap_missing_gtk_common_themes(mock_theme_manager: MagicMo
 
 
 def test_sandbox_page_refresh_error_state(mock_theme_manager: MagicMock) -> None:
-    """Verifica la transizione allo stato 'error' in caso di eccezione durante il recupero diagnostico."""
+    """Verify transition to 'error' state on exception during diagnostic retrieval."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.side_effect = OSError("Subprocess failed")
 
@@ -141,9 +141,9 @@ def test_sandbox_page_refresh_error_state(mock_theme_manager: MagicMock) -> None
 
 
 def test_sandbox_page_propagation_confirmed_success(mock_theme_manager: MagicMock) -> None:
-    """Verifica che la propagazione confermata invochi manager.propagate_sandbox e mostri feedback."""
+    """Verify that confirmed propagation invokes manager.propagate_sandbox and displays feedback."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         flatpak_available=True,
@@ -176,9 +176,9 @@ def test_sandbox_page_propagation_confirmed_success(mock_theme_manager: MagicMoc
 
 
 def test_sandbox_page_propagation_partial_warnings(mock_theme_manager: MagicMock) -> None:
-    """Verifica che esiti parziali con avvisi producano un feedback chiaro."""
+    """Verify that partial outcomes with warnings produce clear feedback."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         flatpak_available=True,
@@ -201,9 +201,9 @@ def test_sandbox_page_propagation_partial_warnings(mock_theme_manager: MagicMock
 
 
 def test_sandbox_page_window_wiring(mock_theme_manager: MagicMock) -> None:
-    """Verifica che in GnomeThemeWindow il callback on_sandbox_propagated aggiorni la pagina Stato."""
+    """Verify that in GnomeThemeWindow the on_sandbox_propagated callback refreshes the Status page."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
     from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
@@ -212,7 +212,7 @@ def test_sandbox_page_window_wiring(mock_theme_manager: MagicMock) -> None:
     try:
         win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
     except Exception as err:
-        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+        pytest.skip(f"Display unavailable in headless environment: {err}")
 
     with patch.object(win.status_page, "refresh") as mock_status_refresh:
         win.sandbox_page.on_sandbox_propagated()
@@ -220,9 +220,9 @@ def test_sandbox_page_window_wiring(mock_theme_manager: MagicMock) -> None:
 
 
 def test_sandbox_page_snap_visibility_and_help_dialog(mock_theme_manager: MagicMock) -> None:
-    """Verifica la visibilità condizionale del gruppo Snap e l'apertura del dialog guida."""
+    """Verify conditional visibility of Snap group and opening of help dialog."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_sandbox_status.return_value = SandboxStatus(
         snap_available=False,

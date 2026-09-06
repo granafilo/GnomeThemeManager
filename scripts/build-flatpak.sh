@@ -2,10 +2,10 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script di Build per Flatpak - GNOME Theme Manager
+# Flatpak Build Script - GNOME Theme Manager
 # ==============================================================================
-# Questo script pulisce le vecchie directory di build, esegue flatpak-builder,
-# esporta il bundle offline (.flatpak) e genera il file di installazione (.flatpakref).
+# This script cleans previous build directories, runs flatpak-builder,
+# exports the offline bundle (.flatpak), and generates the installation file (.flatpakref).
 # ==============================================================================
 
 set -eo pipefail
@@ -36,34 +36,34 @@ BUNDLE_FILE="$OUTPUT_DIR/${APP_NAME}-${VERSION}-${ARCH}.flatpak"
 FLATPAKREF_FILE="$OUTPUT_DIR/${APP_NAME}.flatpakref"
 
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${BLUE}  Avvio Generazione Flatpak per ${APP_NAME} v${VERSION}${NC}"
+echo -e "${BLUE}  Starting Flatpak generation for ${APP_NAME} v${VERSION}${NC}"
 echo -e "${BLUE}====================================================${NC}"
 
 # ------------------------------------------------------------------------------
-# 1. Controllo strumenti richiesti e repository Flathub
+# 1. Check required tools and Flathub repository
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[1/5] Controllo strumenti Flatpak e runtime...${NC}"
+echo -e "\n${YELLOW}[1/5] Checking Flatpak tools and runtime...${NC}"
 
 if ! command -v flatpak &> /dev/null; then
-    echo -e "${RED}Errore: 'flatpak' non trovato. Installalo con: sudo apt install flatpak${NC}" >&2
+    echo -e "${RED}Error: 'flatpak' not found. Install it with: sudo apt install flatpak${NC}" >&2
     exit 1
 fi
 
 if ! command -v flatpak-builder &> /dev/null; then
-    echo -e "${RED}Errore: 'flatpak-builder' non trovato. Installalo con: sudo apt install flatpak-builder${NC}" >&2
+    echo -e "${RED}Error: 'flatpak-builder' not found. Install it with: sudo apt install flatpak-builder${NC}" >&2
     exit 1
 fi
 
-# Configura il remote flathub a livello utente se non già presente
-echo -e "${BLUE}Configurazione repository Flathub utente...${NC}"
+# Configure Flathub user remote if not already configured
+echo -e "${BLUE}Configuring user Flathub repository...${NC}"
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-echo -e "${GREEN}✓ Strumenti flatpak, flatpak-builder e remote Flathub configurati.${NC}"
+echo -e "${GREEN}✓ Flatpak tools, flatpak-builder, and Flathub remote configured.${NC}"
 
 # ------------------------------------------------------------------------------
-# 2. Pulizia ambiente di build precedente
+# 2. Clean previous build environment
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[2/5] Pulizia cache e directory di build...${NC}"
+echo -e "\n${YELLOW}[2/5] Cleaning cache and build directories...${NC}"
 if [ -d "$ROOT_DIR/.flatpak-builder/rofiles" ]; then
     for rof in "$ROOT_DIR/.flatpak-builder/rofiles"/*; do
         if [ -d "$rof" ]; then
@@ -74,15 +74,15 @@ fi
 rm -rf "$BUILD_DIR" "$REPO_DIR" "$ROOT_DIR/.flatpak-builder"
 mkdir -p "$OUTPUT_DIR"
 
-# Compila cataloghi traduzione gettext
+# Compile gettext translation catalogs
 if [ -f "$ROOT_DIR/scripts/compile_translations.py" ]; then
     python3 "$ROOT_DIR/scripts/compile_translations.py"
 fi
 
 # ------------------------------------------------------------------------------
-# 3. Compilazione pacchetto Flatpak con flatpak-builder
+# 3. Build Flatpak package with flatpak-builder
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[3/5] Esecuzione flatpak-builder (download SDK/Runtime se necessario)...${NC}"
+echo -e "\n${YELLOW}[3/5] Running flatpak-builder (downloading SDK/Runtime if needed)...${NC}"
 
 flatpak-builder --force-clean \
     --disable-cache \
@@ -93,21 +93,21 @@ flatpak-builder --force-clean \
     "$BUILD_DIR" \
     "$MANIFEST"
 
-echo -e "${GREEN}✓ Build Flatpak completata con successo nel repository locale.${NC}"
+echo -e "${GREEN}✓ Flatpak build completed successfully in local repository.${NC}"
 
 # ------------------------------------------------------------------------------
-# 4. Generazione Bundle Offline (.flatpak)
+# 4. Generate Offline Bundle (.flatpak)
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[4/5] Generazione Bundle Offline (.flatpak)...${NC}"
+echo -e "\n${YELLOW}[4/5] Generating offline bundle (.flatpak)...${NC}"
 
 flatpak build-bundle "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID" stable
 
-echo -e "${GREEN}✓ Bundle offline generato: $BUNDLE_FILE${NC}"
+echo -e "${GREEN}✓ Offline bundle generated: $BUNDLE_FILE${NC}"
 
 # ------------------------------------------------------------------------------
-# 5. Generazione file .flatpakref (Click-to-Install)
+# 5. Generate .flatpakref file (Click-to-Install)
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[5/5] Generazione file .flatpakref...${NC}"
+echo -e "\n${YELLOW}[5/5] Generating .flatpakref file...${NC}"
 
 cat << EOF > "$FLATPAKREF_FILE"
 [Flatpak Ref]
@@ -123,23 +123,23 @@ RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
 IsRuntime=false
 EOF
 
-echo -e "${GREEN}✓ File Flatpakref generato: $FLATPAKREF_FILE${NC}"
+echo -e "${GREEN}✓ Flatpakref file generated: $FLATPAKREF_FILE${NC}"
 
 # ------------------------------------------------------------------------------
-# Riepilogo e Istruzioni per l'utente
+# Summary and User Instructions
 # ------------------------------------------------------------------------------
 echo -e "\n${GREEN}====================================================${NC}"
-echo -e "${GREEN}  ✓ PACCHETTI FLATPAK CREATI CON SUCCESSO!${NC}"
+echo -e "${GREEN}  ✓ FLATPAK PACKAGES CREATED SUCCESSFULLY!${NC}"
 echo -e "${GREEN}====================================================${NC}"
-echo -e "${BLUE}1. Bundle Offline (singolo file):${NC} $BUNDLE_FILE"
-echo -e "${BLUE}2. File Click-to-Install:${NC}         $FLATPAKREF_FILE"
-echo -e "\n${YELLOW}Come installare ed eseguire l'applicazione:${NC}"
-echo -e "  • ${GREEN}Installazione Utente (Zero richieste password - Consigliata):${NC}"
+echo -e "${BLUE}1. Offline Bundle (single file):${NC} $BUNDLE_FILE"
+echo -e "${BLUE}2. Click-to-Install File:${NC}         $FLATPAKREF_FILE"
+echo -e "\n${YELLOW}How to install and run the application:${NC}"
+echo -e "  • ${GREEN}User Installation (Passwordless - Recommended):${NC}"
 echo -e "    flatpak install --user --bundle $BUNDLE_FILE"
-echo -e "    oppure:"
+echo -e "    or:"
 echo -e "    flatpak install --user $FLATPAKREF_FILE"
-echo -e "\n  • ${GREEN}Installazione di Sistema:${NC}"
+echo -e "\n  • ${GREEN}System Installation:${NC}"
 echo -e "    flatpak install --bundle $BUNDLE_FILE"
-echo -e "\n  • ${GREEN}Esecuzione dell'app:${NC}"
+echo -e "\n  • ${GREEN}Run the application:${NC}"
 echo -e "    flatpak run $APP_ID"
 echo -e "${GREEN}====================================================${NC}\n"

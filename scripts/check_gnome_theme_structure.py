@@ -88,54 +88,54 @@ def detect_gnome_version() -> tuple[str, int, int]:
         except Exception:
             pass
 
-    return ("non rilevata", 0, 0)
+    return ("not detected", 0, 0)
 
 
 def get_required_structure(major: int, minor: int) -> dict:
     if major >= 50:
         return {
-            "summary": "gtk-4.0/gtk.css + gtk-4.0/libadwaita.css (o libadwaita.css) + gnome-shell/gnome-shell.css",
+            "summary": "gtk-4.0/gtk.css + gtk-4.0/libadwaita.css (or libadwaita.css) + gnome-shell/gnome-shell.css",
             "details": [
-                "1. ThemeName/gtk-4.0/gtk.css (obbligatorio per GTK 4)",
-                "2. ThemeName/gtk-4.0/libadwaita.css oppure ThemeName/libadwaita.css (obbligatorio per Libadwaita)",
-                "3. ThemeName/gnome-shell/gnome-shell.css (obbligatorio per Shell theme)",
-                "4. ThemeName/index.theme (metadati)",
+                "1. ThemeName/gtk-4.0/gtk.css (required for GTK 4)",
+                "2. ThemeName/gtk-4.0/libadwaita.css or ThemeName/libadwaita.css (required for Libadwaita)",
+                "3. ThemeName/gnome-shell/gnome-shell.css (required for Shell theme)",
+                "4. ThemeName/index.theme (metadata)",
             ],
             "note": (
-                "GNOME 50+ richiede tassativamente i fogli di stile Libadwaita dedicati. "
-                "La variabile d'ambiente GTK_THEME non ha più effetto sulle app Libadwaita."
+                "GNOME 50+ strictly requires dedicated Libadwaita stylesheets. "
+                "The GTK_THEME environment variable no longer affects Libadwaita apps."
             ),
         }
     elif major >= 42:
         return {
-            "summary": "gtk-4.0/gtk.css + gnome-shell/gnome-shell.css + gtk-3.0/gtk.css (opzionale: libadwaita.css)",
+            "summary": "gtk-4.0/gtk.css + gnome-shell/gnome-shell.css + gtk-3.0/gtk.css (optional: libadwaita.css)",
             "details": [
-                "1. ThemeName/gtk-4.0/gtk.css (obbligatorio per GTK 4/Libadwaita override)",
-                "2. ThemeName/gnome-shell/gnome-shell.css (obbligatorio per Shell theme)",
-                "3. ThemeName/gtk-3.0/gtk.css (per retrocompatibilità con app GTK 3)",
-                "4. ThemeName/index.theme (metadati)",
+                "1. ThemeName/gtk-4.0/gtk.css (required for GTK 4/Libadwaita override)",
+                "2. ThemeName/gnome-shell/gnome-shell.css (required for Shell theme)",
+                "3. ThemeName/gtk-3.0/gtk.css (for backward compatibility with GTK 3 apps)",
+                "4. ThemeName/index.theme (metadata)",
             ],
-            "note": "GNOME 42-49 supporta GTK4 e GTK3 tramite symlink in ~/.config/gtk-4.0/.",
+            "note": "GNOME 42-49 supports GTK4 and GTK3 via symlink in ~/.config/gtk-4.0/.",
         }
     elif major > 0:
         return {
             "summary": "gtk-3.0/gtk.css + gnome-shell/gnome-shell.css",
             "details": [
-                "1. ThemeName/gtk-3.0/gtk.css (obbligatorio per GTK 3)",
-                "2. ThemeName/gnome-shell/gnome-shell.css (per Shell theme)",
-                "3. ThemeName/index.theme (metadati)",
+                "1. ThemeName/gtk-3.0/gtk.css (required for GTK 3)",
+                "2. ThemeName/gnome-shell/gnome-shell.css (for Shell theme)",
+                "3. ThemeName/index.theme (metadata)",
             ],
-            "note": "Versioni legacy di GNOME (< 42) non utilizzano Libadwaita.",
+            "note": "Legacy GNOME versions (< 42) do not use Libadwaita.",
         }
     else:
         return {
-            "summary": "gnome-shell non rilevato; struttura consigliata standard: gtk-4.0/gtk.css + gtk-4.0/libadwaita.css + gtk-3.0/gtk.css",
+            "summary": "gnome-shell not detected; recommended standard structure: gtk-4.0/gtk.css + gtk-4.0/libadwaita.css + gtk-3.0/gtk.css",
             "details": [
                 "ThemeName/gtk-4.0/gtk.css",
-                "ThemeName/gtk-4.0/libadwaita.css (oppure libadwaita.css)",
+                "ThemeName/gtk-4.0/libadwaita.css (or libadwaita.css)",
                 "ThemeName/gnome-shell/gnome-shell.css",
             ],
-            "note": "Ambiente GNOME non rilevato o shell non installata.",
+            "note": "GNOME environment not detected or shell not installed.",
         }
 
 
@@ -143,18 +143,18 @@ def main() -> None:
     ver_str, major, minor = detect_gnome_version()
     req = get_required_structure(major, minor)
 
-    # Output richiesto dall'utente:
-    print(f"versione {ver_str} rilevata - struttura richiesta: {req['summary']}")
+    # User-requested output:
+    print(f"version {ver_str} detected - required structure: {req['summary']}")
     print("-" * 75)
-    print("Dettagli struttura richiesta:")
+    print("Required structure details:")
     for item in req["details"]:
         print(f"  • {item}")
-    print(f"\nNota: {req['note']}")
+    print(f"\nNote: {req['note']}")
 
-    # Verifica veloce dei temi utente locali
+    # Quick check of local user themes
     user_theme_dir = os.path.expanduser("~/.local/share/themes")
     if os.path.isdir(user_theme_dir):
-        print(f"\nVerifica temi installati in {user_theme_dir}:")
+        print(f"\nChecking installed themes in {user_theme_dir}:")
         themes = sorted(os.listdir(user_theme_dir))
         found = 0
         for t in themes:
@@ -178,12 +178,12 @@ def main() -> None:
             if has_shell:
                 status_tags.append("Shell")
 
-            tag_str = ", ".join(status_tags) if status_tags else "incompleto / solo GTK3"
+            tag_str = ", ".join(status_tags) if status_tags else "incomplete / GTK3 only"
             compat_flag = "✓" if (major < 50 or (has_gtk4 and has_libadw)) else "⚠"
             print(f"  [{compat_flag}] {t:<24} -> [{tag_str}]")
 
         if found == 0:
-            print("  (Nessun tema installato in directory utente)")
+            print("  (No themes installed in user directory)")
 
 
 if __name__ == "__main__":

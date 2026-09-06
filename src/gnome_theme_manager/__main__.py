@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Entry point principale per l'esecuzione del package con `python -m gnome_theme_manager`."""
+"""Main entry point for executing the package with `python -m gnome_theme_manager`."""
 
 import sys
 

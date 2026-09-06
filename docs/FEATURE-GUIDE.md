@@ -115,26 +115,26 @@ Full control over your own looks.
 
 ## Release v1.4.1 — Snap Integration & Maintenance ✅
 
-L'app diventa un cittadino modello degli ambienti sandboxed e si prende cura dei dettagli:
+The app becomes a first-class citizen of sandboxed environments and takes care of the details:
 
-- **Content Snap Istantanei**: I tuoi temi personalizzati vengono impacchettati in Content Snap locali in meno di un secondo, così le app Snap (Firefox, Thunderbird, ecc.) smettono di lamentarsi dei "temi mancanti".
-- **Un Click per i Permessi**: Installazione e connessione di tutti i Content Snap sotto un'unica finestra di autorizzazione PolicyKit.
-- **Diagnostica Live**: Pannello che ti mostra in tempo reale quali temi sono attivi, quali Content Snap sono installati e quali app Snap sono connesse.
-- **Editor Più Intelligente**: L'editor parte dalle impostazioni che stai usando davvero, ti fa rinominare i temi sul posto e include un'azione "Reset" sicura.
-- **Cancellazione Protetta**: Non puoi più cancellare per sbaglio un tema in uso; i temi incompleti o invalidi vengono comunque rimossi in modo pulito.
-- **Niente Più Warning GTK**: Il fallback override applica i temi direttamente alle GSettings, eliminando i popup di errore del desktop.
+- **Instant Content Snaps**: Your custom themes are packaged into local Content Snaps in less than a second, so Snap applications (Firefox, Thunderbird, etc.) stop complaining about missing themes.
+- **Single-Click Permissions**: Installation and connection of all Content Snaps under a single PolicyKit authorization window.
+- **Live Diagnostics**: Dashboard displaying in real time which themes are active, which Content Snaps are installed, and which Snap apps are connected.
+- **Smarter Editor**: The editor starts from the settings currently in use, lets you rename themes in-place, and includes a safe "Reset" action.
+- **Protected Deletion**: You can no longer accidentally delete an active theme; incomplete or invalid themes are still cleanly removed.
+- **No More GTK Warnings**: Fallback overrides apply themes directly to GSettings, eliminating desktop error popups.
 
 ---
 
-## Release v1.4.2 — Stabilizzazione e Rifinitura Pre-Store 🛠️
+## Release v1.4.2 — Stabilization & Pre-Store Polish 🛠️
 
-Gli ultimi ritocchi prima del grande salto allo Store online:
+Finishing touches before moving to the online Store:
 
-- **Fallback Temi Intelligenti**: L'app non si affida più a nomi di temi scritti nel codice. Verifica dinamicamente cosa è installato e applica le impostazioni in modo sicuro.
-- **Icona Corretta su Flatpak**: L'icona dell'applicazione viene finalmente visualizzata come si deve anche dentro la sandbox Flatpak.
-- **Guida Sandbox Passo-Passo**: Documentazione chiara con i comandi pronti all'uso per far vedere i tuoi temi alle app Flatpak e Snap.
-- **Stato Reale del Desktop**: Il pannello "Configurazione Attuale" ora legge le GSettings in tempo reale — niente più valori fantasma o non corrispondenti.
-- **Controllo Chiaro/Scuro Esplicito**: Puoi finalmente scegliere direttamente dall'interfaccia se usare lo schema colori Chiaro, Scuro o Predefinito.
+- **Intelligent Theme Fallbacks**: The app no longer relies on hardcoded theme names in code. It dynamically verifies what is installed and applies settings safely.
+- **Proper Flatpak Icon**: The application icon is now correctly displayed inside the Flatpak sandbox.
+- **Step-by-Step Sandbox Guide**: Clear documentation with ready-to-use commands to expose themes to Flatpak and Snap apps.
+- **Real Desktop State**: The "Current Configuration" panel reads live GSettings in real time — no more stale or mismatched values.
+- **Explicit Light/Dark Control**: Directly choose from the UI whether to use Light, Dark, or Default color schemes.
 
 ---
 

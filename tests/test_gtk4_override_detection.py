@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per la rilevazione dello stato di override GTK4 (Task 0.1)."""
+"""Unit tests for GTK4 override status detection (Task 0.1)."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -12,7 +12,7 @@ from gnome_theme_manager.core.gsettings import GSettingsClient, Gtk4OverrideStat
 
 @pytest.fixture
 def mock_gio_minimal():
-    """Fixture che simula Gio sufficientemente per istanziare GSettingsClient."""
+    """Fixture that mocks Gio sufficiently to instantiate GSettingsClient."""
     with (
         patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
         patch("gnome_theme_manager.core.gsettings.Gio") as mock_gio,
@@ -25,7 +25,7 @@ def mock_gio_minimal():
 
 
 def test_detect_gtk4_override_active(tmp_path: Path, mock_gio_minimal):
-    """Verifica la rilevazione corretta dell'override se il file esiste."""
+    """Verify correct detection of override if the file exists."""
     gtk_dir = tmp_path / ".config" / "gtk-4.0"
     gtk_dir.mkdir(parents=True, exist_ok=True)
     css_file = gtk_dir / "gtk.css"
@@ -38,7 +38,7 @@ def test_detect_gtk4_override_active(tmp_path: Path, mock_gio_minimal):
 
 
 def test_detect_gtk4_override_inactive(tmp_path: Path, mock_gio_minimal):
-    """Verifica che se il file non esiste lo stato sia INACTIVE."""
+    """Verify that if the file does not exist the status is INACTIVE."""
     gtk_dir = tmp_path / ".config" / "gtk-4.0"
     client = GSettingsClient(custom_schema_dirs=[])
     with patch("gnome_theme_manager.core.gsettings.GTK4_CONFIG_DIR", gtk_dir):

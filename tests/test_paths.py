@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test di base per i modelli e i percorsi costanti."""
+"""Basic tests for models and path constants."""
 
 from pathlib import Path
 
@@ -17,7 +17,7 @@ from gnome_theme_manager.core.models import Theme, ThemeSet, ThemeType
 
 
 def test_constants_defined():
-    """Verifica che tutte le costanti di base siano definite correttamente."""
+    """Verify that all basic constants are defined correctly."""
     assert len(USER_THEMES_DIRS) >= 2
     assert len(USER_ICONS_DIRS) >= 2
     assert len(SYSTEM_THEMES_DIRS) >= 1
@@ -28,7 +28,7 @@ def test_constants_defined():
 
 
 def test_theme_model(tmp_path: Path):
-    """Verifica le proprietà della dataclass Theme con vari tipi di tema."""
+    """Verify properties of Theme dataclass with various theme types."""
     theme_path = tmp_path / "TestTheme"
     theme_path.mkdir()
 
@@ -55,7 +55,7 @@ def test_theme_model(tmp_path: Path):
 
 
 def test_theme_set_as_dict():
-    """Verifica la serializzazione di ThemeSet in dizionario incluso shell_theme."""
+    """Verify serialization of ThemeSet to dictionary including shell_theme."""
     theme_set = ThemeSet(
         gtk_theme="Adwaita-dark",
         icon_theme="Papirus",

@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per il modulo GTK4ThemeLinker.
+"""Unit tests for GTK4ThemeLinker module.
 
-Verifica la corretta creazione, sostituzione, rimozione e verifica di integrità
-dei collegamenti simbolici (symlink) nella directory di configurazione utente ~/.config/gtk-4.0/.
+Verifies correct creation, replacement, removal, and integrity checking
+of symbolic links (symlinks) in user configuration directory ~/.config/gtk-4.0/.
 """
 
 from pathlib import Path
@@ -15,11 +15,11 @@ from gnome_theme_manager.core.gtk4_linker import GTK4ThemeLinker
 
 @pytest.fixture
 def mock_gtk4_environment(tmp_path: Path):
-    """Crea una struttura fittizia di tema e di cartella ~/.config/gtk-4.0/ per i test."""
+    """Create a mock theme structure and ~/.config/gtk-4.0/ directory for tests."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     theme_dir = tmp_path / "themes" / "Nordic"
 
-    # Creazione file tema con cartella gtk-4.0 e assets
+    # Create theme files with gtk-4.0 directory and assets
     gtk4_dir = theme_dir / "gtk-4.0"
     gtk4_dir.mkdir(parents=True, exist_ok=True)
     (gtk4_dir / "gtk.css").write_text("/* nordic gtk4 css */")
@@ -36,7 +36,7 @@ def mock_gtk4_environment(tmp_path: Path):
 
 
 def test_gtk4_linker_apply_success(mock_gtk4_environment):
-    """Verifica che apply_override crei correttamente i symlink per gtk.css e assets."""
+    """Verify that apply_override properly creates symlinks for gtk.css and assets."""
     env = mock_gtk4_environment
     linker = GTK4ThemeLinker(config_dir=env["config_dir"])
 
@@ -56,7 +56,7 @@ def test_gtk4_linker_apply_success(mock_gtk4_environment):
 
 
 def test_gtk4_linker_apply_fallback_gtk3(tmp_path: Path):
-    """Verifica che venga usata la cartella gtk-3.0 come fallback se gtk-4.0 non esiste."""
+    """Verify that gtk-3.0 folder is used as fallback if gtk-4.0 does not exist."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     theme_dir = tmp_path / "themes" / "LegacyOnly"
 
@@ -74,7 +74,7 @@ def test_gtk4_linker_apply_fallback_gtk3(tmp_path: Path):
 
 
 def test_gtk4_linker_apply_no_css(tmp_path: Path):
-    """Verifica che apply_override ritorni False se non trova file CSS."""
+    """Verify that apply_override returns False if no CSS files are found."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     theme_dir = tmp_path / "themes" / "EmptyTheme"
     theme_dir.mkdir(parents=True, exist_ok=True)
@@ -87,22 +87,22 @@ def test_gtk4_linker_apply_no_css(tmp_path: Path):
 
 
 def test_gtk4_linker_apply_no_css_removes_previous_override(mock_gtk4_environment):
-    """Verifica che applicare un tema senza stili GTK4/3 rimuova un override precedentemente attivo."""
+    """Verify that applying a theme without GTK4/3 styles removes a previously active override."""
     env = mock_gtk4_environment
     linker = GTK4ThemeLinker(config_dir=env["config_dir"])
 
-    # 1. Applica prima tema A con stili GTK4 validi
+    # 1. First apply theme A with valid GTK4 styles
     assert linker.apply_override(env["theme_dir"]) is True
     assert linker.is_override_active() is True
     assert (env["config_dir"] / "gtk.css").exists()
 
-    # 2. Applica tema B senza stili GTK4/3
+    # 2. Apply theme B without GTK4/3 styles
     empty_theme_dir = env["theme_dir"].parent / "EmptyTheme"
     empty_theme_dir.mkdir(parents=True, exist_ok=True)
 
     success = linker.apply_override(empty_theme_dir)
     assert success is False
-    # L'override precedente deve essere stato rimosso
+    # Previous override must have been removed
     assert not (env["config_dir"] / "gtk.css").exists()
     assert not (env["config_dir"] / "gtk-dark.css").exists()
     assert not (env["config_dir"] / "assets").exists()
@@ -110,7 +110,7 @@ def test_gtk4_linker_apply_no_css_removes_previous_override(mock_gtk4_environmen
 
 
 def test_gtk4_linker_apply_no_css_when_no_previous_override(tmp_path: Path):
-    """Verifica che applicare un tema senza stili GTK4/3 quando non c'era nessun override non sollevi eccezioni."""
+    """Verify that applying a theme without GTK4/3 styles when no override existed raises no exceptions."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     empty_theme_dir = tmp_path / "themes" / "EmptyTheme"
     empty_theme_dir.mkdir(parents=True, exist_ok=True)
@@ -121,7 +121,7 @@ def test_gtk4_linker_apply_no_css_when_no_previous_override(tmp_path: Path):
 
 
 def test_gtk4_linker_remove_override(mock_gtk4_environment):
-    """Verifica che remove_override elimini i symlink precedentemente creati."""
+    """Verify that remove_override deletes previously created symlinks."""
     env = mock_gtk4_environment
     linker = GTK4ThemeLinker(config_dir=env["config_dir"])
 
@@ -135,7 +135,7 @@ def test_gtk4_linker_remove_override(mock_gtk4_environment):
 
 
 def test_gtk4_linker_is_override_active_true(mock_gtk4_environment):
-    """Verifica che is_override_active ritorni True quando i symlink sono validi."""
+    """Verify that is_override_active returns True when symlinks are valid."""
     env = mock_gtk4_environment
     linker = GTK4ThemeLinker(config_dir=env["config_dir"])
 
@@ -146,14 +146,14 @@ def test_gtk4_linker_is_override_active_true(mock_gtk4_environment):
 
 
 def test_gtk4_linker_is_override_active_false_when_empty(tmp_path: Path):
-    """Verifica che is_override_active ritorni False su una directory vuota o inesistente."""
+    """Verify that is_override_active returns False on an empty or non-existent directory."""
     config_dir = tmp_path / "non_existent_gtk4"
     linker = GTK4ThemeLinker(config_dir=config_dir)
     assert linker.is_override_active() is False
 
 
 def test_gtk4_linker_is_override_active_false_when_dangling_symlink(tmp_path: Path):
-    """Verifica che is_override_active ritorni False se gtk.css è un symlink rotto/dangling."""
+    """Verify that is_override_active returns False if gtk.css is a broken/dangling symlink."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     config_dir.mkdir(parents=True, exist_ok=True)
 
@@ -169,17 +169,17 @@ def test_gtk4_linker_is_override_active_false_when_dangling_symlink(tmp_path: Pa
 
 
 def test_gtk4_linker_is_override_active_false_when_secondary_symlink_dangling(tmp_path: Path):
-    """Verifica che is_override_active ritorni False se un file opzionale collegato è dangling."""
+    """Verify that is_override_active returns False if an optional linked file is dangling."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     config_dir.mkdir(parents=True, exist_ok=True)
 
-    # gtk.css valido
+    # valid gtk.css
     valid_css_source = tmp_path / "valid_theme" / "gtk.css"
     valid_css_source.parent.mkdir(parents=True, exist_ok=True)
     valid_css_source.write_text("/* valid */")
     (config_dir / "gtk.css").symlink_to(valid_css_source)
 
-    # gtk-dark.css rotto
+    # broken gtk-dark.css
     (config_dir / "gtk-dark.css").symlink_to(tmp_path / "deleted" / "gtk-dark.css")
 
     linker = GTK4ThemeLinker(config_dir=config_dir)

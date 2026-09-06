@@ -85,7 +85,7 @@ GNOME Theme Manager is distributed primarily via **Flatpak**, offering sandboxed
 #### 🚀 Method 1 (Recommended / Click-to-Install): `.flatpakref`
 Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 - **GUI**: Double-click `GNOMEThemeManager.flatpakref` in Files (Nautilus) or open it with GNOME Software / App Center to install with 1 click.
-- **CLI (senza richiesta di password / User space)**:
+- **CLI (passwordless / user space)**:
   ```bash
   flatpak install --user GNOMEThemeManager.flatpakref
   ```

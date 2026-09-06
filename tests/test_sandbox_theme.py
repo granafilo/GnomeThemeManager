@@ -11,7 +11,7 @@ from gnome_theme_manager.core.sandbox_theme import SystemThemePreviewSession
 
 
 def test_preview_session_lifecycle_start_and_cancel(tmp_path: Path) -> None:
-    """Verifica che start_preview salvi lo snapshot e cancel_preview ripristini il sistema originale in < 100ms."""
+    """Verify that start_preview saves the snapshot and cancel_preview restores the original system state in < 100ms."""
     initial_set = ThemeSet(
         gtk_theme="Yaru",
         icon_theme="Yaru",
@@ -50,13 +50,13 @@ def test_preview_session_lifecycle_start_and_cancel(tmp_path: Path) -> None:
     assert cancel_success is True
     assert not session.is_preview_active
     assert session.active_preview_set is None
-    # Il sistema è stato ripristinato allo stato iniziale
+    # System restored to initial state
     assert applied_sets[-1] == initial_set
     assert cancel_dur_ms < 100.0
 
 
 def test_preview_session_commit(tmp_path: Path) -> None:
-    """Verifica che commit_preview mantenga il tema applicato senza fare rollback."""
+    """Verify that commit_preview keeps the applied theme without rolling back."""
     initial_set = ThemeSet(gtk_theme="Yaru")
     applied_sets: list[ThemeSet] = []
 
@@ -79,12 +79,12 @@ def test_preview_session_commit(tmp_path: Path) -> None:
     commit_res = session.commit_preview()
     assert commit_res is True
     assert not session.is_preview_active
-    # Il tema rimane applicato (nessun secondo ripristino ad initial_set)
+    # Theme remains applied (no second restore to initial_set)
     assert applied_sets[-1] == preview_target
 
 
 def test_preview_session_idempotent_cancel() -> None:
-    """Verifica che cancel_preview quando nessuna sessione è attiva sia idempotente e restituisca False."""
+    """Verify that cancel_preview when no session is active is idempotent and returns False."""
     session = SystemThemePreviewSession(
         get_current_themes_fn=lambda: ThemeSet(),
         apply_themes_fn=lambda ts, **kw: ApplyResult(success=True, applied_themes=ts),
@@ -94,7 +94,7 @@ def test_preview_session_idempotent_cancel() -> None:
 
 
 def test_theme_manager_preview_session_integration(tmp_path: Path) -> None:
-    """Verifica i metodi di facciata start_theme_preview, commit_theme_preview e cancel_theme_preview in ThemeManager."""
+    """Verify facade methods start_theme_preview, commit_theme_preview and cancel_theme_preview in ThemeManager."""
     from gnome_theme_manager.core.manager import ThemeManager
 
     mock_scanner = MagicMock()
@@ -117,19 +117,19 @@ def test_theme_manager_preview_session_integration(tmp_path: Path) -> None:
 
     manager = ThemeManager(scanner=mock_scanner, gsettings=mock_gsettings)
 
-    # Inizia anteprima di sistema
+    # Start system preview
     res_start = manager.start_theme_preview("Colloid-Dark", ThemeType.GTK)
     assert res_start is True
     assert manager.is_preview_active
 
-    # Annulla anteprima di sistema (revert)
+    # Cancel system preview (revert)
     res_cancel = manager.cancel_theme_preview()
     assert res_cancel is True
     assert not manager.is_preview_active
 
 
 def test_theme_manager_preview_with_cross_opposite(tmp_path: Path) -> None:
-    """Verifica che start_theme_preview con also_apply_opposite=True estenda l'anteprima anche a Shell/GTK."""
+    """Verify that start_theme_preview with also_apply_opposite=True extends the preview to Shell/GTK as well."""
     from gnome_theme_manager.core.manager import ThemeManager
 
     mock_scanner = MagicMock()
@@ -155,7 +155,7 @@ def test_theme_manager_preview_with_cross_opposite(tmp_path: Path) -> None:
 
     manager = ThemeManager(scanner=mock_scanner, gsettings=mock_gsettings, validator=mock_validator)
 
-    # Inizia anteprima con estensione a tema Shell accoppiato
+    # Start preview extending to paired Shell theme
     res = manager.start_theme_preview("Colloid-Dark", ThemeType.GTK, also_apply_opposite=True)
     assert res is True
     assert manager.is_preview_active
@@ -163,7 +163,7 @@ def test_theme_manager_preview_with_cross_opposite(tmp_path: Path) -> None:
     assert manager.theme_preview.active_preview_set.gtk_theme == "Colloid-Dark"
     assert manager.theme_preview.active_preview_set.shell_theme == "Colloid-Dark"
 
-    # Deseleziona "applica anche come": disattiva solo Shell e ripristina Yaru da snapshot, mantenendo GTK su Colloid-Dark
+    # Uncheck "also apply as": deactivates only Shell and restores Yaru from snapshot, keeping GTK on Colloid-Dark
     res_uncheck = manager.start_theme_preview(
         "Colloid-Dark", ThemeType.GTK, also_apply_opposite=False
     )
@@ -173,6 +173,6 @@ def test_theme_manager_preview_with_cross_opposite(tmp_path: Path) -> None:
     assert manager.theme_preview.active_preview_set.gtk_theme == "Colloid-Dark"
     assert manager.theme_preview.active_preview_set.shell_theme == "Yaru"
 
-    # Rollback pulito finale
+    # Clean final rollback
     manager.cancel_theme_preview()
     assert not manager.is_preview_active

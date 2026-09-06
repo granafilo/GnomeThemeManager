@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script per eseguire la suite di test globale (Pytest + Ruff)
+# Script to run global test suite (Pytest + Ruff)
 # ==============================================================================
 
 set -e
@@ -20,8 +20,7 @@ echo "========================================"
 echo " Running Pytest Unit & Integration Tests"
 echo "========================================"
 
-# Se pytest-cov è installato usa il report di coverage, altrimenti esegui pytest normale
-# Se pytest-cov è installato usa il report di coverage, altrimenti esegui pytest normale
+# If pytest-cov is installed use coverage report, otherwise run standard pytest
 if [ -f "$PROJECT_ROOT/.venv/bin/pytest" ]; then
     if "$PROJECT_ROOT/.venv/bin/pytest" --help 2>&1 | grep -q -- "--cov"; then
         "$PROJECT_ROOT/.venv/bin/pytest" -v --cov=gnome_theme_manager
@@ -51,5 +50,5 @@ if command -v "$RUFF_BIN" &> /dev/null || [ -f "$RUFF_BIN" ]; then
     "$RUFF_BIN" format --check src tests
     echo "✓ Ruff checks and formatting passed cleanly!"
 else
-    echo "Ruff non installato (opzionale: pip install ruff)"
+    echo "Ruff not installed (optional: pip install ruff)"
 fi

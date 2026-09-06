@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per lo scanner del filesystem (ThemeScanner).
+"""Unit tests for filesystem scanner (ThemeScanner).
 
-Verifica il corretto rilevamento di:
-- Temi GTK (tramite cartelle gtk-X.0 o index.theme)
-- Temi Icone (tramite cartelle risoluzioni/scalable o index.theme)
-- Temi Cursori (tramite cartella cursors/)
-- Temi GNOME Shell (tramite cartella gnome-shell/)
-- Cartelle ibride (temi che contengono sia icone che cursori)
-- Precedenze tra directory utente e di sistema (Utente > Sistema)
-- Filtri come 'user_only' e ricerca mirata con 'find_theme'
+Verifies correct detection of:
+- GTK themes (via gtk-X.0 directories or index.theme)
+- Icon themes (via resolution/scalable directories or index.theme)
+- Cursor themes (via cursors/ directory)
+- GNOME Shell themes (via gnome-shell/ directory)
+- Hybrid folders (themes containing both icons and cursors)
+- Precedence between user and system directories (User > System)
+- Filters such as 'user_only' and targeted search with 'find_theme'
 """
 
 from pathlib import Path
@@ -22,21 +22,21 @@ from gnome_theme_manager.core.scanner import ThemeScanner
 
 @pytest.fixture
 def mock_filesystem_structure(tmp_path: Path):
-    """Crea una gerarchia di directory e file temporanei simulando l'ambiente GNOME."""
-    # 1. Directory Utente
+    """Create a temporary directory and file hierarchy simulating the GNOME environment."""
+    # 1. User Directories
     user_themes = tmp_path / "user" / "themes"
     user_icons = tmp_path / "user" / "icons"
     user_themes.mkdir(parents=True, exist_ok=True)
     user_icons.mkdir(parents=True, exist_ok=True)
 
-    # Tema GTK + Shell Utente (es. "Nordic" con gtk-3.0 e gnome-shell/)
+    # User GTK + Shell Theme (e.g. "Nordic" with gtk-3.0 and gnome-shell/)
     nordic = user_themes / "Nordic"
     (nordic / "gtk-3.0").mkdir(parents=True, exist_ok=True)
     (nordic / "gtk-3.0" / "gtk.css").write_text("/* dummy */")
     (nordic / "gnome-shell").mkdir(parents=True, exist_ok=True)
     (nordic / "gnome-shell" / "gnome-shell.css").write_text("/* shell css */")
 
-    # Tema Icone Utente (es. "Papirus-Dark" con index.theme)
+    # User Icon Theme (e.g. "Papirus-Dark" with index.theme)
     papirus_icon = user_icons / "Papirus-Dark"
     papirus_icon.mkdir(parents=True, exist_ok=True)
     (papirus_icon / "index.theme").write_text(
@@ -44,27 +44,27 @@ def mock_filesystem_structure(tmp_path: Path):
     )
     (papirus_icon / "48x48").mkdir(parents=True, exist_ok=True)
 
-    # Tema Cursori Utente (es. "Capitaine" con cursors/)
+    # User Cursor Theme (e.g. "Capitaine" with cursors/)
     capitaine_cursor = user_icons / "Capitaine-Cursors"
     capitaine_cursor.mkdir(parents=True, exist_ok=True)
     (capitaine_cursor / "cursors").mkdir(parents=True, exist_ok=True)
 
-    # 2. Directory di Sistema
+    # 2. System Directories
     sys_themes = tmp_path / "sys" / "themes"
     sys_icons = tmp_path / "sys" / "icons"
     sys_themes.mkdir(parents=True, exist_ok=True)
     sys_icons.mkdir(parents=True, exist_ok=True)
 
-    # Tema GTK Sistema (es. "Adwaita" con gtk-4.0)
+    # System GTK Theme (e.g. "Adwaita" with gtk-4.0)
     adwaita_gtk = sys_themes / "Adwaita" / "gtk-4.0"
     adwaita_gtk.mkdir(parents=True, exist_ok=True)
 
-    # Tema GTK Sistema con lo stesso nome del tema Utente ("Nordic") per testare la precedenza
+    # System GTK Theme with same name as User theme ("Nordic") to test precedence
     nordic_sys = sys_themes / "Nordic"
     (nordic_sys / "gtk-3.0").mkdir(parents=True, exist_ok=True)
     (nordic_sys / "gnome-shell").mkdir(parents=True, exist_ok=True)
 
-    # Tema Ibrido di Sistema (es. "Yaru" contenente sia icone che la cartella cursors/)
+    # System Hybrid Theme (e.g. "Yaru" containing both icons and cursors/ directory)
     yaru_hybrid = sys_icons / "Yaru"
     yaru_hybrid.mkdir(parents=True, exist_ok=True)
     (yaru_hybrid / "index.theme").write_text("[Icon Theme]\nName=Yaru\n")
@@ -80,7 +80,7 @@ def mock_filesystem_structure(tmp_path: Path):
 
 
 def test_scanner_initialization():
-    """Verifica che ThemeScanner si istanzi correttamente con percorsi personalizzati o di default."""
+    """Verify that ThemeScanner instantiates properly with custom or default paths."""
     scanner = ThemeScanner()
     assert len(scanner.user_theme_dirs) >= 1
     assert len(scanner.system_theme_dirs) >= 1
@@ -91,7 +91,7 @@ def test_scanner_initialization():
 
 
 def test_scan_gtk_themes(mock_filesystem_structure):
-    """Verifica la scansione dei temi GTK e la corretta applicazione della precedenza."""
+    """Verify scanning of GTK themes and proper application of precedence."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -115,7 +115,7 @@ def test_scan_gtk_themes(mock_filesystem_structure):
 
 
 def test_scan_shell_themes(mock_filesystem_structure):
-    """Verifica la scansione dei temi per la GNOME Shell."""
+    """Verify scanning of themes for GNOME Shell."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -134,7 +134,7 @@ def test_scan_shell_themes(mock_filesystem_structure):
 
 
 def test_scan_icon_and_cursor_themes(mock_filesystem_structure):
-    """Verifica la scansione separata di icone e cursori, inclusa la gestione di cartelle ibride."""
+    """Verify separate scanning of icons and cursors, including handling of hybrid directories."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -143,14 +143,14 @@ def test_scan_icon_and_cursor_themes(mock_filesystem_structure):
         system_icon_dirs=[fs["sys_icons"]],
     )
 
-    # Scansione Icone
+    # Icons scan
     icon_themes = scanner.scan_icon_themes()
     icon_names = [t.name for t in icon_themes]
     assert "Papirus-Dark" in icon_names
     assert "Yaru" in icon_names
     assert "Capitaine-Cursors" not in icon_names
 
-    # Scansione Cursori
+    # Cursors scan
     cursor_themes = scanner.scan_cursor_themes()
     cursor_names = [t.name for t in cursor_themes]
     assert "Capitaine-Cursors" in cursor_names
@@ -159,7 +159,7 @@ def test_scan_icon_and_cursor_themes(mock_filesystem_structure):
 
 
 def test_scan_all(mock_filesystem_structure):
-    """Verifica che scan_all restituisca l'insieme completo di tutti i temi (inclusi Shell)."""
+    """Verify that scan_all returns the complete set of all themes (including Shell)."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -169,12 +169,12 @@ def test_scan_all(mock_filesystem_structure):
     )
 
     all_themes = scanner.scan_all()
-    # Ci aspettiamo: Nordic (GTK), Adwaita (GTK), Papirus-Dark (ICON), Yaru (ICON), Yaru (CURSOR), Capitaine (CURSOR), Nordic (SHELL)
+    # Expected: Nordic (GTK), Adwaita (GTK), Papirus-Dark (ICON), Yaru (ICON), Yaru (CURSOR), Capitaine (CURSOR), Nordic (SHELL)
     assert len(all_themes) == 7
 
 
 def test_scan_user_only(mock_filesystem_structure):
-    """Verifica che user_only=True escluda tutti i temi di sistema."""
+    """Verify that user_only=True excludes all system themes."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -196,7 +196,7 @@ def test_scan_user_only(mock_filesystem_structure):
 
 
 def test_find_theme(mock_filesystem_structure):
-    """Verifica la ricerca di un tema per nome e tipo."""
+    """Verify looking up a theme by name and type."""
     fs = mock_filesystem_structure
     scanner = ThemeScanner(
         user_theme_dirs=[fs["user_themes"]],
@@ -205,29 +205,29 @@ def test_find_theme(mock_filesystem_structure):
         system_icon_dirs=[fs["sys_icons"]],
     )
 
-    # Tema GTK esistente
+    # Existing GTK theme
     gtk_theme = scanner.find_theme("Nordic", ThemeType.GTK)
     assert gtk_theme is not None
     assert gtk_theme.name == "Nordic"
     assert gtk_theme.theme_type == ThemeType.GTK
 
-    # Tema Shell esistente
+    # Existing Shell theme
     shell_theme = scanner.find_theme("Nordic", ThemeType.SHELL)
     assert shell_theme is not None
     assert shell_theme.name == "Nordic"
     assert shell_theme.theme_type == ThemeType.SHELL
 
-    # Tema cercato con tipo errato -> deve restituire None
+    # Looked up with wrong type -> must return None
     wrong_type = scanner.find_theme("Capitaine-Cursors", ThemeType.GTK)
     assert wrong_type is None
 
-    # Tema inesistente -> deve restituire None
+    # Non-existent theme -> must return None
     non_existent = scanner.find_theme("Fantasma", ThemeType.GTK)
     assert non_existent is None
 
 
 def test_scanner_nonexistent_directory(tmp_path: Path):
-    """Verifica che directory inesistenti vengano gestite senza sollevare eccezioni."""
+    """Verify that non-existent directories are handled without raising exceptions."""
     non_existent = tmp_path / "does_not_exist"
     scanner = ThemeScanner(
         user_theme_dirs=[non_existent],
@@ -244,7 +244,7 @@ def test_scanner_nonexistent_directory(tmp_path: Path):
 
 
 def test_dynamic_xdg_paths_resolution(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """Verifica che le variabili d'ambiente XDG_DATA_HOME e XDG_DATA_DIRS vengano considerate dinamicamente."""
+    """Verify that XDG_DATA_HOME and XDG_DATA_DIRS environment variables are respected dynamically."""
     custom_xdg_home = tmp_path / "custom_data_home"
     custom_xdg_dirs = f"{tmp_path}/custom_sys1:{tmp_path}/custom_sys2"
 
@@ -253,31 +253,31 @@ def test_dynamic_xdg_paths_resolution(tmp_path: Path, monkeypatch: pytest.Monkey
 
     scanner = ThemeScanner()
 
-    # Verifica user themes
+    # Check user themes
     assert custom_xdg_home / "themes" in scanner.user_theme_dirs
     assert Path.home() / ".themes" in scanner.user_theme_dirs
 
-    # Verifica user icons
+    # Check user icons
     assert custom_xdg_home / "icons" in scanner.user_icon_dirs
     assert Path.home() / ".icons" in scanner.user_icon_dirs
 
-    # Verifica system themes
+    # Check system themes
     assert tmp_path / "custom_sys1" / "themes" in scanner.system_theme_dirs
     assert tmp_path / "custom_sys2" / "themes" in scanner.system_theme_dirs
     assert Path("/usr/share/themes") in scanner.system_theme_dirs
 
-    # Verifica system icons
+    # Check system icons
     assert tmp_path / "custom_sys1" / "icons" in scanner.system_icon_dirs
     assert tmp_path / "custom_sys2" / "icons" in scanner.system_icon_dirs
     assert Path("/usr/share/icons") in scanner.system_icon_dirs
 
 
 def test_scanner_invalid_index_theme(tmp_path: Path):
-    """Verifica che temi con index.theme corrotto/assente siano marcati come invalid ma non crashino lo scanner."""
+    """Verify that themes with corrupted/missing index.theme are marked as invalid without crashing the scanner."""
     user_themes = tmp_path / "themes"
     user_themes.mkdir()
 
-    # 1. Tema con index.theme corrotto (non parsabile come INI)
+    # 1. Theme with corrupted index.theme (cannot parse as INI)
     bad_theme = user_themes / "CorruptedTheme"
     bad_theme.mkdir()
     (bad_theme / "index.theme").write_text("corrupted content without sections or key-value pairs")
@@ -292,11 +292,11 @@ def test_scanner_invalid_index_theme(tmp_path: Path):
 
 
 def test_scanner_inheritance_chain(tmp_path: Path):
-    """Verifica la risoluzione ricorsiva dell'inheritance chain da index.theme fino a max depth 5."""
+    """Verify recursive inheritance chain resolution from index.theme up to max depth 5."""
     user_themes = tmp_path / "themes"
     user_themes.mkdir()
 
-    # Creiamo 6 temi in catena: Theme5 -> Theme4 -> Theme3 -> Theme2 -> Theme1 -> Theme0
+    # Create 6 themes in a chain: Theme5 -> Theme4 -> Theme3 -> Theme2 -> Theme1 -> Theme0
     for i in range(6):
         theme_dir = user_themes / f"Theme{i}"
         theme_dir.mkdir()
@@ -309,7 +309,7 @@ def test_scanner_inheritance_chain(tmp_path: Path):
         user_theme_dirs=[user_themes], user_icon_dirs=[], system_theme_dirs=[], system_icon_dirs=[]
     )
 
-    # Per Theme5 (depth 5), la catena deve fermarsi a Theme1 (Theme5, 4, 3, 2, 1) ed escludere Theme0
+    # For Theme5 (depth 5), chain stops at Theme1 (Theme5, 4, 3, 2, 1) and excludes Theme0
     theme5 = scanner.find_theme("Theme5", ThemeType.GTK)
     assert theme5 is not None
     assert "Theme4" in theme5.inheritance_chain

@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script per eseguire la suite di test e i controlli di qualità
+# Script to run test suite and quality checks
 # ==============================================================================
 
 set -e
@@ -26,7 +26,7 @@ if [ -f "$PROJECT_ROOT/.venv/bin/pytest" ]; then
 elif command -v pytest &> /dev/null; then
     pytest -v --cov=gnome_theme_manager
 else
-    echo "Errore: pytest non trovato. Esegui prima ./scripts/install_dependencies.sh"
+    echo "Error: pytest not found. Run ./scripts/install_dependencies.sh first"
     exit 1
 fi
 
@@ -43,9 +43,9 @@ fi
 if command -v "$RUFF_BIN" &> /dev/null || [ -f "$RUFF_BIN" ]; then
     "$RUFF_BIN" check src tests
     "$RUFF_BIN" format --check src tests
-    echo "✓ Ruff checks e formatting superati!"
+    echo "✓ Ruff checks and formatting passed!"
 else
-    echo "Ruff non installato (opzionale)."
+    echo "Ruff not installed (optional)."
 fi
 
 echo ""
@@ -60,10 +60,10 @@ fi
 
 if command -v "$MYPY_BIN" &> /dev/null || [ -f "$MYPY_BIN" ]; then
     "$MYPY_BIN" --strict src
-    echo "✓ Mypy type check superato!"
+    echo "✓ Mypy type check passed!"
 else
-    echo "Mypy non installato (opzionale)."
+    echo "Mypy not installed (optional)."
 fi
 
 echo ""
-echo "✓ Tutti i test e controlli completati con successo!"
+echo "✓ All tests and checks completed successfully!"

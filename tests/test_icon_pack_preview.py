@@ -23,9 +23,9 @@ if is_gtk_available():
 
 
 def test_preview_icon_names_constants() -> None:
-    """Verifica che la lista delle icone standard per la preview sia definita e contenga icone GNOME standard."""
+    """Verify that the standard preview icon list is defined and contains standard GNOME icons."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     assert len(PREVIEW_ICON_NAMES) >= 6
     assert "folder" in PREVIEW_ICON_NAMES
@@ -35,9 +35,9 @@ def test_preview_icon_names_constants() -> None:
 
 
 def test_icon_pack_preview_widget_creation(tmp_path: Path) -> None:
-    """Verifica che il widget IconPackPreview venga istanziato correttamente con un percorso tema."""
+    """Verify that IconPackPreview widget is correctly instantiated with a theme path."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     theme_dir = tmp_path / "MyTestIcons"
     theme_dir.mkdir(parents=True)
@@ -53,18 +53,18 @@ def test_icon_pack_preview_widget_creation(tmp_path: Path) -> None:
 
 
 def test_create_icon_preview_grid_with_system_theme() -> None:
-    """Verifica la creazione della griglia di anteprima per un tema di sistema come Adwaita."""
+    """Verify creation of preview grid for a system theme like Adwaita."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     widget = create_icon_preview_grid(theme_name="Adwaita", icon_size=32)
     assert isinstance(widget, Gtk.Widget)
 
 
 def test_icon_pack_preview_does_not_mutate_default_icon_theme() -> None:
-    """Verifica che l'anteprima usi un Gtk.IconTheme isolato senza modificare il tema globale/di default."""
+    """Verify that preview uses an isolated Gtk.IconTheme without modifying the default/global theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     import gi
 

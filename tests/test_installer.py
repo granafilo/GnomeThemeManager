@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per la gestione sicura degli archivi e per l'installer dei temi."""
+"""Unit tests for safe archive extraction and theme installer."""
 
 import io
 import os
@@ -25,14 +25,14 @@ from gnome_theme_manager.core.models import ThemeType
 
 
 def create_mock_zip(zip_path: Path, files: dict[str, str | bytes]) -> Path:
-    """Helper per creare un archivio ZIP con contenuti di test.
+    """Helper to create a ZIP archive with test contents.
 
     Args:
-        zip_path: Percorso in cui salvare lo zip.
-        files: Dizionario {rel_path: contenuto}.
+        zip_path: Path where the zip file should be saved.
+        files: Dictionary of {rel_path: content}.
 
     Returns:
-        Path del file zip creato.
+        Path of the created zip file.
     """
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(zip_path, "w") as zf:
@@ -44,15 +44,15 @@ def create_mock_zip(zip_path: Path, files: dict[str, str | bytes]) -> Path:
 
 
 def create_mock_tar(tar_path: Path, files: dict[str, str | bytes], mode: str = "w:gz") -> Path:
-    """Helper per creare un archivio TAR (.tar.gz, ecc.) con contenuti di test.
+    """Helper to create a TAR archive (.tar.gz, etc.) with test contents.
 
     Args:
-        tar_path: Percorso del file tar.
-        files: Dizionario {rel_path: contenuto}.
-        mode: Modalità di apertura per tarfile (es. 'w:gz', 'w:xz').
+        tar_path: Path of the tar file.
+        files: Dictionary of {rel_path: content}.
+        mode: Open mode for tarfile (e.g. 'w:gz', 'w:xz').
 
     Returns:
-        Path del file tar creato.
+        Path of the created tar file.
     """
     tar_path.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(tar_path, mode) as tf:
@@ -66,12 +66,12 @@ def create_mock_tar(tar_path: Path, files: dict[str, str | bytes], mode: str = "
 
 
 # =============================================================================
-# 1. Test Estrazione Sicura (safe_extract)
+# 1. Safe Extraction Tests (safe_extract)
 # =============================================================================
 
 
 def test_safe_extract_valid_zip(tmp_path: Path) -> None:
-    """Verifica l'estrazione corretta di un archivio ZIP valido."""
+    """Verify correct extraction of a valid ZIP archive."""
     archive_file = tmp_path / "valid_theme.zip"
     create_mock_zip(archive_file, {"MyTheme/gtk-3.0/gtk.css": "/* CSS */"})
 
@@ -83,7 +83,7 @@ def test_safe_extract_valid_zip(tmp_path: Path) -> None:
 
 
 def test_safe_extract_valid_targz(tmp_path: Path) -> None:
-    """Verifica l'estrazione corretta di un archivio TAR.GZ valido."""
+    """Verify correct extraction of a valid TAR.GZ archive."""
     archive_file = tmp_path / "valid_theme.tar.gz"
     create_mock_tar(archive_file, {"MyTheme/cursors/arrow": b"CURSOR"})
 
@@ -95,16 +95,16 @@ def test_safe_extract_valid_targz(tmp_path: Path) -> None:
 
 
 def test_safe_extract_tar_with_symlinks(tmp_path: Path) -> None:
-    """Verifica l'estrazione di un archivio TAR con symlink e percorsi assoluti (tipici dei pacchetti icone)."""
+    """Verify extraction of a TAR archive with symlinks and absolute paths (typical in icon themes)."""
     archive_file = tmp_path / "icons_with_symlinks.tar.xz"
     with tarfile.open(archive_file, "w:xz") as tf:
-        # File reale
+        # Real file
         base_file = tarfile.TarInfo(name="Slot-Dark-Icons/status/32/appointment.svg")
         base_content = b"<svg>test</svg>"
         base_file.size = len(base_content)
         tf.addfile(base_file, io.BytesIO(base_content))
 
-        # Symlink con percorso assoluto / slash iniziale
+        # Symlink with absolute path / leading slash
         sym_link = tarfile.TarInfo(name="Slot-Dark-Icons/status/32/appointment-symbolic.svg")
         sym_link.type = tarfile.SYMTYPE
         sym_link.linkname = "/Slot-Dark-Icons/status/32/appointment.svg"
@@ -119,9 +119,9 @@ def test_safe_extract_tar_with_symlinks(tmp_path: Path) -> None:
 
 
 def test_safe_extract_zip_path_traversal(tmp_path: Path) -> None:
-    """Verifica che tentativi di Zip Slip / Path Traversal sollevino ArchiveExtractionError."""
+    """Verify that Zip Slip / Path Traversal attempts raise ArchiveExtractionError."""
     archive_file = tmp_path / "malicious.zip"
-    # File con percorso relativo che tenta di uscire dalla directory di estrazione
+    # File with relative path attempting to escape extraction directory
     create_mock_zip(archive_file, {"../../evil.txt": "hacked"})
 
     target_dir = tmp_path / "extracted"
@@ -130,7 +130,7 @@ def test_safe_extract_zip_path_traversal(tmp_path: Path) -> None:
 
 
 def test_safe_extract_tar_path_traversal(tmp_path: Path) -> None:
-    """Verifica che tentativi di Path Traversal in un archivio TAR sollevino ArchiveExtractionError."""
+    """Verify that Path Traversal attempts in a TAR archive raise ArchiveExtractionError."""
     archive_file = tmp_path / "malicious.tar.gz"
     create_mock_tar(archive_file, {"../../evil.txt": "hacked"})
 
@@ -140,7 +140,7 @@ def test_safe_extract_tar_path_traversal(tmp_path: Path) -> None:
 
 
 def test_safe_extract_corrupted_file(tmp_path: Path) -> None:
-    """Verifica che un archivio corrotto sollevi ArchiveExtractionError."""
+    """Verify that a corrupted archive raises ArchiveExtractionError."""
     corrupted_file = tmp_path / "broken.zip"
     corrupted_file.write_bytes(b"NOT A ZIP FILE CONTENT")
 
@@ -150,7 +150,7 @@ def test_safe_extract_corrupted_file(tmp_path: Path) -> None:
 
 
 def test_safe_extract_unsupported_extension(tmp_path: Path) -> None:
-    """Verifica che un'estensione non supportata sollevi ArchiveExtractionError."""
+    """Verify that an unsupported extension raises ArchiveExtractionError."""
     txt_file = tmp_path / "archive.rar"
     txt_file.write_text("dummy")
 
@@ -160,19 +160,19 @@ def test_safe_extract_unsupported_extension(tmp_path: Path) -> None:
 
 
 def test_safe_extract_non_existent_file(tmp_path: Path) -> None:
-    """Verifica la gestione di file archivio inesistente."""
+    """Verify handling of a non-existent archive file."""
     missing = tmp_path / "missing.zip"
     with pytest.raises(ArchiveExtractionError, match="does not exist"):
         safe_extract(missing, tmp_path / "out")
 
 
 # =============================================================================
-# 2. Test Rilevamento Tipi e Struttura (detect_theme_types & inspect_extracted_tree)
+# 2. Type & Structure Detection Tests (detect_theme_types & inspect_extracted_tree)
 # =============================================================================
 
 
 def test_detect_theme_types_gtk(tmp_path: Path) -> None:
-    """Verifica il rilevamento di un tema GTK con sottodirectory gtk-3.0."""
+    """Verify detection of a GTK theme with gtk-3.0 subdirectory."""
     theme_dir = tmp_path / "TestGtk"
     (theme_dir / "gtk-3.0").mkdir(parents=True)
     (theme_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
@@ -182,7 +182,7 @@ def test_detect_theme_types_gtk(tmp_path: Path) -> None:
 
 
 def test_detect_theme_types_shell(tmp_path: Path) -> None:
-    """Verifica il rilevamento di un tema GNOME Shell."""
+    """Verify detection of a GNOME Shell theme."""
     theme_dir = tmp_path / "TestShell"
     (theme_dir / "gnome-shell").mkdir(parents=True)
     (theme_dir / "gnome-shell" / "gnome-shell.css").write_text("/* CSS */")
@@ -192,7 +192,7 @@ def test_detect_theme_types_shell(tmp_path: Path) -> None:
 
 
 def test_detect_theme_types_icon_and_cursor(tmp_path: Path) -> None:
-    """Verifica il rilevamento di temi icone e cursori."""
+    """Verify detection of icon and cursor themes."""
     theme_dir = tmp_path / "TestIcon"
     (theme_dir / "cursors").mkdir(parents=True)
     (theme_dir / "index.theme").write_text("[Icon Theme]\nName=TestIcon\n")
@@ -203,7 +203,7 @@ def test_detect_theme_types_icon_and_cursor(tmp_path: Path) -> None:
 
 
 def test_inspect_extracted_tree_single_root(tmp_path: Path) -> None:
-    """Verifica layout a radice singola (es. Nord-GTK/gtk-3.0)."""
+    """Verify single root layout (e.g. Nord-GTK/gtk-3.0)."""
     extracted_root = tmp_path / "extracted"
     (extracted_root / "Nord-GTK" / "gtk-3.0").mkdir(parents=True)
 
@@ -214,7 +214,7 @@ def test_inspect_extracted_tree_single_root(tmp_path: Path) -> None:
 
 
 def test_inspect_extracted_tree_flat_layout(tmp_path: Path) -> None:
-    """Verifica layout flat (file del tema direttamente nella radice dell'archivio)."""
+    """Verify flat layout (theme files directly in archive root)."""
     extracted_root = tmp_path / "extracted"
     (extracted_root / "gtk-3.0").mkdir(parents=True)
 
@@ -225,7 +225,7 @@ def test_inspect_extracted_tree_flat_layout(tmp_path: Path) -> None:
 
 
 def test_inspect_extracted_tree_multi_root(tmp_path: Path) -> None:
-    """Verifica layout multi-tema (es. Tema-Light/ e Tema-Dark/)."""
+    """Verify multi-theme layout (e.g. Theme-Light/ and Theme-Dark/)."""
     extracted_root = tmp_path / "extracted"
     (extracted_root / "Nord-Light" / "gtk-3.0").mkdir(parents=True)
     (extracted_root / "Nord-Dark" / "gtk-3.0").mkdir(parents=True)
@@ -237,7 +237,7 @@ def test_inspect_extracted_tree_multi_root(tmp_path: Path) -> None:
 
 
 def test_inspect_extracted_tree_invalid(tmp_path: Path) -> None:
-    """Verifica che un archivio privo di cartelle di temi valide sollevi ThemeValidationError."""
+    """Verify that an archive without valid theme directories raises ThemeValidationError."""
     extracted_root = tmp_path / "extracted"
     (extracted_root / "random_folder").mkdir(parents=True)
     (extracted_root / "random_folder" / "hello.txt").write_text("world")
@@ -247,12 +247,12 @@ def test_inspect_extracted_tree_invalid(tmp_path: Path) -> None:
 
 
 # =============================================================================
-# 3. Test ThemeInstaller (Install & Uninstall)
+# 3. ThemeInstaller Tests (Install & Uninstall)
 # =============================================================================
 
 
 def test_installer_install_gtk_theme(tmp_path: Path) -> None:
-    """Test di installazione di un tema GTK in una directory utente temporanea."""
+    """Test installing a GTK theme into a temporary user directory."""
     user_themes = tmp_path / "user_themes"
     user_icons = tmp_path / "user_icons"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
@@ -270,7 +270,7 @@ def test_installer_install_gtk_theme(tmp_path: Path) -> None:
 
 
 def test_installer_install_custom_name(tmp_path: Path) -> None:
-    """Test di installazione con nome personalizzato (custom_name)."""
+    """Test installation with custom name (custom_name)."""
     user_themes = tmp_path / "user_themes"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
 
@@ -284,7 +284,7 @@ def test_installer_install_custom_name(tmp_path: Path) -> None:
 
 
 def test_installer_install_overwrite_conflict(tmp_path: Path) -> None:
-    """Test gestione conflitto se il tema esiste già e overwrite=False."""
+    """Test conflict handling if theme already exists and overwrite=False."""
     user_themes = tmp_path / "user_themes"
     (user_themes / "Nordic").mkdir(parents=True)
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
@@ -295,14 +295,14 @@ def test_installer_install_overwrite_conflict(tmp_path: Path) -> None:
     with pytest.raises(FileExistsError, match="already exists"):
         installer.install(archive, overwrite=False)
 
-    # Con overwrite=True deve sovrascrivere con successo
+    # With overwrite=True it must successfully overwrite
     installed = installer.install(archive, overwrite=True)
     assert len(installed) == 1
     assert (user_themes / "Nordic" / "gtk-3.0" / "gtk.css").exists()
 
 
 def test_installer_uninstall_success(tmp_path: Path) -> None:
-    """Test disinstallazione di un tema utente esistente."""
+    """Test uninstalling an existing user theme."""
     user_themes = tmp_path / "user_themes"
     target_theme = user_themes / "ThemeToRemove"
     (target_theme / "gtk-3.0").mkdir(parents=True)
@@ -315,7 +315,7 @@ def test_installer_uninstall_success(tmp_path: Path) -> None:
 
 
 def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
-    """Test disinstallazione tema inesistente solleva ThemeNotFoundError."""
+    """Test uninstalling a non-existent theme raises ThemeNotFoundError."""
     user_themes = tmp_path / "user_themes"
     user_themes.mkdir(parents=True)
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
@@ -325,7 +325,7 @@ def test_installer_uninstall_non_existent(tmp_path: Path) -> None:
 
 
 def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
-    """Test di installazione di un tema moderno unificato (GTK3, GTK4, Libadwaita e GNOME Shell in unico archivio)."""
+    """Test installing a modern unified theme (GTK3, GTK4, Libadwaita and GNOME Shell in a single archive)."""
     user_themes = tmp_path / "user_themes"
     user_icons = tmp_path / "user_icons"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
@@ -342,7 +342,7 @@ def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
     )
 
     installed = installer.install(archive)
-    # Deve rilevare sia GTK che SHELL dalla medesima cartella
+    # Must detect both GTK and SHELL from the same folder
     types = {t.theme_type for t in installed}
     assert ThemeType.GTK in types
     assert ThemeType.SHELL in types
@@ -354,12 +354,12 @@ def test_installer_install_modern_unified_theme(tmp_path: Path) -> None:
 
 
 # =============================================================================
-# 6. Test Ispezione e Installazione da Cartella Locale
+# 6. Local Directory Inspection & Installation Tests
 # =============================================================================
 
 
 def test_installer_inspect_source_archive(tmp_path: Path) -> None:
-    """Verifica che inspect_source analizzi un archivio senza installarlo."""
+    """Verify that inspect_source inspects an archive without installing it."""
     archive = tmp_path / "InspectTheme.zip"
     create_mock_zip(archive, {"InspectTheme/gtk-3.0/gtk.css": "/* CSS */"})
 
@@ -371,12 +371,12 @@ def test_installer_inspect_source_archive(tmp_path: Path) -> None:
     assert len(results) == 1
     assert results[0][0] == "InspectTheme"
     assert results[0][2] == ThemeType.GTK
-    # Verifica che non sia stato installato nulla
+    # Verify that nothing was installed
     assert not (tmp_path / "themes" / "InspectTheme").exists()
 
 
 def test_installer_inspect_source_directory(tmp_path: Path) -> None:
-    """Verifica che inspect_source analizzi una cartella senza modificarla."""
+    """Verify that inspect_source inspects a directory without modifying it."""
     source_dir = tmp_path / "LocalThemeDir"
     (source_dir / "gtk-3.0").mkdir(parents=True)
     (source_dir / "gtk-3.0" / "gtk.css").write_text("/* CSS */")
@@ -389,12 +389,12 @@ def test_installer_inspect_source_directory(tmp_path: Path) -> None:
     assert len(results) == 1
     assert results[0][0] == "LocalThemeDir"
     assert results[0][2] == ThemeType.GTK
-    # La cartella sorgente originale deve rimanere intatta
+    # Original source directory must remain intact
     assert (source_dir / "gtk-3.0" / "gtk.css").exists()
 
 
 def test_installer_inspect_source_non_existent(tmp_path: Path) -> None:
-    """Verifica che inspect_source sollevi FileNotFoundError se la sorgente non esiste."""
+    """Verify that inspect_source raises FileNotFoundError if the source does not exist."""
     installer = ThemeInstaller(
         user_themes_dir=tmp_path / "themes", user_icons_dir=tmp_path / "icons"
     )
@@ -403,7 +403,7 @@ def test_installer_inspect_source_non_existent(tmp_path: Path) -> None:
 
 
 def test_installer_install_directory_success(tmp_path: Path) -> None:
-    """Verifica l'installazione di un tema da cartella locale."""
+    """Verify installing a theme from a local folder."""
     user_themes = tmp_path / "user_themes"
     user_icons = tmp_path / "user_icons"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
@@ -418,14 +418,14 @@ def test_installer_install_directory_success(tmp_path: Path) -> None:
     assert installed[0].theme_type == ThemeType.GTK
     assert installed[0].is_user_level is True
 
-    # Verifica destinazione
+    # Verify destination
     assert (user_themes / "MyFolderTheme" / "gtk-3.0" / "gtk.css").exists()
-    # Verifica che la sorgente non sia stata eliminata o spostata
+    # Verify that the source was not deleted or moved
     assert (source_dir / "gtk-3.0" / "gtk.css").exists()
 
 
 def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> None:
-    """Verifica gestione del conflitto di sovrascrittura da cartella."""
+    """Verify handling of overwrite conflict from a folder."""
     user_themes = tmp_path / "user_themes"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=tmp_path / "icons")
 
@@ -435,11 +435,11 @@ def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> N
 
     installer.install_directory(source_dir)
 
-    # Nuovo tentativo con overwrite=False
+    # New attempt with overwrite=False
     with pytest.raises(FileExistsError, match="already exists"):
         installer.install_directory(source_dir, overwrite=False)
 
-    # Sovrascrittura con overwrite=True
+    # Overwrite with overwrite=True
     (source_dir / "gtk-3.0" / "gtk.css").write_text("/* v2 */")
     installed = installer.install_directory(source_dir, overwrite=True)
     assert len(installed) == 1
@@ -447,12 +447,12 @@ def test_installer_install_directory_conflict_and_overwrite(tmp_path: Path) -> N
 
 
 def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> None:
-    """Verifica che se un archivio/cartella multi-componente ha un conflitto tardivo, nessun file venga scritto su disco con overwrite=False."""
+    """Verify that if a multi-component archive/folder encounters a late conflict, no files are written with overwrite=False."""
     user_themes = tmp_path / "user_themes"
     user_icons = tmp_path / "user_icons"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
 
-    # Archivio con due componenti: ThemeGTK (GTK) e ThemeIcons (Icone)
+    # Archive with two components: ThemeGTK (GTK) and ThemeIcons (Icons)
     archive = tmp_path / "MultiTheme.zip"
     create_mock_zip(
         archive,
@@ -463,18 +463,18 @@ def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> No
         },
     )
 
-    # Pre-creiamo solo la cartella di destinazione del SECONDO componente (ThemeIcons) per simulare un conflitto tardivo
+    # Pre-create only the destination folder of the SECOND component (ThemeIcons) to simulate a late conflict
     (user_icons / "ThemeIcons").mkdir(parents=True)
     (user_icons / "ThemeIcons" / "index.theme").write_text("/* Pre-existing Icon Theme */")
 
-    # 1. Con overwrite=False deve sollevare FileExistsError prima di copiare ThemeGTK
+    # 1. With overwrite=False it must raise FileExistsError before copying ThemeGTK
     with pytest.raises(FileExistsError, match="already exists"):
         installer.install(archive, overwrite=False)
 
-    # Verifica atomicità: ThemeGTK NON deve essere stato creato/scritto nel primo passaggio
+    # Verify atomicity: ThemeGTK must NOT have been created/written in the first step
     assert not (user_themes / "ThemeGTK").exists()
 
-    # 2. Con overwrite=True, entrambi i componenti devono venire installati correttamente
+    # 2. With overwrite=True, both components must be installed successfully
     installed = installer.install(archive, overwrite=True)
     assert len(installed) == 2
     assert (user_themes / "ThemeGTK" / "gtk-3.0" / "gtk.css").exists()
@@ -482,7 +482,7 @@ def test_installer_atomic_install_multi_component_conflict(tmp_path: Path) -> No
 
 
 def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
-    """Verifica che specificando target_dir='legacy' i temi vengano installati nelle cartelle legacy (~/.themes e ~/.icons)."""
+    """Verify that specifying target_dir='legacy' installs themes in legacy directories (~/.themes and ~/.icons)."""
     user_themes = tmp_path / "user_themes"
     user_icons = tmp_path / "user_icons"
     installer = ThemeInstaller(user_themes_dir=user_themes, user_icons_dir=user_icons)
@@ -508,7 +508,7 @@ def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
         installed = installer.install(archive, target_dir="legacy")
         assert len(installed) == 2
 
-        # Verifica che siano stati salvati nelle directory legacy e non XDG
+        # Verify that files were saved in legacy directories and not XDG
         assert (legacy_themes / "LegacyGTK" / "gtk-3.0" / "gtk.css").exists()
         assert (legacy_icons / "LegacyIcons" / "16x16" / "icon.png").exists()
         assert not (user_themes / "LegacyGTK").exists()
@@ -516,7 +516,7 @@ def test_installer_install_legacy_target_dir(tmp_path: Path) -> None:
 
 
 def test_installer_ensure_user_directories(tmp_path: Path) -> None:
-    """Verifica che ensure_user_directories crei ~/.themes, ~/.local/share/themes, ~/.icons, ~/.local/share/icons."""
+    """Verify that ensure_user_directories creates ~/.themes, ~/.local/share/themes, ~/.icons, ~/.local/share/icons."""
     mock_home = tmp_path / "home" / "user"
     user_themes = mock_home / ".local" / "share" / "themes"
     legacy_themes = mock_home / ".themes"
@@ -547,23 +547,23 @@ def test_installer_ensure_user_directories(tmp_path: Path) -> None:
         assert user_icons.is_dir()
         assert legacy_icons.is_dir()
 
-        # Invocazione idempotente
+        # Idempotent call
         created_again = installer.ensure_user_directories()
         assert len(created_again) == 4
 
 
 def test_installer_with_dangling_symlinks(tmp_path: Path) -> None:
-    """Verifica che l'installer gestisca senza errori pacchetti con collegamenti simbolici orfani."""
+    """Verify that the installer handles packages with orphaned symbolic links gracefully."""
     user_icons = tmp_path / "icons"
     installer = ThemeInstaller(user_icons_dir=user_icons)
 
-    # Crea cartella con un symlink verso un file inesistente
+    # Create directory with a symlink pointing to a non-existent file
     source_theme = tmp_path / "BrokenIconTheme"
     (source_theme / "16x16").mkdir(parents=True)
     (source_theme / "index.theme").write_text("[Icon Theme]\nName=BrokenIconTheme\n")
     (source_theme / "16x16" / "real.png").write_bytes(b"PNG")
 
-    # Creazione manuale del symlink dangling
+    # Manual creation of dangling symlink
     os.symlink("non_existent_file.png", source_theme / "16x16" / "dangling.png")
 
     installed = installer.install_directory(source_theme, overwrite=True)

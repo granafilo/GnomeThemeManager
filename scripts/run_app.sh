@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script per avviare l'applicazione GnomeThemeManager (GUI o CLI)
+# Script to launch GnomeThemeManager (GUI or CLI)
 # ==============================================================================
 
 set -e
@@ -19,11 +19,11 @@ fi
 
 export PYTHONPATH="$PROJECT_ROOT/src:${PYTHONPATH:-}"
 
-# Se non vengono passati argomenti, avvia l'interfaccia grafica GTK4
+# If no arguments are passed, launch the GTK4 graphical interface
 if [ "$#" -eq 0 ]; then
-    echo "Avvio interfaccia grafica GTK4..."
+    echo "Launching GTK4 graphical interface..."
     python3 -m gnome_theme_manager gui
 else
-    # Altrimenti passa i parametri alla CLI
+    # Otherwise forward arguments to the CLI
     python3 -m gnome_theme_manager.cli.main "$@"
 fi

@@ -2,23 +2,23 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script wrapper per eseguire la CLI di GnomeThemeManager
+# Wrapper script to run GnomeThemeManager CLI
 # ==============================================================================
 
 set -e
 
-# Determina la radice del progetto
+# Determine project root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
-# Attiva l'ambiente virtuale se presente
+# Activate virtual environment if present
 if [ -f "$PROJECT_ROOT/.venv/bin/activate" ]; then
     source "$PROJECT_ROOT/.venv/bin/activate"
 fi
 
-# Se gnome-theme-manager è installato usa il comando, altrimenti usa python3 -m
+# If gnome-theme-manager is installed use the command, otherwise use python3 -m
 if command -v gnome-theme-manager &> /dev/null; then
     gnome-theme-manager "$@"
 else

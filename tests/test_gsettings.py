@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per il wrapper GSettingsClient.
+"""Unit tests for the GSettingsClient wrapper.
 
-Verifica l'interazione con Gio.Settings simulando (mocking):
-- Lettura dei temi correnti (incluso il tema GNOME Shell)
-- Applicazione in blocco o singola dei temi (apply, set_gtk_theme, set_shell_theme, ecc.)
-- Rilevamento dello schema colori GNOME 42+ (color-scheme)
-- Gestione degli errori quando PyGObject o gli schemi GSettings non sono disponibili
+Verify interaction with Gio.Settings by mocking:
+- Reading current themes (including GNOME Shell theme)
+- Batch or individual application of themes (apply, set_gtk_theme, set_shell_theme, etc.)
+- GNOME 42+ color scheme detection (color-scheme)
+- Error handling when PyGObject or GSettings schemas are unavailable
 """
 
 from pathlib import Path
@@ -20,7 +20,7 @@ from gnome_theme_manager.core.models import ThemeSet
 
 
 class MockGioSettings:
-    """Mock per simulare l'oggetto Gio.Settings di PyGObject."""
+    """Mock to simulate PyGObject's Gio.Settings object."""
 
     def __init__(
         self,
@@ -56,7 +56,7 @@ class MockGioSettings:
 
 @pytest.fixture
 def mock_gio_environment():
-    """Fixture che fornisce un ambiente PyGObject / Gio simulato con successo."""
+    """Fixture providing a successfully mocked PyGObject / Gio environment."""
     mock_settings = MockGioSettings("org.gnome.desktop.interface")
     mock_shell_settings = MockGioSettings(
         "org.gnome.shell.extensions.user-theme", {"name": "Adwaita"}
@@ -106,7 +106,7 @@ def mock_gio_environment():
 
 
 def test_gsettings_get_current(mock_gio_environment):
-    """Verifica la corretta lettura dei temi attivi da GSettings incluso Shell."""
+    """Verify correct reading of active themes from GSettings including Shell."""
     client = GSettingsClient()
     current = client.get_current()
 
@@ -120,7 +120,7 @@ def test_gsettings_get_current(mock_gio_environment):
 
 
 def test_gsettings_apply_full(mock_gio_environment):
-    """Verifica l'applicazione completa di un ThemeSet incluso Shell theme."""
+    """Verify complete application of a ThemeSet including Shell theme."""
     client = GSettingsClient()
     new_themes = ThemeSet(
         gtk_theme="Nordic",
@@ -142,16 +142,16 @@ def test_gsettings_apply_full(mock_gio_environment):
 
 
 def test_gsettings_extension_schema_in_directory(tmp_path: Path):
-    """Verifica la ricerca di schemi personalizzati nelle directory delle estensioni."""
+    """Verify search for custom schemas in extension directories."""
     ext_dir = tmp_path / "extensions" / "user-theme@gnome" / "schemas"
     ext_dir.mkdir(parents=True, exist_ok=True)
     (ext_dir / "gschemas.compiled").write_text("dummy")
 
     mock_schema_source = MagicMock()
-    mock_schema_source.lookup.return_value = MagicMock()  # Interfaccia trovata
+    mock_schema_source.lookup.return_value = MagicMock()  # Interface found
 
     mock_ext_source = MagicMock()
-    mock_ext_source.lookup.return_value = MagicMock()  # Shell trovata nella cartella estensione
+    mock_ext_source.lookup.return_value = MagicMock()  # Shell found in extension folder
 
     with (
         patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", True),
@@ -168,7 +168,7 @@ def test_gsettings_extension_schema_in_directory(tmp_path: Path):
 
 
 def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
-    """Verifica che set_shell_theme sollevi GSettingsUnavailableError se l'estensione non è presente."""
+    """Verify that set_shell_theme raises GSettingsUnavailableError if extension is not present."""
     mock_schema_source = MagicMock()
 
     def lookup_side_effect(schema: str, recursive: bool):
@@ -190,7 +190,7 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
         mock_gio.Settings.new_full.return_value = MockGioSettings()
 
         client = GSettingsClient()
-        # Non trova lo schema shell da nessuna parte
+        # Cannot find shell schema anywhere
         client._shell_settings = None
         with (
             patch.object(client, "_is_dconf_shell_available", return_value=False),
@@ -203,7 +203,7 @@ def test_gsettings_set_shell_theme_unsupported(tmp_path: Path):
 
 
 def test_gsettings_unavailable_when_gio_missing():
-    """Verifica che venga sollevata GSettingsUnavailableError se PyGObject non è installato."""
+    """Verify that GSettingsUnavailableError is raised if PyGObject is not installed."""
     with (
         patch("gnome_theme_manager.core.gsettings._GIO_AVAILABLE", False),
         pytest.raises(GSettingsUnavailableError, match="PyGObject .* is not available"),
@@ -212,7 +212,7 @@ def test_gsettings_unavailable_when_gio_missing():
 
 
 def test_gsettings_get_and_apply_fonts():
-    """Verifica lettura e scrittura font tramite GSettingsClient."""
+    """Verify reading and writing fonts via GSettingsClient."""
     from gnome_theme_manager.core.fonts import FontConfig
 
     storage = {
@@ -261,7 +261,7 @@ def test_gsettings_get_and_apply_fonts():
 
 
 def test_gsettings_connect_changed(mock_gio_environment) -> None:
-    """Verifica che connect_changed registri il callback su Gio.Settings."""
+    """Verify that connect_changed registers the callback on Gio.Settings."""
     client = GSettingsClient()
     events: list[str] = []
 

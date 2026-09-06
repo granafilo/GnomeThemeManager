@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test per il sistema di traduzioni (i18n)."""
+"""Tests for the translation system (i18n)."""
 
 import gettext
 from pathlib import Path
 
-# Trova il percorso locale_dir
+# Find locale_dir path
 ROOT_DIR = Path(__file__).parent.parent
 LOCALE_DIR = ROOT_DIR / "src" / "gnome_theme_manager" / "locale"
 
 
 def test_mo_files_exist():
-    """Verifica che i file .mo per it ed en siano stati compilati e siano presenti."""
+    """Verify that .mo files for it and en have been compiled and are present."""
     it_mo = LOCALE_DIR / "it" / "LC_MESSAGES" / "gnomethememanager.mo"
     en_mo = LOCALE_DIR / "en" / "LC_MESSAGES" / "gnomethememanager.mo"
 
@@ -22,7 +22,7 @@ def test_mo_files_exist():
 
 
 def test_translation_loading_it():
-    """Verifica che la traduzione italiana venga caricata e traduca dall'inglese (sorgente) all'italiano."""
+    """Verify that Italian translation loads and translates from English (source) to Italian."""
     trans = gettext.translation(
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["it"], fallback=False
     )
@@ -42,7 +42,7 @@ def test_translation_loading_it():
 
 
 def test_translation_loading_en():
-    """Verifica che la traduzione inglese mantenga le stringhe sorgente in inglese."""
+    """Verify that English translation maintains source strings in English."""
     trans = gettext.translation(
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["en"], fallback=False
     )
@@ -60,7 +60,7 @@ def test_translation_loading_en():
 
 
 def test_translation_fallback():
-    """Verifica che il fallback restituisca la stringa originale se la lingua non esiste o non ha traduzioni."""
+    """Verify that fallback returns original string if language does not exist or lacks translations."""
     trans = gettext.translation(
         "gnomethememanager", localedir=str(LOCALE_DIR), languages=["fr"], fallback=True
     )
@@ -70,7 +70,7 @@ def test_translation_fallback():
 
 
 def test_flatpak_build_includes_locale_directory():
-    """Verifica che la build Flatpak compili le traduzioni e che il package data sia configurato in pyproject.toml."""
+    """Verify that Flatpak build compiles translations and package data is configured in pyproject.toml."""
     pyproject_data = (ROOT_DIR / "pyproject.toml").read_text(encoding="utf-8")
     assert '"gnome_theme_manager" = ["locale/**/*", "locale/*/LC_MESSAGES/*.mo"]' in pyproject_data
 
@@ -79,7 +79,7 @@ def test_flatpak_build_includes_locale_directory():
 
 
 def test_gtk_builder_uses_translation_domain():
-    """Verifica che i builder GTK usino il dominio delle traduzioni corretto per il parsing dei file .ui."""
+    """Verify that GTK builders use the correct translation domain when parsing .ui files."""
     for relative_path in [
         "src/gnome_theme_manager/gui_gtk/window.py",
         "src/gnome_theme_manager/gui_gtk/pages/installer.py",
@@ -98,7 +98,7 @@ def test_gtk_builder_uses_translation_domain():
 
 
 def test_english_catalogue_has_key_gui_translations():
-    """Verifica che le stringhe principali della GUI siano presenti nel catalogo en.po."""
+    """Verify that key GUI strings are present in the en.po catalogue."""
     en_po = (ROOT_DIR / "po" / "en.po").read_text(encoding="utf-8")
     translations = {
         "Current Status": "Current Status",
@@ -114,7 +114,7 @@ def test_english_catalogue_has_key_gui_translations():
 
 
 def test_italian_catalogue_has_key_gui_translations():
-    """Verifica che le stringhe principali della GUI abbiano traduzione italiana completa in it.po."""
+    """Verify that key GUI strings have complete Italian translation in it.po."""
     it_po = (ROOT_DIR / "po" / "it.po").read_text(encoding="utf-8")
     translations = {
         "Current Status": "Stato attuale",

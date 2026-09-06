@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo core di GnomeThemeManager."""
+"""Core module for GnomeThemeManager."""
 
 from .constants import (
     FALLBACKS_FILE,

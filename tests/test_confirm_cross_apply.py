@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test per la richiesta di cross-applicazione di GTK e Shell nel dialogo di conferma (RED)."""
+"""Test for cross-applying GTK and Shell themes in the confirmation dialog."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -20,9 +20,9 @@ if is_gtk_available():
 
 
 def test_themes_page_confirm_gtk_asks_to_apply_as_shell(mock_theme_manager) -> None:
-    """Verifica che applicando un tema GTK, il dialogo chieda se applicarlo anche per la Shell se disponibile."""
+    """Verify that when applying a GTK theme, the dialog asks whether to also apply it for Shell if available."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -30,14 +30,14 @@ def test_themes_page_confirm_gtk_asks_to_apply_as_shell(mock_theme_manager) -> N
     item = ThemeItemPresentation(
         name="Nordic",
         theme_type=ThemeType.GTK,
-        category_display="Applicazioni (GTK)",
+        category_display="Applications (GTK)",
         icon_name="preferences-desktop-theme-symbolic",
         path_display="/usr/share/themes/Nordic",
-        origin_display="Sistema",
+        origin_display="System",
         is_user_level=False,
     )
 
-    # Mock per far trovare Nordic anche come Shell
+    # Mock so that Nordic is also found as Shell
     mock_theme_manager.scanner.find_theme.side_effect = lambda name, theme_type: Theme(
         "Nordic", theme_type, Path("/usr/share/themes/Nordic"), False
     )
@@ -64,12 +64,12 @@ def test_themes_page_confirm_gtk_asks_to_apply_as_shell(mock_theme_manager) -> N
         page.confirm_and_apply_theme(item, sync=True)
 
         assert len(dialog_instances) == 1
-        # Il dialogo deve contenere un CheckButton o interazione simile per scegliere di applicare anche a Shell
-        # Cerca per un widget Gtk.CheckButton nell'extra child del dialogo
+        # Dialog must contain a CheckButton or similar widget to choose also applying to Shell
+        # Look for a Gtk.CheckButton widget in dialog's extra child
         extra_child = dialog_instances[0].get_extra_child()
         assert extra_child is not None
 
-        # Cerchiamo un CheckButton all'interno del contenitore extra
+        # Look for a CheckButton inside the extra child container
         check_button = None
         child = extra_child.get_first_child()
         while child is not None:

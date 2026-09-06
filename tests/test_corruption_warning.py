@@ -28,7 +28,7 @@ if is_gtk_available():
 
 
 def test_cli_apply_corrupted_theme_with_yes_flag(capsys: pytest.CaptureFixture[str]) -> None:
-    """Verifica che applicando un tema corrotto/incompleto con -y/--yes, venga mostrato un warning e l'applicazione proceda con force=True."""
+    """Verify that applying a corrupted/incomplete theme with -y/--yes displays a warning and proceeds with force=True."""
     mock_gtk = Theme(
         name="BrokenTheme",
         theme_type=ThemeType.GTK,
@@ -66,7 +66,7 @@ def test_cli_apply_corrupted_theme_with_yes_flag(capsys: pytest.CaptureFixture[s
 def test_cli_apply_corrupted_theme_prompt_confirmed(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Verifica che applicando un tema corrotto senza -y, venga richiesto un prompt interattivo; se confermato (y), si procede con force=True."""
+    """Verify that applying a corrupted theme without -y asks via interactive prompt; if confirmed (y), proceeds with force=True."""
     mock_gtk = Theme(
         name="BrokenTheme",
         theme_type=ThemeType.GTK,
@@ -104,7 +104,7 @@ def test_cli_apply_corrupted_theme_prompt_confirmed(
 def test_cli_apply_corrupted_theme_prompt_cancelled(
     capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Verifica che se l'utente rifiuta il prompt interattivo (n), l'applicazione venga annullata."""
+    """Verify that if the user declines the interactive prompt (n), theme application is cancelled."""
     mock_gtk = Theme(
         name="BrokenTheme",
         theme_type=ThemeType.GTK,
@@ -141,7 +141,7 @@ def test_cli_apply_corrupted_theme_prompt_cancelled(
 def test_gui_confirm_corrupted_theme_shows_apply_anyway_dialog(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che nella GUI, tentando di applicare un tema corrotto/incompleto, venga mostrato un dialogo di warning con opzione 'Apply anyway'."""
+    """Verify that in the GUI, attempting to apply a corrupted/incomplete theme displays a warning dialog with an 'Apply anyway' option."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 unavailable.")
 

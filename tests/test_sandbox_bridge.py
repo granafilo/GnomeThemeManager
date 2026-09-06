@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test di unità per il modulo SandboxBridge e l'integrazione con Snap e Flatpak."""
+"""Unit tests for SandboxBridge module and Snap / Flatpak integration."""
 
 import subprocess
 from pathlib import Path
@@ -22,33 +22,33 @@ from gnome_theme_manager.core.models import (
 from gnome_theme_manager.core.sandbox_bridge import SandboxBridge
 
 # =============================================================================
-# 1. Test Rilevamento Disponibilità Binari ($PATH)
+# 1. Binary Availability Detection Tests ($PATH)
 # =============================================================================
 
 
 def test_snap_available_detection() -> None:
-    """Verifica che is_snap_available() ritorni True quando snap è presente."""
+    """Verify that is_snap_available() returns True when snap is present."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value="/usr/bin/snap"):
         assert bridge.is_snap_available() is True
 
 
 def test_snap_not_available() -> None:
-    """Verifica che is_snap_available() ritorni False quando snap non è installato."""
+    """Verify that is_snap_available() returns False when snap is not installed."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value=None):
         assert bridge.is_snap_available() is False
 
 
 def test_flatpak_available_detection() -> None:
-    """Verifica che is_flatpak_available() ritorni True quando flatpak è presente."""
+    """Verify that is_flatpak_available() returns True when flatpak is present."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value="/usr/bin/flatpak"):
         assert bridge.is_flatpak_available() is True
 
 
 def test_flatpak_not_available() -> None:
-    """Verifica che is_flatpak_available() ritorni False quando flatpak non è installato."""
+    """Verify that is_flatpak_available() returns False when flatpak is not installed."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value=None):
         assert bridge.is_flatpak_available() is False
@@ -60,7 +60,7 @@ def test_flatpak_not_available() -> None:
 
 
 def test_sandbox_status_all_active() -> None:
-    """Verifica la corretta generazione di SandboxStatus quando entrambi i runtime sono attivi."""
+    """Verify correct generation of SandboxStatus when both runtimes are active."""
     bridge = SandboxBridge()
 
     def mock_subprocess_run(cmd: list[str], **kwargs) -> MagicMock:
@@ -84,7 +84,7 @@ def test_sandbox_status_all_active() -> None:
 
 
 def test_sandbox_status_not_available() -> None:
-    """Verifica SandboxStatus quando né Snap né Flatpak sono installati."""
+    """Verify SandboxStatus when neither Snap nor Flatpak is installed."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value=None):
         status: SandboxStatus = bridge.get_sandbox_status()
@@ -95,12 +95,12 @@ def test_sandbox_status_not_available() -> None:
 
 
 # =============================================================================
-# 3. Test Propagazione Flatpak
+# 3. Flatpak Propagation Tests
 # =============================================================================
 
 
 def test_propagate_to_flatpak_success() -> None:
-    """Verifica che propagate_to_flatpak esegua i comandi corretti e ritorni flatpak_success=True."""
+    """Verify that propagate_to_flatpak executes correct commands and returns flatpak_success=True."""
     bridge = SandboxBridge()
     executed_commands: list[list[str]] = []
 
@@ -121,7 +121,7 @@ def test_propagate_to_flatpak_success() -> None:
         assert result.flatpak_success is True
         assert len(result.warnings) == 0
         assert len(result.flatpak_messages) > 0
-        # Verifica che tutti i comandi di override e le variabili d'ambiente siano stati eseguiti
+        # Verify that all override commands and environment variables were executed
         assert [
             "flatpak",
             "override",
@@ -141,7 +141,7 @@ def test_propagate_to_flatpak_success() -> None:
 
 
 def test_propagate_to_flatpak_not_installed() -> None:
-    """Verifica che propagate_to_flatpak ritorni False senza chiamare subprocess se flatpak non esiste."""
+    """Verify that propagate_to_flatpak returns False without calling subprocess if flatpak does not exist."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value=None), patch("subprocess.run") as mock_run:
         result = bridge.propagate_to_flatpak(gtk_theme="Adwaita")
@@ -150,12 +150,12 @@ def test_propagate_to_flatpak_not_installed() -> None:
 
 
 # =============================================================================
-# 4. Test Propagazione e Compatibilità Snap
+# 4. Snap Propagation and Compatibility Tests
 # =============================================================================
 
 
 def test_propagate_to_snap_with_gtk_common_themes() -> None:
-    """Verifica che un tema standard (es. Yaru) con gtk-common-themes installato dia esito positivo."""
+    """Verify that a standard theme (e.g. Yaru) with gtk-common-themes installed succeeds."""
     bridge = SandboxBridge()
     mock_res = MagicMock()
     mock_res.returncode = 0
@@ -171,7 +171,7 @@ def test_propagate_to_snap_with_gtk_common_themes() -> None:
 
 
 def test_propagate_to_snap_custom_theme_warning() -> None:
-    """Verifica che un tema personalizzato non in gtk-common-themes produca un avviso informativo."""
+    """Verify that a custom theme not in gtk-common-themes produces an informative warning."""
     bridge = SandboxBridge()
     mock_res = MagicMock()
     mock_res.returncode = 0
@@ -188,7 +188,7 @@ def test_propagate_to_snap_custom_theme_warning() -> None:
 
 
 def test_propagate_to_snap_not_installed() -> None:
-    """Verifica che propagate_to_snap ritorni False se snap non è disponibile."""
+    """Verify that propagate_to_snap returns False if snap is not available."""
     bridge = SandboxBridge()
     with patch("shutil.which", return_value=None), patch("subprocess.run") as mock_run:
         result = bridge.propagate_to_snap(gtk_theme="Yaru")
@@ -197,10 +197,10 @@ def test_propagate_to_snap_not_installed() -> None:
 
 
 def test_propagate_to_snap_no_gtk_common_themes() -> None:
-    """Verifica che propagate_to_snap segnali warning se gtk-common-themes non è installato."""
+    """Verify that propagate_to_snap reports a warning if gtk-common-themes is not installed."""
     bridge = SandboxBridge()
     mock_res = MagicMock()
-    mock_res.returncode = 1  # snap list fallito
+    mock_res.returncode = 1  # snap list failed
 
     with (
         patch("shutil.which", return_value="/usr/bin/snap"),
@@ -213,12 +213,12 @@ def test_propagate_to_snap_no_gtk_common_themes() -> None:
 
 
 # =============================================================================
-# 5. Test propagate_all() e Unione Risultati
+# 5. Test propagate_all() and Results Merging
 # =============================================================================
 
 
 def test_propagate_all_combines_results() -> None:
-    """Verifica che propagate_all unisca correttamente messaggi, warning e stati di Flatpak e Snap."""
+    """Verify that propagate_all correctly merges messages, warnings and status of Flatpak and Snap."""
     bridge = SandboxBridge()
 
     flatpak_stub = PropagationResult(
@@ -246,12 +246,12 @@ def test_propagate_all_combines_results() -> None:
 
 
 # =============================================================================
-# 6. Test Gestione Eccezioni e Timeout in Subprocess
+# 6. Exception and Timeout Handling Tests in Subprocess
 # =============================================================================
 
 
 def test_subprocess_timeout_handling() -> None:
-    """Verifica che TimeoutExpired in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
+    """Verify that TimeoutExpired in subprocess.run returns PropagationResult with flatpak_success=False and warning."""
     bridge = SandboxBridge()
     with (
         patch("shutil.which", return_value="/usr/bin/flatpak"),
@@ -267,7 +267,7 @@ def test_subprocess_timeout_handling() -> None:
 
 
 def test_subprocess_error_handling() -> None:
-    """Verifica che CalledProcessError in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
+    """Verify that CalledProcessError in subprocess.run returns PropagationResult with flatpak_success=False and warning."""
     bridge = SandboxBridge()
     err = subprocess.CalledProcessError(
         returncode=1, cmd="flatpak override", stderr="Permission denied"
@@ -283,7 +283,7 @@ def test_subprocess_error_handling() -> None:
 
 
 def test_subprocess_file_not_found_handling() -> None:
-    """Verifica che FileNotFoundError in subprocess.run ritorni PropagationResult con flatpak_success=False e warning."""
+    """Verify that FileNotFoundError in subprocess.run returns PropagationResult with flatpak_success=False and warning."""
     bridge = SandboxBridge()
     with (
         patch("shutil.which", return_value="/usr/bin/flatpak"),
@@ -296,12 +296,12 @@ def test_subprocess_file_not_found_handling() -> None:
 
 
 # =============================================================================
-# 7. Test Integrazione con ThemeManager
+# 7. Integration Tests with ThemeManager
 # =============================================================================
 
 
 def test_apply_themes_with_sandbox_propagation() -> None:
-    """Verifica che ThemeManager.apply_themes invochi SandboxBridge e popoli sandbox_propagation."""
+    """Verify that ThemeManager.apply_themes invokes SandboxBridge and populates sandbox_propagation."""
     mock_scanner = MagicMock()
     mock_scanner.find_theme.return_value = Theme(
         name="Nordic",
@@ -342,7 +342,7 @@ def test_apply_themes_with_sandbox_propagation() -> None:
 
 
 def test_apply_themes_no_sandbox_flag() -> None:
-    """Verifica che con propagate_sandbox=False la propagazione sandbox non venga eseguita."""
+    """Verify that with propagate_sandbox=False sandbox propagation is not executed."""
     mock_scanner = MagicMock()
     mock_scanner.find_theme.return_value = Theme(
         name="Nordic",
@@ -370,7 +370,7 @@ def test_apply_themes_no_sandbox_flag() -> None:
 
 
 def test_manager_system_status_includes_sandbox() -> None:
-    """Verifica che get_system_status() includa sandbox_status."""
+    """Verify that get_system_status() includes sandbox_status."""
     mock_sandbox = MagicMock()
     mock_sandbox.get_sandbox_status.return_value = SandboxStatus(
         snap_available=True,
@@ -393,12 +393,12 @@ def test_manager_system_status_includes_sandbox() -> None:
 
 
 # =============================================================================
-# 8. Test CLI: sandbox-status e flag --no-sandbox
+# 8. CLI Tests: sandbox-status and --no-sandbox flag
 # =============================================================================
 
 
 def test_cli_sandbox_status_command(capsys: pytest.CaptureFixture[str]) -> None:
-    """Verifica che il comando CLI 'gnome-theme-manager sandbox-status' stampi lo stato corretto."""
+    """Verify that the CLI command 'gnome-theme-manager sandbox-status' prints the correct status."""
     with patch("gnome_theme_manager.core.manager.ThemeManager.get_system_status") as mock_status:
         mock_status.return_value = SystemStatus(
             gsettings_available=True,
@@ -424,7 +424,7 @@ def test_cli_sandbox_status_command(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_cli_apply_no_sandbox_flag() -> None:
-    """Verifica che il comando apply con flag --no-sandbox passi propagate_sandbox=False al manager."""
+    """Verify that apply command with --no-sandbox flag passes propagate_sandbox=False to manager."""
     with (
         patch("gnome_theme_manager.core.manager.ThemeManager.apply_themes") as mock_apply,
         patch("gnome_theme_manager.core.manager.ThemeManager.find_theme", return_value=True),
@@ -444,7 +444,7 @@ def test_cli_apply_no_sandbox_flag() -> None:
 
 
 def test_sandbox_bridge_in_container(tmp_path: Path) -> None:
-    """Verifica che dentro il sandbox Flatpak vengano rilevati Flatpak e Snap dai file e scritto l'override."""
+    """Verify that inside Flatpak sandbox, Flatpak and Snap are detected from files and override is written."""
     bridge = SandboxBridge()
     fake_override = tmp_path / ".local" / "share" / "flatpak" / "overrides" / "global"
     fake_override.parent.mkdir(parents=True, exist_ok=True)

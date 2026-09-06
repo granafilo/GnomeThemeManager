@@ -38,12 +38,12 @@ else:
     GLib = None  # type: ignore[assignment]
     Pango = None  # type: ignore[assignment]
 
-# Percorso della directory contenente i file UI
+# Path to the directory containing UI files
 UI_DIR = Path(__file__).parent.parent / "src" / "gnome_theme_manager" / "gui_gtk" / "ui"
 
 
 def test_themes_page_ui_structure_and_scrolling() -> None:
-    """Verifica la struttura dichiarativa di themes_page.ui e i relativi controlli."""
+    """Verify the declarative structure of themes_page.ui and its controls."""
     themes_ui_path = UI_DIR / "themes_page.ui"
     tree = ET.parse(themes_ui_path)
     root = tree.getroot()
@@ -81,9 +81,9 @@ def test_themes_page_ui_structure_and_scrolling() -> None:
 
 
 def test_themes_page_ready_state_and_active_card(mock_theme_manager: MagicMock) -> None:
-    """Verifica che ThemesPage mostri la Card del Tema Attivo ed escluda tale tema dalla lista disponibili."""
+    """Verify that ThemesPage displays the Active Theme Card and excludes it from the available list."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     assert page.page_id == "themes"
@@ -91,67 +91,67 @@ def test_themes_page_ready_state_and_active_card(mock_theme_manager: MagicMock) 
     page.refresh(sync=True)
 
     assert page.widget.get_visible_child_name() == "ready"
-    # Il tema attivo per GTK nel mock è 'Yaru'
+    # The active theme for GTK in mock is 'Yaru'
     assert page.active_theme_row.get_title() == "Yaru"
     assert "In use" in page.active_theme_badge.get_text()
 
-    # La lista delle alternative contiene solo 'Nordic' ('Yaru' è escluso)
+    # The alternatives list contains only 'Nordic' ('Yaru' is excluded)
     assert "1 other applications (gtk) available" in page.count_label.get_text()
     assert page.themes_list_box.get_visible() is True
     assert page.apply_button.get_sensitive() is False
 
 
 def test_themes_page_categories_navigation(mock_theme_manager: MagicMock) -> None:
-    """Verifica la navigazione tra categorie con corretta visualizzazione della card attiva e delle alternative."""
+    """Verify navigation across categories with proper active card and alternatives display."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
 
-    # 1. Categoria GNOME Shell (attivo: Yaru [non in lista locale], 1 alternativa: Nordic-Shell)
+    # 1. GNOME Shell category (active: Yaru [not in local list], 1 alternative: Nordic-Shell)
     page.set_category(ThemeType.SHELL)
     assert page.active_theme_row.get_title() == "Yaru"
     assert "not found" in page.active_theme_row.get_subtitle().lower()
     assert "1 other gnome shell available" in page.count_label.get_text()
 
-    # 2. Categoria Cursori (attivo: Yaru [non in lista locale], 1 alternativa: Bibata-Modern-Classic)
+    # 2. Cursor category (active: Yaru [not in local list], 1 alternative: Bibata-Modern-Classic)
     page.set_category(ThemeType.CURSOR)
     assert page.active_theme_row.get_title() == "Yaru"
     assert "not found" in page.active_theme_row.get_subtitle().lower()
     assert "1 other cursors available" in page.count_label.get_text()
 
-    # 3. Categoria Icone (attivo: Yaru [non in lista locale], 1 alternativa: Papirus)
+    # 3. Icon category (active: Yaru [not in local list], 1 alternative: Papirus)
     page.set_category(ThemeType.ICON)
     assert page.active_theme_row.get_title() == "Yaru"
     assert "not found" in page.active_theme_row.get_subtitle().lower()
     assert "1 other icons available" in page.count_label.get_text()
 
-    # 4. Categoria GTK (attivo: Yaru, 1 alternativa: Nordic)
+    # 4. GTK category (active: Yaru, 1 alternative: Nordic)
     page.set_category(ThemeType.GTK)
     assert page.active_theme_row.get_title() == "Yaru"
     assert "1 other applications (gtk) available" in page.count_label.get_text()
 
 
 def test_themes_page_search_filtering_in_available_list(mock_theme_manager: MagicMock) -> None:
-    """Verifica che la ricerca testuale operi esclusivamente tra i temi alternativi disponibili."""
+    """Verify that text search operates exclusively on available alternative themes."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
     page.set_category(ThemeType.GTK)
 
-    # Ricerca per 'nordic' (disponibile)
+    # Search for 'nordic' (available)
     page.search_entry.set_text("nordic")
     assert "1 other applications (gtk) available" in page.count_label.get_text()
 
-    # Ricerca per 'yaru' (che è già attivo ed escluso dalla lista disponibili)
+    # Search for 'yaru' (which is already active and excluded from the available list)
     page.search_entry.set_text("yaru")
     assert page.no_results_page.get_visible() is True
     assert page.themes_list_box.get_visible() is False
 
-    # Azzeramento ricerca
+    # Clear search
     page.search_entry.set_text("")
     assert "1 other applications (gtk) available" in page.count_label.get_text()
     assert page.no_results_page.get_visible() is False
@@ -161,14 +161,14 @@ def test_themes_page_search_filtering_in_available_list(mock_theme_manager: Magi
 def test_themes_page_apply_theme_updates_card_and_available_list(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che applicando un nuovo tema:
-    1. Si crei un nuovo snapshot immutabile;
-    2. La card mostri il nuovo tema attivo;
-    3. Il nuovo tema attivo scompaia dalla lista;
-    4. Il tema precedente venga reinserito nella lista dei disponibili.
+    """Verify that applying a new theme:
+    1. Creates a new immutable snapshot;
+    2. Displays the new active theme in the card;
+    3. Removes the new active theme from the available list;
+    4. Reinserts the previous active theme into the available list.
     """
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -190,16 +190,16 @@ def test_themes_page_apply_theme_updates_card_and_available_list(
 
     page.apply_theme(item_nordic, sync=True)
 
-    # Verifica immutabilità e creazione nuovo snapshot
+    # Verify immutability and new snapshot creation
     snapshot_after = page.current_snapshot
     assert snapshot_after is not None
     assert snapshot_after is not snapshot_before
     assert snapshot_after.active_themes[ThemeType.GTK] == "Nordic"
 
-    # Card aggiornata con il nuovo tema
+    # Card updated with the new theme
     assert page.active_theme_row.get_title() == "Nordic"
 
-    # Lista aggiornata: ora contiene 'Yaru' ('Nordic' è stato rimosso)
+    # Updated list: now contains 'Yaru' ('Nordic' was removed)
     assert "1 other applications (gtk) available" in page.count_label.get_text()
     first_row = page.themes_list_box.get_first_child()
     assert first_row is not None
@@ -207,9 +207,9 @@ def test_themes_page_apply_theme_updates_card_and_available_list(
 
 
 def test_themes_page_single_click_selects_only(mock_theme_manager: MagicMock) -> None:
-    """Verifica che il singolo click selezioni soltanto la riga senza avviare la conferma/applicazione."""
+    """Verify that a single click only selects the row without triggering confirm/apply."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -219,7 +219,7 @@ def test_themes_page_single_click_selects_only(mock_theme_manager: MagicMock) ->
     assert first_row is not None
 
     with patch.object(page, "confirm_and_apply_selected") as mock_confirm:
-        # Il singolo click emette row-selected
+        # Single click emits row-selected
         page.themes_list_box.select_row(first_row)
         assert page.selected_theme is not None
         assert page.selected_theme.name == "Nordic"
@@ -227,9 +227,9 @@ def test_themes_page_single_click_selects_only(mock_theme_manager: MagicMock) ->
 
 
 def test_themes_page_double_click_triggers_confirm_and_apply(mock_theme_manager: MagicMock) -> None:
-    """Verifica che il doppio click (row-activated) avvii la conferma/applicazione del tema."""
+    """Verify that double click (row-activated) triggers theme confirmation/application."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -239,7 +239,7 @@ def test_themes_page_double_click_triggers_confirm_and_apply(mock_theme_manager:
     assert first_row is not None
 
     with patch.object(page, "confirm_and_apply_selected") as mock_confirm:
-        # Il doppio click emette row-activated
+        # Double click emits row-activated
         page.themes_list_box.emit("row-activated", first_row)
         assert page.selected_theme is not None
         assert page.selected_theme.name == "Nordic"
@@ -247,9 +247,9 @@ def test_themes_page_double_click_triggers_confirm_and_apply(mock_theme_manager:
 
 
 def test_themes_page_double_click_blocked_during_application(mock_theme_manager: MagicMock) -> None:
-    """Verifica che un doppio click durante un'applicazione in corso venga ignorato."""
+    """Verify that double click during an ongoing application is ignored."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -266,13 +266,13 @@ def test_themes_page_double_click_blocked_during_application(mock_theme_manager:
 
 
 def test_themes_page_sorting_user_first_then_alphabetical() -> None:
-    """Verifica che i temi siano ordinati con priorità:
-    1. Temi Utente
-    2. Temi Sistema
-    3. Ordine alfabetico case-insensitive
+    """Verify themes are sorted by priority:
+    1. User themes
+    2. System themes
+    3. Case-insensitive alphabetical order
     """
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_mgr = MagicMock(spec=ThemeManager)
     mock_mgr.get_current_themes.return_value = ThemeSet(gtk_theme="ActiveTheme")
@@ -313,7 +313,7 @@ def test_themes_page_sorting_user_first_then_alphabetical() -> None:
     page.refresh(sync=True)
     page.set_category(ThemeType.GTK)
 
-    # Raccolta dei titoli delle righe nella lista
+    # Collect row titles from the list
     rendered_titles: list[str] = []
     child = page.themes_list_box.get_first_child()
     while child is not None:
@@ -321,16 +321,16 @@ def test_themes_page_sorting_user_first_then_alphabetical() -> None:
             rendered_titles.append(child.get_title())
         child = child.get_next_sibling()
 
-    # Ordine atteso: Utenti (alpha-user, Zeta-User) poi Sistema (alpha-sys, Zeta-Sys)
+    # Expected order: User (alpha-user, Zeta-User) then System (alpha-sys, Zeta-Sys)
     assert rendered_titles == ["alpha-user", "Zeta-User", "alpha-sys", "Zeta-Sys"]
 
 
 def test_themes_page_cursor_application_shows_informative_toast(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che l'applicazione del tema cursore emetta un feedback persistente con nota informativa."""
+    """Verify that cursor theme application emits persistent feedback with an informative note."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -348,21 +348,21 @@ def test_themes_page_cursor_application_shows_informative_toast(
 
     with patch.object(page, "_show_toast") as mock_toast:
         page.apply_theme(item_cursor, sync=True)
-        # Deve comparire il toast informativo dedicato
+        # Dedicated informative toast must appear
         mock_toast.assert_called_once()
         msg = mock_toast.call_args[0][0]
         assert "Bibata-Modern-Classic" in msg
         assert "switch windows" in msg.lower() or "restart" in msg.lower()
-        # Controlli riabilitati
+        # Controls re-enabled
         assert page.is_applying is False
 
 
 def test_themes_page_cursor_application_error_shows_error_toast(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che in caso di errore nell'applicazione del tema cursore venga mostrato il messaggio di errore."""
+    """Verify that on cursor theme application failure an error toast is displayed."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.apply_themes.side_effect = GnomeThemeManagerError("Errore dconf")
 
@@ -390,9 +390,9 @@ def test_themes_page_cursor_application_error_shows_error_toast(
 def test_themes_page_double_click_blocked_when_dialog_already_open(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che se un dialogo di conferma è già aperto, ulteriori attivazioni/doppi click vengano ignorati."""
+    """Verify that if a confirmation dialog is already open, further activations/double-clicks are ignored."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -412,9 +412,9 @@ def test_themes_page_double_click_blocked_when_dialog_already_open(
 def test_themes_page_confirm_dialog_cancel_resets_flag_and_no_apply(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che l'annullamento del dialogo di conferma resetti _confirm_dialog_open e non applichi nulla."""
+    """Verify that canceling the confirmation dialog resets _confirm_dialog_open and applies nothing."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -443,10 +443,10 @@ def test_themes_page_confirm_dialog_cancel_resets_flag_and_no_apply(
         page.confirm_and_apply_theme(item, sync=False)
         assert page._confirm_dialog_open is True
 
-        # Secondo tentativo di apertura mentre è aperto: deve essere ignorato
+        # Second open attempt while already open: must be ignored
         page.confirm_and_apply_theme(item, sync=False)
 
-        # Simulazione risposta 'cancel' dal dialogo
+        # Simulate 'cancel' response from dialog
         if captured_callback is not None:
             captured_callback(MagicMock(), "cancel")
 
@@ -457,9 +457,9 @@ def test_themes_page_confirm_dialog_cancel_resets_flag_and_no_apply(
 def test_themes_page_confirm_dialog_interactive_apply_resets_flag(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che la risposta 'apply' dal dialogo interattivo resetti _confirm_dialog_open e invochi apply_theme."""
+    """Verify that 'apply' response from interactive dialog resets _confirm_dialog_open and calls apply_theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -488,7 +488,7 @@ def test_themes_page_confirm_dialog_interactive_apply_resets_flag(
         page.confirm_and_apply_theme(item, sync=False)
         assert page._confirm_dialog_open is True
 
-        # Simulazione risposta 'apply' dal dialogo
+        # Simulate 'apply' response from dialog
         if captured_callback is not None:
             captured_callback(MagicMock(), "apply")
 
@@ -499,9 +499,9 @@ def test_themes_page_confirm_dialog_interactive_apply_resets_flag(
 def test_themes_page_confirm_dialog_sync_mode_resets_flag_and_applies(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che con sync=True il dialogo venga comunque creato e alla risposta 'apply' invochi apply_theme(sync=True)."""
+    """Verify that with sync=True dialog is still created and on 'apply' response calls apply_theme(sync=True)."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -534,16 +534,16 @@ def test_themes_page_confirm_dialog_sync_mode_resets_flag_and_applies(
         assert len(dialog_instances) == 1
         assert page._confirm_dialog_open is True
 
-        # Simulazione risposta "apply"
+        # Simulate 'apply' response
         dialog_instances[0].emit("response", "apply")
         assert page._confirm_dialog_open is False
         mock_apply.assert_called_once_with(item, on_complete=None, sync=True)
 
 
 def test_themes_page_active_theme_backend_unavailable(mock_theme_manager: MagicMock) -> None:
-    """Verifica che se il backend non riesce a recuperare il tema attivo, la card mostri 'Not available'."""
+    """Verify that if backend fails to retrieve the active theme, the card shows 'Not available'."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.get_current_themes.side_effect = GnomeThemeManagerError(
         "GSettings unavailable."
@@ -557,24 +557,24 @@ def test_themes_page_active_theme_backend_unavailable(mock_theme_manager: MagicM
 
 
 def test_themes_page_cursor_propagate_fallback_error(mock_theme_manager: MagicMock) -> None:
-    """Verifica che un errore in GtkSettings durante la propagazione del cursore venga gestito senza eccezioni."""
+    """Verify that an error in GtkSettings during cursor propagation is handled without exceptions."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
 
     with patch(
-        "gi.repository.Gdk.Display.get_default", side_effect=RuntimeError("Display non disponibile")
+        "gi.repository.Gdk.Display.get_default", side_effect=RuntimeError("Display unavailable")
     ):
-        # Non deve sollevare eccezioni
+        # Must not raise exceptions
         res = page._propagate_cursor_theme_in_process("Bibata-Modern-Classic")
         assert res is False
 
 
 def test_themes_page_selection_enables_apply_button(mock_theme_manager: MagicMock) -> None:
-    """Verifica che la selezione di un tema alternativo dalla lista abiliti il pulsante Applica."""
+    """Verify that selecting an alternative theme from the list enables the Apply button."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -583,7 +583,7 @@ def test_themes_page_selection_enables_apply_button(mock_theme_manager: MagicMoc
     assert page.selected_theme is None
     assert page.apply_button.get_sensitive() is False
 
-    # Selezione del tema disponibile nella lista ('Nordic')
+    # Select available theme from list ('Nordic')
     first_row = page.themes_list_box.get_first_child()
     assert first_row is not None
     page.themes_list_box.select_row(first_row)
@@ -594,9 +594,9 @@ def test_themes_page_selection_enables_apply_button(mock_theme_manager: MagicMoc
 
 
 def test_themes_page_empty_state() -> None:
-    """Verifica che quando list_themes restituisce una lista vuota venga mostrato lo stato EMPTY."""
+    """Verify that when list_themes returns an empty list the EMPTY state is shown."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_mgr = MagicMock(spec=ThemeManager)
     mock_mgr.list_themes.return_value = []
@@ -614,9 +614,9 @@ def test_themes_page_empty_state() -> None:
 
 
 def test_themes_page_error_state_and_retry(mock_theme_manager: MagicMock) -> None:
-    """Verifica la transizione allo stato ERROR in caso di eccezione e il funzionamento del retry."""
+    """Verify transition to ERROR state on exception and retry behavior."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.list_themes.side_effect = GnomeThemeManagerError("Scansione fallita.")
 
@@ -626,16 +626,16 @@ def test_themes_page_error_state_and_retry(mock_theme_manager: MagicMock) -> Non
     assert page.widget.get_visible_child_name() == "error"
     assert "Scansione fallita" in page.error_page.get_description()
 
-    # Ripristino condizione di successo e retry sincrono
+    # Restore success condition and synchronous retry
     mock_theme_manager.list_themes.side_effect = None
     page.refresh(sync=True)
     assert page.widget.get_visible_child_name() == "ready"
 
 
 def test_themes_page_concurrency_guard(mock_theme_manager: MagicMock) -> None:
-    """Verifica che richieste di refresh concorrenti su ThemesPage vengano bloccate."""
+    """Verify that concurrent refresh requests on ThemesPage are blocked."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page._is_loading = True
@@ -645,9 +645,9 @@ def test_themes_page_concurrency_guard(mock_theme_manager: MagicMock) -> None:
 
 
 def test_themes_page_apply_theme_mapping_gtk(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'applicazione di un tema GTK configuri solo gtk_theme."""
+    """Verify that applying a GTK theme configures only gtk_theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -662,7 +662,7 @@ def test_themes_page_apply_theme_mapping_gtk(mock_theme_manager: MagicMock) -> N
 
     page.apply_theme(item, sync=True)
 
-    # Verifica invocazione con apply_component
+    # Verify invocation with apply_component
     mock_theme_manager.apply_component.assert_called_once_with(
         component=ThemeType.GTK,
         theme_name="Nordic",
@@ -672,9 +672,9 @@ def test_themes_page_apply_theme_mapping_gtk(mock_theme_manager: MagicMock) -> N
 
 
 def test_themes_page_apply_theme_mapping_icon(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'applicazione di un tema icone configuri solo icon_theme."""
+    """Verify that applying an icon theme configures only icon_theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -698,9 +698,9 @@ def test_themes_page_apply_theme_mapping_icon(mock_theme_manager: MagicMock) -> 
 
 
 def test_themes_page_apply_theme_mapping_cursor(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'applicazione di un tema cursori configuri solo cursor_theme."""
+    """Verify that applying a cursor theme configures only cursor_theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -724,9 +724,9 @@ def test_themes_page_apply_theme_mapping_cursor(mock_theme_manager: MagicMock) -
 
 
 def test_themes_page_apply_theme_mapping_shell(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'applicazione di un tema shell configuri solo shell_theme."""
+    """Verify that applying a shell theme configures only shell_theme."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -750,9 +750,9 @@ def test_themes_page_apply_theme_mapping_shell(mock_theme_manager: MagicMock) ->
 
 
 def test_themes_page_apply_theme_success_notifies_listener(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'applicazione riuscita notifichi il listener on_theme_applied."""
+    """Verify that successful application notifies the on_theme_applied listener."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     mock_listener = MagicMock()
@@ -775,9 +775,9 @@ def test_themes_page_apply_theme_success_notifies_listener(mock_theme_manager: M
 
 
 def test_themes_page_apply_theme_error_handling(mock_theme_manager: MagicMock) -> None:
-    """Verifica che un errore durante l'applicazione ripristini _is_applying e notifichi l'errore."""
+    """Verify that an error during application resets _is_applying and notifies the error."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.apply_themes.side_effect = GnomeThemeManagerError("GSettings write failed.")
 
@@ -802,9 +802,9 @@ def test_themes_page_apply_theme_error_handling(mock_theme_manager: MagicMock) -
 
 
 def test_themes_page_apply_concurrency_guard(mock_theme_manager: MagicMock) -> None:
-    """Verifica che una seconda applicazione concorrente venga scartata se una è già in corso."""
+    """Verify that a second concurrent application is discarded if one is already running."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page._is_applying = True
@@ -827,9 +827,9 @@ def test_themes_page_apply_concurrency_guard(mock_theme_manager: MagicMock) -> N
 
 
 def test_themes_page_apply_shell_theme_missing_user_themes(mock_theme_manager: MagicMock) -> None:
-    """Verifica che se il tema Shell non può essere applicato (shell_theme=None), non venga notificato il successo."""
+    """Verify that if Shell theme cannot be applied (shell_theme=None), success is not notified."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.apply_themes.return_value = ApplyResult(
         shell_theme=None,
@@ -852,14 +852,14 @@ def test_themes_page_apply_shell_theme_missing_user_themes(mock_theme_manager: M
 
     page.apply_theme(item, sync=True)
 
-    # Il listener di successo NON deve essere stato chiamato
+    # Success listener must NOT have been called
     mock_listener.assert_not_called()
 
 
 def test_themes_page_apply_gtk_theme_without_gtk4_override(mock_theme_manager: MagicMock) -> None:
-    """Verifica che un tema GTK applicato senza override GTK4 notifichi comunque il listener con l'esito."""
+    """Verify that a GTK theme applied without GTK4 override still notifies the listener with the result."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.apply_themes.return_value = ApplyResult(
         gtk_theme="Classic-Theme",
@@ -890,15 +890,15 @@ def test_themes_page_apply_gtk_theme_without_gtk4_override(mock_theme_manager: M
 def test_themes_page_confirm_dialog_clean_structure_and_sizing(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica la struttura pulita del dialogo di conferma:
-    - Titolo: «Applicare “NOME” a CATEGORIA?»
-    - Nessun path o origine nel testo principale
-    - Presenza di categoria e tema attivo
-    - Spaziatura confortevole (larghezza minima 500px)
-    - Label con wrap=False ed ellipsize=END
+    """Verify clean confirmation dialog structure:
+    - Title: "Apply 'NAME' to CATEGORY?"
+    - No path or origin in main text
+    - Category and active theme presence
+    - Comfortable spacing (minimum width 500px)
+    - Labels with wrap=False and ellipsize=END
     """
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -930,19 +930,19 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
         assert len(dialog_instances) == 1
         dlg = dialog_instances[0]
 
-        # Verifica titolo pulito
+        # Verify clean title
         assert dlg.get_heading() == "Apply “Colloid” to GNOME Shell?"
 
-        # Verifica contenuto extra_child
+        # Verify extra_child content
         extra_child = dlg.get_extra_child()
         assert extra_child is not None
         assert isinstance(extra_child, Gtk.Box)
 
-        # Verifica larghezza minima confortevole (500px)
+        # Verify comfortable minimum width (500px)
         width, _ = extra_child.get_size_request()
         assert width >= 480
 
-        # Ispezione label interne
+        # Inspect inner labels
         labels: list[Gtk.Label] = []
         child = extra_child.get_first_child()
         while child is not None:
@@ -956,7 +956,7 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
         assert labels[0].get_wrap() is False
         assert labels[0].get_ellipsize() == Pango.EllipsizeMode.END
 
-        # Verifica assenza di percorsi e dettagli tecnici
+        # Verify absence of paths and technical details
         for lbl in labels:
             text = lbl.get_text()
             assert "/usr/share" not in text
@@ -968,9 +968,9 @@ def test_themes_page_confirm_dialog_clean_structure_and_sizing(
 def test_themes_page_confirm_dialog_long_name_and_active_theme(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica il comportamento del dialogo con nomi lunghi e tema attivo valorizzato."""
+    """Verify dialog behavior with long names and active theme populated."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -1023,9 +1023,9 @@ def test_themes_page_confirm_dialog_long_name_and_active_theme(
 
 
 def test_themes_page_confirm_dialog_accept(mock_theme_manager: MagicMock) -> None:
-    """Verifica che la conferma con 'apply' nel dialogo invochi l'applicazione del tema."""
+    """Verify that confirming with 'apply' in the dialog invokes theme application."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -1053,15 +1053,15 @@ def test_themes_page_confirm_dialog_accept(mock_theme_manager: MagicMock) -> Non
         ):
             page.confirm_and_apply_theme(item, sync=True)
             assert len(dialog_instances) == 1
-            # Emettiamo la risposta "apply"
+            # Emit "apply" response
             dialog_instances[0].emit("response", "apply")
             mock_apply.assert_called_once_with(item, on_complete=None, sync=True)
 
 
 def test_themes_page_confirm_dialog_cancel(mock_theme_manager: MagicMock) -> None:
-    """Verifica che l'annullamento con 'cancel' nel dialogo non invochi l'applicazione del tema."""
+    """Verify that canceling with 'cancel' in the dialog does not invoke theme application."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     item = ThemeItemPresentation(
@@ -1089,15 +1089,15 @@ def test_themes_page_confirm_dialog_cancel(mock_theme_manager: MagicMock) -> Non
         ):
             page.confirm_and_apply_theme(item, sync=True)
             assert len(dialog_instances) == 1
-            # Emettiamo la risposta "cancel"
+            # Emit "cancel" response
             dialog_instances[0].emit("response", "cancel")
             mock_apply.assert_not_called()
 
 
 def test_themes_page_category_specific_feedback_messages(mock_theme_manager: MagicMock) -> None:
-    """Verifica che ogni categoria emetta un messaggio di successo chiaro e specifico."""
+    """Verify that each category emits a clear and specific success message."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = ThemesPage(manager=mock_theme_manager)
     page.refresh(sync=True)
@@ -1105,7 +1105,7 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     toasts: list[str] = []
     page._show_toast = lambda msg, **kwargs: toasts.append(msg)
 
-    # 1. GTK con override
+    # 1. GTK with override
     mock_theme_manager.apply_themes.return_value = ApplyResult(gtk4_override_applied=True)
     item_gtk = ThemeItemPresentation(
         name="Nordic",
@@ -1136,7 +1136,7 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     assert len(toasts) == 2
     assert "GNOME Shell theme «Colloid» applied" in toasts[-1]
 
-    # 3. Icone
+    # 3. Icons
     mock_theme_manager.apply_themes.return_value = ApplyResult()
     item_icon = ThemeItemPresentation(
         name="Papirus",
@@ -1151,7 +1151,7 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     assert len(toasts) == 3
     assert "Icon theme «Papirus» applied" in toasts[-1]
 
-    # 4. Cursore
+    # 4. Cursor
     mock_theme_manager.apply_themes.return_value = ApplyResult()
     item_cursor = ThemeItemPresentation(
         name="Bibata",
@@ -1167,7 +1167,7 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
     assert "Cursor theme «Bibata» applied" in toasts[-1]
     assert "switch windows" in toasts[-1] or "restart" in toasts[-1]
 
-    # 5. GNOME Shell parziale (no user themes)
+    # 5. GNOME Shell partial (no user themes)
     mock_theme_manager.apply_themes.return_value = ApplyResult(shell_theme=None)
     page.apply_theme(item_shell, sync=True)
     assert len(toasts) == 5
@@ -1176,7 +1176,7 @@ def test_themes_page_category_specific_feedback_messages(mock_theme_manager: Mag
 
 
 def test_themes_page_color_scheme_combo_row(mock_theme_manager: MagicMock) -> None:
-    """Verifica che il selettore color_scheme sia visibile solo per GTK e aggiorni GSettings."""
+    """Verify that the color_scheme selector is visible only for GTK and updates GSettings."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 unavailable.")
 
