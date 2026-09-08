@@ -3338,6 +3338,13 @@ msgstr "Esecuzione del comando non riuscita."
 msgid "Failed"
 msgstr "Non riuscito"
 
+msgid "Cancel All"
+msgstr "Annulla tutto"
+
+msgid "This component is already configured on your system."
+msgstr "Questo componente è già configurato sul sistema."
+
+
 
 
 

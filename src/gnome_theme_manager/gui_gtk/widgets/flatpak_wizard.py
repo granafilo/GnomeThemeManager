@@ -44,6 +44,13 @@ class FlatpakWizardDialog:
         self.step_results: dict[str, str] = {}  # step_id -> "installed" | "skipped" | "already_satisfied" | "failed"
         self._is_executing: bool = False
 
+        self.step_sub_stacks: dict[str, Gtk.Stack] = {}
+        self.step_install_btns: dict[str, Gtk.Button] = {}
+        self.step_skip_btns: dict[str, Gtk.Button] = {}
+        self.step_cancel_all_btns: dict[str, Gtk.Button] = {}
+        self.step_skip_err_btns: dict[str, Gtk.Button] = {}
+        self.step_retry_btns: dict[str, Gtk.Button] = {}
+
         self.window = Adw.Window(
             modal=True,
             transient_for=parent_window,
@@ -297,6 +304,13 @@ class FlatpakWizardDialog:
             )
             prompt_box.append(auth_banner)
 
+        if step.is_satisfied:
+            satisfied_banner = Adw.Banner(
+                title=_("This component is already configured on your system."),
+                revealed=True,
+            )
+            prompt_box.append(satisfied_banner)
+
         step_check = Gtk.CheckButton(label=_("Include this step in the setup"))
         step_check.set_active(step.step_id in self.selected_step_ids)
         step_check.connect("toggled", self._on_step_check_toggled, step.step_id)
@@ -432,6 +446,10 @@ class FlatpakWizardDialog:
         error_box.append(error_group)
 
         error_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        cancel_all_btn = Gtk.Button(label=_("Cancel All"), css_classes=["destructive-action"])
+        cancel_all_btn.connect("clicked", lambda _b: self.window.close())
+        error_actions.append(cancel_all_btn)
+
         skip_err_btn = Gtk.Button(label=_("Skip and Continue"))
         skip_err_btn.connect("clicked", lambda _b, s=step: self._on_step_skip(s))
         error_actions.append(skip_err_btn)
@@ -441,6 +459,14 @@ class FlatpakWizardDialog:
         error_box.append(error_actions)
 
         step_sub_stack.add_named(error_box, "error")
+
+        # Expose test handles in widget mappings
+        self.step_sub_stacks[step.step_id] = step_sub_stack
+        self.step_install_btns[step.step_id] = install_btn
+        self.step_skip_btns[step.step_id] = skip_btn
+        self.step_cancel_all_btns[step.step_id] = cancel_all_btn
+        self.step_skip_err_btns[step.step_id] = skip_err_btn
+        self.step_retry_btns[step.step_id] = retry_btn
 
         # Connect install and retry triggers
         install_btn.connect(
