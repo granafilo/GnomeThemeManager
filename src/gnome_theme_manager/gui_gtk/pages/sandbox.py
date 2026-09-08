@@ -25,6 +25,7 @@ from gi.repository import Adw, GLib, Gtk
 from ...core.errors import GSettingsUnavailableError
 from ...core.models import PropagationResult, SandboxStatus, ThemeSet
 from ...core.sandbox_bridge import KNOWN_SNAP_COMMON_THEMES
+from ..widgets.flatpak_dialog import FlatpakPropagationDialog
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -308,6 +309,19 @@ class SandboxPage:
         else:
             self.flatpak_override_row.set_subtitle(_("Not configured"))
 
+        if not hasattr(self, "_flatpak_override_btn"):
+            self._flatpak_override_btn = Gtk.Button(
+                label=_("Propagate Now"),
+                css_classes=["suggested-action", "flat"],
+                valign=Gtk.Align.CENTER,
+            )
+            self._flatpak_override_btn.connect("clicked", lambda _b: self._on_propagate_clicked())
+            self.flatpak_override_row.add_suffix(self._flatpak_override_btn)
+
+        self._flatpak_override_btn.set_visible(
+            sb.flatpak_available and not sb.flatpak_filesystem_override_active
+        )
+
         if self.flatpak_group is not None:
             self.flatpak_group.set_visible(True)
 
@@ -436,68 +450,24 @@ class SandboxPage:
         threading.Thread(target=run_thread, daemon=True).start()
 
     def _on_propagate_clicked(self, _button: Gtk.Button | None = None) -> None:
-        """Open confirmation dialog before propagation."""
-        if self._confirm_dialog_open:
-            return
-
-        self._confirm_dialog_open = True
+        """Open Flatpak propagation and repair dialog."""
         root_window = self._get_root_window()
-        heading = _("Propagate theme to sandboxed applications?")
-        body = _(
-            "This operation configures filesystem overrides for Flatpak and "
-            "verifies compatibility of active themes with Snap.\n\n"
-            "Not all sandboxed applications or themes can be updated automatically."
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+        dlg = FlatpakPropagationDialog(
+            manager=self.manager,
+            parent_window=parent_win,
+            on_propagated=self._on_propagation_finished,
         )
+        dlg.present()
 
-        if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new(heading, body)
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("propagate", _("Propagate Theme"))
-            dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
-            dialog.set_default_response("propagate")
-            dialog.set_close_response("cancel")
-
-            def on_dialog_response(d: Any, response_param: Any) -> None:
-                try:
-                    if hasattr(d, "choose_finish") and not isinstance(response_param, str):
-                        try:
-                            resp = d.choose_finish(response_param)
-                        except (GLib.GError, TypeError, ValueError):
-                            resp = str(response_param)
-                    else:
-                        resp = str(response_param)
-
-                    if resp == "propagate":
-                        self._run_propagation()
-                finally:
-                    self._confirm_dialog_open = False
-
-            dialog.connect("response", on_dialog_response)
-            dialog.present(root_window if isinstance(root_window, Gtk.Widget) else None)
-        elif hasattr(Adw, "MessageDialog"):
-            dialog = Adw.MessageDialog.new(
-                root_window if isinstance(root_window, Gtk.Window) else None,
-                heading,
-                body,
-            )
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("propagate", _("Propagate Theme"))
-            dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
-            dialog.set_default_response("propagate")
-            dialog.set_close_response("cancel")
-
-            def on_msg_response(_dlg: Any, response: str) -> None:
-                try:
-                    if response == "propagate":
-                        self._run_propagation()
-                finally:
-                    self._confirm_dialog_open = False
-
-            dialog.connect("response", on_msg_response)
-            dialog.present()
-        else:
-            self._confirm_dialog_open = False
-            self._run_propagation()
+    def _on_propagation_finished(self) -> None:
+        """Handle completion of propagation."""
+        self.refresh(sync=True)
+        if self.on_sandbox_propagated:
+            try:
+                self.on_sandbox_propagated()
+            except Exception as e:
+                logger.warning("Error in on_sandbox_propagated callback: %s", e)
 
     def _run_propagation(self, sync: bool = False) -> None:
         """Execute propagation."""

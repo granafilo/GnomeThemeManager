@@ -3142,3 +3142,61 @@ msgstr "Applicazione tema in corso..."
 
 msgid "Installation complete!"
 msgstr "Installazione completata!"
+
+msgid "Flatpak Propagation & Repair"
+msgstr "Propagazione e Riparazione Flatpak"
+
+msgid "Propagate Theme to Flatpak"
+msgstr "Propaga Tema a Flatpak"
+
+msgid "Flatpak applications run in sandbox containers and require filesystem access to host themes and icons. Running repair and propagation configures permissions automatically."
+msgstr "Le applicazioni Flatpak vengono eseguite in contenitori sandbox e richiedono l'accesso al filesystem per visualizzare i temi e le icone host. La riparazione e propagazione configura automaticamente i permessi necessari."
+
+msgid "Installation Scope"
+msgstr "Ambito di installazione"
+
+msgid "User scope (recommended)"
+msgstr "Ambito utente (consigliato)"
+
+msgid "Repairs user installation and sets user overrides (~/.local/share)"
+msgstr "Ripara l'installazione utente e imposta gli override utente (~/.local/share)"
+
+msgid "System-wide scope"
+msgstr "Ambito di sistema"
+
+msgid "Repairs system installation (requires administrator password via pkexec)"
+msgstr "Ripara l'installazione di sistema (richiede password di amministratore tramite pkexec)"
+
+msgid "Ignore"
+msgstr "Ignora"
+
+msgid "Propagate Now"
+msgstr "Propaga ora"
+
+msgid "Repairing Flatpak installation..."
+msgstr "Riparazione dell'installazione Flatpak in corso..."
+
+msgid "Configuring Flatpak filesystem overrides..."
+msgstr "Configurazione degli override del filesystem Flatpak in corso..."
+
+msgid "Detailed Log"
+msgstr "Log dettagliato"
+
+msgid "Propagation Completed Successfully"
+msgstr "Propagazione completata con successo"
+
+msgid "Flatpak runtime was verified and theme filesystem overrides were applied."
+msgstr "Il runtime Flatpak è stato verificato e gli override del filesystem per i temi sono stati applicati."
+
+msgid "Propagation Failed"
+msgstr "Propagazione non riuscita"
+
+msgid "Error:"
+msgstr "Errore:"
+
+msgid "Unknown error occurred."
+msgstr "Si è verificato un errore sconosciuto."
+
+msgid "Close"
+msgstr "Chiudi"
+

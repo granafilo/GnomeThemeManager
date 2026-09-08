@@ -3142,3 +3142,61 @@ msgstr "Applying theme..."
 
 msgid "Installation complete!"
 msgstr "Installation complete!"
+
+msgid "Flatpak Propagation & Repair"
+msgstr "Flatpak Propagation & Repair"
+
+msgid "Propagate Theme to Flatpak"
+msgstr "Propagate Theme to Flatpak"
+
+msgid "Flatpak applications run in sandbox containers and require filesystem access to host themes and icons. Running repair and propagation configures permissions automatically."
+msgstr "Flatpak applications run in sandbox containers and require filesystem access to host themes and icons. Running repair and propagation configures permissions automatically."
+
+msgid "Installation Scope"
+msgstr "Installation Scope"
+
+msgid "User scope (recommended)"
+msgstr "User scope (recommended)"
+
+msgid "Repairs user installation and sets user overrides (~/.local/share)"
+msgstr "Repairs user installation and sets user overrides (~/.local/share)"
+
+msgid "System-wide scope"
+msgstr "System-wide scope"
+
+msgid "Repairs system installation (requires administrator password via pkexec)"
+msgstr "Repairs system installation (requires administrator password via pkexec)"
+
+msgid "Ignore"
+msgstr "Ignore"
+
+msgid "Propagate Now"
+msgstr "Propagate Now"
+
+msgid "Repairing Flatpak installation..."
+msgstr "Repairing Flatpak installation..."
+
+msgid "Configuring Flatpak filesystem overrides..."
+msgstr "Configuring Flatpak filesystem overrides..."
+
+msgid "Detailed Log"
+msgstr "Detailed Log"
+
+msgid "Propagation Completed Successfully"
+msgstr "Propagation Completed Successfully"
+
+msgid "Flatpak runtime was verified and theme filesystem overrides were applied."
+msgstr "Flatpak runtime was verified and theme filesystem overrides were applied."
+
+msgid "Propagation Failed"
+msgstr "Propagation Failed"
+
+msgid "Error:"
+msgstr "Error:"
+
+msgid "Unknown error occurred."
+msgstr "Unknown error occurred."
+
+msgid "Close"
+msgstr "Close"
+
