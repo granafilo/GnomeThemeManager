@@ -38,6 +38,7 @@ from .models import (
     ThemeSet,
     ThemeType,
     WizardStepInfo,
+    WizardStepResult,
 )
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
@@ -551,6 +552,19 @@ class ThemeManager:
         return self._sandbox.get_wizard_steps(
             user_mode=user_mode,
             extensions_manager=self._extensions,
+        )
+
+    def execute_wizard_step(
+        self,
+        step: WizardStepInfo,
+        user_mode: bool = True,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> WizardStepResult:
+        """Execute a guided installation step with live progress reporting."""
+        return self._sandbox.execute_wizard_step(
+            step=step,
+            user_mode=user_mode,
+            on_progress=on_progress,
         )
 
     def propagate_sandbox(

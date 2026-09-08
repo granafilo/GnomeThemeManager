@@ -10,6 +10,7 @@ managed by Flatpak or Snap.
 import configparser
 import logging
 import os
+import shlex
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -25,6 +26,7 @@ from .models import (
     PropagationResult,
     SandboxStatus,
     WizardStepInfo,
+    WizardStepResult,
 )
 
 if TYPE_CHECKING:
@@ -755,6 +757,143 @@ class SandboxBridge:
         ]
         return steps
 
+    def execute_wizard_step(
+        self,
+        step: WizardStepInfo,
+        user_mode: bool = True,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> WizardStepResult:
+        """Execute the command for a wizard step with live line-by-line output streaming.
+
+        Args:
+            step: WizardStepInfo defining the step and commands.
+            user_mode: True for user scope, False for system-wide scope.
+            on_progress: Optional callback invoked for each line of stdout/stderr output.
+
+        Returns:
+            WizardStepResult containing success status, return code, and captured output.
+        """
+        raw_cmd = step.command_user if user_mode else step.command_system
+        logger.info("Executing wizard step '%s': %s", step.step_id, raw_cmd)
+
+        output_lines: list[str] = []
+        overall_success = True
+        last_returncode = 0
+        error_msg: str | None = None
+
+        # Split compound commands separated by &&
+        subcommands = [sc.strip() for sc in raw_cmd.split("&&") if sc.strip()]
+
+        for sc in subcommands:
+            try:
+                tokens = shlex.split(sc)
+            except ValueError as val_err:
+                msg = f"Invalid command syntax: {val_err}"
+                output_lines.append(msg)
+                if on_progress:
+                    on_progress(msg)
+                return WizardStepResult(
+                    step_id=step.step_id,
+                    success=False,
+                    command=raw_cmd,
+                    output="\n".join(output_lines),
+                    returncode=-1,
+                    error_message=msg,
+                )
+
+            if not tokens:
+                continue
+
+            prog_msg = f"> {' '.join(tokens)}"
+            output_lines.append(prog_msg)
+            if on_progress:
+                on_progress(prog_msg)
+
+            # Check if binary is present
+            bin_name = tokens[0]
+            if not shutil.which(bin_name) and not is_in_flatpak_sandbox():
+                err = f"Command '{bin_name}' is not installed on this system."
+                output_lines.append(err)
+                if on_progress:
+                    on_progress(err)
+                return WizardStepResult(
+                    step_id=step.step_id,
+                    success=False,
+                    command=raw_cmd,
+                    output="\n".join(output_lines),
+                    returncode=127,
+                    error_message=err,
+                )
+
+            try:
+                process = subprocess.Popen(
+                    tokens,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1,
+                )
+
+                if process.stdout is not None:
+                    for raw_line in process.stdout:
+                        line = raw_line.rstrip()
+                        if not line:
+                            continue
+                        output_lines.append(line)
+                        if on_progress is not None:
+                            try:
+                                on_progress(line)
+                            except Exception as cb_err:
+                                logger.debug("Error in wizard progress callback: %s", cb_err)
+
+                process.wait(timeout=300)
+                last_returncode = process.returncode
+
+                if last_returncode != 0:
+                    overall_success = False
+                    joined_out = "\n".join(output_lines).lower()
+                    if (
+                        last_returncode == 126
+                        or "not authorized" in joined_out
+                        or "dismissed" in joined_out
+                    ):
+                        error_msg = _("Authentication was cancelled or denied.")
+                    else:
+                        error_msg = _("Command failed with exit code {code}.").format(
+                            code=last_returncode
+                        )
+                    break
+            except Exception as proc_err:
+                logger.error(
+                    "Failed to execute wizard step '%s' subcommand '%s': %s",
+                    step.step_id,
+                    sc,
+                    proc_err,
+                )
+                err_text = str(proc_err)
+                output_lines.append(err_text)
+                if on_progress:
+                    on_progress(err_text)
+                return WizardStepResult(
+                    step_id=step.step_id,
+                    success=False,
+                    command=raw_cmd,
+                    output="\n".join(output_lines),
+                    returncode=-1,
+                    error_message=err_text,
+                )
+
+        full_output = "\n".join(output_lines)
+        return WizardStepResult(
+            step_id=step.step_id,
+            success=overall_success,
+            command=raw_cmd,
+            output=full_output,
+            returncode=last_returncode,
+            error_message=error_msg,
+        )
+
+
 
 def check_flatpak_status(
     user_mode: bool | None = None,
@@ -812,6 +951,21 @@ def get_flatpak_wizard_steps(
         extensions_manager=extensions_manager,
         os_info=os_info,
     )
+
+
+def execute_wizard_step(
+    step: WizardStepInfo,
+    user_mode: bool = True,
+    on_progress: Callable[[str], None] | None = None,
+) -> WizardStepResult:
+    """Execute guided installation wizard step using default SandboxBridge instance."""
+    bridge = SandboxBridge()
+    return bridge.execute_wizard_step(
+        step=step,
+        user_mode=user_mode,
+        on_progress=on_progress,
+    )
+
 
 
 

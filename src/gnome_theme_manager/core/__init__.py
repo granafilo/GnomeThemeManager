@@ -75,6 +75,7 @@ from .models import (
     ThemeSet,
     ThemeType,
     WizardStepInfo,
+    WizardStepResult,
 )
 from .os_detector import (
     DEPENDENCY_PACKAGE_MAP,
@@ -90,6 +91,7 @@ from .presets import PresetManager
 from .sandbox_bridge import (
     SandboxBridge,
     check_flatpak_status,
+    execute_wizard_step,
     get_flatpak_wizard_steps,
     repair_and_propagate_flatpak,
     repair_flatpak,
@@ -227,6 +229,7 @@ __all__ = [
     "UIPrefs",
     "WallpaperColorExtractor",
     "WizardStepInfo",
+    "WizardStepResult",
     "apply_palette_to_gnome_terminal",
     "check_flatpak_status",
     "create_gnome_terminal_profile",
@@ -237,6 +240,7 @@ __all__ = [
     "detect_os",
     "detect_terminal",
     "detect_theme_types",
+    "execute_wizard_step",
     "export_palette_to_json",
     "extract_dominant_colors_from_image",
     "extract_shell_colors",

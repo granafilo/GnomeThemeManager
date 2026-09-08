@@ -3305,4 +3305,38 @@ msgstr "Step-by-step setup for Flatpak, Flathub, and GNOME dependencies"
 msgid "Guided installation for Flatpak, Flathub, Extension Manager, and User Themes."
 msgstr "Guided installation for Flatpak, Flathub, Extension Manager, and User Themes."
 
+msgid "Authentication was cancelled or denied."
+msgstr "Authentication was cancelled or denied."
+
+msgid "Command failed with exit code {code}."
+msgstr "Command failed with exit code {code}."
+
+msgid "Executing command..."
+msgstr "Executing command..."
+
+msgid "{step_title} configured successfully!"
+msgstr "{step_title} configured successfully!"
+
+msgid "View output log"
+msgstr "View output log"
+
+msgid "Continue"
+msgstr "Continue"
+
+msgid "Installation Failed"
+msgstr "Installation Failed"
+
+msgid "View error details"
+msgstr "View error details"
+
+msgid "Skip and Continue"
+msgstr "Skip and Continue"
+
+msgid "Command execution failed."
+msgstr "Command execution failed."
+
+msgid "Failed"
+msgstr "Failed"
+
+
 

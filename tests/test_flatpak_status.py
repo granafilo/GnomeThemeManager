@@ -383,5 +383,100 @@ def test_check_flatpak_status_detects_extension_manager_via_extensions_manager()
         mock_ext_mgr.is_extension_manager_installed.assert_called_once()
 
 
+def test_execute_wizard_step_success() -> None:
+    """Verify execute_wizard_step executes commands and captures streaming output."""
+    from gnome_theme_manager.core import WizardStepInfo, execute_wizard_step
+
+    step = WizardStepInfo(
+        step_id="test_step",
+        title="Test Step",
+        description="Test description",
+        command_user="echo 'Hello' && echo 'World'",
+        command_system="echo 'System'",
+    )
+
+    lines: list[str] = []
+    res = execute_wizard_step(step, user_mode=True, on_progress=lambda l: lines.append(l))
+    assert res.success is True
+    assert res.returncode == 0
+    assert "Hello" in res.output
+    assert "World" in res.output
+    assert len(lines) >= 2
+
+
+def test_execute_wizard_step_pkexec_cancellation() -> None:
+    """Verify execute_wizard_step handles policykit / pkexec cancellation gracefully."""
+    from gnome_theme_manager.core import WizardStepInfo, execute_wizard_step
+
+    step = WizardStepInfo(
+        step_id="test_pkexec",
+        title="Root Step",
+        description="Root required",
+        command_user="echo 1",
+        command_system="pkexec test-cmd",
+    )
+
+    mock_process = MagicMock()
+    mock_process.stdout = iter(["Error: Not authorized / dismissed."])
+    mock_process.returncode = 126
+    mock_process.wait.return_value = None
+
+    with patch("shutil.which", return_value="/usr/bin/pkexec"), patch(
+        "subprocess.Popen", return_value=mock_process
+    ):
+        res = execute_wizard_step(step, user_mode=False)
+        assert res.success is False
+        assert res.returncode == 126
+        assert "cancelled" in (res.error_message or "").lower() or "denied" in (res.error_message or "").lower()
+
+
+def test_execute_wizard_step_missing_binary() -> None:
+    """Verify execute_wizard_step returns failure with returncode 127 when binary is missing."""
+    from gnome_theme_manager.core import WizardStepInfo, execute_wizard_step
+
+    step = WizardStepInfo(
+        step_id="test_missing",
+        title="Missing",
+        description="Desc",
+        command_user="nonexistent_binary_foo_bar_xyz",
+        command_system="nonexistent_binary_foo_bar_xyz",
+    )
+
+    with patch("shutil.which", return_value=None), patch(
+        "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False
+    ):
+        res = execute_wizard_step(step, user_mode=True)
+        assert res.success is False
+        assert res.returncode == 127
+        assert "not installed" in (res.error_message or "").lower()
+
+
+def test_theme_manager_execute_wizard_step_delegates() -> None:
+    """Verify ThemeManager delegates execute_wizard_step to SandboxBridge."""
+    from gnome_theme_manager.core import ThemeManager, WizardStepInfo, WizardStepResult
+
+    mock_bridge = MagicMock()
+    mock_step = WizardStepInfo(
+        step_id="step_1",
+        title="Title",
+        description="Desc",
+        command_user="echo 1",
+        command_system="echo 2",
+    )
+    mock_res = WizardStepResult(step_id="step_1", success=True, command="echo 1", output="1")
+    mock_bridge.execute_wizard_step.return_value = mock_res
+
+    mgr = ThemeManager(sandbox_bridge=mock_bridge)
+    res = mgr.execute_wizard_step(mock_step, user_mode=True)
+    assert res.success is True
+    assert res.output == "1"
+    mock_bridge.execute_wizard_step.assert_called_once_with(
+        step=mock_step,
+        user_mode=True,
+        on_progress=None,
+    )
+
+
+
 
 

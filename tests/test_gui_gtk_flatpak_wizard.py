@@ -2,12 +2,13 @@
 
 """Unit tests for FlatpakWizardDialog GUI widget."""
 
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 from gi.repository import GLib
 
-from gnome_theme_manager.core.models import WizardStepInfo
+from gnome_theme_manager.core.models import WizardStepInfo, WizardStepResult
 from gnome_theme_manager.gui_gtk import is_gtk_available
 from gnome_theme_manager.gui_gtk.widgets.flatpak_wizard import FlatpakWizardDialog
 
@@ -120,10 +121,10 @@ def test_flatpak_wizard_step_navigation_and_completion(
     assert wizard.step_results["install_flatpak"] == "skipped"
     assert wizard.stack.get_visible_child_name() == "step_add_flathub"
 
-    # Install step 2
-    wizard._on_step_install(mock_steps[1])
+    # Skip step 2 to complete wizard
+    wizard._on_step_skip(mock_steps[1])
     _drain_events()
-    assert wizard.step_results["add_flathub"] == "installed"
+    assert wizard.step_results["add_flathub"] == "skipped"
     assert wizard.stack.get_visible_child_name() == "summary"
 
     # Close on summary
@@ -131,3 +132,97 @@ def test_flatpak_wizard_step_navigation_and_completion(
         wizard._on_finish_clicked(MagicMock())
         mock_close.assert_called_once()
         assert completed_called is True
+
+
+def test_flatpak_wizard_async_execution_success(
+    mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]
+) -> None:
+    """Verify asynchronous execution updates state to success upon completion."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    mock_theme_manager.get_flatpak_wizard_steps.return_value = mock_steps
+    mock_theme_manager.execute_wizard_step.return_value = WizardStepResult(
+        step_id="install_flatpak",
+        success=True,
+        command="apt install flatpak",
+        output="Done installing flatpak",
+        returncode=0,
+    )
+
+    wizard = FlatpakWizardDialog(manager=mock_theme_manager)
+    wizard.selected_step_ids = {"install_flatpak"}
+    wizard.start_btn.emit("clicked")
+    _drain_events()
+
+    # Locate the step widget
+    step_widget = wizard.stack.get_child_by_name("step_install_flatpak")
+    assert step_widget is not None
+
+    # Trigger install
+    wizard._run_step_async(
+        step=mock_steps[0],
+        sub_stack=MagicMock(),
+        progress_lbl=MagicMock(),
+        log_buffer=MagicMock(),
+        log_scroll=MagicMock(),
+        success_log_buffer=MagicMock(),
+        error_msg_lbl=MagicMock(),
+        error_log_buffer=MagicMock(),
+    )
+
+    for _ in range(50):
+        _drain_events()
+        if not wizard._is_executing:
+            break
+        time.sleep(0.02)
+
+    _drain_events()
+    assert wizard.step_results.get("install_flatpak") == "installed"
+    assert wizard.back_button.get_sensitive() is True
+
+
+def test_flatpak_wizard_async_execution_failure(
+    mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]
+) -> None:
+    """Verify asynchronous execution updates state to failure with error message."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    mock_theme_manager.get_flatpak_wizard_steps.return_value = mock_steps
+    mock_theme_manager.execute_wizard_step.return_value = WizardStepResult(
+        step_id="install_flatpak",
+        success=False,
+        command="apt install flatpak",
+        output="E: Could not get lock",
+        returncode=100,
+        error_message="Could not get lock",
+    )
+
+    wizard = FlatpakWizardDialog(manager=mock_theme_manager)
+    wizard.selected_step_ids = {"install_flatpak"}
+    wizard.start_btn.emit("clicked")
+    _drain_events()
+
+    error_lbl = MagicMock()
+    wizard._run_step_async(
+        step=mock_steps[0],
+        sub_stack=MagicMock(),
+        progress_lbl=MagicMock(),
+        log_buffer=MagicMock(),
+        log_scroll=MagicMock(),
+        success_log_buffer=MagicMock(),
+        error_msg_lbl=error_lbl,
+        error_log_buffer=MagicMock(),
+    )
+
+    for _ in range(50):
+        _drain_events()
+        if not wizard._is_executing:
+            break
+        time.sleep(0.02)
+
+    _drain_events()
+    assert wizard.step_results.get("install_flatpak") == "failed"
+    error_lbl.set_label.assert_called_with("Could not get lock")
+

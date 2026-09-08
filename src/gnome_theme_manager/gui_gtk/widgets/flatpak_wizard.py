@@ -3,6 +3,7 @@
 """Step-by-step guided installation wizard for Flatpak and GNOME dependencies."""
 
 import logging
+import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -12,9 +13,9 @@ from gnome_theme_manager import _
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, Gtk
+from gi.repository import Adw, Gdk, GLib, Gtk
 
-from ...core.models import WizardStepInfo
+from ...core.models import WizardStepInfo, WizardStepResult
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -41,6 +42,7 @@ class FlatpakWizardDialog:
         self.selected_step_ids: set[str] = set()
         self.current_step_index: int = 0
         self.step_results: dict[str, str] = {}  # step_id -> "installed" | "skipped" | "already_satisfied" | "failed"
+        self._is_executing: bool = False
 
         self.window = Adw.Window(
             modal=True,
@@ -73,11 +75,20 @@ class FlatpakWizardDialog:
         toolbar_view.set_content(self.stack)
         self.window.set_content(toolbar_view)
 
+        self.window.connect("close-request", self._on_close_request)
+
     def present(self) -> None:
         """Present the wizard window to the user."""
         self.stack.set_visible_child_name("overview")
         self.back_button.set_visible(False)
         self.window.present()
+
+    def _on_close_request(self, _window: Adw.Window) -> bool:
+        """Prevent closing dialog while command execution is in progress."""
+        if self._is_executing:
+            logger.warning("Attempted to close Flatpak wizard during command execution.")
+            return True  # Block closing
+        return False
 
     def _load_steps(self) -> None:
         """Fetch wizard step definitions and statuses from core."""
@@ -235,41 +246,35 @@ class FlatpakWizardDialog:
             self.stack.add_named(page, f"step_{step.step_id}")
 
     def _build_single_step_page(self, step: WizardStepInfo, step_num: int, total_steps: int) -> Gtk.Widget:
-        """Construct the UI page for an individual wizard step."""
+        """Construct the UI page for an individual wizard step with interactive states."""
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
         clamp = Adw.Clamp(maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        
+        # Sub-stack to manage step states: prompt -> running -> success / error
+        step_sub_stack = Gtk.Stack()
+        step_sub_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
 
-        # Step header counter
+        # -------------------------------------------------------------
+        # STATE 1: PROMPT
+        # -------------------------------------------------------------
+        prompt_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
         step_counter_lbl = Gtk.Label(
             label=_("Step {current} of {total}").format(current=step_num, total=total_steps),
             css_classes=["dim-label", "caption"],
             halign=Gtk.Align.CENTER,
         )
-        box.append(step_counter_lbl)
+        prompt_box.append(step_counter_lbl)
 
-        # Step Title
-        title_lbl = Gtk.Label(
-            label=step.title,
-            css_classes=["title-2"],
-            halign=Gtk.Align.CENTER,
-        )
-        box.append(title_lbl)
+        title_lbl = Gtk.Label(label=step.title, css_classes=["title-2"], halign=Gtk.Align.CENTER)
+        prompt_box.append(title_lbl)
 
-        # Description
-        desc_lbl = Gtk.Label(
-            label=step.description,
-            wrap=True,
-            justify=Gtk.Justification.CENTER,
-            halign=Gtk.Align.CENTER,
-        )
-        box.append(desc_lbl)
+        desc_lbl = Gtk.Label(label=step.description, wrap=True, justify=Gtk.Justification.CENTER, halign=Gtk.Align.CENTER)
+        prompt_box.append(desc_lbl)
 
-        # Command to execute
         cmd_text = step.command_user if self.user_mode else step.command_system
-
         cmd_group = Adw.PreferencesGroup(title=_("Command to Execute"))
         cmd_row = Adw.ActionRow()
         cmd_row.set_subtitle(cmd_text)
@@ -281,46 +286,263 @@ class FlatpakWizardDialog:
         copy_btn.set_valign(Gtk.Align.CENTER)
         copy_btn.connect("clicked", lambda _b, c=cmd_text: self._copy_to_clipboard(c))
         cmd_row.add_suffix(copy_btn)
-
         cmd_group.add(cmd_row)
-        box.append(cmd_group)
+        prompt_box.append(cmd_group)
 
-        # Root / Privileges notice if needed
         needs_root = (not self.user_mode and step.requires_root_system) or ("pkexec" in cmd_text)
         if needs_root:
             auth_banner = Adw.Banner(
                 title=_("This command requires administrator privileges (authentication will be prompted)."),
                 revealed=True,
             )
-            box.append(auth_banner)
+            prompt_box.append(auth_banner)
 
-        # Inclusion Checkbox for this step
         step_check = Gtk.CheckButton(label=_("Include this step in the setup"))
         step_check.set_active(step.step_id in self.selected_step_ids)
         step_check.connect("toggled", self._on_step_check_toggled, step.step_id)
-        box.append(step_check)
+        prompt_box.append(step_check)
 
-        # Action buttons: Skip / Install
-        actions_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=12,
-            halign=Gtk.Align.END,
-            margin_top=16,
-        )
-
+        prompt_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=16)
         skip_btn = Gtk.Button(label=_("Skip"))
         skip_btn.connect("clicked", lambda _b, s=step: self._on_step_skip(s))
-        actions_box.append(skip_btn)
+        prompt_actions.append(skip_btn)
 
         install_btn = Gtk.Button(label=_("Install"), css_classes=["suggested-action", "pill"])
-        install_btn.connect("clicked", lambda _b, s=step: self._on_step_install(s))
-        actions_box.append(install_btn)
+        prompt_actions.append(install_btn)
+        prompt_box.append(prompt_actions)
 
-        box.append(actions_box)
+        step_sub_stack.add_named(prompt_box, "prompt")
 
-        clamp.set_child(box)
+        # -------------------------------------------------------------
+        # STATE 2: RUNNING (SPINNER & LIVE OUTPUT)
+        # -------------------------------------------------------------
+        running_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
+        running_counter = Gtk.Label(
+            label=_("Step {current} of {total}").format(current=step_num, total=total_steps),
+            css_classes=["dim-label", "caption"],
+            halign=Gtk.Align.CENTER,
+        )
+        running_box.append(running_counter)
+
+        spinner = Gtk.Spinner(spinning=True, width_request=40, height_request=40, halign=Gtk.Align.CENTER)
+        running_box.append(spinner)
+
+        progress_lbl = Gtk.Label(label=_("Executing command..."), css_classes=["title-3"], halign=Gtk.Align.CENTER)
+        running_box.append(progress_lbl)
+
+        log_scroll = Gtk.ScrolledWindow(height_request=160, hexpand=True, vexpand=True)
+        log_scroll.add_css_class("card")
+        log_buffer = Gtk.TextBuffer()
+        log_view = Gtk.TextView(
+            buffer=log_buffer,
+            editable=False,
+            monospace=True,
+            wrap_mode=Gtk.WrapMode.CHAR,
+            top_margin=8,
+            bottom_margin=8,
+            left_margin=8,
+            right_margin=8,
+        )
+        log_scroll.set_child(log_view)
+        running_box.append(log_scroll)
+
+        step_sub_stack.add_named(running_box, "running")
+
+        # -------------------------------------------------------------
+        # STATE 3: SUCCESS
+        # -------------------------------------------------------------
+        success_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
+        success_icon = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
+        success_icon.set_pixel_size(48)
+        success_icon.set_halign(Gtk.Align.CENTER)
+        success_box.append(success_icon)
+
+        success_title = Gtk.Label(
+            label=_("{step_title} configured successfully!").format(step_title=step.title),
+            css_classes=["title-2"],
+            halign=Gtk.Align.CENTER,
+        )
+        success_box.append(success_title)
+
+        success_expander = Adw.ExpanderRow(title=_("Detailed Log"), subtitle=_("View output log"))
+        success_log_buffer = Gtk.TextBuffer()
+        success_log_view = Gtk.TextView(
+            buffer=success_log_buffer,
+            editable=False,
+            monospace=True,
+            wrap_mode=Gtk.WrapMode.CHAR,
+            top_margin=8,
+            bottom_margin=8,
+            left_margin=8,
+            right_margin=8,
+        )
+        success_log_scroll = Gtk.ScrolledWindow(height_request=140)
+        success_log_scroll.set_child(success_log_view)
+        success_expander.add_row(success_log_scroll)
+
+        success_group = Adw.PreferencesGroup()
+        success_group.add(success_expander)
+        success_box.append(success_group)
+
+        success_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        next_btn = Gtk.Button(label=_("Continue"), css_classes=["suggested-action", "pill"])
+        next_btn.connect("clicked", lambda _b: self._advance_next_step())
+        success_actions.append(next_btn)
+        success_box.append(success_actions)
+
+        step_sub_stack.add_named(success_box, "success")
+
+        # -------------------------------------------------------------
+        # STATE 4: ERROR
+        # -------------------------------------------------------------
+        error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+
+        error_icon = Gtk.Image.new_from_icon_name("dialog-error-symbolic")
+        error_icon.set_pixel_size(48)
+        error_icon.set_halign(Gtk.Align.CENTER)
+        error_box.append(error_icon)
+
+        error_title = Gtk.Label(label=_("Installation Failed"), css_classes=["title-2"], halign=Gtk.Align.CENTER)
+        error_box.append(error_title)
+
+        error_msg_lbl = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER, halign=Gtk.Align.CENTER)
+        error_box.append(error_msg_lbl)
+
+        error_expander = Adw.ExpanderRow(title=_("Detailed Log"), subtitle=_("View error details"))
+        error_expander.set_expanded(True)
+        error_log_buffer = Gtk.TextBuffer()
+        error_log_view = Gtk.TextView(
+            buffer=error_log_buffer,
+            editable=False,
+            monospace=True,
+            wrap_mode=Gtk.WrapMode.CHAR,
+            top_margin=8,
+            bottom_margin=8,
+            left_margin=8,
+            right_margin=8,
+        )
+        error_log_scroll = Gtk.ScrolledWindow(height_request=140)
+        error_log_scroll.set_child(error_log_view)
+        error_expander.add_row(error_log_scroll)
+
+        error_group = Adw.PreferencesGroup()
+        error_group.add(error_expander)
+        error_box.append(error_group)
+
+        error_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        skip_err_btn = Gtk.Button(label=_("Skip and Continue"))
+        skip_err_btn.connect("clicked", lambda _b, s=step: self._on_step_skip(s))
+        error_actions.append(skip_err_btn)
+
+        retry_btn = Gtk.Button(label=_("Retry"), css_classes=["suggested-action", "pill"])
+        error_actions.append(retry_btn)
+        error_box.append(error_actions)
+
+        step_sub_stack.add_named(error_box, "error")
+
+        # Connect install and retry triggers
+        install_btn.connect(
+            "clicked",
+            lambda _b: self._run_step_async(
+                step=step,
+                sub_stack=step_sub_stack,
+                progress_lbl=progress_lbl,
+                log_buffer=log_buffer,
+                log_scroll=log_scroll,
+                success_log_buffer=success_log_buffer,
+                error_msg_lbl=error_msg_lbl,
+                error_log_buffer=error_log_buffer,
+            ),
+        )
+
+        retry_btn.connect(
+            "clicked",
+            lambda _b: self._run_step_async(
+                step=step,
+                sub_stack=step_sub_stack,
+                progress_lbl=progress_lbl,
+                log_buffer=log_buffer,
+                log_scroll=log_scroll,
+                success_log_buffer=success_log_buffer,
+                error_msg_lbl=error_msg_lbl,
+                error_log_buffer=error_log_buffer,
+            ),
+        )
+
+        step_sub_stack.set_visible_child_name("prompt")
+        clamp.set_child(step_sub_stack)
         scrolled.set_child(clamp)
         return scrolled
+
+    def _run_step_async(
+        self,
+        step: WizardStepInfo,
+        sub_stack: Gtk.Stack,
+        progress_lbl: Gtk.Label,
+        log_buffer: Gtk.TextBuffer,
+        log_scroll: Gtk.ScrolledWindow,
+        success_log_buffer: Gtk.TextBuffer,
+        error_msg_lbl: Gtk.Label,
+        error_log_buffer: Gtk.TextBuffer,
+    ) -> None:
+        """Launch background command execution with real-time feedback."""
+        if self._is_executing:
+            return
+
+        self._is_executing = True
+        self.back_button.set_sensitive(False)
+        sub_stack.set_visible_child_name("running")
+        progress_lbl.set_label(_("Executing command..."))
+        log_buffer.set_text("")
+
+        def on_progress_line(line: str) -> None:
+            GLib.idle_add(self._append_log_line, log_buffer, log_scroll, line)
+
+        def worker() -> WizardStepResult:
+            if self.manager is not None:
+                return self.manager.execute_wizard_step(
+                    step=step,
+                    user_mode=self.user_mode,
+                    on_progress=on_progress_line,
+                )
+            from ...core.sandbox_bridge import execute_wizard_step
+
+            return execute_wizard_step(
+                step=step,
+                user_mode=self.user_mode,
+                on_progress=on_progress_line,
+            )
+
+        def on_done(res: WizardStepResult) -> None:
+            self._is_executing = False
+            self.back_button.set_sensitive(True)
+
+            if res.success:
+                self.step_results[step.step_id] = "installed"
+                success_log_buffer.set_text(res.output)
+                sub_stack.set_visible_child_name("success")
+            else:
+                self.step_results[step.step_id] = "failed"
+                error_msg_lbl.set_label(res.error_message or _("Command execution failed."))
+                error_log_buffer.set_text(res.output)
+                sub_stack.set_visible_child_name("error")
+
+        def run_thread() -> None:
+            result = worker()
+            GLib.idle_add(on_done, result)
+
+        threading.Thread(target=run_thread, daemon=True).start()
+
+    def _append_log_line(self, buffer: Gtk.TextBuffer, scroll: Gtk.ScrolledWindow, line: str) -> bool:
+        """Append output line to text buffer and auto-scroll to bottom."""
+        end = buffer.get_end_iter()
+        buffer.insert(end, f"{line}\n")
+        adj = scroll.get_vadjustment()
+        if adj is not None:
+            adj.set_value(adj.get_upper() - adj.get_page_size())
+        return GLib.SOURCE_REMOVE
 
     def _copy_to_clipboard(self, text: str) -> None:
         """Copy command string to clipboard."""
@@ -343,6 +565,8 @@ class FlatpakWizardDialog:
 
     def _on_back_clicked(self, _button: Gtk.Button) -> None:
         """Navigate back to previous step or overview."""
+        if self._is_executing:
+            return
         if self.current_step_index > 0:
             self._show_step(self.current_step_index - 1)
         else:
@@ -351,14 +575,9 @@ class FlatpakWizardDialog:
 
     def _on_step_skip(self, step: WizardStepInfo) -> None:
         """Handle skipping the current step."""
+        if self._is_executing:
+            return
         self.step_results[step.step_id] = "skipped"
-        self._advance_next_step()
-
-    def _on_step_install(self, step: WizardStepInfo) -> None:
-        """Handle installing the current step."""
-        # Note: Async execution with streaming log and pkexec will be handled in Step 4.
-        # For Step 3, mark as executed and advance.
-        self.step_results[step.step_id] = "installed"
         self._advance_next_step()
 
     def _advance_next_step(self) -> None:
@@ -405,6 +624,8 @@ class FlatpakWizardDialog:
                 badge = Gtk.Label(label=_("Configured"), css_classes=["badge", "accent"])
             elif status == "already_satisfied":
                 badge = Gtk.Label(label=_("Already satisfied"), css_classes=["badge"])
+            elif status == "failed":
+                badge = Gtk.Label(label=_("Failed"), css_classes=["badge", "error"])
             else:
                 badge = Gtk.Label(label=_("Skipped"), css_classes=["badge", "dim-label"])
 

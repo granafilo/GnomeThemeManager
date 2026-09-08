@@ -158,6 +158,19 @@ class WizardStepInfo:
     requires_root_system: bool = True
 
 
+@dataclass(frozen=True)
+class WizardStepResult:
+    """Outcome of executing a guided installation wizard step."""
+
+    step_id: str
+    success: bool
+    command: str
+    output: str = ""
+    returncode: int = 0
+    error_message: str | None = None
+
+
+
 @dataclass
 class SandboxStatus:
     """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""
