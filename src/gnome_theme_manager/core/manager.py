@@ -12,6 +12,7 @@ high-level entry point to consume all core package capabilities:
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,8 @@ from .icon_fallback import IconFallbackResolver, IconResolutionResult
 from .installer import ThemeInstaller
 from .models import (
     ApplyResult,
+    FlatpakRepairResult,
+    FlatpakStatus,
     PropagationResult,
     SandboxStatus,
     SystemStatus,
@@ -493,6 +496,51 @@ class ThemeManager:
             SandboxStatus instance.
         """
         return self._sandbox.get_sandbox_status()
+
+    def check_flatpak_status(self, user_mode: bool | None = None) -> FlatpakStatus:
+        """Check status of Flatpak runtime, Flathub, Extension Manager, and User Themes.
+
+        Args:
+            user_mode: True to check user-specific scope, False for system-wide scope,
+                or None to check both scopes.
+
+        Returns:
+            FlatpakStatus with detected availability flags.
+        """
+        return self._sandbox.check_flatpak_status(
+            user_mode=user_mode,
+            extensions_manager=self._extensions,
+        )
+
+    def repair_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> FlatpakRepairResult:
+        """Execute flatpak repair with optional progress reporting."""
+        return self._sandbox.repair_flatpak(
+            user_mode=user_mode,
+            use_pkexec=use_pkexec,
+            on_progress=on_progress,
+        )
+
+    def repair_and_propagate_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> tuple[FlatpakRepairResult, PropagationResult]:
+        """Repair Flatpak installation and propagate theme overrides."""
+        return self._sandbox.repair_and_propagate_flatpak(
+            user_mode=user_mode,
+            use_pkexec=use_pkexec,
+            gtk_theme=gtk_theme,
+            icon_theme=icon_theme,
+            on_progress=on_progress,
+        )
 
     def propagate_sandbox(
         self,

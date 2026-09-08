@@ -12,10 +12,20 @@ import logging
 import os
 import shutil
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .errors import ThemeValidationError
-from .models import PropagationResult, SandboxStatus
+from .models import (
+    FlatpakRepairResult,
+    FlatpakStatus,
+    PropagationResult,
+    SandboxStatus,
+)
+
+if TYPE_CHECKING:
+    from .extensions import ExtensionsManager
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
@@ -457,3 +467,264 @@ class SandboxBridge:
             snap_messages=snap_res.snap_messages,
             warnings=consolidated_warnings,
         )
+
+    def check_flatpak_status(
+        self,
+        user_mode: bool | None = None,
+        extensions_manager: "ExtensionsManager | None" = None,
+    ) -> FlatpakStatus:
+        """Check status of Flatpak runtime, Flathub remote, Extension Manager, and User Themes.
+
+        Args:
+            user_mode: True to check user-specific scope, False for system-wide scope,
+                or None to check both scopes.
+            extensions_manager: Optional ExtensionsManager instance to test user-theme status.
+
+        Returns:
+            FlatpakStatus with detected availability flags.
+        """
+        flatpak_installed = self.is_flatpak_available()
+        flathub_configured = False
+        extension_manager_installed = False
+
+        if flatpak_installed and shutil.which("flatpak") is not None:
+            # 1. Check Flathub remote
+            remotes_cmd = ["flatpak", "remotes", "--columns=name"]
+            if user_mode is True:
+                remotes_cmd = ["flatpak", "remotes", "--user", "--columns=name"]
+            elif user_mode is False:
+                remotes_cmd = ["flatpak", "remotes", "--system", "--columns=name"]
+
+            try:
+                res = subprocess.run(
+                    remotes_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False,
+                )
+                if res.returncode == 0:
+                    configured_remotes = {
+                        line.strip().lower()
+                        for line in res.stdout.splitlines()
+                        if line.strip()
+                    }
+                    flathub_configured = "flathub" in configured_remotes
+            except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
+                logger.debug("Error querying Flatpak remotes: %s", err)
+
+            # 2. Check Extension Manager flatpak
+            ext_mgr_cmd = ["flatpak", "info", "com.mattjakeman.ExtensionManager"]
+            if user_mode is True:
+                ext_mgr_cmd = [
+                    "flatpak",
+                    "info",
+                    "--user",
+                    "com.mattjakeman.ExtensionManager",
+                ]
+            elif user_mode is False:
+                ext_mgr_cmd = [
+                    "flatpak",
+                    "info",
+                    "--system",
+                    "com.mattjakeman.ExtensionManager",
+                ]
+
+            try:
+                res_info = subprocess.run(
+                    ext_mgr_cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False,
+                )
+                extension_manager_installed = res_info.returncode == 0
+            except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
+                logger.debug("Error querying Extension Manager flatpak info: %s", err)
+
+        # 3. Native Extension Manager binary fallback if not found in flatpak
+        if not extension_manager_installed and (user_mode is None or user_mode is False):
+            extension_manager_installed = shutil.which("extension-manager") is not None
+
+        # 4. Check user-theme extension
+        user_themes_enabled = False
+        if extensions_manager is not None:
+            try:
+                user_themes_enabled = bool(extensions_manager.is_user_theme_enabled())
+            except Exception as err:
+                logger.debug("Error querying ExtensionsManager for user-themes: %s", err)
+        else:
+            try:
+                from .extensions import ExtensionsManager
+
+                ext_mgr = ExtensionsManager()
+                user_themes_enabled = bool(ext_mgr.is_user_theme_enabled())
+            except Exception as err:
+                logger.debug("Error creating ExtensionsManager to check user-themes: %s", err)
+
+        return FlatpakStatus(
+            flatpak_installed=flatpak_installed,
+            flathub_configured=flathub_configured,
+            extension_manager_installed=extension_manager_installed,
+            user_themes_enabled=user_themes_enabled,
+        )
+
+    def repair_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> FlatpakRepairResult:
+        """Run `flatpak repair` for user or system installation with optional live progress callback.
+
+        Args:
+            user_mode: True to execute `flatpak repair --user`, False for `--system`.
+            use_pkexec: If True (or if running system mode as non-root), prefix command with `pkexec`.
+            on_progress: Optional callback invoked for each line of stdout/stderr.
+
+        Returns:
+            FlatpakRepairResult with execution status, returncode, and captured output.
+        """
+        if shutil.which("flatpak") is None and not is_in_flatpak_sandbox():
+            return FlatpakRepairResult(
+                success=False,
+                command=[],
+                output="Flatpak is not installed or available on this system.",
+                returncode=-1,
+                error_message="Flatpak executable not found.",
+            )
+
+        cmd: list[str] = []
+        is_non_root = hasattr(os, "geteuid") and os.geteuid() != 0
+        needs_pkexec = (not user_mode) and (use_pkexec or is_non_root)
+
+        if needs_pkexec and shutil.which("pkexec") is not None:
+            cmd.append("pkexec")
+
+        cmd.extend(["flatpak", "repair"])
+        if user_mode:
+            cmd.append("--user")
+        else:
+            cmd.append("--system")
+
+        logger.info("Executing flatpak repair: %s", " ".join(cmd))
+        output_lines: list[str] = []
+
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+
+            if process.stdout is not None:
+                for raw_line in process.stdout:
+                    line = raw_line.rstrip()
+                    if not line:
+                        continue
+                    output_lines.append(line)
+                    if on_progress is not None:
+                        try:
+                            on_progress(line)
+                        except Exception as cb_err:
+                            logger.debug("Error in on_progress callback: %s", cb_err)
+
+            process.wait(timeout=300)
+            success = process.returncode == 0
+            full_output = "\n".join(output_lines)
+            return FlatpakRepairResult(
+                success=success,
+                command=cmd,
+                output=full_output,
+                returncode=process.returncode,
+                error_message=None if success else f"Process exited with code {process.returncode}",
+            )
+        except Exception as err:
+            logger.error("Failed to execute flatpak repair: %s", err)
+            return FlatpakRepairResult(
+                success=False,
+                command=cmd,
+                output="\n".join(output_lines),
+                returncode=-1,
+                error_message=str(err),
+            )
+
+    def repair_and_propagate_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> tuple[FlatpakRepairResult, PropagationResult]:
+        """Repair Flatpak installation and subsequently propagate theme filesystem overrides.
+
+        Args:
+            user_mode: True for user scope, False for system scope.
+            use_pkexec: Whether to use pkexec for system repair.
+            gtk_theme: GTK theme name to propagate overrides for (None for current/defaults).
+            icon_theme: Icon theme name to propagate overrides for (None for current/defaults).
+            on_progress: Optional progress callback.
+
+        Returns:
+            Tuple of (FlatpakRepairResult, PropagationResult).
+        """
+        repair_res = self.repair_flatpak(
+            user_mode=user_mode,
+            use_pkexec=use_pkexec,
+            on_progress=on_progress,
+        )
+
+        if on_progress is not None:
+            on_progress("Configuring Flatpak filesystem overrides...")
+
+        prop_res = self.propagate_to_flatpak(gtk_theme=gtk_theme, icon_theme=icon_theme)
+        return repair_res, prop_res
+
+
+def check_flatpak_status(
+    user_mode: bool | None = None,
+    extensions_manager: "ExtensionsManager | None" = None,
+) -> FlatpakStatus:
+    """Check status of Flatpak runtime, Flathub remote, Extension Manager, and User Themes."""
+    bridge = SandboxBridge()
+    return bridge.check_flatpak_status(
+        user_mode=user_mode,
+        extensions_manager=extensions_manager,
+    )
+
+
+def repair_flatpak(
+    user_mode: bool = True,
+    use_pkexec: bool = False,
+    on_progress: Callable[[str], None] | None = None,
+) -> FlatpakRepairResult:
+    """Run `flatpak repair` using default SandboxBridge instance."""
+    bridge = SandboxBridge()
+    return bridge.repair_flatpak(
+        user_mode=user_mode,
+        use_pkexec=use_pkexec,
+        on_progress=on_progress,
+    )
+
+
+def repair_and_propagate_flatpak(
+    user_mode: bool = True,
+    use_pkexec: bool = False,
+    gtk_theme: str | None = None,
+    icon_theme: str | None = None,
+    on_progress: Callable[[str], None] | None = None,
+) -> tuple[FlatpakRepairResult, PropagationResult]:
+    """Repair Flatpak and propagate overrides using default SandboxBridge instance."""
+    bridge = SandboxBridge()
+    return bridge.repair_and_propagate_flatpak(
+        user_mode=user_mode,
+        use_pkexec=use_pkexec,
+        gtk_theme=gtk_theme,
+        icon_theme=icon_theme,
+        on_progress=on_progress,
+    )
+
+

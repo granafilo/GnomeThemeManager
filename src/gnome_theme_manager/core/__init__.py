@@ -66,6 +66,8 @@ from .installer import (
 from .manager import ThemeManager
 from .models import (
     ApplyResult,
+    FlatpakRepairResult,
+    FlatpakStatus,
     PropagationResult,
     SandboxStatus,
     SystemStatus,
@@ -84,7 +86,12 @@ from .os_detector import (
     get_os_install_commands,
 )
 from .presets import PresetManager
-from .sandbox_bridge import SandboxBridge
+from .sandbox_bridge import (
+    SandboxBridge,
+    check_flatpak_status,
+    repair_and_propagate_flatpak,
+    repair_flatpak,
+)
 from .scanner import ThemeScanner
 from .shell_editor import (
     ShellColorExtractor,
@@ -167,6 +174,8 @@ __all__ = [
     "ExtractedColors",
     "FallbackConfig",
     "FallbackManager",
+    "FlatpakRepairResult",
+    "FlatpakStatus",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
@@ -216,6 +225,7 @@ __all__ = [
     "UIPrefs",
     "WallpaperColorExtractor",
     "apply_palette_to_gnome_terminal",
+    "check_flatpak_status",
     "create_gnome_terminal_profile",
     "create_theme_fork",
     "delete_gnome_terminal_profile",
@@ -241,6 +251,8 @@ __all__ = [
     "integrate_desktop",
     "list_gnome_terminal_profiles",
     "parse_css_define_colors",
+    "repair_and_propagate_flatpak",
+    "repair_flatpak",
     "resolve_icon",
     "revert_theme_fork",
     "safe_extract",

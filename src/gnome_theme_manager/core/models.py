@@ -124,6 +124,27 @@ class ThemeSet:
         )
 
 
+@dataclass(frozen=True)
+class FlatpakStatus:
+    """Status of Flatpak runtime and related integration dependencies."""
+
+    flatpak_installed: bool = False
+    flathub_configured: bool = False
+    extension_manager_installed: bool = False
+    user_themes_enabled: bool = False
+
+
+@dataclass(frozen=True)
+class FlatpakRepairResult:
+    """Result of a flatpak repair operation."""
+
+    success: bool = False
+    command: list[str] = field(default_factory=list)
+    output: str = ""
+    returncode: int = 0
+    error_message: str | None = None
+
+
 @dataclass
 class SandboxStatus:
     """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""
