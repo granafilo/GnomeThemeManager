@@ -87,6 +87,12 @@ DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
         "pacman": "python-gobject gtk4 libadwaita",
         "zypper": "python3-gobject typelib-1_0-Gtk-4_0 typelib-1_0-Adw-1",
     },
+    "flatpak": {
+        "apt": "flatpak",
+        "dnf": "flatpak",
+        "pacman": "flatpak",
+        "zypper": "flatpak",
+    },
     "user-theme": {
         "apt": "gnome-shell-extension-user-theme",
         "dnf": "gnome-shell-extension-user-theme",

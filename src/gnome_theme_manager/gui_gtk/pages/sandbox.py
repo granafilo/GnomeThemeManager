@@ -26,6 +26,7 @@ from ...core.errors import GSettingsUnavailableError
 from ...core.models import PropagationResult, SandboxStatus, ThemeSet
 from ...core.sandbox_bridge import KNOWN_SNAP_COMMON_THEMES
 from ..widgets.flatpak_dialog import FlatpakPropagationDialog
+from ..widgets.flatpak_wizard import FlatpakWizardDialog
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -100,6 +101,7 @@ class SandboxPage:
 
         self.sandbox_help_button: Gtk.Button = self.builder.get_object("sandbox_help_button")
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
+        self.flatpak_wizard_button: Gtk.Button = self.builder.get_object("flatpak_wizard_button")
         self.propagate_button: Gtk.Button = self.builder.get_object("propagate_button")
 
         self.error_status_page: Adw.StatusPage = self.builder.get_object("error_status_page")
@@ -108,7 +110,8 @@ class SandboxPage:
         self._button_configs: dict[str, tuple[str, str]] = {
             "sandbox_help_button": (_("Sandbox Guide"), "help-about-symbolic"),
             "refresh_button": (_("Refresh Status"), "emblem-synchronizing-symbolic"),
-            "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
+            "flatpak_wizard_button": (_("Configure"), "system-software-install-symbolic"),
+            "propagate_button": (_("Propagate Themes"), "emblem-ok-symbolic"),
             "error_retry_button": (_("Retry"), "emblem-synchronizing-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
@@ -131,6 +134,8 @@ class SandboxPage:
         if self.sandbox_help_button is not None:
             self.sandbox_help_button.connect("clicked", self._on_help_clicked)
         self.refresh_button.connect("clicked", lambda _btn: self.refresh())
+        if self.flatpak_wizard_button is not None:
+            self.flatpak_wizard_button.connect("clicked", self._on_wizard_clicked)
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
         self.snap_build_custom_button.connect("clicked", self._on_build_snap_clicked)
         self.error_retry_button.connect("clicked", lambda _btn: self.refresh())
@@ -459,6 +464,17 @@ class SandboxPage:
             on_propagated=self._on_propagation_finished,
         )
         dlg.present()
+
+    def _on_wizard_clicked(self, _button: Gtk.Button | None = None) -> None:
+        """Open Flatpak and GNOME dependency guided setup wizard."""
+        root_window = self._get_root_window()
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+        wizard = FlatpakWizardDialog(
+            manager=self.manager,
+            parent_window=parent_win,
+            on_completed=lambda: self.refresh(sync=True),
+        )
+        wizard.present()
 
     def _on_propagation_finished(self) -> None:
         """Handle completion of propagation."""

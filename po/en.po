@@ -3200,3 +3200,109 @@ msgstr "Unknown error occurred."
 msgid "Close"
 msgstr "Close"
 
+msgid "Install Flatpak"
+msgstr "Install Flatpak"
+
+msgid "Install the Flatpak package and sandbox container runtime for desktop applications."
+msgstr "Install the Flatpak package and sandbox container runtime for desktop applications."
+
+msgid "Add Flathub Repository"
+msgstr "Add Flathub Repository"
+
+msgid "Add the official Flathub remote repository to access thousands of desktop applications."
+msgstr "Add the official Flathub remote repository to access thousands of desktop applications."
+
+msgid "Install Extension Manager"
+msgstr "Install Extension Manager"
+
+msgid "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
+msgstr "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
+
+msgid "Enable User Themes"
+msgstr "Enable User Themes"
+
+msgid "Enable the GNOME Shell extension required to apply custom Shell and top bar styles."
+msgstr "Enable the GNOME Shell extension required to apply custom Shell and top bar styles."
+
+msgid "Dependency Setup Wizard"
+msgstr "Dependency Setup Wizard"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Guided Component Setup"
+msgstr "Guided Component Setup"
+
+msgid "Select the components and dependencies you want to configure. The wizard will guide you through each step with the exact commands."
+msgstr "Select the components and dependencies you want to configure. The wizard will guide you through each step with the exact commands."
+
+msgid "Installation Scope"
+msgstr "Installation Scope"
+
+msgid "Choose whether to install Flatpak remotes and apps for the current user or system-wide."
+msgstr "Choose whether to install Flatpak remotes and apps for the current user or system-wide."
+
+msgid "User Scope (--user)"
+msgstr "User Scope (--user)"
+
+msgid "Installs components without root privileges whenever possible."
+msgstr "Installs components without root privileges whenever possible."
+
+msgid "System-Wide Scope"
+msgstr "System-Wide Scope"
+
+msgid "Installs components system-wide using administrator privileges (pkexec)."
+msgstr "Installs components system-wide using administrator privileges (pkexec)."
+
+msgid "Components to Configure"
+msgstr "Components to Configure"
+
+msgid "Check the steps you wish to execute:"
+msgstr "Check the steps you wish to execute:"
+
+msgid "Already satisfied"
+msgstr "Already satisfied"
+
+msgid "Start Setup"
+msgstr "Start Setup"
+
+msgid "Step {current} of {total}"
+msgstr "Step {current} of {total}"
+
+msgid "Command to Execute"
+msgstr "Command to Execute"
+
+msgid "Copy command to clipboard"
+msgstr "Copy command to clipboard"
+
+msgid "This command requires administrator privileges (authentication will be prompted)."
+msgstr "This command requires administrator privileges (authentication will be prompted)."
+
+msgid "Include this step in the setup"
+msgstr "Include this step in the setup"
+
+msgid "Skip"
+msgstr "Skip"
+
+msgid "Setup Completed"
+msgstr "Setup Completed"
+
+msgid "Summary of Actions"
+msgstr "Summary of Actions"
+
+msgid "Configured"
+msgstr "Configured"
+
+msgid "Skipped"
+msgstr "Skipped"
+
+msgid "Setup Wizard"
+msgstr "Setup Wizard"
+
+msgid "Step-by-step setup for Flatpak, Flathub, and GNOME dependencies"
+msgstr "Step-by-step setup for Flatpak, Flathub, and GNOME dependencies"
+
+msgid "Guided installation for Flatpak, Flathub, Extension Manager, and User Themes."
+msgstr "Guided installation for Flatpak, Flathub, Extension Manager, and User Themes."
+
+

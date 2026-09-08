@@ -3200,3 +3200,110 @@ msgstr "Si è verificato un errore sconosciuto."
 msgid "Close"
 msgstr "Chiudi"
 
+msgid "Install Flatpak"
+msgstr "Installa Flatpak"
+
+msgid "Install the Flatpak package and sandbox container runtime for desktop applications."
+msgstr "Installa il pacchetto Flatpak e il runtime container sandbox per le applicazioni desktop."
+
+msgid "Add Flathub Repository"
+msgstr "Aggiungi repository Flathub"
+
+msgid "Add the official Flathub remote repository to access thousands of desktop applications."
+msgstr "Aggiunge il repository remoto ufficiale Flathub per accedere a migliaia di applicazioni desktop."
+
+msgid "Install Extension Manager"
+msgstr "Installa Extension Manager"
+
+msgid "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
+msgstr "Installa Extension Manager (com.mattjakeman.ExtensionManager) per esplorare e gestire le estensioni GNOME Shell."
+
+msgid "Enable User Themes"
+msgstr "Abilita User Themes"
+
+msgid "Enable the GNOME Shell extension required to apply custom Shell and top bar styles."
+msgstr "Abilita l'estensione GNOME Shell richiesta per applicare temi personalizzati alla Shell e al pannello superiore."
+
+msgid "Dependency Setup Wizard"
+msgstr "Configurazione guidata dipendenze"
+
+msgid "Back"
+msgstr "Indietro"
+
+msgid "Guided Component Setup"
+msgstr "Configurazione guidata componenti"
+
+msgid "Select the components and dependencies you want to configure. The wizard will guide you through each step with the exact commands."
+msgstr "Seleziona i componenti e le dipendenze da configurare. La procedura guidata ti mostrerà ogni passaggio con i comandi esatti."
+
+msgid "Installation Scope"
+msgstr "Ambito di installazione"
+
+msgid "Choose whether to install Flatpak remotes and apps for the current user or system-wide."
+msgstr "Scegli se installare i repository e le app Flatpak per l'utente corrente o a livello di sistema."
+
+msgid "User Scope (--user)"
+msgstr "Ambito utente (--user)"
+
+msgid "Installs components without root privileges whenever possible."
+msgstr "Installa i componenti senza privilegi di root quando possibile."
+
+msgid "System-Wide Scope"
+msgstr "Ambito a livello di sistema"
+
+msgid "Installs components system-wide using administrator privileges (pkexec)."
+msgstr "Installa i componenti per l'intero sistema usando i privilegi di amministratore (pkexec)."
+
+msgid "Components to Configure"
+msgstr "Componenti da configurare"
+
+msgid "Check the steps you wish to execute:"
+msgstr "Seleziona i passaggi che desideri eseguire:"
+
+msgid "Already satisfied"
+msgstr "Già soddisfatto"
+
+msgid "Start Setup"
+msgstr "Avvia configurazione"
+
+msgid "Step {current} of {total}"
+msgstr "Passaggio {current} di {total}"
+
+msgid "Command to Execute"
+msgstr "Comando da eseguire"
+
+msgid "Copy command to clipboard"
+msgstr "Copia comando negli appunti"
+
+msgid "This command requires administrator privileges (authentication will be prompted)."
+msgstr "Questo comando richiede privilegi di amministratore (verrà richiesta l'autenticazione)."
+
+msgid "Include this step in the setup"
+msgstr "Includi questo passaggio nella configurazione"
+
+msgid "Skip"
+msgstr "Salta"
+
+msgid "Setup Completed"
+msgstr "Configurazione completata"
+
+msgid "Summary of Actions"
+msgstr "Riepilogo delle azioni"
+
+msgid "Configured"
+msgstr "Configurato"
+
+msgid "Skipped"
+msgstr "Saltato"
+
+msgid "Setup Wizard"
+msgstr "Installazione guidata"
+
+msgid "Step-by-step setup for Flatpak, Flathub, and GNOME dependencies"
+msgstr "Installazione guidata per Flatpak, Flathub e dipendenze GNOME"
+
+msgid "Guided installation for Flatpak, Flathub, Extension Manager, and User Themes."
+msgstr "Installazione guidata per Flatpak, Flathub, Extension Manager e User Themes."
+
+
+

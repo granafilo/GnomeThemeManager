@@ -139,6 +139,29 @@
                           </object>
                         </child>
                         <child>
+                          <object class="AdwActionRow" id="flatpak_wizard_row">
+                            <property name="subtitle-lines">2</property>
+                            <property name="title" translatable="yes">Setup Wizard</property>
+                            <property name="subtitle" translatable="yes">Guided installation for Flatpak, Flathub, Extension Manager, and User Themes.</property>
+                            <child type="prefix">
+                              <object class="GtkImage" id="flatpak_wizard_icon">
+                                <property name="icon-name">system-software-install-symbolic</property>
+                              </object>
+                            </child>
+                            <child type="suffix">
+                              <object class="GtkButton" id="flatpak_wizard_button">
+                                <property name="label" translatable="yes">Configure</property>
+                                <property name="tooltip-text" translatable="yes">Step-by-step setup for Flatpak, Flathub, and GNOME dependencies</property>
+                                <property name="valign">center</property>
+                                <style>
+                                  <class name="suggested-action"/>
+                                  <class name="pill"/>
+                                </style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
                           <object class="AdwActionRow" id="flatpak_notes_row">
                             <property name="subtitle-lines">3</property>
                             <property name="title" translatable="yes">Compatibility Notes</property>

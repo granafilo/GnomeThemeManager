@@ -81,6 +81,7 @@ def test_check_flatpak_status_flathub_missing() -> None:
     bridge = SandboxBridge()
     mock_ext_mgr = MagicMock()
     mock_ext_mgr.is_user_theme_enabled.return_value = False
+    mock_ext_mgr.is_extension_manager_installed.return_value = False
 
     def fake_subprocess_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         if "remotes" in cmd:
@@ -160,6 +161,7 @@ def test_check_flatpak_status_subprocess_errors_handled_gracefully() -> None:
     bridge = SandboxBridge()
     mock_ext_mgr = MagicMock()
     mock_ext_mgr.is_user_theme_enabled.side_effect = RuntimeError("dconf locked")
+    mock_ext_mgr.is_extension_manager_installed.return_value = False
 
     with patch("shutil.which", side_effect=lambda name: "/usr/bin/flatpak" if name == "flatpak" else None), patch(
         "subprocess.run", side_effect=subprocess.SubprocessError("Process error")
@@ -303,5 +305,83 @@ def test_module_level_repair_functions() -> None:
         assert r2.success is True
         assert p2.flatpak_success is True
         m_both.assert_called_once()
+
+
+def test_get_wizard_steps_content_and_satisfaction() -> None:
+    """Verify get_wizard_steps returns 4 expected steps and reflects satisfaction flags."""
+    bridge = SandboxBridge()
+    mock_status = FlatpakStatus(
+        flatpak_installed=True,
+        flathub_configured=False,
+        extension_manager_installed=False,
+        user_themes_enabled=True,
+    )
+
+    with patch.object(bridge, "check_flatpak_status", return_value=mock_status):
+        steps = bridge.get_wizard_steps(user_mode=True)
+        assert len(steps) == 4
+        step_ids = [s.step_id for s in steps]
+        assert step_ids == [
+            "install_flatpak",
+            "add_flathub",
+            "install_extension_manager",
+            "enable_user_themes",
+        ]
+
+        # Check satisfaction flags
+        assert steps[0].is_satisfied is True
+        assert steps[1].is_satisfied is False
+        assert steps[2].is_satisfied is False
+        assert steps[3].is_satisfied is True
+
+        # Check commands
+        assert "flathub.flatpakrepo" in steps[1].command_user
+        assert "com.mattjakeman.ExtensionManager" in steps[2].command_user
+        assert "gnome-extensions enable" in steps[3].command_user
+
+
+def test_theme_manager_and_module_get_wizard_steps() -> None:
+    """Verify ThemeManager and module level get_flatpak_wizard_steps work correctly."""
+    from gnome_theme_manager.core import WizardStepInfo, get_flatpak_wizard_steps
+
+    mock_step = WizardStepInfo(
+        step_id="mock_step",
+        title="Mock Title",
+        description="Mock Desc",
+        command_user="echo 1",
+        command_system="echo 2",
+    )
+
+    mock_bridge = MagicMock()
+    mock_bridge.get_wizard_steps.return_value = [mock_step]
+
+    manager = ThemeManager(sandbox_bridge=mock_bridge)
+    res_mgr = manager.get_flatpak_wizard_steps(user_mode=True)
+    assert len(res_mgr) == 1
+    assert res_mgr[0].step_id == "mock_step"
+    mock_bridge.get_wizard_steps.assert_called_once()
+
+    with patch("gnome_theme_manager.core.sandbox_bridge.SandboxBridge.get_wizard_steps", return_value=[mock_step]):
+        res_mod = get_flatpak_wizard_steps(user_mode=False)
+        assert len(res_mod) == 1
+        assert res_mod[0].title == "Mock Title"
+
+
+def test_check_flatpak_status_detects_extension_manager_via_extensions_manager() -> None:
+    """Verify check_flatpak_status reflects is_extension_manager_installed from ExtensionsManager."""
+    bridge = SandboxBridge()
+    mock_ext_mgr = MagicMock()
+    mock_ext_mgr.is_extension_manager_installed.return_value = True
+    mock_ext_mgr.is_user_theme_enabled.return_value = True
+
+    with patch("shutil.which", return_value="/usr/bin/flatpak"), patch(
+        "subprocess.run",
+        return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout="flathub\n", stderr=""),
+    ):
+        status = bridge.check_flatpak_status(user_mode=True, extensions_manager=mock_ext_mgr)
+        assert status.extension_manager_installed is True
+        mock_ext_mgr.is_extension_manager_installed.assert_called_once()
+
+
 
 

@@ -48,6 +48,7 @@ class FlatpakPropagationDialog:
             default_width=540,
             default_height=480,
         )
+        self.window.set_size_request(500, 440)
         self.window.add_css_class("flatpak-propagation-dialog")
 
         toolbar_view = Adw.ToolbarView()

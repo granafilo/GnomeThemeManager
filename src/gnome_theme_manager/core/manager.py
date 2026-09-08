@@ -37,6 +37,7 @@ from .models import (
     Theme,
     ThemeSet,
     ThemeType,
+    WizardStepInfo,
 )
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
@@ -540,6 +541,16 @@ class ThemeManager:
             gtk_theme=gtk_theme,
             icon_theme=icon_theme,
             on_progress=on_progress,
+        )
+
+    def get_flatpak_wizard_steps(
+        self,
+        user_mode: bool = True,
+    ) -> list[WizardStepInfo]:
+        """Return guided installation wizard steps with system-tailored commands."""
+        return self._sandbox.get_wizard_steps(
+            user_mode=user_mode,
+            extensions_manager=self._extensions,
         )
 
     def propagate_sandbox(

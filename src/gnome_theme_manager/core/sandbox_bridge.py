@@ -16,16 +16,20 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from gnome_theme_manager import _
+
 from .errors import ThemeValidationError
 from .models import (
     FlatpakRepairResult,
     FlatpakStatus,
     PropagationResult,
     SandboxStatus,
+    WizardStepInfo,
 )
 
 if TYPE_CHECKING:
     from .extensions import ExtensionsManager
+    from .os_detector import OSInfo
 
 logger = logging.getLogger("gnome_theme_manager.core")
 
@@ -513,38 +517,31 @@ class SandboxBridge:
             except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
                 logger.debug("Error querying Flatpak remotes: %s", err)
 
-            # 2. Check Extension Manager flatpak
-            ext_mgr_cmd = ["flatpak", "info", "com.mattjakeman.ExtensionManager"]
-            if user_mode is True:
-                ext_mgr_cmd = [
-                    "flatpak",
-                    "info",
-                    "--user",
-                    "com.mattjakeman.ExtensionManager",
-                ]
-            elif user_mode is False:
-                ext_mgr_cmd = [
-                    "flatpak",
-                    "info",
-                    "--system",
-                    "com.mattjakeman.ExtensionManager",
-                ]
+            # 2. Check Extension Manager flatpak (check via ExtensionsManager, any-scope flatpak info, or native)
+            if extensions_manager is not None:
+                try:
+                    extension_manager_installed = bool(extensions_manager.is_extension_manager_installed())
+                except Exception as err:
+                    logger.debug("Error querying ExtensionsManager for Extension Manager: %s", err)
 
-            try:
-                res_info = subprocess.run(
-                    ext_mgr_cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
-                extension_manager_installed = res_info.returncode == 0
-            except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
-                logger.debug("Error querying Extension Manager flatpak info: %s", err)
+            if not extension_manager_installed:
+                try:
+                    # Check Flatpak info without scope restriction to detect both system-wide and user installations
+                    res_info = subprocess.run(
+                        ["flatpak", "info", "com.mattjakeman.ExtensionManager"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=False,
+                    )
+                    extension_manager_installed = res_info.returncode == 0
+                except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
+                    logger.debug("Error querying Extension Manager flatpak info: %s", err)
 
         # 3. Native Extension Manager binary fallback if not found in flatpak
-        if not extension_manager_installed and (user_mode is None or user_mode is False):
+        if not extension_manager_installed:
             extension_manager_installed = shutil.which("extension-manager") is not None
+
 
         # 4. Check user-theme extension
         user_themes_enabled = False
@@ -683,6 +680,81 @@ class SandboxBridge:
         prop_res = self.propagate_to_flatpak(gtk_theme=gtk_theme, icon_theme=icon_theme)
         return repair_res, prop_res
 
+    def get_wizard_steps(
+        self,
+        user_mode: bool = True,
+        extensions_manager: "ExtensionsManager | None" = None,
+        os_info: "OSInfo | None" = None,
+    ) -> list[WizardStepInfo]:
+        """Return guided dependency installation steps with system-tailored commands.
+
+        Args:
+            user_mode: True to check status in user scope, False for system-wide scope.
+            extensions_manager: Optional ExtensionsManager instance.
+            os_info: Optional OSInfo instance for package manager commands.
+
+        Returns:
+            List of WizardStepInfo instances.
+        """
+        from .os_detector import detect_os, get_install_command
+
+        target_os = os_info or detect_os()
+        status = self.check_flatpak_status(user_mode=user_mode, extensions_manager=extensions_manager)
+
+        flatpak_sys_cmd = get_install_command("flatpak", os_info=target_os).replace("sudo ", "pkexec ")
+        user_theme_sys_cmd = (
+            get_install_command("user-theme", os_info=target_os).replace("sudo ", "pkexec ")
+            + " && gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com"
+        )
+
+        steps: list[WizardStepInfo] = [
+            WizardStepInfo(
+                step_id="install_flatpak",
+                title=_("Install Flatpak"),
+                description=_(
+                    "Install the Flatpak package and sandbox container runtime for desktop applications."
+                ),
+                command_user=flatpak_sys_cmd,
+                command_system=flatpak_sys_cmd,
+                is_satisfied=status.flatpak_installed,
+                requires_root_system=True,
+            ),
+            WizardStepInfo(
+                step_id="add_flathub",
+                title=_("Add Flathub Repository"),
+                description=_(
+                    "Add the official Flathub remote repository to access thousands of desktop applications."
+                ),
+                command_user="flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo",
+                command_system="pkexec flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo",
+                is_satisfied=status.flathub_configured,
+                requires_root_system=True,
+            ),
+            WizardStepInfo(
+                step_id="install_extension_manager",
+                title=_("Install Extension Manager"),
+                description=_(
+                    "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
+                ),
+                command_user="flatpak install -y --user flathub com.mattjakeman.ExtensionManager",
+                command_system="pkexec flatpak install -y flathub com.mattjakeman.ExtensionManager",
+                is_satisfied=status.extension_manager_installed,
+                requires_root_system=True,
+            ),
+            WizardStepInfo(
+                step_id="enable_user_themes",
+                title=_("Enable User Themes"),
+                description=_(
+                    "Enable the GNOME Shell extension required to apply custom Shell and top bar styles."
+                ),
+                command_user="gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com",
+                command_system=user_theme_sys_cmd,
+                is_satisfied=status.user_themes_enabled,
+                requires_root_system=True,
+            ),
+        ]
+        return steps
+
 
 def check_flatpak_status(
     user_mode: bool | None = None,
@@ -726,5 +798,20 @@ def repair_and_propagate_flatpak(
         icon_theme=icon_theme,
         on_progress=on_progress,
     )
+
+
+def get_flatpak_wizard_steps(
+    user_mode: bool = True,
+    extensions_manager: "ExtensionsManager | None" = None,
+    os_info: "OSInfo | None" = None,
+) -> list[WizardStepInfo]:
+    """Return guided installation wizard steps using default SandboxBridge instance."""
+    bridge = SandboxBridge()
+    return bridge.get_wizard_steps(
+        user_mode=user_mode,
+        extensions_manager=extensions_manager,
+        os_info=os_info,
+    )
+
 
 

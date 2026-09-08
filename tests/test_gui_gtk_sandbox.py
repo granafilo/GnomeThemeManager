@@ -23,7 +23,8 @@ def test_sandbox_page_initial_and_button_labels(mock_theme_manager: MagicMock) -
     buttons = [
         (page.sandbox_help_button, "Sandbox Guide", "help-about-symbolic"),
         (page.refresh_button, "Refresh Status", "emblem-synchronizing-symbolic"),
-        (page.propagate_button, "Propagate Theme to Sandboxed Apps", "emblem-ok-symbolic"),
+        (page.flatpak_wizard_button, "Configure", "system-software-install-symbolic"),
+        (page.propagate_button, "Propagate Themes", "emblem-ok-symbolic"),
         (page.error_retry_button, "Retry", "emblem-synchronizing-symbolic"),
     ]
 
@@ -244,3 +245,18 @@ def test_sandbox_page_snap_visibility_and_help_dialog(mock_theme_manager: MagicM
 
     with patch.object(Adw.Window, "present"):
         page._on_help_clicked(page.sandbox_help_button)
+
+
+def test_sandbox_page_wizard_dialog_opens(mock_theme_manager: MagicMock) -> None:
+    """Verify that clicking wizard button opens FlatpakWizardDialog."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    page = SandboxPage(manager=mock_theme_manager)
+    with patch("gnome_theme_manager.gui_gtk.pages.sandbox.FlatpakWizardDialog") as mock_dlg_cls:
+        mock_instance = MagicMock()
+        mock_dlg_cls.return_value = mock_instance
+        page.flatpak_wizard_button.emit("clicked")
+        mock_dlg_cls.assert_called_once()
+        mock_instance.present.assert_called_once()
+

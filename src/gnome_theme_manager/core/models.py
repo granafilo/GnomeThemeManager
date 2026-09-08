@@ -145,6 +145,19 @@ class FlatpakRepairResult:
     error_message: str | None = None
 
 
+@dataclass(frozen=True)
+class WizardStepInfo:
+    """Information and commands for a guided dependency installation step."""
+
+    step_id: str
+    title: str
+    description: str
+    command_user: str
+    command_system: str
+    is_satisfied: bool = False
+    requires_root_system: bool = True
+
+
 @dataclass
 class SandboxStatus:
     """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""

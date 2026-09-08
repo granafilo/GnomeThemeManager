@@ -74,6 +74,7 @@ from .models import (
     Theme,
     ThemeSet,
     ThemeType,
+    WizardStepInfo,
 )
 from .os_detector import (
     DEPENDENCY_PACKAGE_MAP,
@@ -89,6 +90,7 @@ from .presets import PresetManager
 from .sandbox_bridge import (
     SandboxBridge,
     check_flatpak_status,
+    get_flatpak_wizard_steps,
     repair_and_propagate_flatpak,
     repair_flatpak,
 )
@@ -224,6 +226,7 @@ __all__ = [
     "ThemeValidator",
     "UIPrefs",
     "WallpaperColorExtractor",
+    "WizardStepInfo",
     "apply_palette_to_gnome_terminal",
     "check_flatpak_status",
     "create_gnome_terminal_profile",
@@ -242,6 +245,7 @@ __all__ = [
     "generate_shell_css_override",
     "get_extension_manager_install_options",
     "get_fallback_icon_name",
+    "get_flatpak_wizard_steps",
     "get_install_command",
     "get_missing_dependency_hint",
     "get_os_install_commands",
