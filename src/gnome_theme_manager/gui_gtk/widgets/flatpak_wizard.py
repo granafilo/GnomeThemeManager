@@ -41,7 +41,9 @@ class FlatpakWizardDialog:
         self.steps: list[WizardStepInfo] = []
         self.selected_step_ids: set[str] = set()
         self.current_step_index: int = 0
-        self.step_results: dict[str, str] = {}  # step_id -> "installed" | "skipped" | "already_satisfied" | "failed"
+        self.step_results: dict[
+            str, str
+        ] = {}  # step_id -> "installed" | "skipped" | "already_satisfied" | "failed"
         self._is_executing: bool = False
 
         self.step_sub_stacks: dict[str, Gtk.Stack] = {}
@@ -117,7 +119,9 @@ class FlatpakWizardDialog:
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        clamp = Adw.Clamp(maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16)
+        clamp = Adw.Clamp(
+            maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16
+        )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18)
 
         # Icon and header title
@@ -148,7 +152,9 @@ class FlatpakWizardDialog:
         # Scope selector: User vs System
         scope_group = Adw.PreferencesGroup(
             title=_("Installation Scope"),
-            description=_("Choose whether to install Flatpak remotes and apps for the current user or system-wide."),
+            description=_(
+                "Choose whether to install Flatpak remotes and apps for the current user or system-wide."
+            ),
         )
         self.scope_row = Adw.ActionRow(
             title=_("User Scope (--user)"),
@@ -188,13 +194,17 @@ class FlatpakWizardDialog:
         box.append(checklist_group)
 
         # Action buttons
-        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        btn_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8
+        )
 
         cancel_btn = Gtk.Button(label=_("Cancel"))
         cancel_btn.connect("clicked", lambda _b: self.window.close())
         btn_box.append(cancel_btn)
 
-        self.start_btn = Gtk.Button(label=_("Start Setup"), css_classes=["suggested-action", "pill"])
+        self.start_btn = Gtk.Button(
+            label=_("Start Setup"), css_classes=["suggested-action", "pill"]
+        )
         self.start_btn.connect("clicked", self._on_start_wizard_clicked)
         btn_box.append(self.start_btn)
 
@@ -209,10 +219,14 @@ class FlatpakWizardDialog:
         self.user_mode = switch.get_active()
         if self.user_mode:
             self.scope_row.set_title(_("User Scope (--user)"))
-            self.scope_row.set_subtitle(_("Installs components without root privileges whenever possible."))
+            self.scope_row.set_subtitle(
+                _("Installs components without root privileges whenever possible.")
+            )
         else:
             self.scope_row.set_title(_("System-Wide Scope"))
-            self.scope_row.set_subtitle(_("Installs components system-wide using administrator privileges (pkexec)."))
+            self.scope_row.set_subtitle(
+                _("Installs components system-wide using administrator privileges (pkexec).")
+            )
 
         # Reload step commands and satisfaction for the new scope
         self._load_steps()
@@ -252,13 +266,17 @@ class FlatpakWizardDialog:
             page = self._build_single_step_page(step, idx + 1, total_steps)
             self.stack.add_named(page, f"step_{step.step_id}")
 
-    def _build_single_step_page(self, step: WizardStepInfo, step_num: int, total_steps: int) -> Gtk.Widget:
+    def _build_single_step_page(
+        self, step: WizardStepInfo, step_num: int, total_steps: int
+    ) -> Gtk.Widget:
         """Construct the UI page for an individual wizard step with interactive states."""
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        clamp = Adw.Clamp(maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16)
-        
+        clamp = Adw.Clamp(
+            maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16
+        )
+
         # Sub-stack to manage step states: prompt -> running -> success / error
         step_sub_stack = Gtk.Stack()
         step_sub_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
@@ -278,7 +296,12 @@ class FlatpakWizardDialog:
         title_lbl = Gtk.Label(label=step.title, css_classes=["title-2"], halign=Gtk.Align.CENTER)
         prompt_box.append(title_lbl)
 
-        desc_lbl = Gtk.Label(label=step.description, wrap=True, justify=Gtk.Justification.CENTER, halign=Gtk.Align.CENTER)
+        desc_lbl = Gtk.Label(
+            label=step.description,
+            wrap=True,
+            justify=Gtk.Justification.CENTER,
+            halign=Gtk.Align.CENTER,
+        )
         prompt_box.append(desc_lbl)
 
         cmd_text = step.command_user if self.user_mode else step.command_system
@@ -299,7 +322,9 @@ class FlatpakWizardDialog:
         needs_root = (not self.user_mode and step.requires_root_system) or ("pkexec" in cmd_text)
         if needs_root:
             auth_banner = Adw.Banner(
-                title=_("This command requires administrator privileges (authentication will be prompted)."),
+                title=_(
+                    "This command requires administrator privileges (authentication will be prompted)."
+                ),
                 revealed=True,
             )
             prompt_box.append(auth_banner)
@@ -316,7 +341,9 @@ class FlatpakWizardDialog:
         step_check.connect("toggled", self._on_step_check_toggled, step.step_id)
         prompt_box.append(step_check)
 
-        prompt_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=16)
+        prompt_actions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=16
+        )
         skip_btn = Gtk.Button(label=_("Skip"))
         skip_btn.connect("clicked", lambda _b, s=step: self._on_step_skip(s))
         prompt_actions.append(skip_btn)
@@ -339,10 +366,14 @@ class FlatpakWizardDialog:
         )
         running_box.append(running_counter)
 
-        spinner = Gtk.Spinner(spinning=True, width_request=40, height_request=40, halign=Gtk.Align.CENTER)
+        spinner = Gtk.Spinner(
+            spinning=True, width_request=40, height_request=40, halign=Gtk.Align.CENTER
+        )
         running_box.append(spinner)
 
-        progress_lbl = Gtk.Label(label=_("Executing command..."), css_classes=["title-3"], halign=Gtk.Align.CENTER)
+        progress_lbl = Gtk.Label(
+            label=_("Executing command..."), css_classes=["title-3"], halign=Gtk.Align.CENTER
+        )
         running_box.append(progress_lbl)
 
         log_scroll = Gtk.ScrolledWindow(height_request=160, hexpand=True, vexpand=True)
@@ -400,7 +431,9 @@ class FlatpakWizardDialog:
         success_group.add(success_expander)
         success_box.append(success_group)
 
-        success_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        success_actions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8
+        )
         next_btn = Gtk.Button(label=_("Continue"), css_classes=["suggested-action", "pill"])
         next_btn.connect("clicked", lambda _b: self._advance_next_step())
         success_actions.append(next_btn)
@@ -418,10 +451,14 @@ class FlatpakWizardDialog:
         error_icon.set_halign(Gtk.Align.CENTER)
         error_box.append(error_icon)
 
-        error_title = Gtk.Label(label=_("Installation Failed"), css_classes=["title-2"], halign=Gtk.Align.CENTER)
+        error_title = Gtk.Label(
+            label=_("Installation Failed"), css_classes=["title-2"], halign=Gtk.Align.CENTER
+        )
         error_box.append(error_title)
 
-        error_msg_lbl = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER, halign=Gtk.Align.CENTER)
+        error_msg_lbl = Gtk.Label(
+            wrap=True, justify=Gtk.Justification.CENTER, halign=Gtk.Align.CENTER
+        )
         error_box.append(error_msg_lbl)
 
         error_expander = Adw.ExpanderRow(title=_("Detailed Log"), subtitle=_("View error details"))
@@ -445,7 +482,9 @@ class FlatpakWizardDialog:
         error_group.add(error_expander)
         error_box.append(error_group)
 
-        error_actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8)
+        error_actions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=12, halign=Gtk.Align.END, margin_top=8
+        )
         cancel_all_btn = Gtk.Button(label=_("Cancel All"), css_classes=["destructive-action"])
         cancel_all_btn.connect("clicked", lambda _b: self.window.close())
         error_actions.append(cancel_all_btn)
@@ -561,7 +600,9 @@ class FlatpakWizardDialog:
 
         threading.Thread(target=run_thread, daemon=True).start()
 
-    def _append_log_line(self, buffer: Gtk.TextBuffer, scroll: Gtk.ScrolledWindow, line: str) -> bool:
+    def _append_log_line(
+        self, buffer: Gtk.TextBuffer, scroll: Gtk.ScrolledWindow, line: str
+    ) -> bool:
         """Append output line to text buffer and auto-scroll to bottom."""
         end = buffer.get_end_iter()
         buffer.insert(end, f"{line}\n")
@@ -620,7 +661,9 @@ class FlatpakWizardDialog:
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        self.summary_clamp = Adw.Clamp(maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16)
+        self.summary_clamp = Adw.Clamp(
+            maximum_size=520, margin_top=20, margin_bottom=24, margin_start=16, margin_end=16
+        )
         scrolled.set_child(self.summary_clamp)
         self.stack.add_named(scrolled, "summary")
 
@@ -661,7 +704,9 @@ class FlatpakWizardDialog:
 
         box.append(summary_group)
 
-        close_btn = Gtk.Button(label=_("Close"), css_classes=["suggested-action", "pill"], halign=Gtk.Align.CENTER)
+        close_btn = Gtk.Button(
+            label=_("Close"), css_classes=["suggested-action", "pill"], halign=Gtk.Align.CENTER
+        )
         close_btn.connect("clicked", self._on_finish_clicked)
         box.append(close_btn)
 

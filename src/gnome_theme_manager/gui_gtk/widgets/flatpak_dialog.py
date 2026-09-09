@@ -77,7 +77,9 @@ class FlatpakPropagationDialog:
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        clamp = Adw.Clamp(maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20)
+        clamp = Adw.Clamp(
+            maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20
+        )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
 
         # Header icon and text
@@ -154,10 +156,14 @@ class FlatpakPropagationDialog:
 
     def _init_progress_page(self) -> None:
         """Create progress page with spinner, progress bar, and streaming log."""
-        clamp = Adw.Clamp(maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20)
+        clamp = Adw.Clamp(
+            maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20
+        )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
 
-        self.spinner = Gtk.Spinner(spinning=True, width_request=48, height_request=48, halign=Gtk.Align.CENTER)
+        self.spinner = Gtk.Spinner(
+            spinning=True, width_request=48, height_request=48, halign=Gtk.Align.CENTER
+        )
         box.append(self.spinner)
 
         self.lbl_progress_status = Gtk.Label(
@@ -199,7 +205,9 @@ class FlatpakPropagationDialog:
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
 
-        clamp = Adw.Clamp(maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20)
+        clamp = Adw.Clamp(
+            maximum_size=500, margin_top=24, margin_bottom=24, margin_start=20, margin_end=20
+        )
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
 
         self.result_status_page = Adw.StatusPage()
@@ -335,7 +343,11 @@ class FlatpakPropagationDialog:
                 _("Flatpak runtime was verified and theme filesystem overrides were applied.")
             )
         else:
-            err_msg = repair_res.error_message or "; ".join(prop_res.warnings) or _("Unknown error occurred.")
+            err_msg = (
+                repair_res.error_message
+                or "; ".join(prop_res.warnings)
+                or _("Unknown error occurred.")
+            )
             self.result_status_page.set_icon_name("dialog-error-symbolic")
             self.result_status_page.set_title(_("Propagation Failed"))
             self.result_status_page.set_description(f"{_('Error:')} {err_msg}")

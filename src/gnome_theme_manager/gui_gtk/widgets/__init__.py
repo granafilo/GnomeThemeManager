@@ -17,4 +17,3 @@ __all__ = [
     "safe_set_font_desc",
     "suppress_font_dialog_critical",
 ]
-

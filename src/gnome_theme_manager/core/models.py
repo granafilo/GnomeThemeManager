@@ -170,7 +170,6 @@ class WizardStepResult:
     error_message: str | None = None
 
 
-
 @dataclass
 class SandboxStatus:
     """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""

@@ -26,6 +26,11 @@ from .desktop_integration import integrate_desktop
 from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
+    ExtensionError,
+    ExtensionIncompatibleError,
+    ExtensionInstallError,
+    ExtensionNetworkError,
+    ExtensionNotFoundError,
     GnomeThemeManagerError,
     GSettingsUnavailableError,
     StoreDownloadError,
@@ -34,6 +39,14 @@ from .errors import (
     StoreNetworkError,
     ThemeNotFoundError,
     ThemeValidationError,
+)
+from .extension_backend import (
+    ExtensionBackend,
+    ExtensionItem,
+    ExtensionSearchResult,
+    GnomeExtensionsCliBackend,
+    GnomeExtensionsRestBackend,
+    get_extension_backend,
 )
 from .extensions import (
     ExtensionsManager,
@@ -174,6 +187,14 @@ __all__ = [
     "ArchiveExtractionError",
     "EditorDraft",
     "EditorDraftManager",
+    "ExtensionBackend",
+    "ExtensionError",
+    "ExtensionIncompatibleError",
+    "ExtensionInstallError",
+    "ExtensionItem",
+    "ExtensionNetworkError",
+    "ExtensionNotFoundError",
+    "ExtensionSearchResult",
     "ExtensionsManager",
     "ExtractedColors",
     "FallbackConfig",
@@ -186,6 +207,8 @@ __all__ = [
     "GlobalTheme",
     "GlobalThemeManager",
     "GnomeExtension",
+    "GnomeExtensionsCliBackend",
+    "GnomeExtensionsRestBackend",
     "GnomeThemeManagerError",
     "IconFallbackResolver",
     "IconResolutionResult",
@@ -247,6 +270,7 @@ __all__ = [
     "extract_theme_colors",
     "extract_wallpaper_palette",
     "generate_shell_css_override",
+    "get_extension_backend",
     "get_extension_manager_install_options",
     "get_fallback_icon_name",
     "get_flatpak_wizard_steps",

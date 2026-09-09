@@ -93,10 +93,7 @@ def test_core_step_execution_single_and_sequence() -> None:
         is_satisfied=False,
     )
 
-    seq_results = [
-        bridge.execute_wizard_step(step=s, user_mode=True)
-        for s in [step, step2]
-    ]
+    seq_results = [bridge.execute_wizard_step(step=s, user_mode=True) for s in [step, step2]]
 
     assert all(r.success for r in seq_results)
     assert seq_results[0].step_id == "test_step"

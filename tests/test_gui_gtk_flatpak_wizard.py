@@ -46,7 +46,9 @@ def mock_steps() -> list[WizardStepInfo]:
     ]
 
 
-def test_flatpak_wizard_init(mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]) -> None:
+def test_flatpak_wizard_init(
+    mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]
+) -> None:
     """Verify wizard dialog initializes with correct title, steps, and selection."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 unavailable.")
@@ -63,7 +65,9 @@ def test_flatpak_wizard_init(mock_theme_manager: MagicMock, mock_steps: list[Wiz
     assert wizard.step_results.get("add_flathub") == "already_satisfied"
 
 
-def test_flatpak_wizard_scope_toggle(mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]) -> None:
+def test_flatpak_wizard_scope_toggle(
+    mock_theme_manager: MagicMock, mock_steps: list[WizardStepInfo]
+) -> None:
     """Verify toggling scope switch updates user_mode and reloads steps."""
     if not is_gtk_available():
         pytest.skip("PyGObject / GTK4 unavailable.")
@@ -225,4 +229,3 @@ def test_flatpak_wizard_async_execution_failure(
     _drain_events()
     assert wizard.step_results.get("install_flatpak") == "failed"
     error_lbl.set_label.assert_called_with("Could not get lock")
-

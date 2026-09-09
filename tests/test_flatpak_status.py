@@ -32,9 +32,12 @@ def test_check_flatpak_status_when_flatpak_not_installed() -> None:
     mock_ext_mgr = MagicMock()
     mock_ext_mgr.is_user_theme_enabled.return_value = True
 
-    with patch("shutil.which", return_value=None), patch(
-        "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox",
-        return_value=False,
+    with (
+        patch("shutil.which", return_value=None),
+        patch(
+            "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox",
+            return_value=False,
+        ),
     ):
         status = bridge.check_flatpak_status(extensions_manager=mock_ext_mgr)
         assert status.flatpak_installed is False
@@ -66,8 +69,9 @@ def test_check_flatpak_status_flathub_and_extension_manager_installed() -> None:
             )
         return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="")
 
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), patch(
-        "subprocess.run", side_effect=fake_subprocess_run
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.run", side_effect=fake_subprocess_run),
     ):
         status = bridge.check_flatpak_status(user_mode=None, extensions_manager=mock_ext_mgr)
         assert status.flatpak_installed is True
@@ -93,8 +97,12 @@ def test_check_flatpak_status_flathub_missing() -> None:
             )
         return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="")
 
-    with patch("shutil.which", side_effect=lambda name: "/usr/bin/flatpak" if name == "flatpak" else None), patch(
-        "subprocess.run", side_effect=fake_subprocess_run
+    with (
+        patch(
+            "shutil.which",
+            side_effect=lambda name: "/usr/bin/flatpak" if name == "flatpak" else None,
+        ),
+        patch("subprocess.run", side_effect=fake_subprocess_run),
     ):
         status = bridge.check_flatpak_status(user_mode=True, extensions_manager=mock_ext_mgr)
         assert status.flatpak_installed is True
@@ -117,11 +125,14 @@ def test_check_flatpak_status_native_extension_manager_fallback() -> None:
     def fake_subprocess_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         # Remotes succeeds with flathub, but flatpak info fails (not in flatpak)
         if "remotes" in cmd:
-            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="flathub\n", stderr="")
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="flathub\n", stderr=""
+            )
         return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="Not found")
 
-    with patch("shutil.which", side_effect=fake_which), patch(
-        "subprocess.run", side_effect=fake_subprocess_run
+    with (
+        patch("shutil.which", side_effect=fake_which),
+        patch("subprocess.run", side_effect=fake_subprocess_run),
     ):
         status = bridge.check_flatpak_status(user_mode=None, extensions_manager=mock_ext_mgr)
         assert status.flatpak_installed is True
@@ -140,8 +151,9 @@ def test_check_flatpak_status_user_and_system_modes() -> None:
         recorded_commands.append(cmd)
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="flathub\n", stderr="")
 
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), patch(
-        "subprocess.run", side_effect=fake_subprocess_run
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.run", side_effect=fake_subprocess_run),
     ):
         # User mode
         bridge.check_flatpak_status(user_mode=True, extensions_manager=mock_ext_mgr)
@@ -163,8 +175,12 @@ def test_check_flatpak_status_subprocess_errors_handled_gracefully() -> None:
     mock_ext_mgr.is_user_theme_enabled.side_effect = RuntimeError("dconf locked")
     mock_ext_mgr.is_extension_manager_installed.return_value = False
 
-    with patch("shutil.which", side_effect=lambda name: "/usr/bin/flatpak" if name == "flatpak" else None), patch(
-        "subprocess.run", side_effect=subprocess.SubprocessError("Process error")
+    with (
+        patch(
+            "shutil.which",
+            side_effect=lambda name: "/usr/bin/flatpak" if name == "flatpak" else None,
+        ),
+        patch("subprocess.run", side_effect=subprocess.SubprocessError("Process error")),
     ):
         status = bridge.check_flatpak_status(extensions_manager=mock_ext_mgr)
         assert status.flatpak_installed is True
@@ -175,7 +191,9 @@ def test_check_flatpak_status_subprocess_errors_handled_gracefully() -> None:
 
 def test_check_flatpak_status_module_level_and_theme_manager() -> None:
     """Verify module-level function and ThemeManager method work and delegate properly."""
-    with patch("gnome_theme_manager.core.sandbox_bridge.SandboxBridge.check_flatpak_status") as mock_check:
+    with patch(
+        "gnome_theme_manager.core.sandbox_bridge.SandboxBridge.check_flatpak_status"
+    ) as mock_check:
         mock_check.return_value = FlatpakStatus(
             flatpak_installed=True,
             flathub_configured=True,
@@ -201,9 +219,10 @@ def test_repair_flatpak_user_success() -> None:
     mock_process.returncode = 0
     mock_process.wait.return_value = None
 
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), patch(
-        "subprocess.Popen", return_value=mock_process
-    ) as mock_popen:
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch("subprocess.Popen", return_value=mock_process) as mock_popen,
+    ):
         res = bridge.repair_flatpak(
             user_mode=True,
             on_progress=lambda line: progress_lines.append(line),
@@ -229,9 +248,11 @@ def test_repair_flatpak_system_with_pkexec() -> None:
             return f"/usr/bin/{cmd}"
         return None
 
-    with patch("shutil.which", side_effect=fake_which), patch(
-        "os.geteuid", return_value=1000, create=True
-    ), patch("subprocess.Popen", return_value=mock_process):
+    with (
+        patch("shutil.which", side_effect=fake_which),
+        patch("os.geteuid", return_value=1000, create=True),
+        patch("subprocess.Popen", return_value=mock_process),
+    ):
         res = bridge.repair_flatpak(user_mode=False, use_pkexec=True)
         assert res.success is True
         assert res.command == ["pkexec", "flatpak", "repair", "--system"]
@@ -240,8 +261,9 @@ def test_repair_flatpak_system_with_pkexec() -> None:
 def test_repair_flatpak_not_installed() -> None:
     """Verify repair_flatpak returns failure immediately when flatpak is not present."""
     bridge = SandboxBridge()
-    with patch("shutil.which", return_value=None), patch(
-        "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False
+    with (
+        patch("shutil.which", return_value=None),
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False),
     ):
         res = bridge.repair_flatpak()
         assert res.success is False
@@ -251,12 +273,15 @@ def test_repair_flatpak_not_installed() -> None:
 def test_repair_and_propagate_flatpak_combined() -> None:
     """Verify repair_and_propagate_flatpak runs repair then propagates overrides."""
     bridge = SandboxBridge()
-    fake_repair = FlatpakRepairResult(success=True, command=["flatpak", "repair", "--user"], output="OK")
+    fake_repair = FlatpakRepairResult(
+        success=True, command=["flatpak", "repair", "--user"], output="OK"
+    )
     fake_prop = PropagationResult(flatpak_success=True, flatpak_messages=["Overrides applied"])
 
-    with patch.object(bridge, "repair_flatpak", return_value=fake_repair) as mock_rep, patch.object(
-        bridge, "propagate_to_flatpak", return_value=fake_prop
-    ) as mock_prop:
+    with (
+        patch.object(bridge, "repair_flatpak", return_value=fake_repair) as mock_rep,
+        patch.object(bridge, "propagate_to_flatpak", return_value=fake_prop) as mock_prop,
+    ):
         res_rep, res_prop = bridge.repair_and_propagate_flatpak(
             user_mode=True,
             gtk_theme="Adwaita",
@@ -293,10 +318,16 @@ def test_module_level_repair_functions() -> None:
     fake_rep = FlatpakRepairResult(success=True)
     fake_prop = PropagationResult(flatpak_success=True)
 
-    with patch("gnome_theme_manager.core.sandbox_bridge.SandboxBridge.repair_flatpak", return_value=fake_rep) as m_rep, patch(
-        "gnome_theme_manager.core.sandbox_bridge.SandboxBridge.repair_and_propagate_flatpak",
-        return_value=(fake_rep, fake_prop),
-    ) as m_both:
+    with (
+        patch(
+            "gnome_theme_manager.core.sandbox_bridge.SandboxBridge.repair_flatpak",
+            return_value=fake_rep,
+        ) as m_rep,
+        patch(
+            "gnome_theme_manager.core.sandbox_bridge.SandboxBridge.repair_and_propagate_flatpak",
+            return_value=(fake_rep, fake_prop),
+        ) as m_both,
+    ):
         r1 = repair_flatpak(user_mode=True)
         assert r1.success is True
         m_rep.assert_called_once()
@@ -361,7 +392,10 @@ def test_theme_manager_and_module_get_wizard_steps() -> None:
     assert res_mgr[0].step_id == "mock_step"
     mock_bridge.get_wizard_steps.assert_called_once()
 
-    with patch("gnome_theme_manager.core.sandbox_bridge.SandboxBridge.get_wizard_steps", return_value=[mock_step]):
+    with patch(
+        "gnome_theme_manager.core.sandbox_bridge.SandboxBridge.get_wizard_steps",
+        return_value=[mock_step],
+    ):
         res_mod = get_flatpak_wizard_steps(user_mode=False)
         assert len(res_mod) == 1
         assert res_mod[0].title == "Mock Title"
@@ -374,9 +408,14 @@ def test_check_flatpak_status_detects_extension_manager_via_extensions_manager()
     mock_ext_mgr.is_extension_manager_installed.return_value = True
     mock_ext_mgr.is_user_theme_enabled.return_value = True
 
-    with patch("shutil.which", return_value="/usr/bin/flatpak"), patch(
-        "subprocess.run",
-        return_value=subprocess.CompletedProcess(args=[], returncode=0, stdout="flathub\n", stderr=""),
+    with (
+        patch("shutil.which", return_value="/usr/bin/flatpak"),
+        patch(
+            "subprocess.run",
+            return_value=subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="flathub\n", stderr=""
+            ),
+        ),
     ):
         status = bridge.check_flatpak_status(user_mode=True, extensions_manager=mock_ext_mgr)
         assert status.extension_manager_installed is True
@@ -421,13 +460,17 @@ def test_execute_wizard_step_pkexec_cancellation() -> None:
     mock_process.returncode = 126
     mock_process.wait.return_value = None
 
-    with patch("shutil.which", return_value="/usr/bin/pkexec"), patch(
-        "subprocess.Popen", return_value=mock_process
+    with (
+        patch("shutil.which", return_value="/usr/bin/pkexec"),
+        patch("subprocess.Popen", return_value=mock_process),
     ):
         res = execute_wizard_step(step, user_mode=False)
         assert res.success is False
         assert res.returncode == 126
-        assert "cancelled" in (res.error_message or "").lower() or "denied" in (res.error_message or "").lower()
+        assert (
+            "cancelled" in (res.error_message or "").lower()
+            or "denied" in (res.error_message or "").lower()
+        )
 
 
 def test_execute_wizard_step_missing_binary() -> None:
@@ -442,8 +485,9 @@ def test_execute_wizard_step_missing_binary() -> None:
         command_system="nonexistent_binary_foo_bar_xyz",
     )
 
-    with patch("shutil.which", return_value=None), patch(
-        "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False
+    with (
+        patch("shutil.which", return_value=None),
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False),
     ):
         res = execute_wizard_step(step, user_mode=True)
         assert res.success is False
@@ -475,8 +519,3 @@ def test_theme_manager_execute_wizard_step_delegates() -> None:
         user_mode=True,
         on_progress=None,
     )
-
-
-
-
-

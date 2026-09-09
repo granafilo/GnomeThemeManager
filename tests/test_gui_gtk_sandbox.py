@@ -259,4 +259,3 @@ def test_sandbox_page_wizard_dialog_opens(mock_theme_manager: MagicMock) -> None
         page.flatpak_wizard_button.emit("clicked")
         mock_dlg_cls.assert_called_once()
         mock_instance.present.assert_called_once()
-

@@ -511,9 +511,7 @@ class SandboxBridge:
                 )
                 if res.returncode == 0:
                     configured_remotes = {
-                        line.strip().lower()
-                        for line in res.stdout.splitlines()
-                        if line.strip()
+                        line.strip().lower() for line in res.stdout.splitlines() if line.strip()
                     }
                     flathub_configured = "flathub" in configured_remotes
             except (subprocess.SubprocessError, FileNotFoundError, OSError) as err:
@@ -522,7 +520,9 @@ class SandboxBridge:
             # 2. Check Extension Manager flatpak (check via ExtensionsManager, any-scope flatpak info, or native)
             if extensions_manager is not None:
                 try:
-                    extension_manager_installed = bool(extensions_manager.is_extension_manager_installed())
+                    extension_manager_installed = bool(
+                        extensions_manager.is_extension_manager_installed()
+                    )
                 except Exception as err:
                     logger.debug("Error querying ExtensionsManager for Extension Manager: %s", err)
 
@@ -543,7 +543,6 @@ class SandboxBridge:
         # 3. Native Extension Manager binary fallback if not found in flatpak
         if not extension_manager_installed:
             extension_manager_installed = shutil.which("extension-manager") is not None
-
 
         # 4. Check user-theme extension
         user_themes_enabled = False
@@ -701,9 +700,13 @@ class SandboxBridge:
         from .os_detector import detect_os, get_install_command
 
         target_os = os_info or detect_os()
-        status = self.check_flatpak_status(user_mode=user_mode, extensions_manager=extensions_manager)
+        status = self.check_flatpak_status(
+            user_mode=user_mode, extensions_manager=extensions_manager
+        )
 
-        flatpak_sys_cmd = get_install_command("flatpak", os_info=target_os).replace("sudo ", "pkexec ")
+        flatpak_sys_cmd = get_install_command("flatpak", os_info=target_os).replace(
+            "sudo ", "pkexec "
+        )
         user_theme_sys_cmd = (
             get_install_command("user-theme", os_info=target_os).replace("sudo ", "pkexec ")
             + " && gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com"
@@ -894,7 +897,6 @@ class SandboxBridge:
         )
 
 
-
 def check_flatpak_status(
     user_mode: bool | None = None,
     extensions_manager: "ExtensionsManager | None" = None,
@@ -965,7 +967,3 @@ def execute_wizard_step(
         user_mode=user_mode,
         on_progress=on_progress,
     )
-
-
-
-

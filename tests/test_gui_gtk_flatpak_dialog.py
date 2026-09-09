@@ -58,7 +58,9 @@ def test_flatpak_dialog_propagation_success(mock_theme_manager: MagicMock) -> No
         on_prop_called = True
 
     mock_theme_manager.repair_and_propagate_flatpak.return_value = (
-        FlatpakRepairResult(success=True, command=["flatpak", "repair", "--user"], output="All good"),
+        FlatpakRepairResult(
+            success=True, command=["flatpak", "repair", "--user"], output="All good"
+        ),
         PropagationResult(flatpak_success=True, flatpak_messages=["Overrides applied"]),
     )
 
