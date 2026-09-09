@@ -19,6 +19,7 @@ from typing import Any
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
+from .extension_backend import ExtensionBackend, get_extension_backend
 from .extensions import ExtensionsManager
 from .fallback import FallbackManager
 from .fonts import FontConfig
@@ -86,6 +87,7 @@ class ThemeManager:
         fallback_manager: FallbackManager | None = None,
         store_client: StoreClient | None = None,
         icon_resolver: IconFallbackResolver | None = None,
+        extension_backend: ExtensionBackend | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -105,6 +107,7 @@ class ThemeManager:
             fallback_manager: Custom FallbackManager instance (optional).
             store_client: Custom StoreClient instance (optional).
             icon_resolver: Custom IconFallbackResolver instance (optional).
+            extension_backend: Custom ExtensionBackend instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -112,6 +115,7 @@ class ThemeManager:
         self._presets = presets or PresetManager()
         self._sandbox = sandbox_bridge or SandboxBridge()
         self._extensions = extensions or ExtensionsManager()
+        self._extension_backend = extension_backend
         self._validator = validator or ThemeValidator()
         self._store_client = store_client or StoreClient()
         self._icon_resolver = icon_resolver or IconFallbackResolver()
@@ -336,6 +340,15 @@ class ThemeManager:
     def extensions(self) -> ExtensionsManager:
         """Return associated GNOME Shell extensions manager."""
         return self._extensions
+
+    @property
+    def extension_backend(self) -> ExtensionBackend:
+        """Return associated GNOME Shell extensions backend."""
+        if self._extension_backend is None:
+            self._extension_backend = get_extension_backend(
+                backend_type="rest", extensions_manager=self._extensions
+            )
+        return self._extension_backend
 
     @property
     def global_themes(self) -> GlobalThemeManager:

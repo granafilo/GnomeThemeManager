@@ -3212,9 +3212,6 @@ msgstr "Aggiungi repository Flathub"
 msgid "Add the official Flathub remote repository to access thousands of desktop applications."
 msgstr "Aggiunge il repository remoto ufficiale Flathub per accedere a migliaia di applicazioni desktop."
 
-msgid "Install Extension Manager"
-msgstr "Installa Extension Manager"
-
 msgid "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
 msgstr "Installa Extension Manager (com.mattjakeman.ExtensionManager) per esplorare e gestire le estensioni GNOME Shell."
 
@@ -3235,9 +3232,6 @@ msgstr "Configurazione guidata componenti"
 
 msgid "Select the components and dependencies you want to configure. The wizard will guide you through each step with the exact commands."
 msgstr "Seleziona i componenti e le dipendenze da configurare. La procedura guidata ti mostrerà ogni passaggio con i comandi esatti."
-
-msgid "Installation Scope"
-msgstr "Ambito di installazione"
 
 msgid "Choose whether to install Flatpak remotes and apps for the current user or system-wide."
 msgstr "Scegli se installare i repository e le app Flatpak per l'utente corrente o a livello di sistema."
@@ -3344,7 +3338,87 @@ msgstr "Annulla tutto"
 msgid "This component is already configured on your system."
 msgstr "Questo componente è già configurato sul sistema."
 
+msgid "Updatable"
+msgstr "Aggiornabili"
 
+msgid "View installed GNOME extensions"
+msgstr "Visualizza le estensioni GNOME installate"
 
+msgid "Browse and install extensions from extensions.gnome.org"
+msgstr "Esplora e installa le estensioni da extensions.gnome.org"
 
+msgid "View installed extensions with pending updates"
+msgstr "Visualizza le estensioni installate con aggiornamenti in sospeso"
+
+msgid "Search by name, tag, or UUID..."
+msgstr "Cerca per nome, tag o UUID..."
+
+msgid "Available Extensions"
+msgstr "Estensioni Disponibili"
+
+msgid "Browse and install extensions from official catalog"
+msgstr "Esplora e installa le estensioni dal catalogo ufficiale"
+
+msgid "Updatable Extensions"
+msgstr "Estensioni Aggiornabili"
+
+msgid "Extensions with a newer version available on catalog"
+msgstr "Estensioni con una nuova versione disponibile nel catalogo"
+
+msgid "Load more extensions..."
+msgstr "Carica altre estensioni..."
+
+msgid "Loading more..."
+msgstr "Caricamento in corso..."
+
+msgid "Searching extensions..."
+msgstr "Ricerca estensioni in corso..."
+
+msgid "Connecting to extensions catalog..."
+msgstr "Connessione al catalogo estensioni..."
+
+msgid "Catalog Unavailable"
+msgstr "Catalogo Non Disponibile"
+
+msgid "Unable to query online extensions catalog. Check your internet connection."
+msgstr "Impossibile interrogare il catalogo online delle estensioni. Verifica la connessione a internet."
+
+msgid "Compatible"
+msgstr "Compatibile"
+
+msgid "Incompatible"
+msgstr "Incompatibile"
+
+msgid "All Extensions Up to Date"
+msgstr "Tutte le estensioni sono aggiornate"
+
+msgid "No updates available for your installed extensions."
+msgstr "Nessun aggiornamento disponibile per le estensioni installate."
+
+msgid "View extension details"
+msgstr "Visualizza dettagli dell'estensione"
+
+msgid "Update"
+msgstr "Aggiornamento"
+
+msgid "Unable to connect to extensions catalog: {err}"
+msgstr "Impossibile connettersi al catalogo estensioni: {err}"
+
+msgid "Search extensions..."
+msgstr "Cerca estensioni..."
+
+msgid "Filter extensions"
+msgstr "Filtra estensioni"
+
+msgid "Sort extensions"
+msgstr "Ordina estensioni"
+
+msgid "Popularity"
+msgstr "Popolarità"
+
+msgid "Downloads"
+msgstr "Download"
+
+msgid "Latest"
+msgstr "Più recenti"
 

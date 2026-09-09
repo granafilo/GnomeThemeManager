@@ -12,6 +12,10 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gtk
 
+from gnome_theme_manager.core.extension_backend import (
+    ExtensionItem,
+    ExtensionSearchResult,
+)
 from gnome_theme_manager.core.extensions import GnomeExtension
 from gnome_theme_manager.gui_gtk.pages.extensions import ExtensionsPage
 
@@ -176,6 +180,7 @@ def test_extensions_page_install_options_select(mock_manager: MagicMock) -> None
         },
     ]
     mock_manager.extensions.is_extensions_app_installed.return_value = False
+    mock_manager.extensions.is_extension_manager_installed.return_value = False
 
     page = ExtensionsPage(manager=mock_manager)
 
@@ -242,3 +247,192 @@ class TestMainWindowExtensionsIntegration:
         # Select extensions page
         window.select_page("extensions")
         assert window.content_stack.get_visible_child_name() == "extensions"
+
+
+def test_extensions_page_filter_modes(mock_manager: MagicMock) -> None:
+    """Test switching filter modes between installed, available, and updatable."""
+    page = ExtensionsPage(manager=mock_manager)
+    assert page._filter_mode == "installed"
+    assert page.user_extensions_group.get_visible() is True
+    assert page.sort_dropdown.get_visible() is False
+
+    # Switch to Available (index 1)
+    assert page.filter_dropdown is not None
+    page.filter_dropdown.set_selected(1)
+    page._on_filter_changed()
+    assert page._filter_mode == "available"
+    assert page.user_extensions_group.get_visible() is False
+    assert page.remote_extensions_group is not None
+    assert page.remote_extensions_group.get_visible() is True
+    assert page.sort_dropdown.get_visible() is True
+
+    # Switch to Updatable (index 2)
+    page.filter_dropdown.set_selected(2)
+    page._on_filter_changed()
+    assert page._filter_mode == "updatable"
+    assert page.user_extensions_group.get_visible() is False
+    assert page.remote_extensions_group.get_visible() is True
+    assert page.sort_dropdown.get_visible() is False
+
+    # Switch back to Installed (index 0)
+    page.filter_dropdown.set_selected(0)
+    page._on_filter_changed()
+    assert page._filter_mode == "installed"
+    assert page.user_extensions_group.get_visible() is True
+    assert page.remote_extensions_group.get_visible() is False
+    assert page.sort_dropdown.get_visible() is False
+
+
+def test_extension_manager_install_option_hidden_when_installed(mock_manager: MagicMock) -> None:
+    """Test that installation options group is hidden when Extension Manager is installed."""
+    mock_manager.extensions.is_extension_manager_installed.return_value = True
+    page = ExtensionsPage(manager=mock_manager)
+    assert page.group_install_manager is not None
+    assert page.group_install_manager.get_visible() is False
+    assert page.install_banner is not None
+    assert page.install_banner.get_revealed() is False
+
+
+def test_extension_manager_install_option_shown_when_not_installed(mock_manager: MagicMock) -> None:
+    """Test that installation options group is shown when Extension Manager is not installed."""
+    mock_manager.extensions.is_extension_manager_installed.return_value = False
+    mock_manager.extensions.is_extensions_app_installed.return_value = False
+    page = ExtensionsPage(manager=mock_manager)
+    assert page.group_install_manager is not None
+    assert page.group_install_manager.get_visible() is True
+    assert page.install_banner is not None
+    assert page.install_banner.get_revealed() is True
+
+
+def test_extensions_page_remote_search_and_lazy_loading(mock_manager: MagicMock) -> None:
+    """Test catalog search results rendering and lazy loading pagination."""
+    item1 = ExtensionItem(
+        uuid="blur-my-shell@aunetx",
+        name="Blur my Shell",
+        description="Adds blur effect to various GNOME Shell elements.",
+        creator="aunetx",
+        downloads=54000,
+        rating=4.9,
+        version="60",
+        is_compatible=True,
+    )
+    item2 = ExtensionItem(
+        uuid="incompatible@ext.org",
+        name="Old Extension",
+        description="Incompatible extension.",
+        downloads=120,
+        is_compatible=False,
+    )
+
+    result_p1 = ExtensionSearchResult(
+        extensions=[item1],
+        total=2,
+        page=1,
+        numpages=2,
+    )
+    result_p2 = ExtensionSearchResult(
+        extensions=[item2],
+        total=2,
+        page=2,
+        numpages=2,
+    )
+
+    mock_manager.extension_backend.search.side_effect = [result_p1, result_p2]
+
+    page = ExtensionsPage(manager=mock_manager)
+    # Simulate page 1 search response
+    page._on_remote_search_success(result_p1, reset_page=True)
+
+    assert len(page._remote_items) == 1
+    assert page._current_page == 1
+    assert page._numpages == 2
+    assert page.status_stack.get_visible_child_name() == "content"
+    assert len(page._remote_row_widgets) == 1
+    assert page.lazy_load_box is not None
+    assert page.lazy_load_box.get_visible() is True
+    assert page.btn_load_more is not None
+    assert page.btn_load_more.get_visible() is True
+
+    # Simulate lazy loading page 2
+    page._filter_mode = "available"
+    page._on_remote_search_success(result_p2, reset_page=False)
+
+    assert len(page._remote_items) == 2
+    assert page._current_page == 2
+    assert len(page._remote_row_widgets) == 2
+    # No more pages after page 2
+    assert page.btn_load_more.get_visible() is False
+
+
+def test_extensions_page_updatable_check(mock_manager: MagicMock) -> None:
+    """Test updatable check populating updatable extensions list."""
+    updatable_item = ExtensionItem(
+        uuid="dash-to-dock@micxgx.gmail.com",
+        name="Dash to Dock",
+        description="Dock for GNOME Shell.",
+        version="92",
+        installed_version="90",
+        is_installed=True,
+        is_enabled=True,
+        has_update=True,
+        is_compatible=True,
+    )
+
+    mock_manager.extension_backend.check_updates.return_value = [updatable_item]
+
+    page = ExtensionsPage(manager=mock_manager)
+    page._on_updatable_loaded([updatable_item])
+
+    assert len(page._remote_items) == 1
+    assert page.status_stack.get_visible_child_name() == "content"
+    assert len(page._remote_row_widgets) == 1
+
+    # Empty updatable list
+    page._on_updatable_loaded([])
+    assert len(page._remote_items) == 0
+    assert page.status_stack.get_visible_child_name() == "empty"
+
+
+def test_extensions_page_remote_error_handling(mock_manager: MagicMock) -> None:
+    """Test remote error handler switching to error page."""
+    page = ExtensionsPage(manager=mock_manager)
+    page._on_remote_search_error("Connection timed out")
+
+    assert page.status_stack.get_visible_child_name() == "error"
+    assert page.error_status_page is not None
+    assert "Connection timed out" in page.error_status_page.get_description()
+
+
+def test_extensions_page_open_url_normalization(mock_manager: MagicMock) -> None:
+    """Test URL normalization in _open_url and _on_view_item_details."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    with patch("gi.repository.Gio.AppInfo.launch_default_for_uri") as mock_launch:
+        # Relative URL
+        page._open_url("/extension/615/appindicator-support/")
+        mock_launch.assert_called_with(
+            "https://extensions.gnome.org/extension/615/appindicator-support/", None
+        )
+
+        # Protocol-less URL
+        page._open_url("extensions.gnome.org/test/")
+        mock_launch.assert_called_with("https://extensions.gnome.org/test/", None)
+
+        # Full URL
+        page._open_url("https://example.com/ext")
+        mock_launch.assert_called_with("https://example.com/ext", None)
+
+        # Empty URL (no-op)
+        mock_launch.reset_mock()
+        page._open_url("")
+        mock_launch.assert_not_called()
+
+        # Item click fallback
+        item = ExtensionItem(
+            uuid="test@example.com",
+            name="Test",
+            description="",
+            link="/extension/615/test/",
+        )
+        page._on_view_item_details(item)
+        mock_launch.assert_called_with("https://extensions.gnome.org/extension/615/test/", None)

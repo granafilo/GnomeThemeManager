@@ -69,6 +69,8 @@ class ExtensionItem:
     icon_url: str | None = None
     screenshot_url: str | None = None
     downloads: int = 0
+    popularity: int = 0
+    rating: float | None = None
     version: str | None = None
     shell_version_map: dict[str, dict[str, Any]] = field(default_factory=dict)
     is_installed: bool = False
@@ -127,6 +129,7 @@ class ExtensionBackend(ABC):
         self,
         query: str = "",
         shell_version: str | None = None,
+        sort: str = "popularity",
         page: int = 1,
         limit: int = 25,
     ) -> ExtensionSearchResult:
@@ -164,6 +167,10 @@ class ExtensionBackend(ABC):
     @abstractmethod
     def list_installed(self) -> list[GnomeExtension]:
         """List locally installed extensions."""
+
+    @abstractmethod
+    def check_updates(self) -> list[ExtensionItem]:
+        """Check for updates for installed extensions."""
 
 
 class GnomeExtensionsRestBackend(ExtensionBackend):
@@ -253,22 +260,58 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         if not isinstance(vmap, dict):
             vmap = {}
 
+        popularity = int(raw.get("popularity", 0))
+        rating_raw = raw.get("rating")
+        rating: float | None = None
+        if rating_raw is not None:
+            try:
+                rating = float(rating_raw)
+            except (ValueError, TypeError):
+                rating = None
+
+        raw_version = str(raw.get("version", "")) if raw.get("version") is not None else None
+        has_update = False
+        if is_installed and installed_version and raw_version:
+            try:
+                has_update = str(raw_version).strip() != str(installed_version).strip()
+            except Exception:
+                has_update = False
+
+        link_raw = raw.get("link")
+        link_url = (
+            f"{EGO_BASE_URL}{link_raw}"
+            if link_raw and str(link_raw).startswith("/")
+            else str(link_raw or "")
+        )
+        if not link_url and uuid:
+            link_url = f"{EGO_BASE_URL}/extension/{uuid}/"
+
+        creator_url_raw = raw.get("creator_url")
+        creator_full_url = (
+            f"{EGO_BASE_URL}{creator_url_raw}"
+            if creator_url_raw and str(creator_url_raw).startswith("/")
+            else str(creator_url_raw or "")
+        )
+
         item = ExtensionItem(
             uuid=uuid,
             name=str(raw.get("name", "")),
             description=str(raw.get("description", "")),
             creator=str(raw.get("creator", "")),
-            creator_url=str(raw.get("creator_url", "")),
+            creator_url=creator_full_url,
             pk=int(raw.get("pk", 0)),
-            link=str(raw.get("link", "")),
+            link=link_url,
             icon_url=icon_url,
             screenshot_url=screenshot_url,
             downloads=int(raw.get("downloads", 0)),
-            version=str(raw.get("version", "")) if raw.get("version") is not None else None,
+            popularity=popularity,
+            rating=rating,
+            version=raw_version,
             shell_version_map=vmap,
             is_installed=is_installed,
             is_enabled=is_enabled,
             installed_version=installed_version,
+            has_update=has_update,
         )
         item.is_compatible = item.check_compatibility()
         return item
@@ -277,6 +320,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         self,
         query: str = "",
         shell_version: str | None = None,
+        sort: str = "popularity",
         page: int = 1,
         limit: int = 25,
     ) -> ExtensionSearchResult:
@@ -296,6 +340,19 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             if ver_tuple:
                 params["shell_version"] = str(ver_tuple[0])
 
+        if sort:
+            ego_sort_map = {
+                "popularity": "popularity",
+                "downloads": "downloads",
+                "recent": "created",
+                "latest": "created",
+                "newest": "created",
+                "created": "created",
+                "name": "name",
+                "relevance": "relevance",
+            }
+            params["sort"] = ego_sort_map.get(sort, "popularity")
+
         try:
             data = self._http_get_json(EGO_QUERY_URL, params=params)
         except ExtensionError:
@@ -311,6 +368,13 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         for raw in raw_extensions:
             if isinstance(raw, dict):
                 items.append(self._parse_extension_item(raw, installed_map))
+
+        if sort == "downloads":
+            items.sort(key=lambda x: x.downloads, reverse=True)
+        elif sort == "popularity":
+            items.sort(key=lambda x: (x.popularity, x.downloads), reverse=True)
+        elif sort in ("recent", "latest", "newest", "created"):
+            items.sort(key=lambda x: x.pk, reverse=True)
 
         return ExtensionSearchResult(
             extensions=items,
@@ -448,6 +512,21 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
     def list_installed(self) -> list[GnomeExtension]:
         return self.mgr.list_extensions()
 
+    def check_updates(self) -> list[ExtensionItem]:
+        """Check for updates for installed extensions."""
+        installed = self.list_installed()
+        updatable: list[ExtensionItem] = []
+        for ext in installed:
+            if not ext.uuid:
+                continue
+            try:
+                item = self.get_details(ext.uuid)
+                if item and item.has_update and item.is_compatible:
+                    updatable.append(item)
+            except Exception as err:
+                logger.debug("Failed to check update for %s: %s", ext.uuid, err)
+        return updatable
+
 
 class GnomeExtensionsCliBackend(ExtensionBackend):
     """Option B: Local gnome-extensions CLI wrapper backend.
@@ -463,6 +542,7 @@ class GnomeExtensionsCliBackend(ExtensionBackend):
         self,
         query: str = "",
         shell_version: str | None = None,
+        sort: str = "popularity",
         page: int = 1,
         limit: int = 25,
     ) -> ExtensionSearchResult:
@@ -562,6 +642,10 @@ class GnomeExtensionsCliBackend(ExtensionBackend):
 
     def list_installed(self) -> list[GnomeExtension]:
         return self.mgr.list_extensions()
+
+    def check_updates(self) -> list[ExtensionItem]:
+        """Check for updates (offline CLI has no remote catalog)."""
+        return []
 
 
 def get_extension_backend(

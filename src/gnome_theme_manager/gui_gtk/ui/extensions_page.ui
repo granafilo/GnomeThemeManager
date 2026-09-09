@@ -202,15 +202,26 @@
                           </object>
                         </child>
 
-                        <!-- Toolbar: Search & Refresh -->
+                        <!-- Toolbar: Search, Filter Dropdown, Sort Dropdown & Refresh -->
                         <child>
-                          <object class="GtkBox">
+                          <object class="GtkBox" id="search_controls_box">
                             <property name="orientation">horizontal</property>
-                            <property name="spacing">12</property>
+                            <property name="spacing">10</property>
                             <child>
                               <object class="GtkSearchEntry" id="search_entry">
-                                <property name="placeholder-text" translatable="yes">Search installed extensions...</property>
+                                <property name="placeholder-text" translatable="yes">Search extensions...</property>
                                 <property name="hexpand">true</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkDropDown" id="filter_dropdown">
+                                <property name="tooltip-text" translatable="yes">Filter extensions</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkDropDown" id="sort_dropdown">
+                                <property name="tooltip-text" translatable="yes">Sort extensions</property>
+                                <property name="visible">false</property>
                               </object>
                             </child>
                             <child>
@@ -225,7 +236,7 @@
                           </object>
                         </child>
 
-                        <!-- Status Stack (Content Groups / Empty Search) -->
+                        <!-- Status Stack (Content Groups / Empty Search / Error / Searching) -->
                         <child>
                           <object class="GtkStack" id="status_stack">
                             <property name="transition-type">crossfade</property>
@@ -251,6 +262,65 @@
                                         <property name="description" translatable="yes">Integrated system extensions provided by GNOME Shell or system packages</property>
                                       </object>
                                     </child>
+                                    <child>
+                                      <object class="AdwPreferencesGroup" id="remote_extensions_group">
+                                        <property name="title" translatable="yes">Available Extensions</property>
+                                        <property name="description" translatable="yes">Browse and install extensions from official catalog</property>
+                                        <property name="visible">false</property>
+                                      </object>
+                                    </child>
+                                    <!-- Lazy loading footer -->
+                                    <child>
+                                      <object class="GtkBox" id="lazy_load_box">
+                                        <property name="orientation">vertical</property>
+                                        <property name="spacing">8</property>
+                                        <property name="halign">center</property>
+                                        <property name="margin-top">8</property>
+                                        <property name="margin-bottom">16</property>
+                                        <property name="visible">false</property>
+                                        <child>
+                                          <object class="GtkSpinner" id="lazy_spinner">
+                                            <property name="spinning">false</property>
+                                            <property name="visible">false</property>
+                                            <property name="width-request">24</property>
+                                            <property name="height-request">24</property>
+                                          </object>
+                                        </child>
+                                        <child>
+                                          <object class="GtkButton" id="btn_load_more">
+                                            <property name="label" translatable="yes">Load more extensions...</property>
+                                            <property name="visible">false</property>
+                                            <style>
+                                              <class name="pill"/>
+                                            </style>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+
+                            <!-- Page: Searching state -->
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">searching</property>
+                                <property name="child">
+                                  <object class="AdwStatusPage" id="searching_status_page">
+                                    <property name="icon-name">system-search-symbolic</property>
+                                    <property name="title" translatable="yes">Searching extensions...</property>
+                                    <property name="description" translatable="yes">Connecting to extensions catalog...</property>
+                                    <property name="child">
+                                      <object class="GtkSpinner" id="searching_spinner">
+                                        <property name="spinning">true</property>
+                                        <property name="halign">center</property>
+                                        <property name="valign">center</property>
+                                        <property name="width-request">32</property>
+                                        <property name="height-request">32</property>
+                                        <property name="margin-top">12</property>
+                                      </object>
+                                    </property>
                                   </object>
                                 </property>
                               </object>
@@ -265,6 +335,30 @@
                                     <property name="icon-name">application-x-addon-symbolic</property>
                                     <property name="title" translatable="yes">No Extensions Found</property>
                                     <property name="description" translatable="yes">No extensions matched your filter or none are installed.</property>
+                                  </object>
+                                </property>
+                              </object>
+                            </child>
+
+                            <!-- Page: Network / Catalog Error -->
+                            <child>
+                              <object class="GtkStackPage">
+                                <property name="name">error</property>
+                                <property name="child">
+                                  <object class="AdwStatusPage" id="error_status_page">
+                                    <property name="icon-name">network-offline-symbolic</property>
+                                    <property name="title" translatable="yes">Catalog Unavailable</property>
+                                    <property name="description" translatable="yes">Unable to query online extensions catalog. Check your internet connection.</property>
+                                    <property name="child">
+                                      <object class="GtkButton" id="btn_error_retry">
+                                        <property name="label" translatable="yes">Retry</property>
+                                        <property name="halign">center</property>
+                                        <property name="margin-top">12</property>
+                                        <style>
+                                          <class name="suggested-action"/>
+                                        </style>
+                                      </object>
+                                    </property>
                                   </object>
                                 </property>
                               </object>

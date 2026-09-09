@@ -69,6 +69,8 @@ def test_rest_backend_search_success(mock_mgr: ExtensionsManager) -> None:
                 "description": "Short desc",
                 "creator": "author",
                 "pk": 123,
+                "link": "/extension/123/test-extension/",
+                "creator_url": "/accounts/profile/author/",
                 "icon": "/icon.png",
                 "screenshot": "/shot.png",
                 "downloads": 500,
@@ -77,15 +79,22 @@ def test_rest_backend_search_success(mock_mgr: ExtensionsManager) -> None:
         ],
     }
 
-    with patch.object(backend, "_http_get_json", return_value=mock_payload):
-        res: ExtensionSearchResult = backend.search(query="test", shell_version="46")
+    with patch.object(backend, "_http_get_json", return_value=mock_payload) as mock_get:
+        res: ExtensionSearchResult = backend.search(query="test", shell_version="46", sort="recent")
         assert res.total == 1
         assert len(res.extensions) == 1
         item = res.extensions[0]
         assert item.uuid == "test@example.com"
+        assert item.link == "https://extensions.gnome.org/extension/123/test-extension/"
+        assert item.creator_url == "https://extensions.gnome.org/accounts/profile/author/"
         assert item.icon_url == "https://extensions.gnome.org/icon.png"
         assert item.screenshot_url == "https://extensions.gnome.org/shot.png"
         assert item.check_compatibility("46") is True
+
+        # Verify query parameters
+        mock_get.assert_called_once()
+        sent_params = mock_get.call_args[1]["params"]
+        assert sent_params["sort"] == "created"
 
 
 def test_rest_backend_get_details(mock_mgr: ExtensionsManager) -> None:

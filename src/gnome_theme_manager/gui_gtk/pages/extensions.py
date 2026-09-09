@@ -1,11 +1,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""GNOME Shell Extensions browser page controller (Task 5.3)."""
+"""GNOME Shell Extensions browser and management page controller.
 
+Supports browsing local installed extensions, searching the online catalog
+(extensions.gnome.org), checking for updates, filtering via dropdown, sorting,
+and lazy loading.
+"""
+
+from __future__ import annotations
+
+import hashlib
 import logging
 import threading
+import urllib.parse
+import urllib.request
 from collections.abc import Callable
 from pathlib import Path
+from typing import ClassVar
+from urllib.parse import urlparse
 
 import gi
 
@@ -15,21 +27,80 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk
 
+try:
+    import requests
+
+    _REQUESTS_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    requests = None  # type: ignore[assignment]
+    _REQUESTS_AVAILABLE = False
+
+from ...core.constants import STATE_DIR
+from ...core.extension_backend import EGO_BASE_URL, ExtensionItem, ExtensionSearchResult
 from ...core.extensions import GnomeExtension
 from ...core.manager import ThemeManager
 
 logger = logging.getLogger("gnome_theme_manager.gui_gtk")
 
 UI_FILE = Path(__file__).parent.parent / "ui" / "extensions_page.ui"
+THUMBNAILS_CACHE_DIR = STATE_DIR / "extension_thumbnails"
+
+
+def _get_icon_cache_path(url: str) -> Path:
+    """Compute deterministic local file path for caching extension icon."""
+    url_hash = hashlib.sha256(url.encode("utf-8")).hexdigest()[:24]
+    ext = Path(urlparse(url).path).suffix.lower()
+    if ext not in (".png", ".svg", ".jpg", ".jpeg", ".webp"):
+        ext = ".png"
+    return THUMBNAILS_CACHE_DIR / f"icon_{url_hash}{ext}"
+
+
+def _download_icon_bytes(url: str, timeout: float = 10.0) -> bytes | None:
+    """Download icon bytes using requests if available, falling back to urllib."""
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"}
+    try:
+        if _REQUESTS_AVAILABLE and requests is not None:
+            res = requests.get(url, headers=headers, timeout=timeout)
+            if res.status_code == 200 and len(res.content) > 0:
+                return res.content
+        else:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data: bytes = resp.read()
+                return data if len(data) > 0 else None
+    except Exception as err:
+        logger.debug("Failed to download icon from %s: %s", url, err)
+    return None
+
+
+def _format_downloads_count(count: int) -> str:
+    """Format download count compactly (e.g. 1.2k, 3.4M)."""
+    if count >= 1_000_000:
+        return f"{count / 1_000_000:.1f}M"
+    if count >= 1_000:
+        return f"{count / 1_000:.1f}k"
+    return str(count)
 
 
 class ExtensionsPage:
-    """Controller for GNOME Shell Extensions management page."""
+    """Controller for GNOME Shell Extensions management and browsing page."""
 
     PAGE_ID: str = "extensions"
     ICON_NAME: str = "application-x-addon-symbolic"
 
-    def __init__(self, manager: "ThemeManager | None" = None) -> None:
+    FILTER_OPTIONS: ClassVar[list[tuple[str, str]]] = [
+        (_("Installed"), "installed"),
+        (_("Available"), "available"),
+        (_("Updatable"), "updatable"),
+    ]
+
+    SORT_OPTIONS: ClassVar[list[tuple[str, str]]] = [
+        (_("Popularity"), "popularity"),
+        (_("Downloads"), "downloads"),
+        (_("Latest"), "recent"),
+    ]
+
+    def __init__(self, manager: ThemeManager | None = None) -> None:
         """Initialize ExtensionsPage controller.
 
         Args:
@@ -43,6 +114,7 @@ class ExtensionsPage:
         # Notification & status callbacks
         self.on_loading_changed: Callable[[bool], None] | None = None
         self.on_notify_message: Callable[[str, bool], None] | None = None
+        self.on_view_details: Callable[[ExtensionItem], None] | None = None
 
         if not UI_FILE.is_file():
             raise FileNotFoundError(f"UI template file not found: {UI_FILE}")
@@ -57,16 +129,40 @@ class ExtensionsPage:
         self.header_subtitle: Gtk.Label | None = self.builder.get_object("header_subtitle")
         self.btn_open_app: Gtk.Button = self.builder.get_object("btn_open_app")
         self.btn_browse_portal: Gtk.Button = self.builder.get_object("btn_browse_portal")
+        self.scrolled_window: Gtk.ScrolledWindow | None = self.builder.get_object("scrolled_window")
+
+        # Toolbar controls: search, filter dropdown, sort dropdown, refresh
         self.search_entry: Gtk.SearchEntry = self.builder.get_object("search_entry")
+        self.filter_dropdown: Gtk.DropDown = self.builder.get_object("filter_dropdown")
+        self.sort_dropdown: Gtk.DropDown = self.builder.get_object("sort_dropdown")
         self.btn_refresh: Gtk.Button = self.builder.get_object("btn_refresh")
         self.status_stack: Gtk.Stack = self.builder.get_object("status_stack")
+
+        # Content groups
         self.user_extensions_group: Adw.PreferencesGroup = self.builder.get_object(
             "user_extensions_group"
         )
         self.system_extensions_group: Adw.PreferencesGroup = self.builder.get_object(
             "system_extensions_group"
         )
+        self.remote_extensions_group: Adw.PreferencesGroup | None = self.builder.get_object(
+            "remote_extensions_group"
+        )
+
+        # Lazy loading widgets
+        self.lazy_load_box: Gtk.Box | None = self.builder.get_object("lazy_load_box")
+        self.lazy_spinner: Gtk.Spinner | None = self.builder.get_object("lazy_spinner")
+        self.btn_load_more: Gtk.Button | None = self.builder.get_object("btn_load_more")
+
+        # Additional status pages
         self.empty_status_page: Adw.StatusPage = self.builder.get_object("empty_status_page")
+        self.searching_status_page: Adw.StatusPage | None = self.builder.get_object(
+            "searching_status_page"
+        )
+        self.error_status_page: Adw.StatusPage | None = self.builder.get_object("error_status_page")
+        self.btn_error_retry: Gtk.Button | None = self.builder.get_object("btn_error_retry")
+
+        # Installation options widgets
         self.install_banner: Adw.Banner | None = self.builder.get_object("install_banner")
         self.group_install_manager: Adw.PreferencesGroup | None = self.builder.get_object(
             "group_install_manager"
@@ -86,7 +182,31 @@ class ExtensionsPage:
             "btn_copy_install_command"
         )
 
-        # Explicitly apply localized strings to all widgets
+        self._apply_localized_labels()
+        self._init_dropdowns()
+
+        # State tracking
+        self._filter_mode: str = "installed"  # "installed" | "available" | "updatable"
+        self._extensions: list[GnomeExtension] = []
+        self._filtered_extensions: list[GnomeExtension] = []
+        self._remote_items: list[ExtensionItem] = []
+        self._install_options: list[dict[str, str]] = []
+        self._is_loading: bool = False
+        self._is_loading_remote: bool = False
+        self._is_loading_more: bool = False
+        self._current_page: int = 1
+        self._numpages: int = 1
+        self._search_debounce_id: int = 0
+        self._row_widgets: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
+        self._remote_row_widgets: list[Gtk.Widget] = []
+
+        self.widget.set_visible_child_name("loading")
+        self._init_install_options()
+        self._connect_signals()
+        self._update_app_status()
+
+    def _apply_localized_labels(self) -> None:
+        """Explicitly apply localized strings to all widgets."""
         if self.loading_page is not None:
             self.loading_page.set_title(_("Loading extensions..."))
             self.loading_page.set_description(
@@ -104,7 +224,13 @@ class ExtensionsPage:
             self.btn_browse_portal.set_tooltip_text(_("Open official GNOME Extensions website"))
 
         if self.search_entry is not None:
-            self.search_entry.set_placeholder_text(_("Search installed extensions..."))
+            self.search_entry.set_placeholder_text(_("Search extensions..."))
+
+        if self.filter_dropdown is not None:
+            self.filter_dropdown.set_tooltip_text(_("Filter extensions"))
+
+        if self.sort_dropdown is not None:
+            self.sort_dropdown.set_tooltip_text(_("Sort extensions"))
 
         if self.btn_refresh is not None:
             self.btn_refresh.set_tooltip_text(_("Refresh extension list"))
@@ -121,11 +247,33 @@ class ExtensionsPage:
                 _("Integrated system extensions provided by GNOME Shell or system packages")
             )
 
+        if self.remote_extensions_group is not None:
+            self.remote_extensions_group.set_title(_("Available Extensions"))
+            self.remote_extensions_group.set_description(
+                _("Browse and install extensions from official catalog")
+            )
+
         if self.empty_status_page is not None:
             self.empty_status_page.set_title(_("No Extensions Found"))
             self.empty_status_page.set_description(
                 _("No extensions matched your filter or none are installed.")
             )
+
+        if self.searching_status_page is not None:
+            self.searching_status_page.set_title(_("Searching extensions..."))
+            self.searching_status_page.set_description(_("Connecting to extensions catalog..."))
+
+        if self.error_status_page is not None:
+            self.error_status_page.set_title(_("Catalog Unavailable"))
+            self.error_status_page.set_description(
+                _("Unable to query online extensions catalog. Check your internet connection.")
+            )
+
+        if self.btn_error_retry is not None:
+            self.btn_error_retry.set_label(_("Retry"))
+
+        if self.btn_load_more is not None:
+            self.btn_load_more.set_label(_("Load more extensions..."))
 
         if self.group_install_manager is not None:
             self.group_install_manager.set_title(_("Extension Manager"))
@@ -149,21 +297,22 @@ class ExtensionsPage:
         if self.btn_copy_install_command is not None:
             self.btn_copy_install_command.set_tooltip_text(_("Copy installation command"))
 
-        self._extensions: list[GnomeExtension] = []
-        self._filtered_extensions: list[GnomeExtension] = []
-        self._install_options: list[dict[str, str]] = []
-        self._is_loading: bool = False
-        self._row_widgets: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
+    def _init_dropdowns(self) -> None:
+        """Initialize filter and sort dropdown options."""
+        if self.filter_dropdown is not None:
+            filter_model = Gtk.StringList.new([name for name, _ in self.FILTER_OPTIONS])
+            self.filter_dropdown.set_model(filter_model)
+            self.filter_dropdown.set_selected(0)
 
-        self.widget.set_visible_child_name("loading")
-        self._init_install_options()
-        self._connect_signals()
-        self._update_app_status()
+        if self.sort_dropdown is not None:
+            sort_model = Gtk.StringList.new([name for name, _ in self.SORT_OPTIONS])
+            self.sort_dropdown.set_model(sort_model)
+            self.sort_dropdown.set_selected(0)
 
     @property
     def is_loading(self) -> bool:
         """Return whether extension loading is active."""
-        return self._is_loading
+        return self._is_loading or self._is_loading_remote
 
     def get_widget(self) -> Gtk.Stack:
         """Return root widget container."""
@@ -187,6 +336,87 @@ class ExtensionsPage:
             )
         self.btn_browse_portal.connect("clicked", lambda _: self._open_portal())
         self.search_entry.connect("search-changed", self._on_search_changed)
+
+        # Dropdowns
+        if self.filter_dropdown is not None:
+            self.filter_dropdown.connect("notify::selected", lambda *_: self._on_filter_changed())
+        if self.sort_dropdown is not None:
+            self.sort_dropdown.connect("notify::selected", lambda *_: self._on_sort_changed())
+
+        # Lazy loading
+        if self.btn_load_more is not None:
+            self.btn_load_more.connect("clicked", lambda _: self._load_more_results())
+        if self.scrolled_window is not None:
+            adj = self.scrolled_window.get_vadjustment()
+            if adj is not None:
+                adj.connect("value-changed", self._on_scroll_value_changed)
+
+        # Error retry
+        if self.btn_error_retry is not None:
+            self.btn_error_retry.connect("clicked", lambda _: self.refresh())
+
+    def _on_filter_changed(self) -> None:
+        """Handle selection change in filter dropdown."""
+        if not self.filter_dropdown:
+            return
+        idx = self.filter_dropdown.get_selected()
+        if 0 <= idx < len(self.FILTER_OPTIONS):
+            mode = self.FILTER_OPTIONS[idx][1]
+            self._set_filter_mode(mode)
+
+    def _on_sort_changed(self) -> None:
+        """Handle selection change in sort dropdown."""
+        if self._filter_mode == "available":
+            self._perform_remote_search(reset_page=True)
+
+    def _set_filter_mode(self, mode: str) -> None:
+        """Switch active filter mode and reload view."""
+        self._filter_mode = mode
+        if mode == "installed":
+            if self.sort_dropdown is not None:
+                self.sort_dropdown.set_visible(False)
+            self.user_extensions_group.set_visible(True)
+            self.system_extensions_group.set_visible(True)
+            if self.remote_extensions_group is not None:
+                self.remote_extensions_group.set_visible(False)
+            if self.lazy_load_box is not None:
+                self.lazy_load_box.set_visible(False)
+            self._update_app_status()
+            self._filter_extensions(self.search_entry.get_text().strip())
+        elif mode == "available":
+            if self.sort_dropdown is not None:
+                self.sort_dropdown.set_visible(True)
+            self.user_extensions_group.set_visible(False)
+            self.system_extensions_group.set_visible(False)
+            if self.group_install_manager is not None:
+                self.group_install_manager.set_visible(False)
+            if self.install_banner is not None:
+                self.install_banner.set_revealed(False)
+            if self.remote_extensions_group is not None:
+                self.remote_extensions_group.set_title(_("Available Extensions"))
+                self.remote_extensions_group.set_description(
+                    _("Browse and install extensions from official catalog")
+                )
+                self.remote_extensions_group.set_visible(True)
+            self._perform_remote_search(reset_page=True)
+        elif mode == "updatable":
+            if self.sort_dropdown is not None:
+                self.sort_dropdown.set_visible(False)
+            self.user_extensions_group.set_visible(False)
+            self.system_extensions_group.set_visible(False)
+            if self.group_install_manager is not None:
+                self.group_install_manager.set_visible(False)
+            if self.install_banner is not None:
+                self.install_banner.set_revealed(False)
+            if self.lazy_load_box is not None:
+                self.lazy_load_box.set_visible(False)
+            if self.remote_extensions_group is not None:
+                self.remote_extensions_group.set_title(_("Updatable Extensions"))
+                self.remote_extensions_group.set_description(
+                    _("Extensions with a newer version available on catalog")
+                )
+                self.remote_extensions_group.set_visible(True)
+            self._perform_updatable_check()
 
     def _init_install_options(self) -> None:
         """Initialize installation choices in the combo dropdown."""
@@ -258,6 +488,15 @@ class ExtensionsPage:
         return self.manager.get_install_command("extension-manager")
 
     def refresh(self) -> None:
+        """Reload extensions based on current filter mode."""
+        if self._filter_mode == "installed":
+            self._reload_installed_extensions()
+        elif self._filter_mode == "available":
+            self._perform_remote_search(reset_page=True)
+        elif self._filter_mode == "updatable":
+            self._perform_updatable_check()
+
+    def _reload_installed_extensions(self) -> None:
         """Reload installed extensions asynchronously."""
         if self._is_loading:
             return
@@ -293,10 +532,26 @@ class ExtensionsPage:
 
     def _on_search_changed(self, entry: Gtk.SearchEntry) -> None:
         """Filter extensions when search query changes."""
-        self._filter_extensions(entry.get_text().strip())
+        query = entry.get_text().strip()
+        if self._filter_mode == "installed":
+            self._filter_extensions(query)
+        else:
+            # Debounce remote search by 350ms
+            if self._search_debounce_id > 0:
+                GLib.source_remove(self._search_debounce_id)
+            self._search_debounce_id = GLib.timeout_add(350, self._on_remote_search_timeout)
+
+    def _on_remote_search_timeout(self) -> bool:
+        """Execute debounced remote search."""
+        self._search_debounce_id = 0
+        if self._filter_mode == "available":
+            self._perform_remote_search(reset_page=True)
+        elif self._filter_mode == "updatable":
+            self._filter_updatable_rows(self.search_entry.get_text().strip())
+        return False
 
     def _filter_extensions(self, query: str) -> None:
-        """Filter cached extensions list and update UI rows."""
+        """Filter cached installed extensions list and update UI rows."""
         q = query.lower()
         if not q:
             self._filtered_extensions = list(self._extensions)
@@ -317,6 +572,10 @@ class ExtensionsPage:
         self._row_widgets.clear()
 
         if not self._filtered_extensions:
+            self.empty_status_page.set_title(_("No Extensions Found"))
+            self.empty_status_page.set_description(
+                _("No extensions matched your filter or none are installed.")
+            )
             self.status_stack.set_visible_child_name("empty")
             return
 
@@ -402,6 +661,344 @@ class ExtensionsPage:
         self.system_extensions_group.set_visible(system_count > 0)
         self.status_stack.set_visible_child_name("content")
 
+    # --- Online Catalog & Remote Search (Step 2) ---
+
+    def _perform_remote_search(self, reset_page: bool = True) -> None:
+        """Search extensions from extensions.gnome.org asynchronously."""
+        if self._is_loading_remote:
+            return
+
+        if reset_page:
+            self._current_page = 1
+            self._remote_items.clear()
+            self._clear_remote_rows()
+            self.status_stack.set_visible_child_name("searching")
+
+        self._is_loading_remote = True
+        query = self.search_entry.get_text().strip()
+        page = self._current_page
+
+        # Get sort order from dropdown
+        sort_by = "popularity"
+        if self.sort_dropdown is not None:
+            sort_idx = self.sort_dropdown.get_selected()
+            if 0 <= sort_idx < len(self.SORT_OPTIONS):
+                sort_by = self.SORT_OPTIONS[sort_idx][1]
+
+        def worker() -> None:
+            backend = self.manager.extension_backend
+            try:
+                result = backend.search(query=query, sort=sort_by, page=page, limit=20)
+                GLib.idle_add(self._on_remote_search_success, result, reset_page)
+            except Exception as err:
+                logger.error("Remote search error: %s", err)
+                GLib.idle_add(self._on_remote_search_error, str(err))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_remote_search_success(self, result: ExtensionSearchResult, reset_page: bool) -> bool:
+        """Handle successful response from remote catalog."""
+        self._is_loading_remote = False
+        self._is_loading_more = False
+        self._current_page = result.page
+        self._numpages = result.numpages
+
+        if reset_page:
+            self._remote_items = list(result.extensions)
+            self._clear_remote_rows()
+        else:
+            self._remote_items.extend(result.extensions)
+
+        if not self._remote_items:
+            self.empty_status_page.set_title(_("No Extensions Found"))
+            self.empty_status_page.set_description(
+                _("No extensions matched your filter or search query.")
+            )
+            self.status_stack.set_visible_child_name("empty")
+            if self.lazy_load_box is not None:
+                self.lazy_load_box.set_visible(False)
+            return False
+
+        for item in result.extensions:
+            row = self._create_remote_extension_row(item)
+            if self.remote_extensions_group is not None:
+                self.remote_extensions_group.add(row)
+                self._remote_row_widgets.append(row)
+
+        self.status_stack.set_visible_child_name("content")
+
+        has_more = self._current_page < self._numpages
+        if self.lazy_load_box is not None:
+            self.lazy_load_box.set_visible(has_more)
+        if self.btn_load_more is not None:
+            self.btn_load_more.set_visible(has_more)
+            self.btn_load_more.set_sensitive(True)
+            self.btn_load_more.set_label(_("Load more extensions..."))
+        if self.lazy_spinner is not None:
+            self.lazy_spinner.set_spinning(False)
+            self.lazy_spinner.set_visible(False)
+
+        return False
+
+    def _on_remote_search_error(self, err_msg: str) -> bool:
+        """Handle error querying online catalog."""
+        self._is_loading_remote = False
+        self._is_loading_more = False
+        if self.error_status_page is not None:
+            self.error_status_page.set_description(
+                _("Unable to connect to extensions catalog: {err}").format(err=err_msg)
+            )
+        self.status_stack.set_visible_child_name("error")
+        if self.lazy_load_box is not None:
+            self.lazy_load_box.set_visible(False)
+        return False
+
+    def _load_more_results(self) -> None:
+        """Request next page of catalog results (lazy loading)."""
+        if self._filter_mode != "available":
+            return
+        if self._is_loading_remote or self._is_loading_more:
+            return
+        if self._current_page >= self._numpages:
+            return
+
+        self._is_loading_more = True
+        self._current_page += 1
+        if self.lazy_spinner is not None:
+            self.lazy_spinner.set_visible(True)
+            self.lazy_spinner.set_spinning(True)
+        if self.btn_load_more is not None:
+            self.btn_load_more.set_label(_("Loading more..."))
+            self.btn_load_more.set_sensitive(False)
+
+        self._perform_remote_search(reset_page=False)
+
+    def _on_scroll_value_changed(self, adj: Gtk.Adjustment) -> None:
+        """Trigger lazy loading when scrolling reaches near bottom."""
+        if self._filter_mode != "available":
+            return
+        if self._is_loading_remote or self._is_loading_more:
+            return
+        if self._current_page >= self._numpages:
+            return
+
+        # Trigger when within 100px of bottom
+        if adj.get_value() >= adj.get_upper() - adj.get_page_size() - 100:
+            self._load_more_results()
+
+    def _perform_updatable_check(self) -> None:
+        """Check for updates for installed extensions."""
+        self.status_stack.set_visible_child_name("searching")
+        self._clear_remote_rows()
+
+        def worker() -> None:
+            backend = self.manager.extension_backend
+            try:
+                items = backend.check_updates()
+                GLib.idle_add(self._on_updatable_loaded, items)
+            except Exception as err:
+                logger.error("Error checking updates: %s", err)
+                GLib.idle_add(self._on_remote_search_error, str(err))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_updatable_loaded(self, items: list[ExtensionItem]) -> bool:
+        """Populate view with updatable extensions."""
+        self._remote_items = list(items)
+        self._filter_updatable_rows(self.search_entry.get_text().strip())
+        return False
+
+    def _filter_updatable_rows(self, query: str) -> None:
+        """Filter cached updatable items by search query."""
+        self._clear_remote_rows()
+        q = query.lower()
+        filtered = [
+            it
+            for it in self._remote_items
+            if not q or q in it.name.lower() or q in it.uuid.lower() or q in it.description.lower()
+        ]
+
+        if not filtered:
+            self.empty_status_page.set_title(_("All Extensions Up to Date"))
+            self.empty_status_page.set_description(
+                _("No updates available for your installed extensions.")
+            )
+            self.status_stack.set_visible_child_name("empty")
+            return
+
+        for item in filtered:
+            row = self._create_remote_extension_row(item)
+            if self.remote_extensions_group is not None:
+                self.remote_extensions_group.add(row)
+                self._remote_row_widgets.append(row)
+
+        self.status_stack.set_visible_child_name("content")
+
+    def _clear_remote_rows(self) -> None:
+        """Remove existing remote extension rows from UI."""
+        if self.remote_extensions_group is not None:
+            for row in self._remote_row_widgets:
+                self.remote_extensions_group.remove(row)
+        self._remote_row_widgets.clear()
+
+    def _create_remote_extension_row(self, item: ExtensionItem) -> Adw.ActionRow:
+        """Build an AdwActionRow representing an extension with icon, metadata, badges, and action."""
+        row = Adw.ActionRow()
+        row.set_title(GLib.markup_escape_text(item.name))
+
+        # Subtitle: version • creator/uuid • brief description snippet
+        subtitle_parts: list[str] = []
+        if item.version:
+            subtitle_parts.append(f"v{item.version}")
+        if item.creator:
+            subtitle_parts.append(f"{_('by')} {item.creator}")
+        elif item.uuid:
+            subtitle_parts.append(item.uuid)
+
+        desc = (item.description or "").split("\n")[0].strip()
+        if len(desc) > 80:
+            desc = desc[:77] + "..."
+        if desc:
+            subtitle_parts.append(desc)
+
+        row.set_subtitle(GLib.markup_escape_text(" • ".join(subtitle_parts)))
+        row.set_subtitle_lines(2)
+
+        # Prefix: Extension Icon (async cached)
+        img = Gtk.Image.new_from_icon_name("application-x-addon-symbolic")
+        img.set_pixel_size(36)
+        img.set_valign(Gtk.Align.CENTER)
+        row.add_prefix(img)
+
+        if item.icon_url:
+            self._load_icon_async(item.icon_url, img)
+
+        # Suffix 1: Downloads / Rating
+        if item.rating is not None and item.rating > 0:
+            box_stat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+            box_stat.set_valign(Gtk.Align.CENTER)
+            star_icon = Gtk.Image.new_from_icon_name("starred-symbolic")
+            star_icon.set_pixel_size(14)
+            lbl_stat = Gtk.Label(label=f"{item.rating:.1f}")
+            lbl_stat.add_css_class("dim-label")
+            lbl_stat.add_css_class("caption")
+            box_stat.append(star_icon)
+            box_stat.append(lbl_stat)
+            row.add_suffix(box_stat)
+        elif item.downloads > 0:
+            box_stat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+            box_stat.set_valign(Gtk.Align.CENTER)
+            dl_icon = Gtk.Image.new_from_icon_name("folder-download-symbolic")
+            dl_icon.set_pixel_size(14)
+            lbl_stat = Gtk.Label(label=_format_downloads_count(item.downloads))
+            lbl_stat.add_css_class("dim-label")
+            lbl_stat.add_css_class("caption")
+            box_stat.append(dl_icon)
+            box_stat.append(lbl_stat)
+            row.add_suffix(box_stat)
+
+        # Suffix 2: Compatibility badge
+        lbl_compat = Gtk.Label()
+        lbl_compat.set_valign(Gtk.Align.CENTER)
+        lbl_compat.add_css_class("caption")
+        if item.is_compatible:
+            lbl_compat.set_text(_("Compatible"))
+            lbl_compat.add_css_class("success")
+        else:
+            lbl_compat.set_text(_("Incompatible"))
+            lbl_compat.add_css_class("error")
+        row.add_suffix(lbl_compat)
+
+        # Suffix 3: State / Action buttons
+        if item.is_installed:
+            lbl_inst = Gtk.Label(label=_("Installed"))
+            lbl_inst.set_valign(Gtk.Align.CENTER)
+            lbl_inst.add_css_class("accent")
+            lbl_inst.add_css_class("caption")
+            row.add_suffix(lbl_inst)
+
+            if item.has_update:
+                lbl_up = Gtk.Label(label=_("Update"))
+                lbl_up.set_valign(Gtk.Align.CENTER)
+                lbl_up.add_css_class("warning")
+                lbl_up.add_css_class("caption")
+                row.add_suffix(lbl_up)
+
+            switch = Gtk.Switch()
+            switch.set_active(item.is_enabled)
+            switch.set_valign(Gtk.Align.CENTER)
+            switch.connect(
+                "state-set",
+                lambda _sw, state, it=item: self._on_remote_switch_toggled(it, state),
+            )
+            row.add_suffix(switch)
+        else:
+            btn_details = Gtk.Button(label=_("Details"))
+            btn_details.set_valign(Gtk.Align.CENTER)
+            btn_details.add_css_class("flat")
+            btn_details.set_tooltip_text(_("View extension details"))
+            btn_details.connect("clicked", lambda _, it=item: self._on_view_item_details(it))
+            row.add_suffix(btn_details)
+
+        row.set_activatable(True)
+        row.connect("activated", lambda _, it=item: self._on_view_item_details(it))
+        return row
+
+    def _load_icon_async(self, icon_url: str, img: Gtk.Image) -> None:
+        """Download and set extension icon asynchronously with local disk caching."""
+
+        def worker() -> None:
+            try:
+                THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                cache_path = _get_icon_cache_path(icon_url)
+                if not cache_path.is_file() or cache_path.stat().st_size == 0:
+                    data = _download_icon_bytes(icon_url)
+                    if data:
+                        cache_path.write_bytes(data)
+
+                if cache_path.is_file() and cache_path.stat().st_size > 0:
+                    GLib.idle_add(img.set_from_file, str(cache_path))
+            except Exception as err:
+                logger.debug("Failed to cache icon %s: %s", icon_url, err)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_view_item_details(self, item: ExtensionItem) -> None:
+        """Callback when an extension row or its Details button is activated."""
+        if self.on_view_details:
+            self.on_view_details(item)
+        elif item.link:
+            self._open_url(item.link)
+        elif item.uuid:
+            if self.manager.extensions:
+                self._open_url(self.manager.extensions.get_store_url(item.uuid))
+            else:
+                self._open_url(f"{EGO_BASE_URL}/extension/{item.uuid}/")
+
+    def _on_remote_switch_toggled(self, item: ExtensionItem, state: bool) -> bool:
+        """Handle toggling an installed extension from the remote/updatable list."""
+        if not self.manager.extensions:
+            return False
+
+        ok = self.manager.extensions.toggle_extension(item.uuid, state)
+        item.is_enabled = state if ok else not state
+
+        if ok:
+            msg = (
+                _("Extension '{name}' enabled.").format(name=item.name)
+                if state
+                else _("Extension '{name}' disabled.").format(name=item.name)
+            )
+            if self.on_notify_message:
+                self.on_notify_message(msg, False)
+        else:
+            msg = _("Failed to toggle extension '{name}'.").format(name=item.name)
+            if self.on_notify_message:
+                self.on_notify_message(msg, True)
+        return False
+
+    # --- Installed Extension Operations ---
+
     def _on_switch_state_set(self, ext: GnomeExtension, target_state: bool) -> bool:
         """Handle switch toggle by user."""
         self._on_extension_switch_toggled(ext, target_state)
@@ -444,53 +1041,36 @@ class ExtensionsPage:
 
         cmd = self._get_active_install_command()
 
-        if self.install_banner is not None:
-            if not is_mgr_installed:
-                self.install_banner.set_title(
-                    _("Extension Manager is not installed. Install with: {cmd}").format(cmd=cmd)
-                )
-                self.install_banner.set_button_label(_("Copy Command"))
-                self.install_banner.set_revealed(True)
-            else:
+        # Item 1: Completely hide install banner & options group if already installed!
+        if is_mgr_installed:
+            if self.install_banner is not None:
                 self.install_banner.set_revealed(False)
-
-        if self.expander_install_options is not None:
-            if not is_mgr_installed:
-                self.expander_install_options.set_title(_("Install Extension Manager"))
-                self.expander_install_options.set_subtitle(
-                    _("Extension Manager is not installed. Select an installation method.")
-                )
-                self.expander_install_options.set_expanded(True)
-            else:
-                self.expander_install_options.set_title(_("Installation Options"))
-                self.expander_install_options.set_subtitle(
-                    _(
-                        "Extension Manager is installed. View alternatives (Flatpak, native package)."
-                    )
-                )
-                self.expander_install_options.set_expanded(False)
-
-        if self.row_basic_app is not None:
-            self.row_basic_app.set_visible(is_basic_installed and not is_mgr_installed)
-
-        if self.btn_open_app is not None:
-            if is_mgr_installed:
+            if self.group_install_manager is not None:
+                self.group_install_manager.set_visible(False)
+            if self.btn_open_app is not None:
                 self.btn_open_app.set_label(_("Open Extension Manager"))
                 self.btn_open_app.set_tooltip_text(
                     _("Open GNOME Extensions application to manage installed extensions")
                 )
-                self.btn_open_app.remove_css_class("accent")
-                self.btn_open_app.add_css_class("suggested-action")
-            else:
+        else:
+            if self.install_banner is not None:
+                self.install_banner.set_title(
+                    _("Extension Manager is not installed. Install with: {cmd}").format(cmd=cmd)
+                )
+                self.install_banner.set_revealed(True)
+            if self.group_install_manager is not None:
+                self.group_install_manager.set_visible(True)
+            if self.btn_open_app is not None:
                 self.btn_open_app.set_label(_("Install Extension Manager"))
                 self.btn_open_app.set_tooltip_text(
-                    _("Extension Manager is not installed. Click to copy install command.")
+                    _("Extension Manager not detected. Click to install: {cmd}").format(cmd=cmd)
                 )
-                self.btn_open_app.remove_css_class("suggested-action")
-                self.btn_open_app.add_css_class("accent")
+
+        if self.row_basic_app is not None:
+            self.row_basic_app.set_visible(is_basic_installed)
 
     def _on_app_button_clicked(self) -> None:
-        """Handle header button click: open if installed, copy command if not."""
+        """Handle click on primary header action button."""
         is_mgr_installed = False
         if self.manager.extensions:
             try:
@@ -558,10 +1138,17 @@ class ExtensionsPage:
 
     def _open_url(self, url: str) -> None:
         """Open web URL in default browser."""
+        if not url or not url.strip():
+            return
+        target_url = url.strip()
+        if target_url.startswith("/"):
+            target_url = f"{EGO_BASE_URL}{target_url}"
+        elif not target_url.startswith(("http://", "https://")):
+            target_url = f"https://{target_url}"
         try:
-            Gio.AppInfo.launch_default_for_uri(url, None)
+            Gio.AppInfo.launch_default_for_uri(target_url, None)
         except Exception as err:
-            logger.warning("Failed to open URL '%s': %s", url, err)
+            logger.warning("Failed to open URL '%s': %s", target_url, err)
 
     def _on_remove_extension(self, ext: GnomeExtension) -> None:
         """Handle uninstalling a user-level extension."""
