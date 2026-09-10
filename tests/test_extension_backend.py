@@ -227,3 +227,21 @@ def test_get_extension_backend_factory(mock_mgr: ExtensionsManager) -> None:
 
     cli_b = get_extension_backend("cli", extensions_manager=mock_mgr)
     assert isinstance(cli_b, GnomeExtensionsCliBackend)
+
+
+def test_rest_backend_parse_multiple_screenshots(mock_mgr: ExtensionsManager) -> None:
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    raw_payload = {
+        "uuid": "gallery@example.com",
+        "name": "Gallery Extension",
+        "description": 'Here is an image: <img src="/images/shot2.png"/> and ![alt](https://example.com/shot3.png)',
+        "screenshot": "/shot1.png",
+        "screenshots": ["/shot1.png", "/shot4.png"],
+    }
+    item = backend._parse_extension_item(raw_payload, {})
+    assert item.screenshot_url == "https://extensions.gnome.org/shot1.png"
+    assert len(item.screenshots) == 4
+    assert item.screenshots[0] == "https://extensions.gnome.org/shot1.png"
+    assert item.screenshots[1] == "https://extensions.gnome.org/shot4.png"
+    assert item.screenshots[2] == "https://extensions.gnome.org/images/shot2.png"
+    assert item.screenshots[3] == "https://example.com/shot3.png"

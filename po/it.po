@@ -3422,3 +3422,42 @@ msgstr "Download"
 msgid "Latest"
 msgstr "Più recenti"
 
+msgid "← Back to Extensions"
+msgstr "← Torna alle estensioni"
+
+msgid "This extension does not officially support your GNOME Shell version. Installation may cause instability."
+msgstr "Questa estensione non supporta ufficialmente la versione di GNOME Shell in uso. L'installazione potrebbe causare instabilità."
+
+msgid "Install Extension?"
+msgstr "Installare l'estensione?"
+
+msgid "Do you want to download and install '{name}' ({uuid}) from extensions.gnome.org?"
+msgstr "Scaricare e installare '{name}' ({uuid}) da extensions.gnome.org?"
+
+msgid "Warning: '{name}' does not officially support your GNOME Shell version.\n\nInstallation may cause errors or system instability.\nDo you still want to proceed?"
+msgstr "Attenzione: '{name}' non supporta ufficialmente la tua versione di GNOME Shell.\n\nL'installazione potrebbe causare errori o instabilità.\nVuoi procedere comunque?"
+
+msgid "Uninstall Extension?"
+msgstr "Disinstallare l'estensione?"
+
+msgid "Are you sure you want to uninstall '{name}' ({uuid})?"
+msgstr "Sei sicuro di voler disinstallare '{name}' ({uuid})?"
+
+msgid "Extension '{name}' installed successfully."
+msgstr "Estensione '{name}' installata con successo."
+
+msgid "Failed to install extension '{name}': {error}"
+msgstr "Impossibile installare l'estensione '{name}': {error}"
+
+msgid "Installing extension..."
+msgstr "Installazione dell'estensione..."
+
+msgid "No description available."
+msgstr "Nessuna descrizione disponibile."
+
+msgid "About"
+msgstr "Informazioni"
+
+msgid "Uninstall"
+msgstr "Disinstalla"
+

@@ -10,7 +10,7 @@ import pytest
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, GLib, Gtk
 
 from gnome_theme_manager.core.extension_backend import (
     ExtensionItem,
@@ -404,7 +404,7 @@ def test_extensions_page_remote_error_handling(mock_manager: MagicMock) -> None:
 
 
 def test_extensions_page_open_url_normalization(mock_manager: MagicMock) -> None:
-    """Test URL normalization in _open_url and _on_view_item_details."""
+    """Test URL normalization in _open_url and _on_detail_website_clicked."""
     page = ExtensionsPage(manager=mock_manager)
 
     with patch("gi.repository.Gio.AppInfo.launch_default_for_uri") as mock_launch:
@@ -427,12 +427,239 @@ def test_extensions_page_open_url_normalization(mock_manager: MagicMock) -> None
         page._open_url("")
         mock_launch.assert_not_called()
 
-        # Item click fallback
+        # Detail website button click
         item = ExtensionItem(
             uuid="test@example.com",
             name="Test",
             description="",
-            link="/extension/615/test/",
+            link="https://extensions.gnome.org/extension/615/test/",
         )
-        page._on_view_item_details(item)
+        page.show_details(item)
+        page._on_detail_website_clicked()
         mock_launch.assert_called_with("https://extensions.gnome.org/extension/615/test/", None)
+
+
+def test_extensions_page_show_details_and_back(mock_manager: MagicMock) -> None:
+    """Test opening details view and returning to catalog."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    item = ExtensionItem(
+        uuid="dash-to-dock@micxgx.gmail.com",
+        name="Dash to Dock",
+        description="A dock for the GNOME Shell.",
+        creator="michele_g",
+        version="92",
+        downloads=1250000,
+        popularity=98,
+        rating=4.7,
+        is_installed=False,
+        is_compatible=True,
+    )
+
+    page._on_view_item_details(item)
+
+    assert page.view_stack is not None
+    assert page.view_stack.get_visible_child_name() == "detail"
+    assert page.detail_title_label is not None
+    assert page.detail_title_label.get_text() == "Dash to Dock"
+    assert page.detail_uuid_label is not None
+    assert page.detail_uuid_label.get_text() == "dash-to-dock@micxgx.gmail.com"
+    assert page.detail_creator_label is not None
+    assert "michele_g" in page.detail_creator_label.get_text()
+    assert page.detail_compat_banner is not None
+    assert page.detail_compat_banner.get_revealed() is False
+    assert page.btn_detail_install is not None
+    assert page.btn_detail_install.get_visible() is True
+    assert page.btn_detail_remove is not None
+    assert page.btn_detail_remove.get_visible() is False
+
+    # Return to catalog
+    page.show_catalog()
+    assert page.view_stack.get_visible_child_name() == "catalog"
+
+
+def test_extensions_page_install_flow(mock_manager: MagicMock) -> None:
+    """Test install flow: confirmation dialog -> backend install -> notification & UI update."""
+    mock_manager.extension_backend.install.return_value = True
+    page = ExtensionsPage(manager=mock_manager)
+    notify_mock = MagicMock()
+    page.on_notify_message = notify_mock
+
+    item = ExtensionItem(
+        uuid="appindicator@ubuntu.com",
+        name="AppIndicator Support",
+        description="Tray icons for GNOME.",
+        is_installed=False,
+        is_compatible=True,
+    )
+    page.show_details(item)
+
+    # Click install with confirmation accepted
+    with patch.object(
+        page, "_show_confirmation_dialog", side_effect=lambda **kw: kw["on_confirm"]()
+    ):
+        page._on_detail_install_clicked()
+
+    # Wait for worker thread to complete in GLib main context
+    import time
+
+    timeout = time.time() + 2.0
+    while time.time() < timeout and not item.is_installed:
+        GLib.MainContext.default().iteration(False)
+
+    mock_manager.extension_backend.install.assert_called_with("appindicator@ubuntu.com")
+    assert item.is_installed is True
+    assert item.is_enabled is True
+    assert page.btn_detail_install is not None
+    assert page.btn_detail_install.get_visible() is False
+    assert page.btn_detail_remove is not None
+    assert page.btn_detail_remove.get_visible() is True
+    assert notify_mock.called
+
+
+def test_extensions_page_remove_flow(mock_manager: MagicMock) -> None:
+    """Test uninstall flow: confirmation dialog -> manager uninstall -> notification & UI update."""
+    mock_manager.extensions.uninstall_extension.return_value = True
+    page = ExtensionsPage(manager=mock_manager)
+    notify_mock = MagicMock()
+    page.on_notify_message = notify_mock
+
+    item = ExtensionItem(
+        uuid="user-theme@gnome-shell-extensions.gcampax.github.com",
+        name="User Themes",
+        description="Load shell themes from user directory.",
+        is_installed=True,
+        is_enabled=True,
+        is_compatible=True,
+    )
+    page.show_details(item)
+    assert page.btn_detail_remove is not None
+    assert page.btn_detail_remove.get_visible() is True
+
+    # Click uninstall with confirmation accepted
+    with patch.object(
+        page, "_show_confirmation_dialog", side_effect=lambda **kw: kw["on_confirm"]()
+    ):
+        page._on_detail_remove_clicked()
+
+    mock_manager.extensions.uninstall_extension.assert_called_with(item.uuid)
+    assert item.is_installed is False
+    assert page.btn_detail_install is not None
+    assert page.btn_detail_install.get_visible() is True
+    assert page.btn_detail_remove.get_visible() is False
+    assert notify_mock.called
+
+
+def test_extensions_page_detail_switch_and_prefs(mock_manager: MagicMock) -> None:
+    """Test toggling extension switch and launching preferences from detail view."""
+    mock_manager.extensions.toggle_extension.return_value = True
+    mock_manager.extensions.open_prefs.return_value = True
+    page = ExtensionsPage(manager=mock_manager)
+
+    item = ExtensionItem(
+        uuid="blur-my-shell@aunetx",
+        name="Blur my Shell",
+        description="",
+        is_installed=True,
+        is_enabled=True,
+    )
+    page.show_details(item)
+
+    assert page.detail_switch_enable is not None
+    # Toggle switch
+    page._on_detail_switch_state_set(page.detail_switch_enable, False)
+    mock_manager.extensions.toggle_extension.assert_called_with("blur-my-shell@aunetx", False)
+    assert item.is_enabled is False
+
+    # Settings button
+    page._on_detail_prefs_clicked()
+    mock_manager.extensions.open_prefs.assert_called_with("blur-my-shell@aunetx")
+
+
+def test_extensions_page_multiple_screenshots_gallery(mock_manager: MagicMock) -> None:
+    """Test gallery navigation, counter label, and thumbnails with multiple screenshots."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    item = ExtensionItem(
+        uuid="gallery-ext@example.com",
+        name="Gallery Ext",
+        description="Extension with multiple screenshots",
+        screenshot_url="https://example.com/shot1.png",
+        screenshots=[
+            "https://example.com/shot1.png",
+            "https://example.com/shot2.png",
+            "https://example.com/shot3.png",
+        ],
+    )
+
+    page.show_details(item)
+
+    assert page.detail_screenshot_container is not None
+    assert page.detail_screenshot_container.get_visible() is True
+
+    # Multi-image controls should be visible
+    assert page.btn_detail_prev_image is not None
+    assert page.btn_detail_prev_image.get_visible() is True
+    assert page.btn_detail_next_image is not None
+    assert page.btn_detail_next_image.get_visible() is True
+    assert page.detail_thumbnails_scrolled is not None
+    assert page.detail_thumbnails_scrolled.get_visible() is True
+    assert page.detail_image_counter_label is not None
+    assert page.detail_image_counter_label.get_visible() is True
+    assert "1" in page.detail_image_counter_label.get_text()
+    assert "3" in page.detail_image_counter_label.get_text()
+
+    # Verify thumbnails buttons created
+    assert len(page._thumbnail_buttons) == 3
+
+    # Navigate to next image
+    page._navigate_image(1)
+    assert page._detail_image_index == 1
+    assert "2" in page.detail_image_counter_label.get_text()
+    assert "suggested-action" in page._thumbnail_buttons[1].get_css_classes()
+    assert "suggested-action" not in page._thumbnail_buttons[0].get_css_classes()
+
+    # Navigate next again
+    page._navigate_image(1)
+    assert page._detail_image_index == 2
+    assert "3" in page.detail_image_counter_label.get_text()
+
+    # Wrap around to first image
+    page._navigate_image(1)
+    assert page._detail_image_index == 0
+
+    # Wrap backwards to last image
+    page._navigate_image(-1)
+    assert page._detail_image_index == 2
+
+
+def test_extensions_page_single_screenshot(mock_manager: MagicMock) -> None:
+    """Test gallery with single or zero screenshots hides navigation controls."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    # 1 screenshot
+    single_item = ExtensionItem(
+        uuid="single@example.com",
+        name="Single Ext",
+        screenshot_url="https://example.com/single.png",
+        screenshots=["https://example.com/single.png"],
+    )
+    page.show_details(single_item)
+    assert page.detail_screenshot_container is not None
+    assert page.detail_screenshot_container.get_visible() is True
+    assert page.btn_detail_prev_image is not None
+    assert page.btn_detail_prev_image.get_visible() is False
+    assert page.btn_detail_next_image is not None
+    assert page.btn_detail_next_image.get_visible() is False
+    assert page.detail_thumbnails_scrolled is not None
+    assert page.detail_thumbnails_scrolled.get_visible() is False
+
+    # 0 screenshots
+    no_shot_item = ExtensionItem(
+        uuid="none@example.com",
+        name="No Shot Ext",
+        screenshot_url=None,
+        screenshots=[],
+    )
+    page.show_details(no_shot_item)
+    assert page.detail_screenshot_container.get_visible() is False

@@ -10,13 +10,15 @@ and lazy loading.
 from __future__ import annotations
 
 import hashlib
+import html
 import logging
+import re
 import threading
 import urllib.parse
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 from urllib.parse import urlparse
 
 import gi
@@ -25,7 +27,7 @@ from gnome_theme_manager import _
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gio, GLib, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 try:
     import requests
@@ -71,6 +73,19 @@ def _download_icon_bytes(url: str, timeout: float = 10.0) -> bytes | None:
     except Exception as err:
         logger.debug("Failed to download icon from %s: %s", url, err)
     return None
+
+
+def _clean_html_description(raw_html: str) -> str:
+    """Convert HTML description from extensions API into clean readable text."""
+    if not raw_html:
+        return ""
+    text = re.sub(r"<\s*br\s*/?>", "\n", raw_html, flags=re.IGNORECASE)
+    text = re.sub(r"<\s*/p\s*>", "\n\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = html.unescape(text)
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n\s*\n", "\n\n", text)
+    return text.strip()
 
 
 def _format_downloads_count(count: int) -> str:
@@ -181,6 +196,71 @@ class ExtensionsPage:
         self.btn_copy_install_command: Gtk.Button | None = self.builder.get_object(
             "btn_copy_install_command"
         )
+
+        # Detail view widgets
+        self.view_stack: Gtk.Stack | None = self.builder.get_object("view_stack")
+        self.btn_detail_back: Gtk.Button | None = self.builder.get_object("btn_detail_back")
+        self.detail_icon_image: Gtk.Image | None = self.builder.get_object("detail_icon_image")
+        self.detail_title_label: Gtk.Label | None = self.builder.get_object("detail_title_label")
+        self.detail_creator_label: Gtk.Label | None = self.builder.get_object(
+            "detail_creator_label"
+        )
+        self.detail_uuid_label: Gtk.Label | None = self.builder.get_object("detail_uuid_label")
+        self.detail_meta_pills_box: Gtk.Box | None = self.builder.get_object(
+            "detail_meta_pills_box"
+        )
+        self.detail_compat_banner: Adw.Banner | None = self.builder.get_object(
+            "detail_compat_banner"
+        )
+        self.detail_screenshot_container: Gtk.Box | None = self.builder.get_object(
+            "detail_screenshot_container"
+        )
+        self.btn_detail_prev_image: Gtk.Button | None = self.builder.get_object(
+            "btn_detail_prev_image"
+        )
+        self.detail_screenshot_picture: Gtk.Picture | None = self.builder.get_object(
+            "detail_screenshot_picture"
+        )
+        self.detail_image_counter_label: Gtk.Label | None = self.builder.get_object(
+            "detail_image_counter_label"
+        )
+        self.btn_detail_fullscreen: Gtk.Button | None = self.builder.get_object(
+            "btn_detail_fullscreen"
+        )
+        self.btn_detail_next_image: Gtk.Button | None = self.builder.get_object(
+            "btn_detail_next_image"
+        )
+        self.detail_thumbnails_scrolled: Gtk.ScrolledWindow | None = self.builder.get_object(
+            "detail_thumbnails_scrolled"
+        )
+        self.detail_thumbnails_box: Gtk.Box | None = self.builder.get_object(
+            "detail_thumbnails_box"
+        )
+        self.detail_description_label: Gtk.Label | None = self.builder.get_object(
+            "detail_description_label"
+        )
+        self.detail_progress_box: Gtk.Box | None = self.builder.get_object("detail_progress_box")
+        self.detail_progress_spinner: Gtk.Spinner | None = self.builder.get_object(
+            "detail_progress_spinner"
+        )
+        self.detail_progress_label: Gtk.Label | None = self.builder.get_object(
+            "detail_progress_label"
+        )
+        self.btn_detail_website: Gtk.Button | None = self.builder.get_object("btn_detail_website")
+        self.btn_detail_prefs: Gtk.Button | None = self.builder.get_object("btn_detail_prefs")
+        self.detail_switch_box: Gtk.Box | None = self.builder.get_object("detail_switch_box")
+        self.detail_switch_label: Gtk.Label | None = self.builder.get_object("detail_switch_label")
+        self.detail_switch_enable: Gtk.Switch | None = self.builder.get_object(
+            "detail_switch_enable"
+        )
+        self.btn_detail_remove: Gtk.Button | None = self.builder.get_object("btn_detail_remove")
+        self.btn_detail_install: Gtk.Button | None = self.builder.get_object("btn_detail_install")
+
+        self._selected_item: ExtensionItem | None = None
+        self._is_detail_action_in_progress: bool = False
+        self._detail_images: list[str] = []
+        self._detail_image_index: int = 0
+        self._thumbnail_buttons: list[Gtk.Button] = []
 
         self._apply_localized_labels()
         self._init_dropdowns()
@@ -297,6 +377,26 @@ class ExtensionsPage:
         if self.btn_copy_install_command is not None:
             self.btn_copy_install_command.set_tooltip_text(_("Copy installation command"))
 
+        if self.btn_detail_back is not None:
+            self.btn_detail_back.set_label(_("← Back to Extensions"))
+        if self.detail_compat_banner is not None:
+            self.detail_compat_banner.set_title(
+                _(
+                    "This extension does not officially support your GNOME Shell version."
+                    " Installation may cause instability."
+                )
+            )
+        if self.btn_detail_website is not None:
+            self.btn_detail_website.set_label(_("Website"))
+        if self.btn_detail_prefs is not None:
+            self.btn_detail_prefs.set_label(_("Settings"))
+        if self.detail_switch_label is not None:
+            self.detail_switch_label.set_label(_("Enabled"))
+        if self.btn_detail_remove is not None:
+            self.btn_detail_remove.set_label(_("Uninstall"))
+        if self.btn_detail_install is not None:
+            self.btn_detail_install.set_label(_("Install"))
+
     def _init_dropdowns(self) -> None:
         """Initialize filter and sort dropdown options."""
         if self.filter_dropdown is not None:
@@ -354,6 +454,30 @@ class ExtensionsPage:
         # Error retry
         if self.btn_error_retry is not None:
             self.btn_error_retry.connect("clicked", lambda _: self.refresh())
+
+        # Detail view signals
+        if self.btn_detail_back is not None:
+            self.btn_detail_back.connect("clicked", lambda _: self.show_catalog())
+        if self.btn_detail_prev_image is not None:
+            self.btn_detail_prev_image.connect("clicked", lambda _: self._navigate_image(-1))
+        if self.btn_detail_next_image is not None:
+            self.btn_detail_next_image.connect("clicked", lambda _: self._navigate_image(1))
+        if self.btn_detail_fullscreen is not None:
+            self.btn_detail_fullscreen.connect("clicked", lambda _: self._open_fullscreen_dialog())
+        if self.detail_screenshot_picture is not None:
+            click_gesture = Gtk.GestureClick.new()
+            click_gesture.connect("released", lambda *_: self._open_fullscreen_dialog())
+            self.detail_screenshot_picture.add_controller(click_gesture)
+        if self.btn_detail_website is not None:
+            self.btn_detail_website.connect("clicked", lambda _: self._on_detail_website_clicked())
+        if self.btn_detail_prefs is not None:
+            self.btn_detail_prefs.connect("clicked", lambda _: self._on_detail_prefs_clicked())
+        if self.detail_switch_enable is not None:
+            self.detail_switch_enable.connect("state-set", self._on_detail_switch_state_set)
+        if self.btn_detail_remove is not None:
+            self.btn_detail_remove.connect("clicked", lambda _: self._on_detail_remove_clicked())
+        if self.btn_detail_install is not None:
+            self.btn_detail_install.connect("clicked", lambda _: self._on_detail_install_clicked())
 
     def _on_filter_changed(self) -> None:
         """Handle selection change in filter dropdown."""
@@ -628,13 +752,24 @@ class ExtensionsPage:
             link_url = ext.url or (
                 self.manager.extensions.get_store_url(ext.uuid) if self.manager.extensions else ""
             )
-            if link_url:
-                btn_details = Gtk.Button(label=_("Details"))
-                btn_details.set_valign(Gtk.Align.CENTER)
-                btn_details.add_css_class("flat")
-                btn_details.set_tooltip_text(_("Open extension website"))
-                btn_details.connect("clicked", lambda _, u=link_url: self._open_url(u))
-                row_actions.add_suffix(btn_details)
+            # Create ExtensionItem representation for local extension
+            ext_item = ExtensionItem(
+                uuid=ext.uuid,
+                name=ext.name,
+                description=ext.description,
+                version=ext.version,
+                installed_version=ext.version,
+                is_installed=True,
+                is_enabled=ext.enabled,
+                is_compatible=True,
+                link=link_url,
+            )
+            btn_details = Gtk.Button(label=_("Details"))
+            btn_details.set_valign(Gtk.Align.CENTER)
+            btn_details.add_css_class("flat")
+            btn_details.set_tooltip_text(_("View extension details"))
+            btn_details.connect("clicked", lambda _, it=ext_item: self._on_view_item_details(it))
+            row_actions.add_suffix(btn_details)
 
             if ext.is_user_level:
                 btn_remove = Gtk.Button(label=_("Remove"))
@@ -965,15 +1100,643 @@ class ExtensionsPage:
 
     def _on_view_item_details(self, item: ExtensionItem) -> None:
         """Callback when an extension row or its Details button is activated."""
+        self.show_details(item)
         if self.on_view_details:
             self.on_view_details(item)
-        elif item.link:
-            self._open_url(item.link)
-        elif item.uuid:
-            if self.manager.extensions:
-                self._open_url(self.manager.extensions.get_store_url(item.uuid))
+
+    def show_catalog(self) -> None:
+        """Switch view to the main catalog browsing page."""
+        if hasattr(self, "view_stack") and self.view_stack is not None:
+            self.view_stack.set_visible_child_name("catalog")
+
+    def show_details(self, item: ExtensionItem) -> None:
+        """Populate and display the details view for an extension."""
+        self._selected_item = item
+
+        if self.detail_title_label is not None:
+            self.detail_title_label.set_text(item.name)
+        if self.detail_creator_label is not None:
+            creator_text = _("by {author}").format(author=item.creator) if item.creator else ""
+            self.detail_creator_label.set_text(creator_text)
+            self.detail_creator_label.set_visible(bool(creator_text))
+        if self.detail_uuid_label is not None:
+            self.detail_uuid_label.set_text(item.uuid)
+
+        # Clean Description
+        clean_desc = _clean_html_description(item.description or _("No description available."))
+        if self.detail_description_label is not None:
+            self.detail_description_label.set_text(clean_desc)
+
+        # Meta pills
+        if self.detail_meta_pills_box is not None:
+            while child := self.detail_meta_pills_box.get_first_child():
+                self.detail_meta_pills_box.remove(child)
+
+            # Compatibility pill
+            pill_compat = Gtk.Label()
+            pill_compat.add_css_class("caption")
+            if item.is_compatible:
+                pill_compat.set_text(_("Compatible"))
+                pill_compat.add_css_class("success")
             else:
-                self._open_url(f"{EGO_BASE_URL}/extension/{item.uuid}/")
+                pill_compat.set_text(_("Incompatible"))
+                pill_compat.add_css_class("error")
+            self.detail_meta_pills_box.append(pill_compat)
+
+            # Version pill
+            if item.version or item.installed_version:
+                v_text = str(item.version or item.installed_version)
+                pill_ver = Gtk.Label(label=f"v{v_text}")
+                pill_ver.add_css_class("caption")
+                pill_ver.add_css_class("dim-label")
+                self.detail_meta_pills_box.append(pill_ver)
+
+            # Downloads pill
+            if item.downloads > 0:
+                d_text = _format_downloads_count(item.downloads)
+                pill_dl = Gtk.Label(label=f"⬇ {d_text}")
+                pill_dl.add_css_class("caption")
+                pill_dl.add_css_class("dim-label")
+                self.detail_meta_pills_box.append(pill_dl)
+
+            # Popularity / Rating pill
+            if item.rating is not None:
+                pill_rate = Gtk.Label(label=f"★ {item.rating:.1f}")
+                pill_rate.add_css_class("caption")
+                pill_rate.add_css_class("dim-label")
+                self.detail_meta_pills_box.append(pill_rate)
+
+        # Compatibility banner
+        if self.detail_compat_banner is not None:
+            self.detail_compat_banner.set_revealed(not item.is_compatible)
+
+        # Icon
+        if self.detail_icon_image is not None:
+            self.detail_icon_image.set_from_icon_name("application-x-addon-symbolic")
+            if item.icon_url:
+                self._load_icon_async(item.icon_url, self.detail_icon_image)
+
+        # Screenshots gallery
+        gallery_images: list[str] = []
+        if item.screenshots:
+            gallery_images = list(item.screenshots)
+        elif item.screenshot_url:
+            gallery_images = [item.screenshot_url]
+        self._update_gallery_ui(gallery_images)
+
+        # Reset progress box
+        if self.detail_progress_box is not None:
+            self.detail_progress_box.set_visible(False)
+
+        self._update_detail_actions(item)
+
+        # Background metadata enrichment for local extensions with minimal info
+        if (
+            (not item.screenshots or not item.screenshot_url)
+            and item.uuid
+            and self.manager.extension_backend
+        ):
+
+            def enrich_worker() -> None:
+                try:
+                    if self.manager.extension_backend:
+                        full_details = self.manager.extension_backend.get_details(item.uuid)
+                        if full_details:
+
+                            def apply_enrich() -> None:
+                                if self._selected_item and self._selected_item.uuid == item.uuid:
+                                    if full_details.screenshots:
+                                        item.screenshots = full_details.screenshots
+                                    if full_details.screenshot_url:
+                                        item.screenshot_url = full_details.screenshot_url
+                                    new_images = (
+                                        list(item.screenshots)
+                                        if item.screenshots
+                                        else ([item.screenshot_url] if item.screenshot_url else [])
+                                    )
+                                    if new_images:
+                                        self._update_gallery_ui(new_images)
+                                    if full_details.description and len(
+                                        full_details.description
+                                    ) > len(item.description):
+                                        item.description = full_details.description
+                                        if self.detail_description_label:
+                                            self.detail_description_label.set_text(
+                                                _clean_html_description(full_details.description)
+                                            )
+                                    if full_details.rating is not None and item.rating is None:
+                                        item.rating = full_details.rating
+                                    if full_details.downloads > 0 and item.downloads == 0:
+                                        item.downloads = full_details.downloads
+
+                            GLib.idle_add(apply_enrich)
+                except Exception as err:
+                    logger.debug("Failed background metadata enrichment for %s: %s", item.uuid, err)
+
+            threading.Thread(target=enrich_worker, daemon=True).start()
+
+        if hasattr(self, "view_stack") and self.view_stack is not None:
+            self.view_stack.set_visible_child_name("detail")
+
+    def _update_detail_actions(self, item: ExtensionItem) -> None:
+        """Update action buttons on the detail page according to item state."""
+        has_web = bool(item.link or item.uuid)
+        if self.btn_detail_website is not None:
+            self.btn_detail_website.set_visible(has_web)
+
+        if item.is_installed:
+            if self.btn_detail_install is not None:
+                self.btn_detail_install.set_visible(False)
+
+            if self.detail_switch_box is not None:
+                self.detail_switch_box.set_visible(True)
+            if self.detail_switch_enable is not None:
+                self.detail_switch_enable.set_active(item.is_enabled)
+
+            if self.btn_detail_remove is not None:
+                self.btn_detail_remove.set_visible(True)
+                self.btn_detail_remove.set_sensitive(True)
+
+            can_configure = False
+            if self.manager.extensions:
+                local_ext = self.manager.extensions.get_extension(item.uuid)
+                if local_ext and local_ext.has_prefs:
+                    can_configure = True
+            if self.btn_detail_prefs is not None:
+                self.btn_detail_prefs.set_visible(can_configure)
+        else:
+            if self.btn_detail_install is not None:
+                self.btn_detail_install.set_visible(True)
+                self.btn_detail_install.set_sensitive(True)
+
+            if self.detail_switch_box is not None:
+                self.detail_switch_box.set_visible(False)
+            if self.btn_detail_remove is not None:
+                self.btn_detail_remove.set_visible(False)
+            if self.btn_detail_prefs is not None:
+                self.btn_detail_prefs.set_visible(False)
+
+    def _update_gallery_ui(self, images: list[str]) -> None:
+        """Configure screenshot gallery, thumbnails and navigation for detail view."""
+        self._detail_images = list(images)
+        self._detail_image_index = 0
+
+        if self.detail_thumbnails_box is not None:
+            while child := self.detail_thumbnails_box.get_first_child():
+                self.detail_thumbnails_box.remove(child)
+        self._thumbnail_buttons.clear()
+
+        has_images = bool(images)
+        has_multiple = len(images) > 1
+
+        if self.detail_screenshot_container is not None:
+            self.detail_screenshot_container.set_visible(has_images)
+
+        if self.btn_detail_prev_image is not None:
+            self.btn_detail_prev_image.set_visible(has_multiple)
+        if self.btn_detail_next_image is not None:
+            self.btn_detail_next_image.set_visible(has_multiple)
+        if self.detail_thumbnails_scrolled is not None:
+            self.detail_thumbnails_scrolled.set_visible(has_multiple)
+        if self.detail_image_counter_label is not None:
+            self.detail_image_counter_label.set_visible(has_multiple)
+
+        if has_multiple and self.detail_thumbnails_box is not None:
+            for idx, img_url in enumerate(images):
+                btn = Gtk.Button()
+                btn.add_css_class("flat")
+                btn.add_css_class("store-thumb-btn")
+                btn_pic = Gtk.Picture()
+                btn_pic.set_can_shrink(True)
+                btn_pic.set_content_fit(Gtk.ContentFit.COVER)
+                btn_pic.set_size_request(72, 48)
+                btn.set_child(btn_pic)
+                btn.connect("clicked", lambda _, i=idx: self._set_active_screenshot_index(i))
+                self.detail_thumbnails_box.append(btn)
+                self._thumbnail_buttons.append(btn)
+                self._load_gallery_thumbnail_async(btn_pic, img_url)
+
+        if images:
+            self._set_active_screenshot_index(0)
+
+    def _set_active_screenshot_index(self, index: int) -> None:
+        """Switch active displayed screenshot and highlight active thumbnail."""
+        if not self._detail_images or index < 0 or index >= len(self._detail_images):
+            return
+
+        self._detail_image_index = index
+
+        if len(self._detail_images) > 1:
+            if self.detail_image_counter_label is not None:
+                counter_str = _("Image {cur} of {tot}").format(
+                    cur=index + 1, tot=len(self._detail_images)
+                )
+                self.detail_image_counter_label.set_text(counter_str)
+
+            for i, btn in enumerate(self._thumbnail_buttons):
+                if i == index:
+                    btn.add_css_class("suggested-action")
+                else:
+                    btn.remove_css_class("suggested-action")
+
+        if self.detail_screenshot_picture is not None:
+            self._load_picture_async(self._detail_images[index], self.detail_screenshot_picture)
+
+    def _navigate_image(self, delta: int) -> None:
+        """Navigate to previous or next screenshot in gallery."""
+        if not self._detail_images:
+            return
+        new_idx = (self._detail_image_index + delta) % len(self._detail_images)
+        self._set_active_screenshot_index(new_idx)
+
+    def _load_gallery_thumbnail_async(self, pic_widget: Gtk.Picture, img_url: str) -> None:
+        """Download thumbnail in background and set on Gtk.Picture widget."""
+
+        def worker() -> None:
+            try:
+                THUMBNAILS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+                cached_path = _get_icon_cache_path(img_url)
+
+                if not cached_path.is_file() or cached_path.stat().st_size == 0:
+                    content = _download_icon_bytes(img_url, timeout=15.0)
+                    if content:
+                        cached_path.write_bytes(content)
+
+                if cached_path.is_file() and cached_path.stat().st_size > 0:
+                    GLib.idle_add(pic_widget.set_filename, str(cached_path))
+            except Exception as err:
+                logger.debug("Failed to load gallery thumbnail preview: %s", err)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _open_fullscreen_dialog(self) -> None:
+        """Open modal fullscreen lightbox for screenshot inspection."""
+        if not self._detail_images:
+            return
+
+        dialog = Gtk.Window()
+        dialog.set_modal(True)
+        root_win = self.widget.get_root()
+        if isinstance(root_win, Gtk.Window):
+            dialog.set_transient_for(root_win)
+
+        title = self._selected_item.name if self._selected_item else _("Screenshot")
+        dialog.set_title(title)
+        dialog.set_default_size(1100, 750)
+
+        # Header Bar
+        header = Adw.HeaderBar()
+        title_widget = Adw.WindowTitle(title=title, subtitle="")
+        header.set_title_widget(title_widget)
+
+        # Prev / Next in Header
+        btn_prev = Gtk.Button.new_from_icon_name("go-previous-symbolic")
+        btn_prev.set_tooltip_text(_("Previous Screenshot"))
+        btn_prev.add_css_class("flat")
+        btn_next = Gtk.Button.new_from_icon_name("go-next-symbolic")
+        btn_next.set_tooltip_text(_("Next Screenshot"))
+        btn_next.add_css_class("flat")
+
+        header.pack_start(btn_prev)
+        header.pack_start(btn_next)
+
+        # Fullscreen toggle button
+        btn_fullscreen = Gtk.Button.new_from_icon_name("view-fullscreen-symbolic")
+        btn_fullscreen.set_tooltip_text(_("Toggle Fullscreen"))
+        btn_fullscreen.add_css_class("flat")
+        header.pack_end(btn_fullscreen)
+
+        # Content Box
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        main_box.append(header)
+
+        # Black backdrop for image viewer
+        img_container = Gtk.Box()
+        img_container.set_hexpand(True)
+        img_container.set_vexpand(True)
+        img_container.add_css_class("store-lightbox-bg")
+
+        picture = Gtk.Picture()
+        picture.set_can_shrink(True)
+        picture.set_content_fit(Gtk.ContentFit.CONTAIN)
+        picture.set_hexpand(True)
+        picture.set_vexpand(True)
+        img_container.append(picture)
+        main_box.append(img_container)
+
+        dialog.set_child(main_box)
+
+        # State tracking for dialog
+        current_idx = [self._detail_image_index]
+        is_fs = [False]
+
+        def update_image(idx: int) -> None:
+            if not self._detail_images:
+                return
+            current_idx[0] = idx % len(self._detail_images)
+            url = self._detail_images[current_idx[0]]
+            counter = _("Image {cur} of {tot}").format(
+                cur=current_idx[0] + 1, tot=len(self._detail_images)
+            )
+            title_widget.set_subtitle(counter)
+            self._set_active_screenshot_index(current_idx[0])
+
+            cached_path = _get_icon_cache_path(url)
+            if cached_path.is_file() and cached_path.stat().st_size > 0:
+                picture.set_filename(str(cached_path))
+            else:
+                self._load_picture_async(url, picture, on_loaded=lambda p: picture.set_filename(p))
+
+        def on_prev(_: Gtk.Button) -> None:
+            update_image(current_idx[0] - 1)
+
+        def on_next(_: Gtk.Button) -> None:
+            update_image(current_idx[0] + 1)
+
+        def toggle_fullscreen(_: Gtk.Button) -> None:
+            if is_fs[0]:
+                dialog.unfullscreen()
+                is_fs[0] = False
+                btn_fullscreen.set_icon_name("view-fullscreen-symbolic")
+            else:
+                dialog.fullscreen()
+                is_fs[0] = True
+                btn_fullscreen.set_icon_name("view-restore-symbolic")
+
+        btn_prev.connect("clicked", on_prev)
+        btn_next.connect("clicked", on_next)
+        btn_fullscreen.connect("clicked", toggle_fullscreen)
+
+        # Keyboard shortcuts
+        key_controller = Gtk.EventControllerKey()
+
+        def on_key_pressed(
+            _ctrl: Gtk.EventControllerKey,
+            keyval: int,
+            _keycode: int,
+            _state: Gdk.ModifierType,
+        ) -> bool:
+            if keyval == Gdk.KEY_Left:
+                on_prev(btn_prev)
+                return True
+            elif keyval == Gdk.KEY_Right:
+                on_next(btn_next)
+                return True
+            elif keyval == Gdk.KEY_F11:
+                toggle_fullscreen(btn_fullscreen)
+                return True
+            elif keyval == Gdk.KEY_Escape:
+                if is_fs[0]:
+                    toggle_fullscreen(btn_fullscreen)
+                else:
+                    dialog.close()
+                return True
+            return False
+
+        key_controller.connect("key-pressed", on_key_pressed)
+        dialog.add_controller(key_controller)
+
+        has_multiple = len(self._detail_images) > 1
+        btn_prev.set_visible(has_multiple)
+        btn_next.set_visible(has_multiple)
+
+        update_image(self._detail_image_index)
+        dialog.present()
+
+    def _load_picture_async(
+        self,
+        url: str,
+        picture: Gtk.Picture,
+        on_loaded: Callable[[str], None] | None = None,
+    ) -> None:
+        """Download or fetch cached screenshot and set it on GtkPicture."""
+        cache_path = _get_icon_cache_path(url)
+        if cache_path.is_file() and cache_path.stat().st_size > 0:
+            picture.set_filename(str(cache_path))
+            if on_loaded:
+                on_loaded(str(cache_path))
+            return
+
+        def worker() -> None:
+            try:
+                data = _download_icon_bytes(url, timeout=15.0)
+                if data:
+                    cache_path.parent.mkdir(parents=True, exist_ok=True)
+                    cache_path.write_bytes(data)
+
+                    def apply() -> None:
+                        path_str = str(cache_path)
+                        if self._selected_item and (
+                            self._selected_item.screenshot_url == url or url in self._detail_images
+                        ):
+                            picture.set_filename(path_str)
+                        if on_loaded:
+                            on_loaded(path_str)
+
+                    GLib.idle_add(apply)
+            except Exception as err:
+                logger.debug("Failed to cache screenshot %s: %s", url, err)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _show_confirmation_dialog(
+        self,
+        title: str,
+        body: str,
+        confirm_label: str,
+        appearance: Any,
+        parent_win: Gtk.Window | None,
+        on_confirm: Callable[[], None],
+    ) -> None:
+        """Display confirmation dialog supporting Adw.MessageDialog or fallback."""
+        if hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(parent_win, title, body)
+            dialog.add_response("cancel", _("Cancel"))
+            dialog.add_response("confirm", confirm_label)
+            if appearance is not None:
+                dialog.set_response_appearance("confirm", appearance)
+            dialog.set_default_response("confirm")
+            dialog.set_close_response("cancel")
+
+            def on_response(_dlg: Any, response: str) -> None:
+                if response == "confirm":
+                    on_confirm()
+
+            dialog.connect("response", on_response)
+            dialog.present()
+        else:
+            on_confirm()
+
+    def _on_detail_install_clicked(self) -> None:
+        """Handle install button click with user confirmation."""
+        item = self._selected_item
+        if not item or self._is_detail_action_in_progress:
+            return
+
+        root_win = self.widget.get_root()
+        parent_win = root_win if isinstance(root_win, Gtk.Window) else None
+
+        title = _("Install Extension?")
+        if item.is_compatible:
+            body = _(
+                "Do you want to download and install '{name}' ({uuid}) from extensions.gnome.org?"
+            ).format(name=item.name, uuid=item.uuid)
+        else:
+            body = _(
+                "Warning: '{name}' does not officially support your GNOME Shell version.\n\n"
+                "Installation may cause errors or system instability.\n"
+                "Do you still want to proceed?"
+            ).format(name=item.name)
+
+        appearance = (
+            Adw.ResponseAppearance.SUGGESTED if hasattr(Adw, "ResponseAppearance") else None
+        )
+        self._show_confirmation_dialog(
+            title=title,
+            body=body,
+            confirm_label=_("Install"),
+            appearance=appearance,
+            parent_win=parent_win,
+            on_confirm=lambda: self._execute_install(item),
+        )
+
+    def _execute_install(self, item: ExtensionItem) -> None:
+        """Perform asynchronous installation of an extension."""
+        if not self.manager.extension_backend:
+            return
+
+        self._is_detail_action_in_progress = True
+        if self.detail_progress_box is not None:
+            self.detail_progress_box.set_visible(True)
+        if self.detail_progress_spinner is not None:
+            self.detail_progress_spinner.set_spinning(True)
+        if self.detail_progress_label is not None:
+            self.detail_progress_label.set_text(_("Installing extension..."))
+
+        if self.btn_detail_install is not None:
+            self.btn_detail_install.set_sensitive(False)
+
+        def worker() -> None:
+            success = False
+            err_msg = ""
+            try:
+                if self.manager.extension_backend:
+                    success = self.manager.extension_backend.install(item.uuid)
+            except Exception as err:
+                err_msg = str(err)
+                logger.error("Failed installing extension %s: %s", item.uuid, err)
+
+            def finish() -> None:
+                self._is_detail_action_in_progress = False
+                if self.detail_progress_box is not None:
+                    self.detail_progress_box.set_visible(False)
+                if self.detail_progress_spinner is not None:
+                    self.detail_progress_spinner.set_spinning(False)
+                if self.btn_detail_install is not None:
+                    self.btn_detail_install.set_sensitive(True)
+
+                if success:
+                    item.is_installed = True
+                    item.is_enabled = True
+                    if self.manager.extensions:
+                        self.manager.extensions.list_extensions()
+                    self._update_detail_actions(item)
+                    msg = _("Extension '{name}' installed successfully.").format(name=item.name)
+                    if self.on_notify_message:
+                        self.on_notify_message(msg, False)
+                else:
+                    msg = _("Failed to install extension '{name}': {error}").format(
+                        name=item.name, error=err_msg or _("Unknown error")
+                    )
+                    if self.on_notify_message:
+                        self.on_notify_message(msg, True)
+
+            GLib.idle_add(finish)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_detail_remove_clicked(self) -> None:
+        """Handle remove button click with user confirmation."""
+        item = self._selected_item
+        if not item or self._is_detail_action_in_progress:
+            return
+
+        root_win = self.widget.get_root()
+        parent_win = root_win if isinstance(root_win, Gtk.Window) else None
+
+        title = _("Uninstall Extension?")
+        body = _("Are you sure you want to uninstall '{name}' ({uuid})?").format(
+            name=item.name, uuid=item.uuid
+        )
+
+        appearance = (
+            Adw.ResponseAppearance.DESTRUCTIVE if hasattr(Adw, "ResponseAppearance") else None
+        )
+        self._show_confirmation_dialog(
+            title=title,
+            body=body,
+            confirm_label=_("Uninstall"),
+            appearance=appearance,
+            parent_win=parent_win,
+            on_confirm=lambda: self._execute_remove(item),
+        )
+
+    def _execute_remove(self, item: ExtensionItem) -> None:
+        """Perform removal of an extension."""
+        if not self.manager.extensions:
+            return
+
+        ok = self.manager.extensions.uninstall_extension(item.uuid)
+        if ok:
+            item.is_installed = False
+            item.is_enabled = False
+            self._update_detail_actions(item)
+            msg = _("Extension '{name}' removed.").format(name=item.name)
+            if self.on_notify_message:
+                self.on_notify_message(msg, False)
+            self.refresh()
+        else:
+            msg = _("Failed to remove extension '{name}'.").format(name=item.name)
+            if self.on_notify_message:
+                self.on_notify_message(msg, True)
+
+    def _on_detail_switch_state_set(self, switch: Gtk.Switch, state: bool) -> bool:
+        """Handle toggling extension enabled state from the detail view."""
+        item = self._selected_item
+        if not item or not self.manager.extensions:
+            return False
+
+        ok = self.manager.extensions.toggle_extension(item.uuid, state)
+        item.is_enabled = state if ok else not state
+
+        if ok:
+            msg = (
+                _("Extension '{name}' enabled.").format(name=item.name)
+                if state
+                else _("Extension '{name}' disabled.").format(name=item.name)
+            )
+            if self.on_notify_message:
+                self.on_notify_message(msg, False)
+        else:
+            msg = _("Failed to toggle extension '{name}'.").format(name=item.name)
+            if self.on_notify_message:
+                self.on_notify_message(msg, True)
+            switch.set_state(not state)
+
+        return True
+
+    def _on_detail_prefs_clicked(self) -> None:
+        """Open settings dialog for the currently selected extension."""
+        if self._selected_item:
+            self._open_prefs(self._selected_item.uuid)
+
+    def _on_detail_website_clicked(self) -> None:
+        """Open website for the currently selected extension."""
+        if self._selected_item:
+            url = (
+                self._selected_item.link or f"{EGO_BASE_URL}/extension/{self._selected_item.uuid}/"
+            )
+            self._open_url(url)
 
     def _on_remote_switch_toggled(self, item: ExtensionItem, state: bool) -> bool:
         """Handle toggling an installed extension from the remote/updatable list."""

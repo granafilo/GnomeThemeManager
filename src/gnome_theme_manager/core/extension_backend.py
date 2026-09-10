@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import urllib.error
@@ -61,13 +62,14 @@ class ExtensionItem:
 
     uuid: str
     name: str
-    description: str
+    description: str = ""
     creator: str = ""
     creator_url: str = ""
     pk: int = 0
     link: str = ""
     icon_url: str | None = None
     screenshot_url: str | None = None
+    screenshots: list[str] = field(default_factory=list)
     downloads: int = 0
     popularity: int = 0
     rating: float | None = None
@@ -293,6 +295,32 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             else str(creator_url_raw or "")
         )
 
+        screenshots: list[str] = []
+        if screenshot_url:
+            screenshots.append(screenshot_url)
+        raw_shots = raw.get("screenshots")
+        if isinstance(raw_shots, list):
+            for s in raw_shots:
+                s_str = str(s).strip()
+                if s_str:
+                    s_url = f"{EGO_BASE_URL}{s_str}" if s_str.startswith("/") else s_str
+                    if s_url not in screenshots:
+                        screenshots.append(s_url)
+
+        raw_desc = str(raw.get("description", ""))
+        embedded_imgs = re.findall(
+            r'<img[^>]+src=["\']([^"\']+)["\']', raw_desc, flags=re.IGNORECASE
+        )
+        embedded_md = re.findall(r"!\[.*?\]\((https?://[^\s)]+)\)", raw_desc)
+        for img_url in embedded_imgs + embedded_md:
+            img_url = img_url.strip()
+            if img_url.startswith("/"):
+                img_url = f"{EGO_BASE_URL}{img_url}"
+            if img_url.startswith(("http://", "https://")) and img_url not in screenshots:
+                screenshots.append(img_url)
+
+        primary_screenshot = screenshots[0] if screenshots else None
+
         item = ExtensionItem(
             uuid=uuid,
             name=str(raw.get("name", "")),
@@ -302,7 +330,8 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             pk=int(raw.get("pk", 0)),
             link=link_url,
             icon_url=icon_url,
-            screenshot_url=screenshot_url,
+            screenshot_url=primary_screenshot,
+            screenshots=screenshots,
             downloads=int(raw.get("downloads", 0)),
             popularity=popularity,
             rating=rating,
