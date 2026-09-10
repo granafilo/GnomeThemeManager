@@ -12,6 +12,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, GLib, Gtk
 
+from gnome_theme_manager.core.errors import ExtensionNetworkError
 from gnome_theme_manager.core.extension_backend import (
     ExtensionItem,
     ExtensionSearchResult,
@@ -394,13 +395,13 @@ def test_extensions_page_updatable_check(mock_manager: MagicMock) -> None:
 
 
 def test_extensions_page_remote_error_handling(mock_manager: MagicMock) -> None:
-    """Test remote error handler switching to error page."""
+    """Test remote error handler switching to error page on server error."""
     page = ExtensionsPage(manager=mock_manager)
-    page._on_remote_search_error("Connection timed out")
+    page._on_remote_search_error("500 Internal Server Error")
 
     assert page.status_stack.get_visible_child_name() == "error"
     assert page.error_status_page is not None
-    assert "Connection timed out" in page.error_status_page.get_description()
+    assert "500 Internal Server Error" in page.error_status_page.get_description()
 
 
 def test_extensions_page_open_url_normalization(mock_manager: MagicMock) -> None:
@@ -663,3 +664,84 @@ def test_extensions_page_single_screenshot(mock_manager: MagicMock) -> None:
     )
     page.show_details(no_shot_item)
     assert page.detail_screenshot_container.get_visible() is False
+
+
+def test_extensions_page_offline_state_and_recovery(mock_manager: MagicMock) -> None:
+    """Test transitioning to offline status page on network error and recovering to installed."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    # Trigger search error with network error
+    err = ExtensionNetworkError("Temporary failure in name resolution")
+    page._on_remote_search_error(str(err), is_offline=True)
+
+    assert page.status_stack.get_visible_child_name() == "offline"
+    assert page.offline_status_page is not None
+    assert page.btn_offline_retry is not None
+    assert page.btn_offline_switch_installed is not None
+
+    # Clicking switch to installed switches filter mode back to installed
+    page._switch_to_installed_filter()
+    assert page._filter_mode == "installed"
+
+
+def test_extensions_page_error_state(mock_manager: MagicMock) -> None:
+    """Test transitioning to generic error page on non-network failure."""
+    page = ExtensionsPage(manager=mock_manager)
+
+    page._on_remote_search_error("Internal Server Error 500", is_offline=False)
+
+    assert page.status_stack.get_visible_child_name() == "error"
+    assert page.error_status_page is not None
+    assert "Internal Server Error 500" in page.error_status_page.get_description()
+
+
+def test_extensions_page_loading_callback(mock_manager: MagicMock) -> None:
+    """Test on_loading_changed is fired during remote operations."""
+    page = ExtensionsPage(manager=mock_manager)
+    loading_states: list[bool] = []
+    page.on_loading_changed = lambda state: loading_states.append(state)
+
+    result = ExtensionSearchResult(extensions=[], total=0, numpages=1, page=1)
+    page._on_remote_search_success(result, reset_page=True)
+
+    assert False in loading_states
+
+
+def test_extensions_page_detail_update_flow(mock_manager: MagicMock) -> None:
+    """Test update flow: confirmation dialog -> manager install -> state update & notification."""
+    mock_manager.extension_backend.install.return_value = True
+    page = ExtensionsPage(manager=mock_manager)
+    notify_mock = MagicMock()
+    page.on_notify_message = notify_mock
+
+    item = ExtensionItem(
+        uuid="appindicator@ubuntu.com",
+        name="AppIndicator Support",
+        description="Tray icons for GNOME.",
+        is_installed=True,
+        is_enabled=True,
+        has_update=True,
+        version="58",
+        installed_version="57",
+    )
+
+    page.show_details(item)
+    assert page.btn_detail_update is not None
+    assert page.btn_detail_update.get_visible() is True
+
+    # Simulate clicking update with confirmation dialog accepted
+    with patch.object(
+        page, "_show_confirmation_dialog", side_effect=lambda **kw: kw["on_confirm"]()
+    ):
+        page._on_detail_update_clicked()
+
+    import time
+
+    timeout = time.time() + 2.0
+    while time.time() < timeout and item.has_update:
+        GLib.MainContext.default().iteration(False)
+
+    mock_manager.extension_backend.install.assert_called_with("appindicator@ubuntu.com")
+    assert item.has_update is False
+    assert page.btn_detail_update.get_visible() is False
+    assert notify_mock.called

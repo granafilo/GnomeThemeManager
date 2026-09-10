@@ -38,6 +38,7 @@ except (ImportError, ModuleNotFoundError):
     _REQUESTS_AVAILABLE = False
 
 from ...core.constants import STATE_DIR
+from ...core.errors import ExtensionNetworkError
 from ...core.extension_backend import EGO_BASE_URL, ExtensionItem, ExtensionSearchResult
 from ...core.extensions import GnomeExtension
 from ...core.manager import ThemeManager
@@ -73,6 +74,26 @@ def _download_icon_bytes(url: str, timeout: float = 10.0) -> bytes | None:
     except Exception as err:
         logger.debug("Failed to download icon from %s: %s", url, err)
     return None
+
+
+def _is_offline_error(err: Any) -> bool:
+    """Determine whether an error is caused by missing internet connectivity."""
+    if isinstance(err, ExtensionNetworkError):
+        return True
+    msg = str(err).lower()
+    offline_keywords = (
+        "network error",
+        "offline",
+        "temporary failure in name resolution",
+        "nameresolutionerror",
+        "connection refused",
+        "timed out",
+        "timeout",
+        "network is unreachable",
+        "no route to host",
+        "connection reset",
+    )
+    return any(k in msg for k in offline_keywords)
 
 
 def _clean_html_description(raw_html: str) -> str:
@@ -176,6 +197,13 @@ class ExtensionsPage:
         )
         self.error_status_page: Adw.StatusPage | None = self.builder.get_object("error_status_page")
         self.btn_error_retry: Gtk.Button | None = self.builder.get_object("btn_error_retry")
+        self.offline_status_page: Adw.StatusPage | None = self.builder.get_object(
+            "offline_status_page"
+        )
+        self.btn_offline_retry: Gtk.Button | None = self.builder.get_object("btn_offline_retry")
+        self.btn_offline_switch_installed: Gtk.Button | None = self.builder.get_object(
+            "btn_offline_switch_installed"
+        )
 
         # Installation options widgets
         self.install_banner: Adw.Banner | None = self.builder.get_object("install_banner")
@@ -254,6 +282,7 @@ class ExtensionsPage:
             "detail_switch_enable"
         )
         self.btn_detail_remove: Gtk.Button | None = self.builder.get_object("btn_detail_remove")
+        self.btn_detail_update: Gtk.Button | None = self.builder.get_object("btn_detail_update")
         self.btn_detail_install: Gtk.Button | None = self.builder.get_object("btn_detail_install")
 
         self._selected_item: ExtensionItem | None = None
@@ -346,11 +375,26 @@ class ExtensionsPage:
         if self.error_status_page is not None:
             self.error_status_page.set_title(_("Catalog Unavailable"))
             self.error_status_page.set_description(
-                _("Unable to query online extensions catalog. Check your internet connection.")
+                _("Unable to query online extensions catalog. Please try again later.")
             )
 
         if self.btn_error_retry is not None:
             self.btn_error_retry.set_label(_("Retry"))
+
+        if self.offline_status_page is not None:
+            self.offline_status_page.set_title(_("You Are Offline"))
+            self.offline_status_page.set_description(
+                _(
+                    "An internet connection is required to browse the online catalog."
+                    " You can still manage all your installed extensions."
+                )
+            )
+
+        if self.btn_offline_retry is not None:
+            self.btn_offline_retry.set_label(_("Retry Connection"))
+
+        if self.btn_offline_switch_installed is not None:
+            self.btn_offline_switch_installed.set_label(_("View Installed"))
 
         if self.btn_load_more is not None:
             self.btn_load_more.set_label(_("Load more extensions..."))
@@ -394,6 +438,8 @@ class ExtensionsPage:
             self.detail_switch_label.set_label(_("Enabled"))
         if self.btn_detail_remove is not None:
             self.btn_detail_remove.set_label(_("Uninstall"))
+        if self.btn_detail_update is not None:
+            self.btn_detail_update.set_label(_("Update Extension"))
         if self.btn_detail_install is not None:
             self.btn_detail_install.set_label(_("Install"))
 
@@ -451,9 +497,15 @@ class ExtensionsPage:
             if adj is not None:
                 adj.connect("value-changed", self._on_scroll_value_changed)
 
-        # Error retry
+        # Error and offline retry
         if self.btn_error_retry is not None:
             self.btn_error_retry.connect("clicked", lambda _: self.refresh())
+        if self.btn_offline_retry is not None:
+            self.btn_offline_retry.connect("clicked", lambda _: self.refresh())
+        if self.btn_offline_switch_installed is not None:
+            self.btn_offline_switch_installed.connect(
+                "clicked", lambda _: self._switch_to_installed_filter()
+            )
 
         # Detail view signals
         if self.btn_detail_back is not None:
@@ -476,6 +528,8 @@ class ExtensionsPage:
             self.detail_switch_enable.connect("state-set", self._on_detail_switch_state_set)
         if self.btn_detail_remove is not None:
             self.btn_detail_remove.connect("clicked", lambda _: self._on_detail_remove_clicked())
+        if self.btn_detail_update is not None:
+            self.btn_detail_update.connect("clicked", lambda _: self._on_detail_update_clicked())
         if self.btn_detail_install is not None:
             self.btn_detail_install.connect("clicked", lambda _: self._on_detail_install_clicked())
 
@@ -487,6 +541,13 @@ class ExtensionsPage:
         if 0 <= idx < len(self.FILTER_OPTIONS):
             mode = self.FILTER_OPTIONS[idx][1]
             self._set_filter_mode(mode)
+
+    def _switch_to_installed_filter(self) -> None:
+        """Switch filter view to installed extensions."""
+        if self.filter_dropdown is not None:
+            self.filter_dropdown.set_selected(0)
+        else:
+            self._set_filter_mode("installed")
 
     def _on_sort_changed(self) -> None:
         """Handle selection change in sort dropdown."""
@@ -810,6 +871,8 @@ class ExtensionsPage:
             self.status_stack.set_visible_child_name("searching")
 
         self._is_loading_remote = True
+        if self.on_loading_changed:
+            self.on_loading_changed(True)
         query = self.search_entry.get_text().strip()
         page = self._current_page
 
@@ -827,7 +890,8 @@ class ExtensionsPage:
                 GLib.idle_add(self._on_remote_search_success, result, reset_page)
             except Exception as err:
                 logger.error("Remote search error: %s", err)
-                GLib.idle_add(self._on_remote_search_error, str(err))
+                is_off = _is_offline_error(err)
+                GLib.idle_add(self._on_remote_search_error, str(err), is_off)
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -835,6 +899,8 @@ class ExtensionsPage:
         """Handle successful response from remote catalog."""
         self._is_loading_remote = False
         self._is_loading_more = False
+        if self.on_loading_changed:
+            self.on_loading_changed(False)
         self._current_page = result.page
         self._numpages = result.numpages
 
@@ -875,15 +941,22 @@ class ExtensionsPage:
 
         return False
 
-    def _on_remote_search_error(self, err_msg: str) -> bool:
+    def _on_remote_search_error(self, err_msg: str, is_offline: bool = False) -> bool:
         """Handle error querying online catalog."""
         self._is_loading_remote = False
         self._is_loading_more = False
-        if self.error_status_page is not None:
-            self.error_status_page.set_description(
-                _("Unable to connect to extensions catalog: {err}").format(err=err_msg)
-            )
-        self.status_stack.set_visible_child_name("error")
+        if self.on_loading_changed:
+            self.on_loading_changed(False)
+
+        if is_offline or _is_offline_error(err_msg):
+            self.status_stack.set_visible_child_name("offline")
+        else:
+            if self.error_status_page is not None:
+                self.error_status_page.set_description(
+                    _("Unable to query online extensions catalog: {err}").format(err=err_msg)
+                )
+            self.status_stack.set_visible_child_name("error")
+
         if self.lazy_load_box is not None:
             self.lazy_load_box.set_visible(False)
         return False
@@ -925,6 +998,8 @@ class ExtensionsPage:
         """Check for updates for installed extensions."""
         self.status_stack.set_visible_child_name("searching")
         self._clear_remote_rows()
+        if self.on_loading_changed:
+            self.on_loading_changed(True)
 
         def worker() -> None:
             backend = self.manager.extension_backend
@@ -933,12 +1008,15 @@ class ExtensionsPage:
                 GLib.idle_add(self._on_updatable_loaded, items)
             except Exception as err:
                 logger.error("Error checking updates: %s", err)
-                GLib.idle_add(self._on_remote_search_error, str(err))
+                is_off = _is_offline_error(err)
+                GLib.idle_add(self._on_remote_search_error, str(err), is_off)
 
         threading.Thread(target=worker, daemon=True).start()
 
     def _on_updatable_loaded(self, items: list[ExtensionItem]) -> bool:
         """Populate view with updatable extensions."""
+        if self.on_loading_changed:
+            self.on_loading_changed(False)
         self._remote_items = list(items)
         self._filter_updatable_rows(self.search_entry.get_text().strip())
         return False
@@ -1248,6 +1326,9 @@ class ExtensionsPage:
             if self.btn_detail_install is not None:
                 self.btn_detail_install.set_visible(False)
 
+            if self.btn_detail_update is not None:
+                self.btn_detail_update.set_visible(bool(item.has_update))
+
             if self.detail_switch_box is not None:
                 self.detail_switch_box.set_visible(True)
             if self.detail_switch_enable is not None:
@@ -1265,6 +1346,8 @@ class ExtensionsPage:
             if self.btn_detail_prefs is not None:
                 self.btn_detail_prefs.set_visible(can_configure)
         else:
+            if self.btn_detail_update is not None:
+                self.btn_detail_update.set_visible(False)
             if self.btn_detail_install is not None:
                 self.btn_detail_install.set_visible(True)
                 self.btn_detail_install.set_sensitive(True)
@@ -1600,8 +1683,35 @@ class ExtensionsPage:
             on_confirm=lambda: self._execute_install(item),
         )
 
-    def _execute_install(self, item: ExtensionItem) -> None:
-        """Perform asynchronous installation of an extension."""
+    def _on_detail_update_clicked(self) -> None:
+        """Handle update button click with user confirmation."""
+        item = self._selected_item
+        if not item or self._is_detail_action_in_progress:
+            return
+
+        root_win = self.widget.get_root()
+        parent_win = root_win if isinstance(root_win, Gtk.Window) else None
+
+        title = _("Update Extension?")
+        version_str = f"v{item.version}" if item.version else ""
+        body = _("Do you want to update '{name}' to version {version}?").format(
+            name=item.name, version=version_str
+        )
+
+        appearance = (
+            Adw.ResponseAppearance.SUGGESTED if hasattr(Adw, "ResponseAppearance") else None
+        )
+        self._show_confirmation_dialog(
+            title=title,
+            body=body,
+            confirm_label=_("Update Extension"),
+            appearance=appearance,
+            parent_win=parent_win,
+            on_confirm=lambda: self._execute_install(item, is_update=True),
+        )
+
+    def _execute_install(self, item: ExtensionItem, is_update: bool = False) -> None:
+        """Perform asynchronous installation or update of an extension."""
         if not self.manager.extension_backend:
             return
 
@@ -1611,10 +1721,13 @@ class ExtensionsPage:
         if self.detail_progress_spinner is not None:
             self.detail_progress_spinner.set_spinning(True)
         if self.detail_progress_label is not None:
-            self.detail_progress_label.set_text(_("Installing extension..."))
+            action_label = _("Updating extension...") if is_update else _("Installing extension...")
+            self.detail_progress_label.set_text(action_label)
 
         if self.btn_detail_install is not None:
             self.btn_detail_install.set_sensitive(False)
+        if self.btn_detail_update is not None:
+            self.btn_detail_update.set_sensitive(False)
 
         def worker() -> None:
             success = False
@@ -1624,7 +1737,7 @@ class ExtensionsPage:
                     success = self.manager.extension_backend.install(item.uuid)
             except Exception as err:
                 err_msg = str(err)
-                logger.error("Failed installing extension %s: %s", item.uuid, err)
+                logger.error("Failed installing/updating extension %s: %s", item.uuid, err)
 
             def finish() -> None:
                 self._is_detail_action_in_progress = False
@@ -1634,14 +1747,22 @@ class ExtensionsPage:
                     self.detail_progress_spinner.set_spinning(False)
                 if self.btn_detail_install is not None:
                     self.btn_detail_install.set_sensitive(True)
+                if self.btn_detail_update is not None:
+                    self.btn_detail_update.set_sensitive(True)
 
                 if success:
                     item.is_installed = True
                     item.is_enabled = True
+                    item.has_update = False
                     if self.manager.extensions:
                         self.manager.extensions.list_extensions()
                     self._update_detail_actions(item)
-                    msg = _("Extension '{name}' installed successfully.").format(name=item.name)
+                    self._sync_item_in_catalog(item)
+                    msg = (
+                        _("Extension '{name}' updated successfully.").format(name=item.name)
+                        if is_update
+                        else _("Extension '{name}' installed successfully.").format(name=item.name)
+                    )
                     if self.on_notify_message:
                         self.on_notify_message(msg, False)
                 else:
@@ -1690,15 +1811,29 @@ class ExtensionsPage:
         if ok:
             item.is_installed = False
             item.is_enabled = False
+            item.has_update = False
             self._update_detail_actions(item)
+            self._sync_item_in_catalog(item)
             msg = _("Extension '{name}' removed.").format(name=item.name)
             if self.on_notify_message:
                 self.on_notify_message(msg, False)
-            self.refresh()
+            if self._filter_mode == "installed":
+                self.refresh()
         else:
             msg = _("Failed to remove extension '{name}'.").format(name=item.name)
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
+
+    def _sync_item_in_catalog(self, item: ExtensionItem) -> None:
+        """Synchronize extension state across remote items and active filter."""
+        for it in self._remote_items:
+            if it.uuid == item.uuid:
+                it.is_installed = item.is_installed
+                it.is_enabled = item.is_enabled
+                it.has_update = item.has_update
+                break
+        if self._filter_mode == "updatable":
+            self._filter_updatable_rows(self.search_entry.get_text().strip())
 
     def _on_detail_switch_state_set(self, switch: Gtk.Switch, state: bool) -> bool:
         """Handle toggling extension enabled state from the detail view."""
@@ -1708,6 +1843,7 @@ class ExtensionsPage:
 
         ok = self.manager.extensions.toggle_extension(item.uuid, state)
         item.is_enabled = state if ok else not state
+        self._sync_item_in_catalog(item)
 
         if ok:
             msg = (

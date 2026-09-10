@@ -3461,3 +3461,31 @@ msgstr "Informazioni"
 msgid "Uninstall"
 msgstr "Disinstalla"
 
+msgid "You Are Offline"
+msgstr "Sei offline"
+
+msgid "An internet connection is required to browse the online catalog. You can still manage all your installed extensions."
+msgstr "È necessaria una connessione Internet per sfogliare il catalogo online. Puoi comunque gestire tutte le estensioni installate."
+
+msgid "Retry Connection"
+msgstr "Riprova connessione"
+
+msgid "View Installed"
+msgstr "Visualizza installate"
+
+msgid "Update Extension"
+msgstr "Aggiorna estensione"
+
+msgid "Update Extension?"
+msgstr "Aggiornare l'estensione?"
+
+msgid "Do you want to update '{name}' to version {version}?"
+msgstr "Vuoi aggiornare '{name}' alla versione {version}?"
+
+msgid "Extension '{name}' updated successfully."
+msgstr "Estensione '{name}' aggiornata con successo."
+
+msgid "Updating extension..."
+msgstr "Aggiornamento dell'estensione..."
+
+
