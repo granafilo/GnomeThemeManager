@@ -14,6 +14,7 @@ from gnome_theme_manager.core.errors import (
     ExtensionError,
     ExtensionIncompatibleError,
     ExtensionInstallError,
+    ExtensionNetworkError,
     ExtensionNotFoundError,
 )
 from gnome_theme_manager.core.extension_backend import (
@@ -245,3 +246,132 @@ def test_rest_backend_parse_multiple_screenshots(mock_mgr: ExtensionsManager) ->
     assert item.screenshots[1] == "https://extensions.gnome.org/shot4.png"
     assert item.screenshots[2] == "https://extensions.gnome.org/images/shot2.png"
     assert item.screenshots[3] == "https://example.com/shot3.png"
+
+
+def test_rest_backend_cache_search_and_offline_fallback(
+    tmp_path: Path, mock_mgr: ExtensionsManager
+) -> None:
+    cache_dir = tmp_path / "ext_cache"
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr, cache_dir=cache_dir)
+
+    mock_payload = {
+        "total": 1,
+        "numpages": 1,
+        "extensions": [
+            {
+                "uuid": "cached@example.com",
+                "name": "Cached Extension",
+                "description": "Cached desc",
+                "pk": 555,
+                "shell_version_map": {"46": {"pk": 555, "version": 1}},
+            }
+        ],
+    }
+
+    # 1. First call succeeds and populates cache
+    with patch.object(backend, "_http_get_json", return_value=mock_payload):
+        res = backend.search(query="cached", shell_version="46")
+        assert res.total == 1
+        assert res.from_cache is False
+        assert len(res.extensions) == 1
+        assert res.extensions[0].uuid == "cached@example.com"
+
+    # Verify cache file was written
+    cache_files = list(cache_dir.glob("search_*.json"))
+    assert len(cache_files) == 1
+
+    # 2. Second call fails with network error: fallback to offline cache
+    with patch.object(
+        backend,
+        "_http_get_json",
+        side_effect=ExtensionNetworkError("Network unreachable"),
+    ):
+        res_offline = backend.search(query="cached", shell_version="46")
+        assert res_offline.total == 1
+        assert res_offline.from_cache is True
+        assert res_offline.extensions[0].uuid == "cached@example.com"
+
+
+def test_rest_backend_cache_get_details(tmp_path: Path, mock_mgr: ExtensionsManager) -> None:
+    cache_dir = tmp_path / "ext_cache"
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr, cache_dir=cache_dir)
+    uuid = "detail_cached@example.com"
+
+    mock_detail = {
+        "uuid": uuid,
+        "name": "Detail Cached",
+        "description": "Offline detail desc",
+        "pk": 888,
+    }
+
+    # 1. First call populates cache
+    with patch.object(backend, "_http_get_json", return_value=mock_detail):
+        det = backend.get_details(uuid)
+        assert det is not None
+        assert det.name == "Detail Cached"
+
+    # Verify detail cache file was written
+    detail_cache_files = list(cache_dir.glob("detail_*.json"))
+    assert len(detail_cache_files) == 1
+
+    # 2. Network error falls back to cached details
+    with patch.object(
+        backend,
+        "_http_get_json",
+        side_effect=ExtensionNetworkError("Connection refused"),
+    ):
+        det_offline = backend.get_details(uuid)
+        assert det_offline is not None
+        assert det_offline.uuid == uuid
+        assert det_offline.name == "Detail Cached"
+
+
+def test_rest_backend_download_bundle_rollback_on_failure(
+    tmp_path: Path, mock_mgr: ExtensionsManager
+) -> None:
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    target_dir = tmp_path / "bundles"
+    uuid = "rollback@example.com"
+
+    item = ExtensionItem(
+        uuid=uuid,
+        name="Rollback Extension",
+        shell_version_map={"46": {"pk": 111, "version": 1}},
+    )
+
+    with patch.object(backend, "get_details", return_value=item):
+        if backend._session is not None:
+            # Simulate network failure during chunk write
+            mock_resp = MagicMock()
+            mock_resp.iter_content.side_effect = RuntimeError("Connection dropped")
+            mock_resp.raise_for_status.return_value = None
+            with patch.object(backend._session, "get", return_value=mock_resp):
+                with pytest.raises(ExtensionNetworkError):
+                    backend.download_bundle(uuid, target_dir=target_dir, shell_version="46")
+        else:
+            with patch("urllib.request.urlopen", side_effect=RuntimeError("Connection dropped")):
+                with pytest.raises(ExtensionNetworkError):
+                    backend.download_bundle(uuid, target_dir=target_dir, shell_version="46")
+
+    # Verify partial file is removed (rollback)
+    dest_file = target_dir / f"{uuid}.zip"
+    assert not dest_file.exists()
+
+
+def test_rest_backend_install_rollback_on_failure(
+    tmp_path: Path, mock_mgr: ExtensionsManager
+) -> None:
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    uuid = "fail_install@example.com"
+
+    # Create an invalid zip file
+    bad_bundle = tmp_path / "corrupt.zip"
+    bad_bundle.write_bytes(b"This is not a zip file at all!")
+
+    with patch("shutil.which", return_value=None):
+        with pytest.raises(ExtensionInstallError):
+            backend.install(uuid, bundle_path=bad_bundle)
+
+    # Verify extension directory was completely rolled back and cleaned up
+    user_ext_dir = mock_mgr.user_extensions_dir / uuid
+    assert not user_ext_dir.exists()

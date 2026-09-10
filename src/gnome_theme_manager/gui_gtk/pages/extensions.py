@@ -308,6 +308,15 @@ class ExtensionsPage:
         self._search_debounce_id: int = 0
         self._row_widgets: list[tuple[Adw.PreferencesGroup, Gtk.Widget]] = []
         self._remote_row_widgets: list[Gtk.Widget] = []
+        self._remote_stat_size_group: Gtk.SizeGroup = Gtk.SizeGroup.new(
+            Gtk.SizeGroupMode.HORIZONTAL
+        )
+        self._remote_compat_size_group: Gtk.SizeGroup = Gtk.SizeGroup.new(
+            Gtk.SizeGroupMode.HORIZONTAL
+        )
+        self._remote_action_size_group: Gtk.SizeGroup = Gtk.SizeGroup.new(
+            Gtk.SizeGroupMode.HORIZONTAL
+        )
 
         self.widget.set_visible_child_name("loading")
         self._init_install_options()
@@ -928,6 +937,9 @@ class ExtensionsPage:
 
         self.status_stack.set_visible_child_name("content")
 
+        if getattr(result, "from_cache", False) and self.on_notify_message:
+            self.on_notify_message(_("Offline mode: displaying cached extensions catalog."), False)
+
         has_more = self._current_page < self._numpages
         if self.lazy_load_box is not None:
             self.lazy_load_box.set_visible(has_more)
@@ -1053,6 +1065,9 @@ class ExtensionsPage:
             for row in self._remote_row_widgets:
                 self.remote_extensions_group.remove(row)
         self._remote_row_widgets.clear()
+        self._remote_stat_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.HORIZONTAL)
+        self._remote_compat_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.HORIZONTAL)
+        self._remote_action_size_group = Gtk.SizeGroup.new(Gtk.SizeGroupMode.HORIZONTAL)
 
     def _create_remote_extension_row(self, item: ExtensionItem) -> Adw.ActionRow:
         """Build an AdwActionRow representing an extension with icon, metadata, badges, and action."""
@@ -1086,10 +1101,18 @@ class ExtensionsPage:
         if item.icon_url:
             self._load_icon_async(item.icon_url, img)
 
-        # Suffix 1: Downloads / Rating
+        # Columns container (unifies spacing and right alignment across all rows)
+        suffix_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+        suffix_box.set_valign(Gtk.Align.CENTER)
+        suffix_box.set_halign(Gtk.Align.END)
+        suffix_box.set_hexpand(False)
+
+        # Column 1: Downloads / Rating (unified width across rows)
+        box_stat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        box_stat.set_valign(Gtk.Align.CENTER)
+        box_stat.set_halign(Gtk.Align.END)
+        box_stat.set_hexpand(False)
         if item.rating is not None and item.rating > 0:
-            box_stat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-            box_stat.set_valign(Gtk.Align.CENTER)
             star_icon = Gtk.Image.new_from_icon_name("starred-symbolic")
             star_icon.set_pixel_size(14)
             lbl_stat = Gtk.Label(label=f"{item.rating:.1f}")
@@ -1097,10 +1120,7 @@ class ExtensionsPage:
             lbl_stat.add_css_class("caption")
             box_stat.append(star_icon)
             box_stat.append(lbl_stat)
-            row.add_suffix(box_stat)
         elif item.downloads > 0:
-            box_stat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
-            box_stat.set_valign(Gtk.Align.CENTER)
             dl_icon = Gtk.Image.new_from_icon_name("folder-download-symbolic")
             dl_icon.set_pixel_size(14)
             lbl_stat = Gtk.Label(label=_format_downloads_count(item.downloads))
@@ -1108,11 +1128,15 @@ class ExtensionsPage:
             lbl_stat.add_css_class("caption")
             box_stat.append(dl_icon)
             box_stat.append(lbl_stat)
-            row.add_suffix(box_stat)
+        self._remote_stat_size_group.add_widget(box_stat)
+        suffix_box.append(box_stat)
 
-        # Suffix 2: Compatibility badge
+        # Column 2: Compatibility badge (unified width across rows)
+        box_compat = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        box_compat.set_valign(Gtk.Align.CENTER)
+        box_compat.set_halign(Gtk.Align.CENTER)
+        box_compat.set_hexpand(False)
         lbl_compat = Gtk.Label()
-        lbl_compat.set_valign(Gtk.Align.CENTER)
         lbl_compat.add_css_class("caption")
         if item.is_compatible:
             lbl_compat.set_text(_("Compatible"))
@@ -1120,38 +1144,41 @@ class ExtensionsPage:
         else:
             lbl_compat.set_text(_("Incompatible"))
             lbl_compat.add_css_class("error")
-        row.add_suffix(lbl_compat)
+        box_compat.append(lbl_compat)
+        self._remote_compat_size_group.add_widget(box_compat)
+        suffix_box.append(box_compat)
 
-        # Suffix 3: State / Action buttons
+        # Column 3: State / Action column ("Installed" or "Details", aligned on first letter)
+        action_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        action_box.set_valign(Gtk.Align.CENTER)
+        action_box.set_halign(Gtk.Align.START)
+        action_box.set_hexpand(False)
+
         if item.is_installed:
             lbl_inst = Gtk.Label(label=_("Installed"))
             lbl_inst.set_valign(Gtk.Align.CENTER)
-            lbl_inst.add_css_class("accent")
-            lbl_inst.add_css_class("caption")
-            row.add_suffix(lbl_inst)
+            lbl_inst.set_halign(Gtk.Align.START)
+            lbl_inst.add_css_class("dim-label")
+            action_box.append(lbl_inst)
 
             if item.has_update:
                 lbl_up = Gtk.Label(label=_("Update"))
                 lbl_up.set_valign(Gtk.Align.CENTER)
                 lbl_up.add_css_class("warning")
                 lbl_up.add_css_class("caption")
-                row.add_suffix(lbl_up)
-
-            switch = Gtk.Switch()
-            switch.set_active(item.is_enabled)
-            switch.set_valign(Gtk.Align.CENTER)
-            switch.connect(
-                "state-set",
-                lambda _sw, state, it=item: self._on_remote_switch_toggled(it, state),
-            )
-            row.add_suffix(switch)
+                action_box.append(lbl_up)
         else:
-            btn_details = Gtk.Button(label=_("Details"))
-            btn_details.set_valign(Gtk.Align.CENTER)
-            btn_details.add_css_class("flat")
-            btn_details.set_tooltip_text(_("View extension details"))
-            btn_details.connect("clicked", lambda _, it=item: self._on_view_item_details(it))
-            row.add_suffix(btn_details)
+            lbl_details = Gtk.Label(label=_("Details"))
+            lbl_details.set_valign(Gtk.Align.CENTER)
+            lbl_details.set_halign(Gtk.Align.START)
+            lbl_details.add_css_class("heading")
+            lbl_details.set_tooltip_text(_("View extension details"))
+            action_box.append(lbl_details)
+
+        self._remote_action_size_group.add_widget(action_box)
+        suffix_box.append(action_box)
+
+        row.add_suffix(suffix_box)
 
         row.set_activatable(True)
         row.connect("activated", lambda _, it=item: self._on_view_item_details(it))

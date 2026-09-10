@@ -3488,4 +3488,7 @@ msgstr "Estensione '{name}' aggiornata con successo."
 msgid "Updating extension..."
 msgstr "Aggiornamento dell'estensione..."
 
+msgid "Offline mode: displaying cached extensions catalog."
+msgstr "Modalità offline: visualizzazione del catalogo estensioni salvato in cache."
+
 

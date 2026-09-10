@@ -58,6 +58,9 @@ FALLBACKS_FILE = STATE_DIR / "fallbacks.json"
 # Persistent UI preferences file (~/.local/state/gnome-theme-manager/ui_prefs.json)
 UI_PREFS_FILE = STATE_DIR / "ui_prefs.json"
 
+# Persistent extensions catalog cache directory (~/.local/state/gnome-theme-manager/extensions_cache/)
+EXTENSIONS_CACHE_DIR = STATE_DIR / "extensions_cache"
+
 
 # -----------------------------------------------------------------------------
 # Dynamic Theme and Icon Path Resolution (XDG Standard + Legacy Fallback)

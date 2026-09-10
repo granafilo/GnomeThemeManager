@@ -2,7 +2,10 @@
 
 """Unit tests for GNOME Extensions GUI view and page (Task 5.3)."""
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import gi
@@ -745,3 +748,88 @@ def test_extensions_page_detail_update_flow(mock_manager: MagicMock) -> None:
     assert item.has_update is False
     assert page.btn_detail_update.get_visible() is False
     assert notify_mock.called
+
+
+def test_extensions_page_offline_cache_notification(mock_manager: MagicMock) -> None:
+    """Test that displaying results from offline cache triggers an informative notification."""
+    page = ExtensionsPage(manager=mock_manager)
+    notifications: list[tuple[str, bool]] = []
+    page.on_notify_message = lambda msg, is_err=False: notifications.append((msg, is_err))
+
+    item = ExtensionItem(
+        uuid="cached@example.com",
+        name="Cached Item",
+        description="Offline cached item",
+    )
+    result = ExtensionSearchResult(
+        extensions=[item],
+        total=1,
+        numpages=1,
+        page=1,
+        from_cache=True,
+    )
+    page._on_remote_search_success(result, reset_page=True)
+
+    assert len(notifications) == 1
+    assert "Offline mode" in notifications[0][0] or "offline" in notifications[0][0].lower()
+    assert notifications[0][1] is False
+
+
+def test_extensions_page_install_failure_handling(mock_manager: MagicMock) -> None:
+    """Test that installation failure displays an error notification and re-enables action buttons."""
+    mock_manager.extension_backend.install.side_effect = RuntimeError("Disk full")
+    page = ExtensionsPage(manager=mock_manager)
+    notifications: list[tuple[str, bool]] = []
+    page.on_notify_message = lambda msg, is_err=False: notifications.append((msg, is_err))
+
+    item = ExtensionItem(
+        uuid="fail@example.com",
+        name="Failing Extension",
+        description="",
+        is_installed=False,
+    )
+    page.show_details(item)
+
+    with patch.object(
+        page, "_show_confirmation_dialog", side_effect=lambda **kw: kw["on_confirm"]()
+    ):
+        page._on_detail_install_clicked()
+
+    import time
+
+    timeout = time.time() + 2.0
+    while time.time() < timeout and not notifications:
+        GLib.MainContext.default().iteration(False)
+
+    assert len(notifications) == 1
+    assert notifications[0][1] is True  # is_error flag set
+    assert "Disk full" in notifications[0][0] or "Failing Extension" in notifications[0][0]
+    assert page.btn_detail_install is not None
+    assert page.btn_detail_install.get_sensitive() is True
+
+
+def test_extensions_page_incompatible_warning_dialog(mock_manager: MagicMock) -> None:
+    """Test that installing an incompatible extension shows a warning in the confirmation dialog."""
+    page = ExtensionsPage(manager=mock_manager)
+    item = ExtensionItem(
+        uuid="incompat@example.com",
+        name="Incompatible Extension",
+        description="",
+        is_installed=False,
+        is_compatible=False,
+    )
+    page.show_details(item)
+
+    captured_dialog_kwargs: dict[str, Any] = {}
+
+    def capture_dialog(**kwargs: Any) -> None:
+        captured_dialog_kwargs.update(kwargs)
+
+    with patch.object(page, "_show_confirmation_dialog", side_effect=capture_dialog):
+        page._on_detail_install_clicked()
+
+    assert (
+        "Warning" in captured_dialog_kwargs["body"]
+        or "Attenzione" in captured_dialog_kwargs["body"]
+    )
+    assert "Incompatible Extension" in captured_dialog_kwargs["body"]

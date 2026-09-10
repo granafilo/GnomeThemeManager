@@ -11,6 +11,7 @@ Provides a unified interface (ExtensionBackend) supporting both:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -38,6 +39,7 @@ except (ImportError, ModuleNotFoundError):
     Retry = None  # type: ignore[assignment,misc]
     _REQUESTS_AVAILABLE = False
 
+from .constants import EXTENSIONS_CACHE_DIR
 from .errors import (
     ExtensionError,
     ExtensionIncompatibleError,
@@ -121,6 +123,7 @@ class ExtensionSearchResult:
     total: int = 0
     page: int = 1
     numpages: int = 1
+    from_cache: bool = False
 
 
 class ExtensionBackend(ABC):
@@ -187,10 +190,16 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         extensions_manager: ExtensionsManager | None = None,
         timeout: float = 15.0,
         user_agent: str = "GnomeThemeManager/1.0 (Linux; GNOME Shell)",
+        cache_dir: Path | None = None,
     ) -> None:
         self.mgr = extensions_manager or ExtensionsManager()
         self.timeout = timeout
         self.user_agent = user_agent
+        self.cache_dir = cache_dir or EXTENSIONS_CACHE_DIR
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as err:
+            logger.warning("Could not create extensions cache dir %s: %s", self.cache_dir, err)
         self._session: Any = None
         if _REQUESTS_AVAILABLE and requests is not None:
             self._session = requests.Session()
@@ -203,6 +212,70 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
                 adapter = HTTPAdapter(max_retries=retries)
                 self._session.mount("https://", adapter)
                 self._session.mount("http://", adapter)
+
+    def _cache_key_for_search(
+        self,
+        query: str,
+        shell_version: str | None,
+        sort: str,
+        page: int,
+        limit: int,
+    ) -> str:
+        raw_key = f"{query.strip().lower()}_{shell_version or ''}_{sort}_{page}_{limit}"
+        return hashlib.sha256(raw_key.encode("utf-8")).hexdigest()[:16]
+
+    def _get_search_cache_path(self, key: str) -> Path:
+        return self.cache_dir / f"search_{key}.json"
+
+    def _save_search_cache(self, key: str, data: dict[str, Any]) -> None:
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = self._get_search_cache_path(key)
+            tmp_file = cache_file.with_suffix(".tmp")
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            tmp_file.replace(cache_file)
+        except Exception as err:
+            logger.debug("Failed to write search cache (%s): %s", key, err)
+
+    def _load_search_cache(self, key: str) -> dict[str, Any] | None:
+        cache_file = self._get_search_cache_path(key)
+        if not cache_file.is_file():
+            return None
+        try:
+            with open(cache_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+                return data
+        except Exception as err:
+            logger.warning("Failed to read search cache (%s): %s", key, err)
+            return None
+
+    def _get_details_cache_path(self, uuid: str) -> Path:
+        safe_uuid = re.sub(r"[^a-zA-Z0-9_.-]", "_", uuid)
+        return self.cache_dir / f"detail_{safe_uuid}.json"
+
+    def _save_details_cache(self, uuid: str, data: dict[str, Any]) -> None:
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = self._get_details_cache_path(uuid)
+            tmp_file = cache_file.with_suffix(".tmp")
+            with open(tmp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            tmp_file.replace(cache_file)
+        except Exception as err:
+            logger.debug("Failed to write details cache for %s: %s", uuid, err)
+
+    def _load_details_cache(self, uuid: str) -> dict[str, Any] | None:
+        cache_file = self._get_details_cache_path(uuid)
+        if not cache_file.is_file():
+            return None
+        try:
+            with open(cache_file, encoding="utf-8") as f:
+                data: dict[str, Any] = json.load(f)
+                return data
+        except Exception as err:
+            logger.warning("Failed to read details cache for %s: %s", uuid, err)
+            return None
 
     def _http_get_json(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
@@ -365,9 +438,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         if shell_version:
             params["shell_version"] = str(shell_version)
         else:
-            ver_tuple = detect_gnome_version()
-            if ver_tuple:
-                params["shell_version"] = str(ver_tuple[0])
+            params["shell_version"] = "all"
 
         if sort:
             ego_sort_map = {
@@ -382,12 +453,34 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             }
             params["sort"] = ego_sort_map.get(sort, "popularity")
 
+        cache_key = self._cache_key_for_search(
+            query=query,
+            shell_version=params.get("shell_version"),
+            sort=params.get("sort", "popularity"),
+            page=page,
+            limit=limit,
+        )
+        from_cache = False
         try:
             data = self._http_get_json(EGO_QUERY_URL, params=params)
-        except ExtensionError:
+            self._save_search_cache(cache_key, data)
+        except ExtensionNotFoundError:
             raise
-        except Exception as err:
-            raise ExtensionNetworkError(f"Search failed: {err}") from err
+        except (ExtensionNetworkError, Exception) as err:
+            cached_data = self._load_search_cache(cache_key)
+            if cached_data is not None:
+                logger.info(
+                    "Network search failed (%s); using cached catalog for query '%s' (%s)",
+                    err,
+                    query,
+                    cache_key,
+                )
+                data = cached_data
+                from_cache = True
+            else:
+                if isinstance(err, ExtensionError):
+                    raise
+                raise ExtensionNetworkError(f"Search failed: {err}") from err
 
         raw_extensions = data.get("extensions", [])
         total = int(data.get("total", len(raw_extensions)))
@@ -410,6 +503,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             total=total,
             page=page,
             numpages=numpages,
+            from_cache=from_cache,
         )
 
     def get_details(self, uuid: str) -> ExtensionItem | None:
@@ -419,11 +513,16 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
 
         try:
             data = self._http_get_json(EGO_INFO_URL, params={"uuid": uuid})
+            self._save_details_cache(uuid, data)
             return self._parse_extension_item(data, installed_map)
         except ExtensionNotFoundError:
             return None
         except Exception as err:
             logger.warning("Could not fetch extension details for %s: %s", uuid, err)
+            cached_data = self._load_details_cache(uuid)
+            if cached_data is not None:
+                logger.info("Using cached details for extension %s", uuid)
+                return self._parse_extension_item(cached_data, installed_map)
             # Fallback to installed local extension if available
             if uuid in installed_map:
                 loc = installed_map[uuid]
@@ -483,6 +582,16 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
                     shutil.copyfileobj(resp, f)
         except Exception as err:
             logger.error("Download failed for %s from %s: %s", uuid, download_url, err)
+            if dest_file.exists():
+                try:
+                    dest_file.unlink()
+                    logger.info("Rolled back incomplete download bundle: %s", dest_file)
+                except Exception as cleanup_err:
+                    logger.warning(
+                        "Failed to remove incomplete download bundle %s: %s",
+                        dest_file,
+                        cleanup_err,
+                    )
             raise ExtensionNetworkError(f"Failed to download extension {uuid}: {err}") from err
 
         return dest_file
@@ -527,6 +636,9 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             return True
         except Exception as err:
             logger.error("Manual extraction failed for %s: %s", uuid, err)
+            if user_ext_dir.exists():
+                shutil.rmtree(user_ext_dir, ignore_errors=True)
+                logger.info("Rolled back incomplete extension directory: %s", user_ext_dir)
             raise ExtensionInstallError(f"Failed to extract extension bundle: {err}") from err
 
     def uninstall(self, uuid: str) -> bool:
@@ -680,6 +792,7 @@ class GnomeExtensionsCliBackend(ExtensionBackend):
 def get_extension_backend(
     backend_type: str = "rest",
     extensions_manager: ExtensionsManager | None = None,
+    cache_dir: Path | None = None,
 ) -> ExtensionBackend:
     """Factory to instantiate the chosen ExtensionBackend.
 
@@ -687,10 +800,11 @@ def get_extension_backend(
         backend_type: 'rest' for extensions.gnome.org API (Option A),
                       or 'cli' for local gnome-extensions CLI (Option B).
         extensions_manager: Optional ExtensionsManager instance.
+        cache_dir: Optional persistent cache directory for REST responses.
 
     Returns:
         ExtensionBackend instance.
     """
     if backend_type.lower() == "cli":
         return GnomeExtensionsCliBackend(extensions_manager=extensions_manager)
-    return GnomeExtensionsRestBackend(extensions_manager=extensions_manager)
+    return GnomeExtensionsRestBackend(extensions_manager=extensions_manager, cache_dir=cache_dir)
