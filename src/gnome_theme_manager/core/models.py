@@ -124,6 +124,52 @@ class ThemeSet:
         )
 
 
+@dataclass(frozen=True)
+class FlatpakStatus:
+    """Status of Flatpak runtime and related integration dependencies."""
+
+    flatpak_installed: bool = False
+    flathub_configured: bool = False
+    extension_manager_installed: bool = False
+    user_themes_enabled: bool = False
+
+
+@dataclass(frozen=True)
+class FlatpakRepairResult:
+    """Result of a flatpak repair operation."""
+
+    success: bool = False
+    command: list[str] = field(default_factory=list)
+    output: str = ""
+    returncode: int = 0
+    error_message: str | None = None
+
+
+@dataclass(frozen=True)
+class WizardStepInfo:
+    """Information and commands for a guided dependency installation step."""
+
+    step_id: str
+    title: str
+    description: str
+    command_user: str
+    command_system: str
+    is_satisfied: bool = False
+    requires_root_system: bool = True
+
+
+@dataclass(frozen=True)
+class WizardStepResult:
+    """Outcome of executing a guided installation wizard step."""
+
+    step_id: str
+    success: bool
+    command: str
+    output: str = ""
+    returncode: int = 0
+    error_message: str | None = None
+
+
 @dataclass
 class SandboxStatus:
     """Status of sandbox runtimes (Snap/Flatpak) detected on the system."""
@@ -171,3 +217,5 @@ class SystemStatus:
     sandbox_status: SandboxStatus | None = None
     gtk4_override_active: bool = False
     gtk4_override_status: "Gtk4OverrideStatus | None" = None
+    gnome_version: str | None = None
+    is_gnome_50_plus: bool = False

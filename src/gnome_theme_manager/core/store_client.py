@@ -6,18 +6,29 @@ Provides search, item metadata inspection, and streaming download capabilities
 for GTK themes, Shell themes, icons, cursors, and fonts from openDesktop/Pling.
 """
 
+import json
 import logging
 import re
+import urllib.error
+import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import quote, unquote, urlencode, urlparse, urlsplit, urlunsplit
 
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    _REQUESTS_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    requests = None  # type: ignore[assignment]
+    HTTPAdapter = None  # type: ignore[assignment,misc]
+    Retry = None  # type: ignore[assignment,misc]
+    _REQUESTS_AVAILABLE = False
 
 from .errors import (
     StoreDownloadError,
@@ -81,6 +92,19 @@ def theme_type_to_store_category(theme_type: ThemeType | str | None) -> str:
         return StoreCategory.CURSOR.value
 
     return ""
+
+
+def safe_encode_url(url: str) -> str:
+    """Safely percent-encode unicode characters in a URL while preserving scheme and syntax."""
+    if not url:
+        return ""
+    try:
+        parsed = urlsplit(url)
+        safe_path = quote(unquote(parsed.path), safe="/:@!$&'()*+,;=-_.~")
+        safe_query = quote(unquote(parsed.query), safe="=&:@!$'()*+,;=-_.~?")
+        return urlunsplit((parsed.scheme, parsed.netloc, safe_path, safe_query, parsed.fragment))
+    except Exception:
+        return url
 
 
 @dataclass
@@ -250,7 +274,7 @@ class StoreClient:
         base_url: str = DEFAULT_OCS_API_BASE,
         timeout: float = DEFAULT_TIMEOUT_SECONDS,
         max_retries: int = DEFAULT_MAX_RETRIES,
-        session: requests.Session | None = None,
+        session: Any = None,
     ) -> None:
         """Initialize StoreClient with configuration and retry adapter.
 
@@ -266,7 +290,12 @@ class StoreClient:
 
         if session is not None:
             self._session = session
-        else:
+        elif (
+            _REQUESTS_AVAILABLE
+            and requests is not None
+            and HTTPAdapter is not None
+            and Retry is not None
+        ):
             self._session = requests.Session()
             retry_strategy = Retry(
                 total=max_retries,
@@ -278,6 +307,8 @@ class StoreClient:
             adapter = HTTPAdapter(max_retries=retry_strategy)
             self._session.mount("https://", adapter)
             self._session.mount("http://", adapter)
+        else:
+            self._session = None
 
     def search(
         self,
@@ -339,19 +370,46 @@ class StoreClient:
         url = f"{self.base_url}content/data"
         logger.debug("Searching store: %s with params %s", url, params)
 
-        try:
-            response = self._session.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
-            payload = response.json()
-        except requests.exceptions.Timeout as err:
-            logger.warning("Store API search timeout: %s", err)
-            raise StoreNetworkError(f"Store search timed out after {self.timeout}s: {err}") from err
-        except requests.exceptions.RequestException as err:
-            logger.warning("Store API search network error: %s", err)
-            raise StoreNetworkError(f"Network error during store search: {err}") from err
-        except ValueError as err:
-            logger.error("Invalid JSON response from store API: %s", err)
-            raise StoreError(f"Store API returned invalid JSON: {err}") from err
+        payload: Any = None
+        if self._session is not None:
+            try:
+                response = self._session.get(url, params=params, timeout=self.timeout)
+                response.raise_for_status()
+                payload = response.json()
+            except Exception as err:
+                if requests is not None and isinstance(err, requests.exceptions.Timeout):
+                    logger.warning("Store API search timeout: %s", err)
+                    raise StoreNetworkError(
+                        f"Store search timed out after {self.timeout}s: {err}"
+                    ) from err
+                elif requests is not None and isinstance(err, requests.exceptions.RequestException):
+                    logger.warning("Store API search network error: %s", err)
+                    raise StoreNetworkError(f"Network error during store search: {err}") from err
+                elif isinstance(err, ValueError):
+                    logger.error("Invalid JSON response from store API: %s", err)
+                    raise StoreError(f"Store API returned invalid JSON: {err}") from err
+                else:
+                    raise StoreNetworkError(f"Network error during store search: {err}") from err
+        else:
+            try:
+                query_str = urlencode(params)
+                req_url = f"{url}?{query_str}" if query_str else url
+                req = urllib.request.Request(
+                    req_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager",
+                        "Accept": "application/json",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    raw_bytes = resp.read()
+                    payload = json.loads(raw_bytes.decode("utf-8"))
+            except urllib.error.URLError as err:
+                logger.warning("Store API search network error (urllib): %s", err)
+                raise StoreNetworkError(f"Network error during store search: {err}") from err
+            except ValueError as err:
+                logger.error("Invalid JSON response from store API: %s", err)
+                raise StoreError(f"Store API returned invalid JSON: {err}") from err
 
         if not isinstance(payload, dict):
             raise StoreError("Malformed API response: expected JSON object.")
@@ -405,25 +463,61 @@ class StoreClient:
 
         logger.debug("Fetching store item details: %s", url)
 
-        try:
-            response = self._session.get(url, params=params, timeout=self.timeout)
-            if response.status_code == 404:
-                raise StoreItemNotFoundError(f"Store item '{clean_id}' was not found (HTTP 404).")
-            response.raise_for_status()
-            payload = response.json()
-        except StoreItemNotFoundError:
-            raise
-        except requests.exceptions.Timeout as err:
-            logger.warning("Store API get_details timeout: %s", err)
-            raise StoreNetworkError(
-                f"Store details request timed out after {self.timeout}s: {err}"
-            ) from err
-        except requests.exceptions.RequestException as err:
-            logger.warning("Store API get_details network error: %s", err)
-            raise StoreNetworkError(f"Network error during store get_details: {err}") from err
-        except ValueError as err:
-            logger.error("Invalid JSON response in get_details: %s", err)
-            raise StoreError(f"Store API returned invalid JSON: {err}") from err
+        payload: Any = None
+        if self._session is not None:
+            try:
+                response = self._session.get(url, params=params, timeout=self.timeout)
+                if response.status_code == 404:
+                    raise StoreItemNotFoundError(
+                        f"Store item '{clean_id}' was not found (HTTP 404)."
+                    )
+                response.raise_for_status()
+                payload = response.json()
+            except StoreItemNotFoundError:
+                raise
+            except Exception as err:
+                if requests is not None and isinstance(err, requests.exceptions.Timeout):
+                    logger.warning("Store API get_details timeout: %s", err)
+                    raise StoreNetworkError(
+                        f"Store details request timed out after {self.timeout}s: {err}"
+                    ) from err
+                elif requests is not None and isinstance(err, requests.exceptions.RequestException):
+                    logger.warning("Store API get_details network error: %s", err)
+                    raise StoreNetworkError(
+                        f"Network error during store get_details: {err}"
+                    ) from err
+                elif isinstance(err, ValueError):
+                    logger.error("Invalid JSON response in get_details: %s", err)
+                    raise StoreError(f"Store API returned invalid JSON: {err}") from err
+                else:
+                    raise StoreNetworkError(
+                        f"Network error during store get_details: {err}"
+                    ) from err
+        else:
+            try:
+                query_str = urlencode(params)
+                req_url = f"{url}?{query_str}" if query_str else url
+                req = urllib.request.Request(
+                    req_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager",
+                        "Accept": "application/json",
+                    },
+                )
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    raw_bytes = resp.read()
+                    payload = json.loads(raw_bytes.decode("utf-8"))
+            except urllib.error.HTTPError as err:
+                if err.code == 404:
+                    raise StoreItemNotFoundError(
+                        f"Store item '{clean_id}' was not found (HTTP 404)."
+                    ) from err
+                raise StoreNetworkError(f"Network error during store get_details: {err}") from err
+            except urllib.error.URLError as err:
+                raise StoreNetworkError(f"Network error during store get_details: {err}") from err
+            except ValueError as err:
+                logger.error("Invalid JSON response in get_details: %s", err)
+                raise StoreError(f"Store API returned invalid JSON: {err}") from err
 
         if not isinstance(payload, dict):
             raise StoreError("Malformed API response: expected JSON object.")
@@ -510,45 +604,78 @@ class StoreClient:
             output_file_path,
         )
 
-        try:
-            with self._session.get(
-                download_url, stream=True, timeout=self.timeout, allow_redirects=True
-            ) as res:
-                res.raise_for_status()
+        safe_dl_url = safe_encode_url(download_url)
+        chunk_size = 256 * 1024  # 256 KB
 
-                total_size: int | None = None
-                content_len_header = res.headers.get("Content-Length")
-                if content_len_header and content_len_header.isdigit():
-                    total_size = int(content_len_header)
+        if self._session is not None:
+            try:
+                with self._session.get(
+                    safe_dl_url, stream=True, timeout=self.timeout, allow_redirects=True
+                ) as res:
+                    res.raise_for_status()
 
-                bytes_downloaded = 0
-                chunk_size = 256 * 1024  # 256 KB
+                    total_size: int | None = None
+                    content_len_header = res.headers.get("Content-Length")
+                    if content_len_header and content_len_header.isdigit():
+                        total_size = int(content_len_header)
 
-                with open(output_file_path, "wb") as f_out:
-                    for chunk in res.iter_content(chunk_size=chunk_size):
-                        if chunk:
+                    bytes_downloaded = 0
+                    with open(output_file_path, "wb") as f_out:
+                        for chunk in res.iter_content(chunk_size=chunk_size):
+                            if chunk:
+                                f_out.write(chunk)
+                                bytes_downloaded += len(chunk)
+                                if progress_callback is not None:
+                                    progress_callback(bytes_downloaded, total_size)
+
+            except Exception as err:
+                logger.warning("Download error for item %s: %s", item_id, err)
+                if output_file_path.exists():
+                    output_file_path.unlink(missing_ok=True)
+                if requests is not None and isinstance(err, requests.exceptions.Timeout):
+                    raise StoreNetworkError(
+                        f"Download timed out after {self.timeout}s: {err}"
+                    ) from err
+                elif isinstance(err, OSError):
+                    raise StoreDownloadError(
+                        f"Filesystem error saving download to '{output_file_path}': {err}"
+                    ) from err
+                raise StoreDownloadError(
+                    f"Failed to download store item '{item_id}': {err}"
+                ) from err
+        else:
+            try:
+                req = urllib.request.Request(
+                    safe_dl_url,
+                    headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) GnomeThemeManager"},
+                )
+                with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                    total_size = None
+                    cl = resp.headers.get("Content-Length")
+                    if cl and cl.isdigit():
+                        total_size = int(cl)
+
+                    bytes_downloaded = 0
+                    with open(output_file_path, "wb") as f_out:
+                        while True:
+                            chunk = resp.read(chunk_size)
+                            if not chunk:
+                                break
                             f_out.write(chunk)
                             bytes_downloaded += len(chunk)
                             if progress_callback is not None:
                                 progress_callback(bytes_downloaded, total_size)
-
-        except requests.exceptions.Timeout as err:
-            logger.warning("Download timeout for item %s: %s", item_id, err)
-            if output_file_path.exists():
-                output_file_path.unlink(missing_ok=True)
-            raise StoreNetworkError(f"Download timed out after {self.timeout}s: {err}") from err
-        except requests.exceptions.RequestException as err:
-            logger.warning("Download network error for item %s: %s", item_id, err)
-            if output_file_path.exists():
-                output_file_path.unlink(missing_ok=True)
-            raise StoreDownloadError(f"Failed to download store item '{item_id}': {err}") from err
-        except OSError as err:
-            logger.error("Filesystem write error during download: %s", err)
-            if output_file_path.exists():
-                output_file_path.unlink(missing_ok=True)
-            raise StoreDownloadError(
-                f"Filesystem error saving download to '{output_file_path}': {err}"
-            ) from err
+            except Exception as err:
+                logger.warning("Download error (urllib) for item %s: %s", item_id, err)
+                if output_file_path.exists():
+                    output_file_path.unlink(missing_ok=True)
+                if isinstance(err, OSError):
+                    raise StoreDownloadError(
+                        f"Filesystem error saving download to '{output_file_path}': {err}"
+                    ) from err
+                raise StoreDownloadError(
+                    f"Failed to download store item '{item_id}': {err}"
+                ) from err
 
         if not output_file_path.exists() or output_file_path.stat().st_size == 0:
             if output_file_path.exists():
@@ -594,28 +721,28 @@ class StoreClient:
         if raw_downloads is not None and str(raw_downloads).isdigit():
             downloads = int(raw_downloads)
 
-        # Parse preview images with high-resolution master URL normalization
+        # Parse preview images with safe URL encoding
         preview_images: list[str] = []
         for i in range(1, 30):
             pic_url = str(raw.get(f"previewpic{i}", "")).strip()
             if pic_url and pic_url.startswith("http"):
-                high_res_url = re.sub(r"/cache/[^/]+/", "/", pic_url)
-                if high_res_url not in preview_images:
-                    preview_images.append(high_res_url)
+                safe_pic = safe_encode_url(pic_url)
+                if safe_pic and safe_pic not in preview_images:
+                    preview_images.append(safe_pic)
 
         # Also extract embedded images from HTML description if available
         if description:
             for img_url in re.findall(
                 r'<img[^>]+src=["\'](https?://[^"\']+)["\']', description, re.IGNORECASE
             ):
-                clean_img = re.sub(r"/cache/[^/]+/", "/", img_url.strip())
+                clean_img = safe_encode_url(img_url.strip())
                 if clean_img and clean_img not in preview_images:
                     preview_images.append(clean_img)
 
         preview_image_url = preview_images[0] if preview_images else ""
         small_preview_image_url = str(raw.get("smallpreviewpic1", "")).strip()
         if small_preview_image_url:
-            small_preview_image_url = re.sub(r"/cache/[^/]+/", "/", small_preview_image_url)
+            small_preview_image_url = safe_encode_url(small_preview_image_url)
         if not small_preview_image_url and preview_image_url:
             small_preview_image_url = preview_image_url
 

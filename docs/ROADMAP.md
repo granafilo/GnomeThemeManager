@@ -1,8 +1,8 @@
 # 🗺️ Development Roadmap — GNOME Theme Manager
 
-**Last updated**: August 28, 2026  
-**Current version**: v1.5.0 (Phase 5 Online Store & Extensions completed)  
-**Status**: Active development (Release v1.5.0 completed)
+**Last updated**: September 10, 2026  
+**Current version**: v1.5.1 (Phase 1.5.1 Online Store & Extensions Stabilization completed)  
+**Status**: Active development (Release v1.5.1 completed)
 
 ---
 
@@ -143,7 +143,8 @@ gsettings get org.gnome.desktop.interface.accent-color
 #### Goals
 - [ ] Create manifest `io.github.<username>.ThemeManager.yml`
 - [ ] Configure build with `flatpak-builder`
-- [ ] Test on Ubuntu 22.04+, Fedora 38+
+- [x] Test on Ubuntu 24.04 (GNOME 46), Zorin OS 17+ (GNOME 46), Fedora 44 (GNOME 50), CachyOS (GNOME 50)
+- [ ] Test on Debian 12+
 - [ ] Publish on Flathub (optional)
 
 #### Implementation Details

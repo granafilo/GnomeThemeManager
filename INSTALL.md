@@ -1,51 +1,61 @@
 # 📦 Installation and Execution Guide - GNOME Theme Manager
 
-This guide explains how to run, install, and optionally build the **GNOME Theme Manager** **AppImage** package from source.
+This guide explains how to install, run, and build the **GNOME Theme Manager** **Flatpak** package.
 
 ---
 
-## ⚡ 1. Quick Start via AppImage (Recommended)
+## ⚡ 1. Flatpak Installation (Recommended)
 
-An **AppImage** package is a single portable executable containing the application and its Python dependencies.
+GNOME Theme Manager is distributed via Flatpak with sandboxed security and native desktop theming capabilities.
 
-### Steps to run:
+### Method A: One-Click `.flatpakref` (Recommended)
 
-1. Download the latest `.AppImage` release from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases).
-2. Open your terminal in the download folder and grant execution permissions:
+1. Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases).
+2. Double-click the file in Files (Nautilus) or open it with GNOME Software / App Center.
+3. Or install via CLI without requiring root/sudo permissions:
+   ```bash
+   flatpak install --user GNOMEThemeManager.flatpakref
+   ```
 
+### Method B: Offline Standalone Single-File Bundle (`.flatpak`)
+
+1. Download `GNOMEThemeManager-1.5.0-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases).
+2. Install the bundle without requiring root/sudo permissions:
+   ```bash
+   flatpak install --user --bundle GNOMEThemeManager-1.5.0-x86_64.flatpak
+   ```
+
+### Running the Application
+
+Launch from your desktop application grid or via terminal:
 ```bash
-chmod +x GNOMEThemeManager-1.0.0-x86_64.AppImage
-```
-
-3. Launch the application:
-
-```bash
-./GNOMEThemeManager-1.0.0-x86_64.AppImage
-```
-
-### AppImage and FUSE
-
-The AppImage build uses `appimagetool` in `extract-and-run` mode, so CI runners do not require a FUSE mount.
-
-To run the AppImage on Ubuntu 24.04, the compatible FUSE 2 library may be required:
-
-```bash
-sudo apt install libfuse2t64
-```
-
-For older Ubuntu releases (e.g. 22.04), use:
-
-```bash
-sudo apt install libfuse2
+flatpak run io.github.granafilo.ThemeManager
 ```
 
 ---
 
-## 📋 2. System Prerequisites
+## 🛠️ 2. Building Flatpak Locally
 
-Because GNOME Theme Manager is a native **GTK4** and **Libadwaita** application, the host system must provide the GTK4 / Libadwaita runtime libraries and PyGObject.
+To build the Flatpak repository, standalone `.flatpak` bundle, and `.flatpakref` from source:
 
-### Ubuntu 22.04 LTS / 24.04 LTS and Debian 12+
+```bash
+git clone https://github.com/granafilo/GnomeThemeManager.git
+cd GnomeThemeManager
+chmod +x scripts/build-flatpak.sh
+./scripts/build-flatpak.sh
+```
+
+The script will automatically build using the GNOME 46 runtime, generate a local repository, and export the packages into `dist/`:
+- `dist/GNOMEThemeManager-1.5.0-x86_64.flatpak` (Standalone offline bundle)
+- `dist/GNOMEThemeManager.flatpakref` (One-click installer)
+
+---
+
+## 📋 3. System Prerequisites (For Source Development)
+
+If running the Python code directly from source outside of Flatpak:
+
+### Ubuntu 22.04 LTS / 24.04 LTS, Zorin OS, and Debian 12+
 
 ```bash
 sudo apt update
@@ -57,50 +67,39 @@ sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1
 ```bash
 sudo dnf install -y python3-gobject gtk4 libadwaita
 ```
+
+### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S python-gobject gtk4 libadwaita
+```
+
 ---
 
-## 🛠️ 3. Building the AppImage Locally
+## 🖥️ Tested Environments
 
-If you want to package the AppImage locally from source:
+The application has been verified and tested on the following platforms:
+- **Ubuntu 24.04 LTS** with **GNOME 46** (Standard reference target)
+- **Zorin OS 17+** with **GNOME 46** (Tested with custom desktop layouts and `zorin-appearance` extensions)
+- **Fedora 44** with **GNOME 50** (Tested with upstream GNOME 50 stack)
+- **CachyOS** with **GNOME 50** (Tested on cutting-edge rolling release with native Libadwaita stylesheets)
 
-### 1. Clone the repository:
+---
 
-```bash
-git clone https://github.com/granafilo/GnomeThemeManager.git
-cd GnomeThemeManager
-```
+## 🗄️ 4. Deprecated Packaging (AppImage)
 
-### 2. Run the build script:
+> **Note**: As of v1.5.0, AppImage packaging is deprecated in favor of Flatpak. Legacy AppImage scripts and files are archived in `deprecated/appimage/`. For details, see [deprecated/appimage/README.md](deprecated/appimage/README.md).
 
-```bash
-chmod +x scripts/build-appimage.sh
-./scripts/build-appimage.sh
-```
+---
 
-The script will generate the `.AppImage` bundle inside the `dist/` directory, complete with bundled `.DirIcon`, multi-resolution PNG icons (128x128, 256x256, 512x512), and hicolor app/mimetypes integration.
+## 🎨 5. Application Icon Sources
 
-### 🎨 Application Icon Sources
-
-The application icons bundled into the AppImage and desktop integrations are located in the following repository paths:
+The application icons bundled into Flatpak and desktop integrations are located in:
 
 - **Multi-size PNG Icons**: `data/icons/hicolor/{128x128,256x256,512x512}/apps/io.github.granafilo.ThemeManager.png`
 - **Scalable SVG Master**: `data/icons/hicolor/scalable/apps/io.github.granafilo.ThemeManager.svg`
-- **AppImage Root Bundle Icons**: `appimage/io.github.granafilo.ThemeManager.png` and `appimage/io.github.granafilo.ThemeManager.svg`
-- **Desktop Entry (`Icon=io.github.granafilo.ThemeManager`)**: `data/desktop/io.github.granafilo.ThemeManager.desktop` and `appimage/io.github.granafilo.ThemeManager.desktop`
-
-To update the application icon in the future, replace the PNG and SVG files in `data/icons/hicolor/` and re-run `./scripts/build-appimage.sh`.
-
----
-
-## 🔍 4. Troubleshooting
-
-### ⚠️ Error: `dlopen(): error loading libfuse.so.2`
-On newer Linux distributions like Ubuntu 22.04+ / 24.04+, FUSE 2 might not be installed by default.
-
-**Solution (Ubuntu/Debian):**
-```bash
-sudo apt install -y libfuse2t64 || sudo apt install -y libfuse2
-```
+- **Desktop Entry (`Icon=io.github.granafilo.ThemeManager`)**: `data/desktop/io.github.granafilo.ThemeManager.desktop`
+- **AppStream Metainfo**: `data/metainfo/io.github.granafilo.ThemeManager.metainfo.xml`
 
 ---
 

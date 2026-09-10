@@ -1,7 +1,12 @@
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from gi.repository import Gio, GLib  # noqa: F401
 
 import gnome_theme_manager
 
@@ -30,11 +35,11 @@ from gnome_theme_manager.core.models import (
 
 @pytest.fixture
 def dummy_user_theme_dir(tmp_path: Path) -> Path:
-    """Crea una directory temporanea con una finta struttura di temi utente."""
+    """Create a temporary directory with a mock user theme structure."""
     themes_dir = tmp_path / ".local" / "share" / "themes"
     themes_dir.mkdir(parents=True, exist_ok=True)
 
-    # Creazione tema GTK dummy
+    # Create dummy GTK theme
     nordic_dir = themes_dir / "Nordic" / "gtk-3.0"
     nordic_dir.mkdir(parents=True, exist_ok=True)
     (nordic_dir / "gtk.css").write_text("/* dummy gtk css */")
@@ -44,7 +49,7 @@ def dummy_user_theme_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def mock_theme_manager() -> MagicMock:
-    """Crea un mock deterministico di ThemeManager con dati validi completi."""
+    """Create a deterministic mock of ThemeManager with complete valid data."""
     mgr = MagicMock(spec=ThemeManager)
     mgr.get_current_themes.return_value = ThemeSet(
         gtk_theme="Yaru",
@@ -116,11 +121,11 @@ def mock_theme_manager() -> MagicMock:
             "gtk4_override_applied": component == ThemeType.GTK,
             "warnings": [],
         }
-        # In caso di specifici mock di errori impostati nel test su apply_themes, propagali
+        # In case of specific error mocks configured in the test on apply_themes, propagate them
         if isinstance(mgr.apply_themes.side_effect, Exception):
             raise mgr.apply_themes.side_effect
         if isinstance(mgr.apply_themes.return_value, ApplyResult):
-            # Se il test ha modificato il valore di ritorno di apply_themes, adeguiamoci
+            # If the test modified the return value of apply_themes, adapt accordingly
             val = mgr.apply_themes.return_value
             if val.shell_theme is None and component == ThemeType.SHELL:
                 res_kwargs["shell_theme"] = None
@@ -137,7 +142,39 @@ def mock_theme_manager() -> MagicMock:
     mgr.installer.ensure_user_directories.return_value = []
     mgr.store_client.search.return_value = []
     from gnome_theme_manager.core.extensions import UIPrefs
+    from gnome_theme_manager.core.os_detector import OSInfo
+    from gnome_theme_manager.core.terminal_detector import TerminalInfo
+    from gnome_theme_manager.core.terminal_profile import get_terminal_profile
 
     mgr.extensions.get_prefs.return_value = UIPrefs(auto_enable_user_theme=False)
     mgr.extensions.list_extensions.return_value = []
+
+    mgr.detect_os.return_value = OSInfo(
+        distro="ubuntu",
+        version="24.04",
+        package_manager="apt",
+        pretty_name="Ubuntu 24.04 LTS",
+    )
+    term_info = TerminalInfo(
+        terminal_id="gnome-terminal",
+        terminal_name="GNOME Terminal",
+        binary="gnome-terminal",
+        desktop_file="org.gnome.Terminal.desktop",
+        detection_method="which",
+        is_installed=True,
+        is_default=True,
+        supports_gsettings=True,
+        schema_id="org.gnome.Terminal.Legacy.Profile",
+        schema_accessible=True,
+    )
+    mgr.detect_terminal.return_value = term_info
+    mgr.detect_default_terminal.return_value = term_info
+    from gnome_theme_manager.core.terminal_palette import TerminalPalette
+
+    mgr.get_terminal_profile.side_effect = lambda tid=None: get_terminal_profile(
+        tid or "gnome-terminal", os_info=mgr.detect_os.return_value
+    )
+    mgr.get_current_terminal_palette.return_value = TerminalPalette()
+    mgr.get_derived_terminal_palette.return_value = TerminalPalette()
+    mgr.list_terminal_profiles.return_value = []
     return mgr

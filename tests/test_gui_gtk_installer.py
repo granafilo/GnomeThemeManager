@@ -22,14 +22,14 @@ from gnome_theme_manager.gui_gtk.pages.installer import (
 
 
 def test_format_components_label() -> None:
-    """Verifica la formattazione testuale dei tipi di tema rilevati."""
+    """Verify text formatting of detected theme types."""
     assert format_components_label([]) == "No recognizable components"
     assert format_components_label([ThemeType.GTK]) == "Applications (GTK)"
     assert (
         format_components_label([ThemeType.GTK, ThemeType.SHELL])
         == "Applications (GTK), GNOME Shell"
     )
-    # Duplicati rimossi
+    # Duplicates removed
     assert (
         format_components_label([ThemeType.GTK, ThemeType.GTK, ThemeType.ICON])
         == "Applications (GTK), Icons"
@@ -37,9 +37,9 @@ def test_format_components_label() -> None:
 
 
 def test_installer_page_initial_state(mock_theme_manager: MagicMock) -> None:
-    """Verifica lo stato iniziale della pagina Installatore (stato 'initial')."""
+    """Verify initial state of Installer page ('initial' state)."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = InstallerPage(manager=mock_theme_manager)
     assert page.page_id == "installer"
@@ -50,9 +50,9 @@ def test_installer_page_initial_state(mock_theme_manager: MagicMock) -> None:
 
 
 def test_installer_page_select_source_archive_success(mock_theme_manager: MagicMock) -> None:
-    """Verifica l'analisi e il passaggio a stato 'ready' per un archivio valido."""
+    """Verify analysis and transition to 'ready' state for a valid archive."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [
         ("Nordic-Theme", ThemeType.GTK),
@@ -73,9 +73,9 @@ def test_installer_page_select_source_archive_success(mock_theme_manager: MagicM
 
 
 def test_installer_page_select_source_directory_success(mock_theme_manager: MagicMock) -> None:
-    """Verifica l'analisi e il passaggio a stato 'ready' per una cartella valida."""
+    """Verify analysis and transition to 'ready' state for a valid folder."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [
         ("Papirus-Icons", ThemeType.ICON),
@@ -91,27 +91,27 @@ def test_installer_page_select_source_directory_success(mock_theme_manager: Magi
 
 
 def test_installer_page_select_source_not_found(mock_theme_manager: MagicMock) -> None:
-    """Verifica che una sorgente inesistente mostri lo stato 'error'."""
+    """Verify that a nonexistent source displays 'error' state."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
-    mock_theme_manager.inspect_theme_source.side_effect = FileNotFoundError("Sorgente non trovata")
+    mock_theme_manager.inspect_theme_source.side_effect = FileNotFoundError("Source not found")
 
     page = InstallerPage(manager=mock_theme_manager)
     page.select_source(Path("/non/existent/theme.zip"), sync=True)
 
     assert page.widget.get_visible_child_name() == "error"
     desc = page.error_status_page.get_description()
-    assert "Sorgente non trovata" in desc
+    assert "Source not found" in desc or "not found" in desc.lower()
 
 
 def test_installer_page_select_source_corrupt_archive(mock_theme_manager: MagicMock) -> None:
-    """Verifica che un archivio corrotto o non supportato mostri lo stato 'error'."""
+    """Verify that a corrupted or unsupported archive displays 'error' state."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.side_effect = ArchiveExtractionError(
-        "Archivio non valido o corrotto"
+        "Invalid or corrupted archive"
     )
 
     page = InstallerPage(manager=mock_theme_manager)
@@ -119,16 +119,16 @@ def test_installer_page_select_source_corrupt_archive(mock_theme_manager: MagicM
 
     assert page.widget.get_visible_child_name() == "error"
     desc = page.error_status_page.get_description()
-    assert "Archivio non valido" in desc or "corrotto" in desc
+    assert "Invalid or corrupted archive" in desc or "corrupted" in desc.lower()
 
 
 def test_installer_page_select_source_invalid_structure(mock_theme_manager: MagicMock) -> None:
-    """Verifica che una cartella senza struttura di tema valida mostri errore."""
+    """Verify that a folder without valid theme structure displays error."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.side_effect = ThemeValidationError(
-        "Nessun tema riconosciuto"
+        "No theme recognized"
     )
 
     page = InstallerPage(manager=mock_theme_manager)
@@ -136,13 +136,13 @@ def test_installer_page_select_source_invalid_structure(mock_theme_manager: Magi
 
     assert page.widget.get_visible_child_name() == "error"
     desc = page.error_status_page.get_description()
-    assert "Struttura del tema non riconosciuta" in desc or "Nessun tema" in desc
+    assert "theme structure" in desc.lower() or "no theme" in desc.lower()
 
 
 def test_installer_page_reset_to_initial(mock_theme_manager: MagicMock) -> None:
-    """Verifica che il pulsante 'Cambia sorgente' ripristini la vista allo stato iniziale."""
+    """Verify that 'Change Source' button restores view to initial state."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("Theme", ThemeType.GTK)]
     page = InstallerPage(manager=mock_theme_manager)
@@ -155,9 +155,9 @@ def test_installer_page_reset_to_initial(mock_theme_manager: MagicMock) -> None:
 
 
 def test_installer_page_install_success(mock_theme_manager: MagicMock) -> None:
-    """Verifica l'installazione riuscita (senza applicazione automatica)."""
+    """Verify successful installation (without automatic apply)."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("MyTheme", ThemeType.GTK)]
     mock_theme_manager.install_theme.return_value = [
@@ -191,9 +191,9 @@ def test_installer_page_install_success(mock_theme_manager: MagicMock) -> None:
 
 
 def test_installer_page_install_and_apply_success(mock_theme_manager: MagicMock) -> None:
-    """Verifica 'Installa e Applica' con successo."""
+    """Verify successful 'Install and Apply'."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("UnifiedTheme", ThemeType.GTK)]
     mock_theme_manager.install_theme.return_value = [
@@ -225,9 +225,9 @@ def test_installer_page_install_and_apply_success(mock_theme_manager: MagicMock)
 
 
 def test_installer_page_install_and_apply_partial_warning(mock_theme_manager: MagicMock) -> None:
-    """Verifica gestione di 'Installa e Applica' con risultato parziale (warning)."""
+    """Verify handling of 'Install and Apply' with partial result (warning)."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [
         ("PartialTheme", ThemeType.GTK),
@@ -257,12 +257,12 @@ def test_installer_page_install_and_apply_partial_warning(mock_theme_manager: Ma
 
 
 def test_installer_page_install_conflict_prompts_overwrite(mock_theme_manager: MagicMock) -> None:
-    """Verifica che FileExistsError apra il dialogo di conferma sovrascrittura."""
+    """Verify that FileExistsError opens overwrite confirmation dialog."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("ExistingTheme", ThemeType.GTK)]
-    mock_theme_manager.install_theme.side_effect = FileExistsError("Tema già presente")
+    mock_theme_manager.install_theme.side_effect = FileExistsError("Theme already exists")
 
     page = InstallerPage(manager=mock_theme_manager)
     page.select_source(Path("/tmp/existing.zip"), sync=True)
@@ -275,9 +275,9 @@ def test_installer_page_install_conflict_prompts_overwrite(mock_theme_manager: M
 def test_installer_page_overwrite_confirmed_calls_backend_with_overwrite_true(
     mock_theme_manager: MagicMock,
 ) -> None:
-    """Verifica che confermando la sovrascrittura il backend venga chiamato con overwrite=True."""
+    """Verify that confirming overwrite calls backend with overwrite=True."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("ExistingTheme", ThemeType.GTK)]
     mock_theme_manager.install_theme.return_value = [
@@ -287,7 +287,7 @@ def test_installer_page_overwrite_confirmed_calls_backend_with_overwrite_true(
     page = InstallerPage(manager=mock_theme_manager)
     page.select_source(Path("/tmp/existing.zip"), sync=True)
 
-    # Simula la conferma di sovrascrittura chiamando _run_install con overwrite=True
+    # Simulate overwrite confirmation by calling _run_install with overwrite=True
     page._run_install(apply_after=False, overwrite=True, sync=True)
 
     mock_theme_manager.install_theme.assert_called_with(
@@ -296,16 +296,16 @@ def test_installer_page_overwrite_confirmed_calls_backend_with_overwrite_true(
         target_dir="xdg",
     )
     assert page.widget.get_visible_child_name() == "success"
-    # La sorgente selezionata deve essere azzerata dopo il completamento
+    # Selected source must be cleared after completion
     assert page._selected_source is None
     assert page.install_button.get_sensitive() is False
     assert page.install_apply_button.get_sensitive() is False
 
 
 def test_installer_page_button_labels_and_icons(mock_theme_manager: MagicMock) -> None:
-    """Verifica che tutti i pulsanti dell'installer abbiano etichette di testo visibili e icone."""
+    """Verify that all installer buttons have visible text labels and icons."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = InstallerPage(manager=mock_theme_manager)
 
@@ -321,21 +321,17 @@ def test_installer_page_button_labels_and_icons(mock_theme_manager: MagicMock) -
     ]
 
     for btn, expected_label, expected_icon in buttons:
-        assert btn.get_label() == expected_label, (
-            f"Etichetta errata per il pulsante: {expected_label}"
-        )
-        assert btn.get_icon_name() == expected_icon, (
-            f"Icona errata per il pulsante: {expected_icon}"
-        )
+        assert btn.get_label() == expected_label, f"Wrong label for button: {expected_label}"
+        assert btn.get_icon_name() == expected_icon, f"Wrong icon for button: {expected_icon}"
 
 
 def test_installer_page_install_error_state(mock_theme_manager: MagicMock) -> None:
-    """Verifica che errori generici durante l'installazione passino allo stato 'error'."""
+    """Verify that generic errors during install transition to 'error' state."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("ErrorTheme", ThemeType.GTK)]
-    mock_theme_manager.install_theme.side_effect = OSError("Spazio su disco esaurito")
+    mock_theme_manager.install_theme.side_effect = OSError("Disk space full")
 
     page = InstallerPage(manager=mock_theme_manager)
     page.select_source(Path("/tmp/error.zip"), sync=True)
@@ -344,13 +340,13 @@ def test_installer_page_install_error_state(mock_theme_manager: MagicMock) -> No
 
     assert page.widget.get_visible_child_name() == "error"
     desc = page.error_status_page.get_description()
-    assert "Spazio su disco esaurito" in desc
+    assert "Disk space full" in desc
 
 
 def test_installer_page_window_wiring(mock_theme_manager: MagicMock) -> None:
-    """Verifica che in GnomeThemeWindow i callback di InstallerPage rinfreschino le altre viste."""
+    """Verify that in GnomeThemeWindow the InstallerPage callbacks refresh other views."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     from gnome_theme_manager.gui_gtk.app import GnomeThemeApplication
     from gnome_theme_manager.gui_gtk.window import GnomeThemeWindow
@@ -359,7 +355,7 @@ def test_installer_page_window_wiring(mock_theme_manager: MagicMock) -> None:
     try:
         win = GnomeThemeWindow(app=app, manager=mock_theme_manager)
     except Exception as err:
-        pytest.skip(f"Display non disponibile in ambiente headless: {err}")
+        pytest.skip(f"Display unavailable in headless environment: {err}")
 
     with (
         patch.object(win.themes_page, "refresh") as mock_themes_refresh,
@@ -378,9 +374,9 @@ def test_installer_page_window_wiring(mock_theme_manager: MagicMock) -> None:
 
 
 def test_installer_page_file_dialog_invocation(mock_theme_manager: MagicMock) -> None:
-    """Verifica che la selezione cartella o archivio utilizzi Gtk.FileDialog con filtri corretti."""
+    """Verify that selecting folder or archive uses Gtk.FileDialog with correct filters."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     page = InstallerPage(manager=mock_theme_manager)
 
@@ -388,14 +384,14 @@ def test_installer_page_file_dialog_invocation(mock_theme_manager: MagicMock) ->
         mock_dialog = MagicMock()
         mock_file_dialog_new.return_value = mock_dialog
 
-        # 1. Apertura dialogo cartelle
+        # 1. Open folder dialog
         page._open_folder_dialog()
         mock_dialog.set_title.assert_called_with("Select theme folder")
         mock_dialog.select_folder.assert_called_once()
 
         mock_dialog.reset_mock()
 
-        # 2. Apertura dialogo archivi
+        # 2. Open archive dialog
         page._open_archive_dialog()
         mock_dialog.set_title.assert_called_with("Select theme archive")
         mock_dialog.set_filters.assert_called_once()
@@ -405,9 +401,9 @@ def test_installer_page_file_dialog_invocation(mock_theme_manager: MagicMock) ->
 def test_installer_page_pre_install_validation(
     mock_theme_manager: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica che durante l'ispezione venga eseguita la validazione pre-installazione dei componenti."""
+    """Verify that pre-install validation of components is performed during source inspection."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     mock_theme_manager.inspect_theme_source.return_value = [("IncompleteTheme", ThemeType.GTK)]
 

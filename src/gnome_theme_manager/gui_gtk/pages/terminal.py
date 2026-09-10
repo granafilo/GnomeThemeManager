@@ -21,6 +21,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Pango", "1.0")
 from gi.repository import Adw, Gtk, Pango
 
+from ...core.terminal_detector import KNOWN_TERMINALS, is_terminal_installed
 from ...core.terminal_palette import (
     DEFAULT_ANSI_PALETTE,
     TerminalPalette,
@@ -28,6 +29,7 @@ from ...core.terminal_palette import (
     export_palette_to_json,
 )
 from ..widgets.color_picker import ColorPickerButton
+from ..widgets.font_utils import safe_set_font_desc
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -49,6 +51,7 @@ class TerminalPage:
         self.manager = manager
         self.page_id = "terminal"
         self.title = _("Terminal")
+        self.on_notify_message: Callable[[str, bool], None] | None = None
 
         builder = Gtk.Builder()
         builder.set_translation_domain("gnomethememanager")
@@ -105,8 +108,47 @@ class TerminalPage:
             self.terminal_preview_box.add_css_class("terminal-preview-box")
         self._preview_css_provider = Gtk.CssProvider()
 
+        # Terminal Environment UI (Prompt 2.1 Step 4)
+        self.terminal_environment_group: Adw.PreferencesGroup = builder.get_object(
+            "terminal_environment_group"
+        )
+        self.terminal_selector_row: Adw.ComboRow = builder.get_object("terminal_selector_row")
+        self.terminal_icon_image: Gtk.Image = builder.get_object("terminal_icon_image")
+        self.terminal_status_badge: Gtk.Label = builder.get_object("terminal_status_badge")
+        self.terminal_command_row: Adw.ActionRow = builder.get_object("terminal_command_row")
+        self.terminal_warning_row: Adw.ActionRow = builder.get_object("terminal_warning_row")
+        self.profiles_group: Adw.PreferencesGroup = builder.get_object("profiles_group")
+
+        self._supported_terminals: list[str] = [
+            "ptyxis",
+            "gnome-terminal",
+            "kgx",
+            "tilix",
+            "terminator",
+            "konsole",
+            "xfce4-terminal",
+            "mate-terminal",
+            "alacritty",
+            "kitty",
+            "wezterm",
+            "warp",
+            "xterm",
+            "urxvt",
+        ]
+        self._selected_terminal_id: str = "ptyxis"
+        self._updating_terminal_selector: bool = False
+
         # Setup ComboRows models
-        self._setup_combo_models()
+        self._updating_terminal_selector = True
+        try:
+            self._setup_combo_models()
+        finally:
+            self._updating_terminal_selector = False
+
+        if self.terminal_selector_row:
+            self.terminal_selector_row.connect(
+                "notify::selected", self._on_terminal_selection_changed
+            )
 
         # Setup FontDialog
         if self.terminal_font_button:
@@ -146,7 +188,6 @@ class TerminalPage:
         if self.apply_button:
             self.apply_button.connect("clicked", self.on_apply_button_clicked)
 
-        self.on_notify_message: Callable[[str, bool], None] | None = None
         self._current_palette: TerminalPalette = TerminalPalette()
 
     def get_widget(self) -> Gtk.Widget:
@@ -154,25 +195,277 @@ class TerminalPage:
         return self.widget
 
     def refresh(self, sync: bool = False) -> None:
-        """Load profile list and currently selected profile."""
+        """Load detected terminal, profile list, and currently selected profile."""
         try:
+            self._init_terminal_detection()
             self._reload_profiles_list()
             self._load_selected_profile()
         except Exception as err:
             logger.warning("Failed to load terminal palette: %s", err)
 
-    def on_apply_button_clicked(self, _btn: Gtk.Button) -> None:
-        """Apply current terminal palette and preferences to GNOME Terminal."""
-        palette = self._build_current_palette()
-        target_pid = self._selected_profile_id
-        success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
-        if success:
-            self._notify(_("Terminal preferences applied to GNOME Terminal."), is_error=False)
+    def _update_terminal_selector_model(self) -> None:
+        """Populate the terminal selector dropdown with installation warning alerts."""
+        if not self.terminal_selector_row:
+            return
+        names: list[str] = []
+        for tid in self._supported_terminals:
+            spec = KNOWN_TERMINALS.get(tid, {})
+            tname = str(spec.get("terminal_name", tid))
+            desktop_file = f"{spec.get('icon_name', tid)}.desktop"
+            if not is_terminal_installed(tid, desktop_file):
+                names.append(f"{tname}  ⚠️ ({_('Not Installed')})")
+            else:
+                names.append(tname)
+        self.terminal_selector_row.set_model(Gtk.StringList.new(names))
+
+    def _init_terminal_detection(self) -> None:
+        """Detect system terminal and initialize terminal selector dropdown."""
+        self._updating_terminal_selector = True
+        try:
+            self._update_terminal_selector_model()
+
+            detected = self.manager.detect_terminal()
+            tid = getattr(detected, "terminal_id", "ptyxis")
+            if tid in self._supported_terminals:
+                self._selected_terminal_id = tid
+            elif self._supported_terminals:
+                self._selected_terminal_id = self._supported_terminals[0]
+
+            if self.terminal_selector_row:
+                idx = (
+                    self._supported_terminals.index(self._selected_terminal_id)
+                    if self._selected_terminal_id in self._supported_terminals
+                    else 0
+                )
+                self.terminal_selector_row.set_selected(idx)
+        finally:
+            self._updating_terminal_selector = False
+
+        self._update_terminal_ui()
+
+    def _on_terminal_selection_changed(self, _combo: Adw.ComboRow, _param: Any) -> None:
+        """Handle user manual selection override in terminal selector dropdown."""
+        if self._updating_terminal_selector or not self.terminal_selector_row:
+            return
+        idx = self.terminal_selector_row.get_selected()
+        if 0 <= idx < len(self._supported_terminals):
+            self._selected_terminal_id = self._supported_terminals[idx]
+            self._update_terminal_ui()
+
+            # Immediate alert notification if the selected terminal is not installed
+            profile = self.manager.get_terminal_profile(self._selected_terminal_id)
+            if not isinstance(getattr(profile, "terminal_name", None), str):
+                from ...core.terminal_profile import get_terminal_profile
+
+                profile = get_terminal_profile(self._selected_terminal_id)
+            installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
+            if not installed:
+                self._notify(
+                    _("The terminal '{name}' is not installed. Install with: {cmd}").format(
+                        name=profile.terminal_name, cmd=profile.install_command
+                    ),
+                    is_error=True,
+                )
+
+    def _update_terminal_ui(self) -> None:
+        """Update UI elements based on the currently selected terminal profile."""
+        profile = self.manager.get_terminal_profile(self._selected_terminal_id)
+        if not isinstance(getattr(profile, "terminal_name", None), str):
+            from ...core.terminal_profile import get_terminal_profile
+
+            profile = get_terminal_profile(self._selected_terminal_id)
+
+        detected = self.manager.detect_terminal()
+        default_term = self.manager.detect_default_terminal()
+
+        is_detected_active = getattr(detected, "terminal_id", "") == self._selected_terminal_id
+        is_default = getattr(default_term, "terminal_id", "") == self._selected_terminal_id
+        installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
+
+        # 1. Update Subtitle
+        if self.terminal_selector_row:
+            if not installed:
+                self.terminal_selector_row.set_subtitle(
+                    f"⚠️ {_('Not Installed')} — {_('Manual override: {name}')}".format(
+                        name=profile.terminal_name
+                    )
+                )
+            elif is_detected_active:
+                self.terminal_selector_row.set_subtitle(
+                    _("Active terminal: {name}").format(name=profile.terminal_name)
+                )
+            elif is_default:
+                self.terminal_selector_row.set_subtitle(
+                    _("Default terminal: {name}").format(name=profile.terminal_name)
+                )
+            else:
+                self.terminal_selector_row.set_subtitle(
+                    _("Manual override: {name}").format(name=profile.terminal_name)
+                )
+
+        # 2. Update Badge & Row Styling
+        if self.terminal_status_badge:
+            self.terminal_status_badge.remove_css_class("accent")
+            self.terminal_status_badge.remove_css_class("success")
+            self.terminal_status_badge.remove_css_class("warning")
+            if not installed:
+                self.terminal_status_badge.set_label(f"⚠️ {_('Not Installed')}")
+                self.terminal_status_badge.add_css_class("warning")
+            elif is_default:
+                self.terminal_status_badge.set_label(_("Default"))
+                self.terminal_status_badge.add_css_class("accent")
+            else:
+                self.terminal_status_badge.set_label(_("Installed"))
+                self.terminal_status_badge.add_css_class("success")
+
+        if self.terminal_selector_row:
+            if not installed:
+                self.terminal_selector_row.add_css_class("warning")
+            else:
+                self.terminal_selector_row.remove_css_class("warning")
+
+        # 3. Update Icon
+        if self.terminal_icon_image:
+            icon_str = getattr(profile, "icon_name", "utilities-terminal-symbolic")
+            if not isinstance(icon_str, str) or icon_str.startswith("<MagicMock"):
+                icon_str = "utilities-terminal-symbolic"
+            self.terminal_icon_image.set_from_icon_name(icon_str)
+
+        # 4. Update Command row
+        if self.terminal_command_row:
+            self.terminal_command_row.set_subtitle(profile.launch_command)
+
+        # 5. Update Warning row
+        if self.terminal_warning_row:
+            installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
+            if not installed:
+                self.terminal_warning_row.set_visible(True)
+                self.terminal_warning_row.set_title(_("Terminal Not Installed"))
+                self.terminal_warning_row.set_subtitle(
+                    _("The terminal '{name}' is not installed. Install with: {cmd}").format(
+                        name=profile.terminal_name, cmd=profile.install_command
+                    )
+                )
+            elif not profile.supports_profiles:
+                self.terminal_warning_row.set_visible(True)
+                self.terminal_warning_row.set_title(_("Configuration Notice"))
+                self.terminal_warning_row.set_subtitle(
+                    _(
+                        "{name} uses file configuration instead of GSettings. Config path: {path}"
+                    ).format(name=profile.terminal_name, path=profile.config_file_path)
+                )
+            else:
+                self.terminal_warning_row.set_visible(False)
+
+        # 6. Adapt profiles management group
+        if self.profiles_group:
+            self.profiles_group.set_visible(profile.supports_profiles)
+
+        # 7. Update preview label
+        if self.terminal_preview_label:
+            markup = (
+                f"<tt><b>user@gnome</b>:<b>~</b>$ uname -a\n"
+                f"Linux 6.8.0-generic x86_64 GNU/Linux\n"
+                f'<b>user@gnome</b>:<b>~</b>$ echo "{profile.terminal_name} Palette Theme"\n'
+                f'<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> '
+                f'<span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> '
+                f'<span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span></tt>'
+            )
+            self.terminal_preview_label.set_label(markup)
+
+    def _show_error_dialog(self, heading: str, body: str) -> None:
+        """Present an informational error dialogue to the user (Fix 4)."""
+        win = self.widget.get_root()
+        if hasattr(Adw, "AlertDialog"):
+            dialog = Adw.AlertDialog.new(heading=heading, body=body)
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+            dialog.present(win if isinstance(win, Gtk.Widget) else None)
+        elif hasattr(Adw, "MessageDialog"):
+            dialog = Adw.MessageDialog.new(
+                win if isinstance(win, Gtk.Window) else None,
+                heading,
+                body,
+            )
+            dialog.add_response("ok", _("OK"))
+            dialog.set_default_response("ok")
+            dialog.set_close_response("ok")
+            dialog.present()
         else:
+            self._notify(f"{heading}: {body}", is_error=True)
+
+    def on_apply_button_clicked(self, _btn: Gtk.Button) -> None:
+        """Apply current terminal palette and preferences with comprehensive validation."""
+        profile = self.manager.get_terminal_profile(self._selected_terminal_id)
+        if not isinstance(getattr(profile, "terminal_name", None), str):
+            from ...core.terminal_profile import get_terminal_profile
+
+            profile = get_terminal_profile(self._selected_terminal_id)
+
+        installed = is_terminal_installed(profile.terminal_id, f"{profile.icon_name}.desktop")
+
+        # Scenario A - Target terminal not installed
+        if not installed:
+            msg = _("The target terminal '{name}' is not installed. Install with: {cmd}").format(
+                name=profile.terminal_name, cmd=profile.install_command
+            )
+            self._show_error_dialog(_("Terminal not installed"), msg)
+            self._notify(msg, is_error=True)
+            return
+
+        # Scenario C - Terminal does not use GSettings
+        if not profile.supports_profiles and profile.terminal_id not in ("kgx", "ptyxis"):
+            msg = _("{terminal} does not use GSettings profiles. Config path: {path}").format(
+                terminal=profile.terminal_name, path=profile.config_file_path
+            )
+            self._show_error_dialog(_("GSettings not supported"), msg)
+            self._notify(msg, is_error=True)
+            return
+
+        # Scenario B - Schema accessibility check for GSettings
+        term_info = self.manager.detect_terminal()
+        schema_acc = getattr(term_info, "schema_accessible", True)
+        if (
+            isinstance(schema_acc, bool)
+            and not schema_acc
+            and getattr(term_info, "terminal_id", "") == self._selected_terminal_id
+        ):
+            self._show_error_dialog(
+                _("GSettings schema unavailable"),
+                _(
+                    "The terminal GSettings schema is not accessible. Check application permissions."
+                ),
+            )
             self._notify(
-                _("Could not apply to GNOME Terminal profile (GSettings schema unavailable)."),
+                _(
+                    "The terminal GSettings schema is not accessible. Check application permissions."
+                ),
                 is_error=True,
             )
+            return
+
+        palette = self._build_current_palette()
+        target_pid = self._selected_profile_id
+        try:
+            success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
+            if success:
+                self._notify(
+                    _("Terminal preferences applied successfully."),
+                    is_error=False,
+                )
+            else:
+                # Scenario D - Generic application error
+                fail_msg = _("Could not apply preferences to {terminal}.").format(
+                    terminal=profile.terminal_name
+                )
+                self._show_error_dialog(_("Error applying theme"), fail_msg)
+                self._notify(fail_msg, is_error=True)
+        except Exception as err:
+            # Scenario D - Detailed exception error
+            err_msg = _("Failed to apply terminal theme: {error}").format(error=str(err))
+            self._show_error_dialog(_("Error applying theme"), err_msg)
+            self._notify(err_msg, is_error=True)
 
     # ------------------------------------------------------------------
     # Profiles Management
@@ -366,7 +659,9 @@ class TerminalPage:
     # ------------------------------------------------------------------
 
     def _setup_combo_models(self) -> None:
-        """Configure models for cursor shape and blinking ComboRows."""
+        """Configure models for terminal selector, cursor shape, and blinking ComboRows."""
+        self._update_terminal_selector_model()
+
         if self.cursor_shape_row:
             shapes = Gtk.StringList.new([_("Block"), _("I-Beam"), _("Underline")])
             self.cursor_shape_row.set_model(shapes)
@@ -469,7 +764,7 @@ class TerminalPage:
         if self.terminal_font_button and palette.font:
             try:
                 desc = Pango.FontDescription.from_string(palette.font)
-                self.terminal_font_button.set_font_desc(desc)
+                safe_set_font_desc(self.terminal_font_button, desc)
             except Exception as err:
                 logger.debug("Failed to set font desc: %s", err)
 

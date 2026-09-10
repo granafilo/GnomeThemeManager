@@ -25,6 +25,8 @@ from gi.repository import Adw, GLib, Gtk
 from ...core.errors import GSettingsUnavailableError
 from ...core.models import PropagationResult, SandboxStatus, ThemeSet
 from ...core.sandbox_bridge import KNOWN_SNAP_COMMON_THEMES
+from ..widgets.flatpak_dialog import FlatpakPropagationDialog
+from ..widgets.flatpak_wizard import FlatpakWizardDialog
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -99,6 +101,7 @@ class SandboxPage:
 
         self.sandbox_help_button: Gtk.Button = self.builder.get_object("sandbox_help_button")
         self.refresh_button: Gtk.Button = self.builder.get_object("refresh_button")
+        self.flatpak_wizard_button: Gtk.Button = self.builder.get_object("flatpak_wizard_button")
         self.propagate_button: Gtk.Button = self.builder.get_object("propagate_button")
 
         self.error_status_page: Adw.StatusPage = self.builder.get_object("error_status_page")
@@ -107,7 +110,8 @@ class SandboxPage:
         self._button_configs: dict[str, tuple[str, str]] = {
             "sandbox_help_button": (_("Sandbox Guide"), "help-about-symbolic"),
             "refresh_button": (_("Refresh Status"), "emblem-synchronizing-symbolic"),
-            "propagate_button": (_("Propagate Theme to Sandboxed Apps"), "emblem-ok-symbolic"),
+            "flatpak_wizard_button": (_("Configure"), "system-software-install-symbolic"),
+            "propagate_button": (_("Propagate Themes"), "emblem-ok-symbolic"),
             "error_retry_button": (_("Retry"), "emblem-synchronizing-symbolic"),
         }
         for btn_attr, (lbl, icon) in self._button_configs.items():
@@ -130,6 +134,8 @@ class SandboxPage:
         if self.sandbox_help_button is not None:
             self.sandbox_help_button.connect("clicked", self._on_help_clicked)
         self.refresh_button.connect("clicked", lambda _btn: self.refresh())
+        if self.flatpak_wizard_button is not None:
+            self.flatpak_wizard_button.connect("clicked", self._on_wizard_clicked)
         self.propagate_button.connect("clicked", self._on_propagate_clicked)
         self.snap_build_custom_button.connect("clicked", self._on_build_snap_clicked)
         self.error_retry_button.connect("clicked", lambda _btn: self.refresh())
@@ -308,6 +314,19 @@ class SandboxPage:
         else:
             self.flatpak_override_row.set_subtitle(_("Not configured"))
 
+        if not hasattr(self, "_flatpak_override_btn"):
+            self._flatpak_override_btn = Gtk.Button(
+                label=_("Propagate Now"),
+                css_classes=["suggested-action", "flat"],
+                valign=Gtk.Align.CENTER,
+            )
+            self._flatpak_override_btn.connect("clicked", lambda _b: self._on_propagate_clicked())
+            self.flatpak_override_row.add_suffix(self._flatpak_override_btn)
+
+        self._flatpak_override_btn.set_visible(
+            sb.flatpak_available and not sb.flatpak_filesystem_override_active
+        )
+
         if self.flatpak_group is not None:
             self.flatpak_group.set_visible(True)
 
@@ -436,68 +455,35 @@ class SandboxPage:
         threading.Thread(target=run_thread, daemon=True).start()
 
     def _on_propagate_clicked(self, _button: Gtk.Button | None = None) -> None:
-        """Open confirmation dialog before propagation."""
-        if self._confirm_dialog_open:
-            return
-
-        self._confirm_dialog_open = True
+        """Open Flatpak propagation and repair dialog."""
         root_window = self._get_root_window()
-        heading = _("Propagate theme to sandboxed applications?")
-        body = _(
-            "This operation configures filesystem overrides for Flatpak and "
-            "verifies compatibility of active themes with Snap.\n\n"
-            "Not all sandboxed applications or themes can be updated automatically."
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+        dlg = FlatpakPropagationDialog(
+            manager=self.manager,
+            parent_window=parent_win,
+            on_propagated=self._on_propagation_finished,
         )
+        dlg.present()
 
-        if hasattr(Adw, "AlertDialog"):
-            dialog = Adw.AlertDialog.new(heading, body)
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("propagate", _("Propagate Theme"))
-            dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
-            dialog.set_default_response("propagate")
-            dialog.set_close_response("cancel")
+    def _on_wizard_clicked(self, _button: Gtk.Button | None = None) -> None:
+        """Open Flatpak and GNOME dependency guided setup wizard."""
+        root_window = self._get_root_window()
+        parent_win = root_window if isinstance(root_window, Gtk.Window) else None
+        wizard = FlatpakWizardDialog(
+            manager=self.manager,
+            parent_window=parent_win,
+            on_completed=lambda: self.refresh(sync=True),
+        )
+        wizard.present()
 
-            def on_dialog_response(d: Any, response_param: Any) -> None:
-                try:
-                    if hasattr(d, "choose_finish") and not isinstance(response_param, str):
-                        try:
-                            resp = d.choose_finish(response_param)
-                        except (GLib.GError, TypeError, ValueError):
-                            resp = str(response_param)
-                    else:
-                        resp = str(response_param)
-
-                    if resp == "propagate":
-                        self._run_propagation()
-                finally:
-                    self._confirm_dialog_open = False
-
-            dialog.connect("response", on_dialog_response)
-            dialog.present(root_window if isinstance(root_window, Gtk.Widget) else None)
-        elif hasattr(Adw, "MessageDialog"):
-            dialog = Adw.MessageDialog.new(
-                root_window if isinstance(root_window, Gtk.Window) else None,
-                heading,
-                body,
-            )
-            dialog.add_response("cancel", _("Cancel"))
-            dialog.add_response("propagate", _("Propagate Theme"))
-            dialog.set_response_appearance("propagate", Adw.ResponseAppearance.SUGGESTED)
-            dialog.set_default_response("propagate")
-            dialog.set_close_response("cancel")
-
-            def on_msg_response(_dlg: Any, response: str) -> None:
-                try:
-                    if response == "propagate":
-                        self._run_propagation()
-                finally:
-                    self._confirm_dialog_open = False
-
-            dialog.connect("response", on_msg_response)
-            dialog.present()
-        else:
-            self._confirm_dialog_open = False
-            self._run_propagation()
+    def _on_propagation_finished(self) -> None:
+        """Handle completion of propagation."""
+        self.refresh(sync=True)
+        if self.on_sandbox_propagated:
+            try:
+                self.on_sandbox_propagated()
+            except Exception as e:
+                logger.warning("Error in on_sandbox_propagated callback: %s", e)
 
     def _run_propagation(self, sync: bool = False) -> None:
         """Execute propagation."""
@@ -608,10 +594,10 @@ class SandboxPage:
         flatpak_cmd_row = Adw.ActionRow()
         flatpak_cmd_row.set_title(_("Manual Terminal Commands"))
         flatpak_cmd_row.set_subtitle(
-            "flatpak override --user --filesystem=xdg-data/themes:ro\n"
-            "flatpak override --user --filesystem=xdg-data/icons:ro"
+            "flatpak override --user --filesystem=xdg-config/gtk-4.0:ro --filesystem=xdg-config/gtk-3.0:ro\n"
+            "flatpak override --user --filesystem=xdg-data/themes:ro --filesystem=xdg-data/icons:ro"
         )
-        flatpak_cmd_row.set_subtitle_lines(3)
+        flatpak_cmd_row.set_subtitle_lines(4)
         flatpak_group.add(flatpak_cmd_row)
 
         flatpak_note_row = Adw.ActionRow()

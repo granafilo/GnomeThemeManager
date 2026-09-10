@@ -2,15 +2,15 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script di Pulizia Repository - GNOME Theme Manager
+# Repository Cleanup Script - GNOME Theme Manager
 # ==============================================================================
-# Rimuove artefatti di build AppImage, cache Python/pytest, log temporanei e
-# file non necessari per mantenere la repository git pulita.
+# Removes AppImage/Flatpak build artifacts, Python/pytest caches, temporary logs,
+# and unnecessary files to keep the git repository clean.
 # ==============================================================================
 
 set -e
 
-# Modello dei colori ANSI per output chiaro a terminale
+# ANSI colors for clear terminal output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -21,21 +21,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${BLUE}  🧹 Pulizia Repository GNOME Theme Manager${NC}"
+echo -e "${BLUE}  🧹 Cleaning GNOME Theme Manager Repository${NC}"
 echo -e "${BLUE}====================================================${NC}"
 
 cd "$ROOT_DIR"
 
-# 1. Directory e file di build AppImage
-echo -e "\n${YELLOW}[1/4] Rimuovo directory ed artefatti di build AppImage...${NC}"
+# 1. Packaging and build directories/artifacts (Flatpak & legacy AppImage)
+echo -e "\n${YELLOW}[1/4] Removing build directories and artifacts (Flatpak & AppImage)...${NC}"
 rm -rf AppDir/
 rm -rf dist/
 rm -rf squashfs-root/
+rm -rf build-dir/
+rm -rf repo/
+rm -rf .flatpak-builder/
+rm -rf scripts/.flatpak-builder/
 rm -f *.AppImage
 rm -f appimagetool-*.AppImage
+rm -f *.flatpak
+rm -f *.flatpakref
 
-# 2. Cache Python, pytest e ruff
-echo -e "\n${YELLOW}[2/4] Rimuovo cache Python, pytest e ruff...${NC}"
+# 2. Python, pytest, and ruff caches
+echo -e "\n${YELLOW}[2/4] Removing Python, pytest, and ruff caches...${NC}"
 find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 find . -type f -name "*.pyc" -delete 2>/dev/null || true
 rm -rf .pytest_cache/
@@ -43,16 +49,17 @@ rm -rf .ruff_cache/
 rm -rf .coverage
 rm -rf htmlcov/
 
-# 3. File temporanei, log e file di testo locali
-echo -e "\n${YELLOW}[3/4] Rimuovo file temporanei, backup e log di debug...${NC}"
+# 3. Temporary files, backups, and debug logs
+echo -e "\n${YELLOW}[3/4] Removing temporary files, backups, and debug logs...${NC}"
 find . -type f \( -name "*.log" -o -name "*.tmp" -o -name "*.bak" -o -name "*.backup" \) -delete 2>/dev/null || true
 rm -f gtk414-warnings.txt README_old.md README_backup.md *.md.bak
 
-# 4. Riepilogo ed esito
-echo -e "\n${YELLOW}[4/4] Verifica dello stato della repository...${NC}"
+# 4. Summary and status check
+echo -e "\n${YELLOW}[4/4] Verifying repository status...${NC}"
 COUNT=$(find . -type f -not -path './.git/*' -not -path './.venv/*' | wc -l)
 
 echo -e "${GREEN}====================================================${NC}"
-echo -e "${GREEN}  ✅ PULIZIA COMPLETATA CON SUCCESSO!${NC}"
-echo -e "${GREEN}  Totale file sorgente/progetto (escluso .venv e .git): ${COUNT}${NC}"
+echo -e "${GREEN}  ✅ CLEANUP COMPLETED SUCCESSFULLY!${NC}"
+echo -e "${GREEN}  Total source/project files (excluding .venv and .git): ${COUNT}${NC}"
 echo -e "${GREEN}====================================================${NC}"
+

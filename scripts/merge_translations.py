@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Script per fondere le traduzioni pot nei file po it ed en.
+# Script to merge pot translations into po it and en files.
 
 import os
 import re
@@ -22,7 +22,7 @@ def parse_po_pot(filepath):
         msgid_raw = match.group(2)
         msgstr_raw = match.group(3)
 
-        # Concatena le righe tra virgolette
+        # Concatenate quoted lines
         msgid = "".join(eval(chunk) for chunk in msgid_raw.splitlines() if chunk.strip())
         msgstr = "".join(eval(chunk) for chunk in msgstr_raw.splitlines() if chunk.strip())
 
@@ -193,7 +193,7 @@ def merge(pot_path, po_path, lang):
         merged.append({"comments": entry["comments"], "msgid": msgid, "msgstr": msgstr})
 
     write_po(po_path, merged, lang)
-    print(f"Fusi {len(merged)} elementi in {po_path}")
+    print(f"Merged {len(merged)} entries into {po_path}")
 
 
 def main():

@@ -362,6 +362,76 @@ class TestStorePageUnit:
         assert page.cards_grid.get_column_homogeneous() is True
         page._on_grid_width_changed()
 
+    def test_store_page_install_finished_applied(self, mock_manager: MagicMock) -> None:
+        page = StorePage(manager=mock_manager)
+        applied_called = False
+        installed_called = False
+        notified_msg: list[str] = []
+
+        page.on_theme_applied = lambda: nonlocal_applied()
+        page.on_theme_installed = lambda: nonlocal_installed()
+        page.on_notify_message = lambda msg, is_err: notified_msg.append(msg)
+
+        def nonlocal_applied() -> None:
+            nonlocal applied_called
+            applied_called = True
+
+        def nonlocal_installed() -> None:
+            nonlocal installed_called
+            installed_called = True
+
+        from gnome_theme_manager.core.models import Theme, ThemeType
+
+        test_themes = [
+            Theme(
+                name="Fluent-dark",
+                theme_type=ThemeType.ICON,
+                path=Path("/tmp/Fluent-dark"),
+                is_user_level=True,
+            )
+        ]
+        page._on_install_finished(test_themes, ["Fluent-dark"], None, apply_after=True)
+
+        assert applied_called is True
+        assert installed_called is False
+        assert len(notified_msg) == 1
+        assert "Fluent-dark" in notified_msg[0]
+
+    def test_store_page_install_finished_only_installed(self, mock_manager: MagicMock) -> None:
+        page = StorePage(manager=mock_manager)
+        applied_called = False
+        installed_called = False
+        notified_msg: list[str] = []
+
+        page.on_theme_applied = lambda: nonlocal_applied()
+        page.on_theme_installed = lambda: nonlocal_installed()
+        page.on_notify_message = lambda msg, is_err: notified_msg.append(msg)
+
+        def nonlocal_applied() -> None:
+            nonlocal applied_called
+            applied_called = True
+
+        def nonlocal_installed() -> None:
+            nonlocal installed_called
+            installed_called = True
+
+        from gnome_theme_manager.core.models import Theme, ThemeType
+
+        test_themes = [
+            Theme(
+                name="Fluent-dark",
+                theme_type=ThemeType.ICON,
+                path=Path("/tmp/Fluent-dark"),
+                is_user_level=True,
+            )
+        ]
+        page._on_install_finished(test_themes, [], None, apply_after=False)
+
+        assert applied_called is False
+        assert installed_called is True
+        assert len(notified_msg) == 1
+        assert "Fluent-dark" in notified_msg[0]
+
 
 class TestMainWindowStoreIntegration:
     """Test MainWindow integration and sidebar selection of StorePage."""
@@ -397,3 +467,45 @@ class TestMainWindowStoreIntegration:
         # Select store page
         window.select_page("store")
         assert window.content_stack.get_visible_child_name() == "store"
+        assert callable(window.store_page.on_theme_applied)
+        assert callable(window.store_page.on_theme_installed)
+
+
+class TestStoreImageLoading:
+    """Test store image download and caching helper functions."""
+
+    def test_get_image_cache_path(self) -> None:
+        from gnome_theme_manager.gui_gtk.pages.store import _get_image_cache_path
+
+        p = _get_image_cache_path("https://example.com/images/test.png", prefix="thumb")
+        assert p.name.startswith("thumb_")
+        assert p.suffix == ".png"
+
+    def test_download_image_bytes_fallback_high_res_to_original(self) -> None:
+        from gnome_theme_manager.gui_gtk.pages.store import _download_image_bytes
+
+        mock_resp_404 = MagicMock()
+        mock_resp_404.status_code = 404
+
+        mock_resp_200 = MagicMock()
+        mock_resp_200.status_code = 200
+        mock_resp_200.content = b"\x89PNGfakeimage"
+
+        with patch("requests.get", side_effect=[mock_resp_404, mock_resp_200]):
+            data = _download_image_bytes("https://images.pling.com/cache/770x540-4/img/test.png")
+            assert data == b"\x89PNGfakeimage"
+
+    def test_download_image_bytes_urllib_fallback(self) -> None:
+        from gnome_theme_manager.gui_gtk.pages.store import _download_image_bytes
+
+        mock_urllib_resp = MagicMock()
+        mock_urllib_resp.status = 200
+        mock_urllib_resp.read.return_value = b"\x89PNGurllib"
+        mock_urllib_resp.__enter__.return_value = mock_urllib_resp
+
+        with (
+            patch.dict("sys.modules", {"requests": None}),
+            patch("urllib.request.urlopen", return_value=mock_urllib_resp),
+        ):
+            data = _download_image_bytes("https://example.com/image.png")
+            assert data == b"\x89PNGurllib"

@@ -58,6 +58,9 @@ FALLBACKS_FILE = STATE_DIR / "fallbacks.json"
 # Persistent UI preferences file (~/.local/state/gnome-theme-manager/ui_prefs.json)
 UI_PREFS_FILE = STATE_DIR / "ui_prefs.json"
 
+# Persistent extensions catalog cache directory (~/.local/state/gnome-theme-manager/extensions_cache/)
+EXTENSIONS_CACHE_DIR = STATE_DIR / "extensions_cache"
+
 
 # -----------------------------------------------------------------------------
 # Dynamic Theme and Icon Path Resolution (XDG Standard + Legacy Fallback)
@@ -65,59 +68,86 @@ UI_PREFS_FILE = STATE_DIR / "ui_prefs.json"
 
 
 def get_user_themes_dirs() -> list[Path]:
-    """Return user theme directories ($XDG_DATA_HOME/themes and ~/.themes)."""
+    """Return user theme directories (~/.local/share/themes, ~/.themes, and $XDG_DATA_HOME/themes)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
-    base = (
-        Path(xdg_data).expanduser()
-        if xdg_data and xdg_data.strip()
-        else Path.home() / ".local" / "share"
-    )
-    dirs = [base / "themes", Path.home() / ".themes"]
+    dirs = [
+        Path.home() / ".local" / "share" / "themes",
+        Path.home() / ".themes",
+    ]
+    if xdg_data and xdg_data.strip():
+        dirs.append(Path(xdg_data).expanduser() / "themes")
     return list(dict.fromkeys(dirs))
 
 
 def get_user_icons_dirs() -> list[Path]:
-    """Return user icon and cursor directories ($XDG_DATA_HOME/icons and ~/.icons)."""
+    """Return user icon and cursor directories (~/.local/share/icons, ~/.icons, and $XDG_DATA_HOME/icons)."""
     xdg_data = os.environ.get("XDG_DATA_HOME")
-    base = (
-        Path(xdg_data).expanduser()
-        if xdg_data and xdg_data.strip()
-        else Path.home() / ".local" / "share"
-    )
-    dirs = [base / "icons", Path.home() / ".icons"]
+    dirs = [
+        Path.home() / ".local" / "share" / "icons",
+        Path.home() / ".icons",
+    ]
+    if xdg_data and xdg_data.strip():
+        dirs.append(Path(xdg_data).expanduser() / "icons")
     return list(dict.fromkeys(dirs))
 
 
 def get_system_themes_dirs() -> list[Path]:
-    """Return system theme directories ($XDG_DATA_DIRS/themes and standard paths)."""
+    """Return system theme directories prioritizing host directories over container runtimes."""
+    host_dirs = [
+        Path("/run/host/usr/share/themes"),
+        Path("/run/host/usr/local/share/themes"),
+        Path("/run/host/share/themes"),
+        Path("/run/host/user-share/themes"),
+    ]
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
-        dirs = [Path(p).expanduser() / "themes" for p in xdg_dirs.split(":") if p.strip()]
+        # Exclude flatpak internal runtime compatibility shims from high-priority system themes
+        parsed_dirs = [
+            Path(p).expanduser() / "themes"
+            for p in xdg_dirs.split(":")
+            if p.strip() and "/runtime/" not in p
+        ]
     else:
-        dirs = [Path("/usr/share/themes"), Path("/usr/local/share/themes")]
+        parsed_dirs = [Path("/usr/share/themes"), Path("/usr/local/share/themes")]
 
-    # Ensure fallback standard paths are always present
-    for default_path in [Path("/usr/local/share/themes"), Path("/usr/share/themes")]:
-        if default_path not in dirs:
-            dirs.append(default_path)
+    fallback_dirs = [
+        Path("/app/share/themes"),
+        Path("/usr/local/share/themes"),
+        Path("/usr/share/themes"),
+        Path("/usr/share/runtime/share/themes"),
+    ]
 
-    return list(dict.fromkeys(dirs))
+    all_dirs = host_dirs + parsed_dirs + fallback_dirs
+    return list(dict.fromkeys(all_dirs))
 
 
 def get_system_icons_dirs() -> list[Path]:
-    """Return system icon and cursor directories ($XDG_DATA_DIRS/icons and standard paths)."""
+    """Return system icon and cursor directories prioritizing host directories over container runtimes."""
+    host_dirs = [
+        Path("/run/host/usr/share/icons"),
+        Path("/run/host/usr/local/share/icons"),
+        Path("/run/host/share/icons"),
+        Path("/run/host/user-share/icons"),
+    ]
     xdg_dirs = os.environ.get("XDG_DATA_DIRS")
     if xdg_dirs and xdg_dirs.strip():
-        dirs = [Path(p).expanduser() / "icons" for p in xdg_dirs.split(":") if p.strip()]
+        parsed_dirs = [
+            Path(p).expanduser() / "icons"
+            for p in xdg_dirs.split(":")
+            if p.strip() and "/runtime/" not in p
+        ]
     else:
-        dirs = [Path("/usr/share/icons"), Path("/usr/local/share/icons")]
+        parsed_dirs = [Path("/usr/share/icons"), Path("/usr/local/share/icons")]
 
-    # Ensure fallback standard paths are always present
-    for default_path in [Path("/usr/local/share/icons"), Path("/usr/share/icons")]:
-        if default_path not in dirs:
-            dirs.append(default_path)
+    fallback_dirs = [
+        Path("/app/share/icons"),
+        Path("/usr/local/share/icons"),
+        Path("/usr/share/icons"),
+        Path("/usr/share/runtime/share/icons"),
+    ]
 
-    return list(dict.fromkeys(dirs))
+    all_dirs = host_dirs + parsed_dirs + fallback_dirs
+    return list(dict.fromkeys(all_dirs))
 
 
 # Exported lists for backward compatibility

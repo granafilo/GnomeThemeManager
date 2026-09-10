@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Package dei test per GnomeThemeManager."""
+"""Test suite package for GnomeThemeManager."""

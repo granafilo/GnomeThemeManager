@@ -34,6 +34,11 @@ po/                # file .po per i18n (EN sorgente, IT traduzione)
 - Python ≥ 3.10 · PyGObject ≥ 3.42.0 · GTK4 + Libadwaita
 - `gsettings` unico backend di persistenza tema
 - Target primario: Ubuntu 24.04 — GNOME 46
+- Sistemi e ambienti testati e verificati:
+  - Ubuntu 24.04 LTS — GNOME 46 (target di riferimento principale)
+  - Zorin OS 17+ — GNOME 46 (compatibilità layout e zorin-appearance)
+  - Fedora 44 — GNOME 50 (stack GNOME 50 e supporto Libadwaita)
+  - CachyOS — GNOME 50 (rolling release Arch-based, supporto fogli stile Libadwaita GNOME 50+)
 
 ### 0.4 Dipendenze esterne consentite
 Solo PyGObject + `requests` (da Fase 3). Nessuna altra senza approvazione esplicita.

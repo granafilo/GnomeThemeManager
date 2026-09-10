@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo GUI Nativa GTK4 / Libadwaita (Fase 5)."""
+"""Native GTK4 / Libadwaita GUI module."""
 
 import logging
 import sys
@@ -10,10 +10,10 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk")
 
 
 def is_gtk_available() -> bool:
-    """Verifica se PyGObject, GTK4 e Libadwaita sono disponibili nel sistema.
+    """Check if PyGObject, GTK4, and Libadwaita are available on the system.
 
     Returns:
-        True se i moduli PyGObject, Gtk 4.0 e Adw 1 sono importabili, False altrimenti.
+        True if PyGObject, Gtk 4.0, and Adw 1 modules can be imported, False otherwise.
     """
     try:
         import gi
@@ -32,36 +32,44 @@ def launch_gui(
     manager: object | None = None,
     argv: Sequence[str] | None = None,
 ) -> int:
-    """Punto di ingresso per l'avvio della GUI nativa GTK4/Libadwaita.
+    """Entry point for launching the native GTK4/Libadwaita GUI.
 
     Args:
-        manager: Istanza opzionale di ThemeManager.
-        argv: Argomenti da riga di comando opzionali passati all'applicazione.
+        manager: Optional ThemeManager instance.
+        argv: Optional command line arguments passed to the application.
 
     Returns:
-        Codice di uscita dell'applicazione (0 per successo, 1 se GTK4 non è disponibile).
+        Application exit code (0 for success, 1 if GTK4 is not available).
     """
     if not is_gtk_available():
+        from ..core.os_detector import get_install_command
+
+        install_cmd = get_install_command("gtk4")
         print(
-            "\n[ERRORE GUI] Impossibile avviare l'interfaccia grafica GTK4/Libadwaita.\n"
-            "Assicurati di essere su un ambiente desktop compatibile e che i pacchetti siano installati:\n"
-            "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n",
+            "\n[GUI ERROR] Unable to start GTK4/Libadwaita graphical interface.\n"
+            "Ensure you are running in a compatible desktop environment with the required packages installed:\n"
+            f"    {install_cmd}\n",
             file=sys.stderr,
         )
         return 1
 
+    from gi.repository import GLib
+
     from ..core.manager import ThemeManager
     from .app import GnomeThemeApplication
+
+    GLib.set_prgname("io.github.granafilo.ThemeManager")
+    GLib.set_application_name("GNOME Theme Manager")
 
     theme_mgr = manager if isinstance(manager, ThemeManager) else ThemeManager()
     app = GnomeThemeApplication(manager=theme_mgr)
 
-    # Convertiamo gli argomenti per l'API GApplication.run()
+    # Convert arguments for the GApplication.run() API
     args_list = list(argv) if argv is not None else [sys.argv[0]]
     try:
         return app.run(args_list)
     except KeyboardInterrupt:
-        logger.debug("Interruzione dell'applicazione da terminale (SIGINT/Ctrl+C).")
+        logger.debug("Application interrupted from terminal (SIGINT/Ctrl+C).")
         return 130
 
 

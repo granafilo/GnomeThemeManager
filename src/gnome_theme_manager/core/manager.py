@@ -12,27 +12,34 @@ high-level entry point to consume all core package capabilities:
 """
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from .constants import GSETTINGS_COLOR_SCHEMES, GSETTINGS_KEY_COLOR_SCHEME
 from .editor_draft import EditorDraftManager
 from .errors import GSettingsUnavailableError, ThemeNotFoundError, ThemeValidationError
+from .extension_backend import ExtensionBackend, get_extension_backend
 from .extensions import ExtensionsManager
 from .fallback import FallbackManager
 from .fonts import FontConfig
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
+from .icon_fallback import IconFallbackResolver, IconResolutionResult
 from .installer import ThemeInstaller
 from .models import (
     ApplyResult,
+    FlatpakRepairResult,
+    FlatpakStatus,
     PropagationResult,
     SandboxStatus,
     SystemStatus,
     Theme,
     ThemeSet,
     ThemeType,
+    WizardStepInfo,
+    WizardStepResult,
 )
 from .presets import PresetManager
 from .sandbox_bridge import SandboxBridge
@@ -79,6 +86,8 @@ class ThemeManager:
         editor_drafts: EditorDraftManager | None = None,
         fallback_manager: FallbackManager | None = None,
         store_client: StoreClient | None = None,
+        icon_resolver: IconFallbackResolver | None = None,
+        extension_backend: ExtensionBackend | None = None,
     ) -> None:
         """Initialize ThemeManager with optional subsystem dependency injection.
 
@@ -97,6 +106,8 @@ class ThemeManager:
             editor_drafts: Custom EditorDraftManager instance (optional).
             fallback_manager: Custom FallbackManager instance (optional).
             store_client: Custom StoreClient instance (optional).
+            icon_resolver: Custom IconFallbackResolver instance (optional).
+            extension_backend: Custom ExtensionBackend instance (optional).
         """
         self._scanner = scanner or ThemeScanner()
         self._gtk4_linker = gtk4_linker or GTK4ThemeLinker()
@@ -104,8 +115,10 @@ class ThemeManager:
         self._presets = presets or PresetManager()
         self._sandbox = sandbox_bridge or SandboxBridge()
         self._extensions = extensions or ExtensionsManager()
+        self._extension_backend = extension_backend
         self._validator = validator or ThemeValidator()
         self._store_client = store_client or StoreClient()
+        self._icon_resolver = icon_resolver or IconFallbackResolver()
         self._theme_preview = SystemThemePreviewSession(
             get_current_themes_fn=self._get_current_themes_safe,
             apply_themes_fn=self.apply_themes,
@@ -329,6 +342,15 @@ class ThemeManager:
         return self._extensions
 
     @property
+    def extension_backend(self) -> ExtensionBackend:
+        """Return associated GNOME Shell extensions backend."""
+        if self._extension_backend is None:
+            self._extension_backend = get_extension_backend(
+                backend_type="rest", extensions_manager=self._extensions
+            )
+        return self._extension_backend
+
+    @property
     def global_themes(self) -> GlobalThemeManager:
         """Return associated global theme manager."""
         return self._global_themes
@@ -342,6 +364,29 @@ class ThemeManager:
     def validator(self) -> ThemeValidator:
         """Return associated theme validator."""
         return self._validator
+
+    @property
+    def icon_resolver(self) -> IconFallbackResolver:
+        """Return associated cascading icon fallback resolver."""
+        return self._icon_resolver
+
+    def resolve_icon(
+        self,
+        icon_name: str,
+        icon_theme: Any = None,
+        theme_name: str | None = None,
+    ) -> IconResolutionResult:
+        """Resolve an icon using the 3-level cascading fallback system.
+
+        Args:
+            icon_name: Name of requested icon.
+            icon_theme: Optional Gtk.IconTheme instance.
+            theme_name: Optional icon theme name.
+
+        Returns:
+            IconResolutionResult with resolved icon and resolution level.
+        """
+        return self._icon_resolver.resolve(icon_name, icon_theme=icon_theme, theme_name=theme_name)
 
     def validate_theme(self, theme_path: Path, theme_type: ThemeType) -> ThemeValidationResult:
         """Validate structural integrity and compliance of a theme.
@@ -392,25 +437,35 @@ class ThemeManager:
         Returns:
             SystemStatus instance containing GSettings, extensions, paths, and sandbox info.
         """
-        gsettings_avail = self._gsettings is not None
-        shell_supported = bool(self._gsettings and self._gsettings.is_shell_theme_supported)
+        client = None
+        try:
+            client = self.gsettings
+        except GSettingsUnavailableError:
+            pass
+
+        gsettings_avail = client is not None
+        ext_enabled = bool(self._extensions and self._extensions.is_user_theme_enabled())
+        gsettings_shell = bool(client and client.is_shell_theme_supported)
+        shell_supported = gsettings_avail and (gsettings_shell or ext_enabled)
 
         color_scheme_supported = False
-        if (
-            self._gsettings
-            and hasattr(self._gsettings, "_has_key")
-            and hasattr(self._gsettings, "_settings")
-        ):
-            color_scheme_supported = self._gsettings._has_key(
-                self._gsettings._settings, GSETTINGS_KEY_COLOR_SCHEME
-            )
+        if client and hasattr(client, "_has_key") and hasattr(client, "_settings"):
+            color_scheme_supported = client._has_key(client._settings, GSETTINGS_KEY_COLOR_SCHEME)
 
         sandbox_stat = self._sandbox.get_sandbox_status()
         gtk4_override_stat = self._gtk4_linker.is_override_active()
 
         override_status = None
-        if self._gsettings:
-            override_status = self._gsettings.detect_gtk4_override()
+        if client:
+            override_status = client.detect_gtk4_override()
+
+        from .gnome_version import (
+            detect_gnome_version_string,
+            is_gnome_50_plus,
+        )
+
+        gnome_ver = detect_gnome_version_string()
+        is_50_plus = is_gnome_50_plus()
 
         return SystemStatus(
             gsettings_available=gsettings_avail,
@@ -421,7 +476,33 @@ class ThemeManager:
             sandbox_status=sandbox_stat,
             gtk4_override_active=gtk4_override_stat,
             gtk4_override_status=override_status,
+            gnome_version=gnome_ver,
+            is_gnome_50_plus=is_50_plus,
         )
+
+    def get_gnome_version(self) -> tuple[int, int] | None:
+        """Detect and return GNOME major and minor version."""
+        from .gnome_version import detect_gnome_version
+
+        return detect_gnome_version()
+
+    def get_gnome_version_string(self) -> str:
+        """Detect and return GNOME version string."""
+        from .gnome_version import detect_gnome_version_string
+
+        return detect_gnome_version_string()
+
+    def is_gnome_50_plus(self) -> bool:
+        """Return True if running on GNOME 50 or higher."""
+        from .gnome_version import is_gnome_50_plus
+
+        return is_gnome_50_plus()
+
+    def get_required_theme_structure(self) -> dict[str, Any]:
+        """Return required theme structure based on detected GNOME version."""
+        from .gnome_version import get_required_theme_structure
+
+        return get_required_theme_structure()
 
     def get_sandbox_status(self) -> SandboxStatus:
         """Return diagnostic status of sandbox runtimes (Flatpak and Snap).
@@ -430,6 +511,74 @@ class ThemeManager:
             SandboxStatus instance.
         """
         return self._sandbox.get_sandbox_status()
+
+    def check_flatpak_status(self, user_mode: bool | None = None) -> FlatpakStatus:
+        """Check status of Flatpak runtime, Flathub, Extension Manager, and User Themes.
+
+        Args:
+            user_mode: True to check user-specific scope, False for system-wide scope,
+                or None to check both scopes.
+
+        Returns:
+            FlatpakStatus with detected availability flags.
+        """
+        return self._sandbox.check_flatpak_status(
+            user_mode=user_mode,
+            extensions_manager=self._extensions,
+        )
+
+    def repair_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> FlatpakRepairResult:
+        """Execute flatpak repair with optional progress reporting."""
+        return self._sandbox.repair_flatpak(
+            user_mode=user_mode,
+            use_pkexec=use_pkexec,
+            on_progress=on_progress,
+        )
+
+    def repair_and_propagate_flatpak(
+        self,
+        user_mode: bool = True,
+        use_pkexec: bool = False,
+        gtk_theme: str | None = None,
+        icon_theme: str | None = None,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> tuple[FlatpakRepairResult, PropagationResult]:
+        """Repair Flatpak installation and propagate theme overrides."""
+        return self._sandbox.repair_and_propagate_flatpak(
+            user_mode=user_mode,
+            use_pkexec=use_pkexec,
+            gtk_theme=gtk_theme,
+            icon_theme=icon_theme,
+            on_progress=on_progress,
+        )
+
+    def get_flatpak_wizard_steps(
+        self,
+        user_mode: bool = True,
+    ) -> list[WizardStepInfo]:
+        """Return guided installation wizard steps with system-tailored commands."""
+        return self._sandbox.get_wizard_steps(
+            user_mode=user_mode,
+            extensions_manager=self._extensions,
+        )
+
+    def execute_wizard_step(
+        self,
+        step: WizardStepInfo,
+        user_mode: bool = True,
+        on_progress: Callable[[str], None] | None = None,
+    ) -> WizardStepResult:
+        """Execute a guided installation step with live progress reporting."""
+        return self._sandbox.execute_wizard_step(
+            step=step,
+            user_mode=user_mode,
+            on_progress=on_progress,
+        )
 
     def propagate_sandbox(
         self,
@@ -487,6 +636,11 @@ class ThemeManager:
             themes = self._scanner.scan_all(user_only=user_only)
 
         return sorted(themes, key=lambda t: (t.theme_type.value, t.name.lower()))
+
+    def invalidate_themes_cache(self) -> None:
+        """Invalidate scanner cache so next theme list call rescans the filesystem."""
+        if hasattr(self._scanner, "invalidate_cache"):
+            self._scanner.invalidate_cache()
 
     def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
         """Find a specific theme by name and type on the filesystem.
@@ -692,7 +846,8 @@ class ThemeManager:
             )
 
         # 6. Shell theme support check
-        if shell_to_apply is not None and not client.is_shell_theme_supported:
+        ext_enabled = bool(self._extensions and self._extensions.is_user_theme_enabled())
+        if shell_to_apply is not None and not (client.is_shell_theme_supported or ext_enabled):
             warning_msg = (
                 "Cannot apply GNOME Shell theme: the 'User Themes' extension "
                 "(schema org.gnome.shell.extensions.user-theme) is not installed or active."
@@ -1187,10 +1342,82 @@ class ThemeManager:
 
         return set_default_gnome_terminal_profile(profile_id)
 
+    def detect_os(self) -> Any:
+        """Detect host Linux distribution, version, and default package manager."""
+        from .os_detector import detect_os
+
+        return detect_os()
+
+    def get_install_command(self, dependency: str) -> str:
+        """Return the distribution-specific installation command for a dependency.
+
+        Args:
+            dependency: Identifier or name of the dependency.
+
+        Returns:
+            Exact shell installation command for the detected host OS.
+        """
+        from .os_detector import get_install_command
+
+        return get_install_command(dependency, os_info=self.detect_os())
+
+    def get_os_install_commands(self, dependency: str) -> dict[str, str]:
+        """Return installation commands for a dependency across major Linux distributions.
+
+        Args:
+            dependency: Identifier or name of the dependency.
+
+        Returns:
+            Dictionary mapping distribution names to their shell installation commands.
+        """
+        from .os_detector import get_os_install_commands
+
+        return get_os_install_commands(dependency)
+
+    def get_extension_manager_install_options(self) -> list[dict[str, str]]:
+        """Return available installation options for Extension Manager across package systems.
+
+        Returns:
+            List of dictionaries with 'id', 'name', 'command', and 'description'.
+        """
+        from .os_detector import get_extension_manager_install_options
+
+        return get_extension_manager_install_options(os_info=self.detect_os())
+
+    def detect_terminal(self) -> Any:
+        """Detect active terminal or default terminal emulator."""
+        from .terminal_detector import detect_terminal
+
+        return detect_terminal()
+
+    def detect_default_terminal(self) -> Any:
+        """Detect the system default terminal emulator."""
+        from .terminal_detector import detect_default_terminal
+
+        return detect_default_terminal()
+
+    def get_terminal_profile(self, terminal_id: str | None = None) -> Any:
+        """Retrieve the capability profile and commands for a given or detected terminal.
+
+        Args:
+            terminal_id: Optional terminal identifier. If None, uses detected terminal.
+
+        Returns:
+            TerminalProfile instance.
+        """
+        from .terminal_profile import get_terminal_profile
+
+        if terminal_id is None:
+            detected = self.detect_terminal()
+            terminal_id = getattr(detected, "terminal_id", "unknown")
+
+        os_info = self.detect_os()
+        return get_terminal_profile(terminal_id=terminal_id, os_info=os_info)
+
     def apply_terminal_palette(
         self, palette: TerminalPalette, profile_id: str | None = None
     ) -> bool:
-        """Apply terminal palette to GNOME Terminal (Task 4.4).
+        """Apply terminal palette to the detected terminal emulator.
 
         Args:
             palette: TerminalPalette to apply.
@@ -1199,6 +1426,14 @@ class ThemeManager:
         Returns:
             True if applied successfully, False otherwise.
         """
+        from .terminal_palette import (
+            apply_palette_to_gnome_console,
+            detect_installed_terminal,
+        )
+
+        term = detect_installed_terminal()
+        if term is not None and term.terminal_type == "kgx":
+            return apply_palette_to_gnome_console(palette)
         return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
 
     # -------------------------------------------------------------------------
@@ -1250,13 +1485,15 @@ class ThemeManager:
         logger.info(
             "Theme directory installation requested: %s (target_dir=%s)", directory_path, target_dir
         )
-        return self._installer.install_directory(
+        res = self._installer.install_directory(
             directory_path=Path(directory_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def install_theme_archive(
         self,
@@ -1281,13 +1518,15 @@ class ThemeManager:
         logger.info(
             "Theme archive installation requested: %s (target_dir=%s)", archive_path, target_dir
         )
-        return self._installer.install(
+        res = self._installer.install(
             archive_path=Path(archive_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def install_theme(
         self,
@@ -1314,13 +1553,15 @@ class ThemeManager:
         logger.info(
             "Theme installation requested from source: %s (target_dir=%s)", source_path, target_dir
         )
-        return self._installer.install(
+        res = self._installer.install(
             archive_path=Path(source_path),
             theme_type=theme_type,
             custom_name=custom_name,
             overwrite=overwrite,
             target_dir=target_dir,
         )
+        self._scanner.invalidate_cache()
+        return res
 
     def uninstall_theme(self, name: str, theme_type: ThemeType) -> bool:
         """Uninstall a specific theme from user directories.
@@ -1336,7 +1577,9 @@ class ThemeManager:
             ThemeNotFoundError: If theme is not found in user directories.
         """
         logger.info("Theme uninstallation requested: '%s' (%s)", name, theme_type)
-        return self._installer.uninstall(theme_name=name, theme_type=theme_type)
+        res = self._installer.uninstall(theme_name=name, theme_type=theme_type)
+        self._scanner.invalidate_cache()
+        return res
 
     def apply_custom_theme_to_snap(
         self,

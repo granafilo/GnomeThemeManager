@@ -2,75 +2,75 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # =============================================================================
-# GnomeThemeManager - Script di Inizializzazione Ambiente di Sviluppo e Test
+# GnomeThemeManager - Development and Test Environment Setup Script
 # =============================================================================
-# Questo script:
-# 1. Verifica la presenza di Python 3 e dei pacchetti di sistema richiesti (PyGObject).
-# 2. Crea il virtual environment (.venv) con supporto a --system-site-packages.
-# 3. Installa e aggiorna le dipendenze di runtime e di sviluppo (pytest, ruff, ecc.).
-# 4. Installa il pacchetto in modalità editabile (pip install -e .).
-# 5. Esegue un test di verifica diagnostico.
+# This script:
+# 1. Checks for Python 3 and required system packages (PyGObject).
+# 2. Creates the virtual environment (.venv) with --system-site-packages support.
+# 3. Installs and updates runtime and development dependencies (pytest, ruff, etc.).
+# 4. Installs the package in editable mode (pip install -e .).
+# 5. Runs a diagnostic verification check.
 # =============================================================================
 
 set -e
 
-# Colori per l'output nel terminale
+# Terminal output colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Posizionamento nella radice del progetto
+# Navigate to project root
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo -e "${BLUE}======================================================${NC}"
-echo -e "${BLUE}  Inizializzazione Ambiente: GnomeThemeManager       ${NC}"
+echo -e "${BLUE}  Environment Setup: GnomeThemeManager                ${NC}"
 echo -e "${BLUE}======================================================${NC}"
 
-# 1. Verifica Python 3
+# 1. Check Python 3
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}[ERRORE] Python 3 non trovato. Installa Python con:${NC}"
+    echo -e "${RED}[ERROR] Python 3 not found. Install Python with:${NC}"
     echo "  sudo apt update && sudo apt install python3 python3-venv python3-pip"
     exit 1
 fi
 
 PYTHON_VERSION=$(python3 --version 2>&1)
-echo -e "${GREEN}✓ Trovato:${NC} $PYTHON_VERSION"
+echo -e "${GREEN}✓ Found:${NC} $PYTHON_VERSION"
 
-# 2. Controllo dipendenze di sistema Ubuntu per PyGObject (GSettings / Gio)
-echo -e "\n${BLUE}[1/4] Verifica dipendenze di sistema GNOME/PyGObject...${NC}"
+# 2. Check Ubuntu system dependencies for PyGObject (GSettings / Gio)
+echo -e "\n${BLUE}[1/4] Checking GNOME/PyGObject system dependencies...${NC}"
 if ! dpkg -s python3-gi &> /dev/null; then
-    echo -e "${YELLOW}[AVVISO] Alcuni pacchetti di sistema consigliati non sembrano installati.${NC}"
-    echo "Per garantire la piena compatibilità con GSettings su Ubuntu, esegui:"
+    echo -e "${YELLOW}[WARNING] Some recommended system packages do not appear to be installed.${NC}"
+    echo "To ensure full compatibility with GSettings on Ubuntu, run:"
     echo -e "${YELLOW}  sudo apt update && sudo apt install -y python3-gi libglib2.0-0 gnome-shell-extension-user-theme${NC}"
 else
-    echo -e "${GREEN}✓ Pacchetto di sistema python3-gi presente.${NC}"
+    echo -e "${GREEN}✓ System package python3-gi is present.${NC}"
 fi
 
-# 3. Creazione del Virtual Environment (.venv)
-echo -e "\n${BLUE}[2/4] Configurazione del virtual environment (.venv)...${NC}"
+# 3. Create Virtual Environment (.venv)
+echo -e "\n${BLUE}[2/4] Setting up virtual environment (.venv)...${NC}"
 if [ ! -d ".venv" ]; then
-    echo "Creazione nuovo virtualenv con accesso a system site packages..."
+    echo "Creating new virtualenv with access to system site packages..."
     python3 -m venv --system-site-packages .venv
-    echo -e "${GREEN}✓ Cartella .venv creata con successo.${NC}"
+    echo -e "${GREEN}✓ Folder .venv created successfully.${NC}"
 else
-    echo -e "${GREEN}✓ Virtualenv .venv già esistente.${NC}"
+    echo -e "${GREEN}✓ Virtualenv .venv already exists.${NC}"
 fi
 
-# 4. Attivazione ed installazione dipendenze
-echo -e "\n${BLUE}[3/4] Installazione dipendenze e pacchetto locale...${NC}"
+# 4. Activate and install dependencies
+echo -e "\n${BLUE}[3/4] Installing dependencies and local package...${NC}"
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
 pip install --upgrade pip --quiet
 pip install -e .[dev] --quiet
 
-echo -e "${GREEN}✓ Dipendenze installate (pytest, pytest-cov, ruff, gnome_theme_manager).${NC}"
+echo -e "${GREEN}✓ Dependencies installed (pytest, pytest-cov, ruff, gnome_theme_manager).${NC}"
 
-# 5. Test diagnostico di import e verifica
-echo -e "\n${BLUE}[4/4] Esecuzione verifica diagnostica...${NC}"
+# 5. Diagnostic import and verification test
+echo -e "\n${BLUE}[4/4] Running diagnostic verification...${NC}"
 python3 -c "
 import sys
 from gnome_theme_manager.core import ThemeManager, PresetManager
@@ -78,21 +78,21 @@ from gnome_theme_manager.core import ThemeManager, PresetManager
 manager = ThemeManager()
 status = manager.get_system_status()
 
-print('  - PyGObject / GSettings disponibile:', status.gsettings_available)
-print('  - Supporto GNOME Shell Theme:       ', status.shell_theme_supported)
-print('  - Cartella temi utente:             ', status.user_themes_path)
-print('  - Cartella icone utente:            ', status.user_icons_path)
-print('  - Preset disponibili:               ', len(manager.list_presets()))
+print('  - PyGObject / GSettings available:  ', status.gsettings_available)
+print('  - GNOME Shell Theme support:        ', status.shell_theme_supported)
+print('  - User themes directory:            ', status.user_themes_path)
+print('  - User icons directory:             ', status.user_icons_path)
+print('  - Available presets:                ', len(manager.list_presets()))
 "
 
 echo -e "\n${GREEN}======================================================${NC}"
-echo -e "${GREEN}  ✓ Ambiente pronto all'uso!                         ${NC}"
+echo -e "${GREEN}  ✓ Environment ready for use!                       ${NC}"
 echo -e "${GREEN}======================================================${NC}"
-echo -e "Per attivare l'ambiente nella tua shell corrente, digita:\n"
+echo -e "To activate the environment in your current shell, run:\n"
 echo -e "  ${YELLOW}source .venv/bin/activate${NC}\n"
-echo -e "Per avviare la suite di test completa:\n"
+echo -e "To run the complete test suite:\n"
 echo -e "  ${YELLOW}pytest -v${NC}\n"
-echo -e "Per usare la CLI del manager:\n"
+echo -e "To use the manager CLI:\n"
 echo -e "  ${YELLOW}gnome-theme-manager current${NC}"
 echo -e "  ${YELLOW}gnome-theme-manager list${NC}"
 echo -e "  ${YELLOW}gnome-theme-manager preset list${NC}\n"

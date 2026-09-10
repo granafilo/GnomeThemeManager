@@ -25,6 +25,7 @@ from gi.repository import Adw, GLib, Gtk
 from ...core.errors import GnomeThemeManagerError, GSettingsUnavailableError
 from ...core.gsettings import Gtk4OverrideStatus
 from ...core.models import SystemStatus, ThemeSet, ThemeType
+from ..widgets.flatpak_dialog import FlatpakPropagationDialog
 
 if TYPE_CHECKING:
     from ...core.manager import ThemeManager
@@ -149,6 +150,8 @@ class StatusPage:
 
         self.widget: Gtk.Stack = self.builder.get_object("page_root")
         self.banner_warning: Adw.Banner = self.builder.get_object("banner_warning")
+        if self.banner_warning is not None:
+            self.banner_warning.connect("button-clicked", self._on_banner_warning_clicked)
 
         self.row_gtk_theme: Adw.ActionRow = self.builder.get_object("row_gtk_theme")
         self.row_icon_theme: Adw.ActionRow = self.builder.get_object("row_icon_theme")
@@ -514,10 +517,20 @@ class StatusPage:
             self.row_snap_status.set_visible(True)
             self.row_snap_status.set_subtitle(_("Not available"))
 
+        flatpak_inactive = False
+        sb_status = snapshot.system_status.sandbox_status
+        if sb_status and sb_status.flatpak_available:
+            flatpak_inactive = not sb_status.flatpak_filesystem_override_active
+
         if snapshot.warnings:
             self.banner_warning.set_title(_("Warnings: ") + " • ".join(snapshot.warnings))
+            if flatpak_inactive:
+                self.banner_warning.set_button_label(_("Propagate Now"))
+            else:
+                self.banner_warning.set_button_label("")
             self.banner_warning.set_revealed(True)
         else:
+            self.banner_warning.set_button_label("")
             self.banner_warning.set_revealed(False)
 
         self._populate_fallback_dropdowns(snapshot)
@@ -692,3 +705,19 @@ class StatusPage:
 
         self.error_page.set_description(user_msg)
         self.widget.set_visible_child_name("error")
+
+    def _get_root_window(self) -> Gtk.Window | None:
+        """Retrieve parent Gtk.Window."""
+        root = self.widget.get_root()
+        if isinstance(root, Gtk.Window):
+            return root
+        return None
+
+    def _on_banner_warning_clicked(self, _banner: Adw.Banner) -> None:
+        """Handle click on warning banner action button."""
+        dlg = FlatpakPropagationDialog(
+            manager=self.manager,
+            parent_window=self._get_root_window(),
+            on_propagated=lambda: self.refresh(),
+        )
+        dlg.present()

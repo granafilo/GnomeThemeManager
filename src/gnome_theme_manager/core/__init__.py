@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Modulo core di GnomeThemeManager."""
+"""Core module for GnomeThemeManager."""
 
 from .constants import (
     FALLBACKS_FILE,
@@ -26,6 +26,11 @@ from .desktop_integration import integrate_desktop
 from .editor_draft import EditorDraft, EditorDraftManager
 from .errors import (
     ArchiveExtractionError,
+    ExtensionError,
+    ExtensionIncompatibleError,
+    ExtensionInstallError,
+    ExtensionNetworkError,
+    ExtensionNotFoundError,
     GnomeThemeManagerError,
     GSettingsUnavailableError,
     StoreDownloadError,
@@ -34,6 +39,14 @@ from .errors import (
     StoreNetworkError,
     ThemeNotFoundError,
     ThemeValidationError,
+)
+from .extension_backend import (
+    ExtensionBackend,
+    ExtensionItem,
+    ExtensionSearchResult,
+    GnomeExtensionsCliBackend,
+    GnomeExtensionsRestBackend,
+    get_extension_backend,
 )
 from .extensions import (
     ExtensionsManager,
@@ -48,6 +61,15 @@ from .fallback import (
 from .global_themes import GlobalTheme, GlobalThemeManager
 from .gsettings import GSettingsClient
 from .gtk4_linker import GTK4ThemeLinker
+from .icon_fallback import (
+    BUNDLED_ICONS_DIR,
+    ICON_FALLBACK_CHAINS,
+    STANDARD_SYSTEM_ICON_DIRS,
+    IconFallbackResolver,
+    IconResolutionResult,
+    get_fallback_icon_name,
+    resolve_icon,
+)
 from .installer import (
     ThemeInstaller,
     detect_theme_types,
@@ -57,15 +79,36 @@ from .installer import (
 from .manager import ThemeManager
 from .models import (
     ApplyResult,
+    FlatpakRepairResult,
+    FlatpakStatus,
     PropagationResult,
     SandboxStatus,
     SystemStatus,
     Theme,
     ThemeSet,
     ThemeType,
+    WizardStepInfo,
+    WizardStepResult,
+)
+from .os_detector import (
+    DEPENDENCY_PACKAGE_MAP,
+    PACKAGE_MANAGER_INSTALL_TEMPLATES,
+    OSInfo,
+    detect_os,
+    get_extension_manager_install_options,
+    get_install_command,
+    get_missing_dependency_hint,
+    get_os_install_commands,
 )
 from .presets import PresetManager
-from .sandbox_bridge import SandboxBridge
+from .sandbox_bridge import (
+    SandboxBridge,
+    check_flatpak_status,
+    execute_wizard_step,
+    get_flatpak_wizard_steps,
+    repair_and_propagate_flatpak,
+    repair_flatpak,
+)
 from .scanner import ThemeScanner
 from .shell_editor import (
     ShellColorExtractor,
@@ -82,6 +125,11 @@ from .store_client import (
     StoreItem,
     theme_type_to_store_category,
 )
+from .terminal_detector import (
+    TerminalInfo,
+    detect_default_terminal,
+    detect_terminal,
+)
 from .terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
@@ -93,6 +141,10 @@ from .terminal_palette import (
     import_palette_from_json,
     list_gnome_terminal_profiles,
     set_default_gnome_terminal_profile,
+)
+from .terminal_profile import (
+    TerminalProfile,
+    get_terminal_profile,
 )
 from .theme_editor import ThemeComposition, ThemeMixer
 from .theme_forks import (
@@ -109,6 +161,8 @@ from .wallpaper_color import (
 )
 
 __all__ = [
+    "BUNDLED_ICONS_DIR",
+    "DEPENDENCY_PACKAGE_MAP",
     "FALLBACKS_FILE",
     "GLOBAL_THEMES_FILE",
     "GSETTINGS_COLOR_SCHEMES",
@@ -120,7 +174,10 @@ __all__ = [
     "GSETTINGS_SCHEMA_INTERFACE",
     "GSETTINGS_SCHEMA_USER_THEME",
     "GTK4_CONFIG_DIR",
+    "ICON_FALLBACK_CHAINS",
+    "PACKAGE_MANAGER_INSTALL_TEMPLATES",
     "PRESETS_DIR",
+    "STANDARD_SYSTEM_ICON_DIRS",
     "STATE_DIR",
     "SYSTEM_ICONS_DIRS",
     "SYSTEM_THEMES_DIRS",
@@ -130,17 +187,32 @@ __all__ = [
     "ArchiveExtractionError",
     "EditorDraft",
     "EditorDraftManager",
+    "ExtensionBackend",
+    "ExtensionError",
+    "ExtensionIncompatibleError",
+    "ExtensionInstallError",
+    "ExtensionItem",
+    "ExtensionNetworkError",
+    "ExtensionNotFoundError",
+    "ExtensionSearchResult",
     "ExtensionsManager",
     "ExtractedColors",
     "FallbackConfig",
     "FallbackManager",
+    "FlatpakRepairResult",
+    "FlatpakStatus",
     "GSettingsClient",
     "GSettingsUnavailableError",
     "GTK4ThemeLinker",
     "GlobalTheme",
     "GlobalThemeManager",
     "GnomeExtension",
+    "GnomeExtensionsCliBackend",
+    "GnomeExtensionsRestBackend",
     "GnomeThemeManagerError",
+    "IconFallbackResolver",
+    "IconResolutionResult",
+    "OSInfo",
     "PresetManager",
     "PropagationResult",
     "SandboxBridge",
@@ -158,7 +230,9 @@ __all__ = [
     "StoreItemNotFoundError",
     "StoreNetworkError",
     "SystemStatus",
+    "TerminalInfo",
     "TerminalPalette",
+    "TerminalProfile",
     "TerminalProfileSummary",
     "Theme",
     "ThemeAvailabilityChecker",
@@ -177,23 +251,41 @@ __all__ = [
     "ThemeValidator",
     "UIPrefs",
     "WallpaperColorExtractor",
+    "WizardStepInfo",
+    "WizardStepResult",
     "apply_palette_to_gnome_terminal",
+    "check_flatpak_status",
     "create_gnome_terminal_profile",
     "create_theme_fork",
     "delete_gnome_terminal_profile",
     "derive_terminal_palette_from_colors",
+    "detect_default_terminal",
+    "detect_os",
+    "detect_terminal",
     "detect_theme_types",
+    "execute_wizard_step",
     "export_palette_to_json",
     "extract_dominant_colors_from_image",
     "extract_shell_colors",
     "extract_theme_colors",
     "extract_wallpaper_palette",
     "generate_shell_css_override",
+    "get_extension_backend",
+    "get_extension_manager_install_options",
+    "get_fallback_icon_name",
+    "get_flatpak_wizard_steps",
+    "get_install_command",
+    "get_missing_dependency_hint",
+    "get_os_install_commands",
+    "get_terminal_profile",
     "import_palette_from_json",
     "inspect_extracted_tree",
     "integrate_desktop",
     "list_gnome_terminal_profiles",
     "parse_css_define_colors",
+    "repair_and_propagate_flatpak",
+    "repair_flatpak",
+    "resolve_icon",
     "revert_theme_fork",
     "safe_extract",
     "set_default_gnome_terminal_profile",

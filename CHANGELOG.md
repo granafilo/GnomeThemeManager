@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.5.1] - 2026-09-10
+
+### Added & Improved
+- **Extension Screenshot Gallery Carousel**: Interactive multi-image screenshot carousel in extension detail view with pagination, navigation buttons, and counter badges.
+- **Unrestricted Catalog Search**: Search queries now query all extensions from extensions.gnome.org without server-side shell version restriction, properly detecting and displaying incompatible extensions with clear visual indicators.
+- **Harmonized Extension Catalog Rows**: Unified layout architecture for both installed and available extensions; vertical column alignment across download counters, compatibility status badges, and action labels.
+- **Pixel-Perfect Action Column Alignment**: First-letter vertical alignment (`halign=START`) for "Installed" and "Details" labels inside size-grouped containers.
+- **Offline Caching & Atomic Rollbacks**: Resilient 24h local disk caching for search and detail queries; automatic atomic rollback and cleanup of temporary zip files and unpacked directories on download or extraction failures.
+- **Reinforced Incompatibility Warnings**: Explicit confirmation dialog and visual warning badges before attempting to install or update extensions not marked as compatible with current GNOME Shell.
+
 ## [1.5.0] - 2026-08-28
 
 ### Added

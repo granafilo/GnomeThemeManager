@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test di integrazione per i comandi dell'interfaccia a riga di comando (CLI).
+"""Integration tests for Command Line Interface (CLI) commands.
 
-Verifica il funzionamento end-to-end dei comandi:
-- `current` (interrogazione dello stato attivo, inclusi Shell e color-scheme)
-- `list` (elenco tabellare con filtri su gtk, icon, cursor, shell)
-- `apply` (validazione preventiva, applicazione GSettings, override GTK4 e gestione errori)
+Verifies end-to-end behavior of commands:
+- `current` (query active state, including Shell and color-scheme)
+- `list` (tabular list with filters for gtk, icon, cursor, shell)
+- `apply` (pre-validation, GSettings application, GTK4 override, and error handling)
 - `preset` (list, save, apply, delete)
 """
 
@@ -17,7 +17,7 @@ from gnome_theme_manager.core.models import ApplyResult, SystemStatus, Theme, Th
 
 
 def test_format_table() -> None:
-    """Verifica la generazione della tabella ASCII."""
+    """Verify ASCII table generation."""
     headers = ["NOME", "TIPO", "ORIGINE"]
     rows = [
         ["Adwaita", "gtk", "System"],
@@ -32,7 +32,7 @@ def test_format_table() -> None:
 
 
 def test_cli_current_success(capsys) -> None:
-    """Verifica l'output del comando 'current' quando GSettings e Shell sono disponibili."""
+    """Verify 'current' command output when GSettings and Shell are available."""
     mock_theme_set = ThemeSet(
         gtk_theme="Nordic",
         icon_theme="Papirus-Dark",
@@ -65,7 +65,7 @@ def test_cli_current_success(capsys) -> None:
 
 
 def test_cli_list_with_shell_type(capsys, tmp_path: Path) -> None:
-    """Verifica il filtro --type shell nel comando 'list'."""
+    """Verify --type shell filter in 'list' command."""
     mock_themes = [
         Theme(
             name="Nordic", theme_type=ThemeType.SHELL, path=tmp_path / "Nordic", is_user_level=True
@@ -87,7 +87,7 @@ def test_cli_list_with_shell_type(capsys, tmp_path: Path) -> None:
 
 
 def test_cli_apply_with_gtk_and_shell(capsys) -> None:
-    """Verifica l'applicazione simultanea di tema GTK, tema Shell e override GTK4."""
+    """Verify simultaneous application of GTK theme, Shell theme, and GTK4 override."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.apply_themes.return_value = ApplyResult(
@@ -112,7 +112,7 @@ def test_cli_apply_with_gtk_and_shell(capsys) -> None:
 
 
 def test_cli_apply_no_gtk4_override_flag(capsys) -> None:
-    """Verifica che il flag --no-gtk4-override disabiliti l'override GTK4."""
+    """Verify that --no-gtk4-override flag disables GTK4 override."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.apply_themes.return_value = ApplyResult(
@@ -133,7 +133,7 @@ def test_cli_apply_no_gtk4_override_flag(capsys) -> None:
 
 
 def test_cli_apply_unified_theme(capsys, tmp_path: Path) -> None:
-    """Verifica che il parametro --theme applichi sia GTK che Shell."""
+    """Verify that --theme parameter applies both GTK and Shell."""
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     shell_theme = Theme("Nordic", ThemeType.SHELL, tmp_path / "Nordic", True)
 
@@ -163,7 +163,7 @@ def test_cli_apply_unified_theme(capsys, tmp_path: Path) -> None:
 
 
 def test_cli_preset_list_empty(capsys) -> None:
-    """Verifica il comando 'preset list' in assenza di preset."""
+    """Verify 'preset list' command when no presets are saved."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.list_presets.return_value = []
@@ -177,7 +177,7 @@ def test_cli_preset_list_empty(capsys) -> None:
 
 
 def test_cli_preset_list_with_items(capsys) -> None:
-    """Verifica il comando 'preset list' con preset memorizzati."""
+    """Verify 'preset list' command with saved presets."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.list_presets.return_value = ["DarkSetup", "LightSetup"]
@@ -193,7 +193,7 @@ def test_cli_preset_list_with_items(capsys) -> None:
 
 
 def test_cli_preset_save_success(capsys, tmp_path: Path) -> None:
-    """Verifica il comando 'preset save <nome>'."""
+    """Verify 'preset save <name>' command."""
     preset_file = tmp_path / "MyPreset.json"
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
@@ -209,7 +209,7 @@ def test_cli_preset_save_success(capsys, tmp_path: Path) -> None:
 
 
 def test_cli_preset_apply_success(capsys) -> None:
-    """Verifica il comando 'preset apply <nome>'."""
+    """Verify 'preset apply <name>' command."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.apply_preset.return_value = ApplyResult(
@@ -233,7 +233,7 @@ def test_cli_preset_apply_success(capsys) -> None:
 
 
 def test_cli_preset_delete_with_yes(capsys) -> None:
-    """Verifica il comando 'preset delete <nome> -y' (senza prompt)."""
+    """Verify 'preset delete <name> -y' command (without prompt)."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_mgr.delete_preset.return_value = True
@@ -248,7 +248,7 @@ def test_cli_preset_delete_with_yes(capsys) -> None:
 
 
 def test_cli_preset_delete_interactive_refusal(capsys, monkeypatch) -> None:
-    """Verifica l'annullamento della cancellazione tramite prompt interattivo 'n'."""
+    """Verify cancellation of deletion via interactive prompt 'n'."""
     with patch("gnome_theme_manager.cli.main.ThemeManager") as mock_manager_cls:
         mock_mgr = MagicMock()
         mock_manager_cls.return_value = mock_mgr

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Script Python per compilare i file .po in .mo in modo portabile e autonomo.
+# Python script to compile .po files to .mo portably and independently.
 
 import re
 import struct
@@ -10,7 +10,7 @@ def compile_po(po_path, mo_path):
     with open(po_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    # Regex per trovare coppie di msgid/msgstr
+    # Regex to match msgid/msgstr pairs
     pattern = re.compile(
         r'msgid\s+((?:"(?:[^"\\]|\\.)*"\s*)+)\s*'
         r'msgstr\s+((?:"(?:[^"\\]|\\.)*"\s*)+)'
@@ -21,14 +21,14 @@ def compile_po(po_path, mo_path):
         msgid_raw = match.group(1)
         msgstr_raw = match.group(2)
 
-        # Concatena le righe racchiuse tra virgolette
+        # Concatenate quoted strings
         msgid = "".join(eval(chunk) for chunk in msgid_raw.splitlines() if chunk.strip())
         msgstr = "".join(eval(chunk) for chunk in msgstr_raw.splitlines() if chunk.strip())
 
-        # gettext richiede che le stringhe siano in byte UTF-8 terminati da null
+        # gettext requires strings to be null-terminated UTF-8 bytes
         pairs.append((msgid.encode("utf-8"), msgstr.encode("utf-8")))
 
-    # gettext impone l'ordinamento in base ai msgid originali
+    # gettext requires sorting by original msgids
     pairs.sort(key=lambda x: x[0])
     num_strings = len(pairs)
 
@@ -77,7 +77,7 @@ def compile_po(po_path, mo_path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Uso: compile-po.py <input.po> <output.mo>")
+        print("Usage: compile-po.py <input.po> <output.mo>")
         sys.exit(1)
     compile_po(sys.argv[1], sys.argv[2])
-    print(f"Compilato con successo {sys.argv[1]} -> {sys.argv[2]}")
+    print(f"Successfully compiled {sys.argv[1]} -> {sys.argv[2]}")

@@ -479,26 +479,28 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        if getattr(args, "gui", False) or args.command == "gui":
+        if getattr(args, "gui", False) or args.command == "gui" or not args.command:
             try:
                 from ..gui_gtk import launch_gui as launch_gui_gtk
             except (ImportError, ModuleNotFoundError) as err:
+                if not getattr(args, "gui", False) and args.command != "gui":
+                    parser.print_help()
+                    return 0
+                from ..core.os_detector import get_install_command
+
+                install_cmd = get_install_command("gtk4")
                 print(
                     _(
                         "\n[GTK4 GUI ERROR] GTK4/Libadwaita is required to launch the graphical interface. Details: {err}\n"
                         "Install required dependencies with:\n"
-                        "    sudo apt update && sudo apt install -y python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1\n"
-                    ).format(err=err),
+                        "    {install_cmd}\n"
+                    ).format(err=err, install_cmd=install_cmd),
                     file=sys.stderr,
                 )
                 return 1
 
             manager = ThemeManager()
             return launch_gui_gtk(manager=manager)
-
-        if not args.command:
-            parser.print_help()
-            return 0
 
         manager = ThemeManager()
 

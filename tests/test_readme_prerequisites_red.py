@@ -1,23 +1,23 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test per la presenza della sezione Prerequisites nel file README.md."""
+"""Test for the presence of the Prerequisites section in README.md."""
 
 from pathlib import Path
 
 
 def test_readme_has_prerequisites_section() -> None:
-    """Verifica che README.md contenga la sezione '## Prerequisites' con i dettagli previsti."""
+    """Verify that README.md contains the '## Prerequisites' section with expected details."""
     readme_path = Path(__file__).parent.parent / "README.md"
-    assert readme_path.is_file(), "README.md non trovato nella radice del progetto"
+    assert readme_path.is_file(), "README.md not found in project root"
 
     content = readme_path.read_text(encoding="utf-8")
 
-    # Verifica la presenza del titolo
-    assert "## Prerequisites" in content, "README.md deve contenere la sezione '## Prerequisites'"
+    # Verify heading presence
+    assert "## Prerequisites" in content, "README.md must contain '## Prerequisites' section"
 
-    # Verifica la presenza delle note su Flatpak/Snap e permessi eseguibile launcher
-    assert "Flatpak" in content, "Mancano riferimenti a Flatpak nella sezione Prerequisites"
-    assert "Snap" in content, "Mancano riferimenti a Snap nella sezione Prerequisites"
+    # Verify notes on Flatpak/Snap and launcher executable permissions
+    assert "Flatpak" in content, "Missing references to Flatpak in Prerequisites section"
+    assert "Snap" in content, "Missing references to Snap in Prerequisites section"
     assert "executable" in content or "permissions" in content or "chmod" in content, (
-        "Mancano indicazioni sui permessi di esecuzione del launcher"
+        "Missing instructions on launcher executable permissions"
     )

@@ -13,6 +13,7 @@ Manages the main GTK4 and Libadwaita shell:
 
 import logging
 import os
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ gi.require_version("Adw", "1")
 gi.require_version("GLib", "2.0")
 from gi.repository import Adw, Gdk, GLib, Gtk
 
+from ..core.icon_fallback import find_bundled_icon_dirs, resolve_icon
 from ..core.manager import ThemeManager
 from ..core.models import ThemeType
 from .pages import (
@@ -52,50 +54,35 @@ BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons
 COLLAPSE_BREAKPOINT_WIDTH: int = 0
 
 # Main window minimum geometry to keep sidebar + content fully usable
-MIN_WINDOW_WIDTH: int = 980
-MIN_WINDOW_HEIGHT: int = 680
+MIN_WINDOW_WIDTH: int = 1060
+MIN_WINDOW_HEIGHT: int = 700
 
 # Main window default geometry at startup
-DEFAULT_WINDOW_WIDTH: int = 1080
-DEFAULT_WINDOW_HEIGHT: int = 720
+DEFAULT_WINDOW_WIDTH: int = 1120
+DEFAULT_WINDOW_HEIGHT: int = 740
 
 
 def init_bundled_icon_theme(icon_theme: Gtk.IconTheme | None = None) -> None:
     """Register bundled icons directory in the Gtk.IconTheme search path chain."""
-    search_dirs: list[Path] = [
-        BUNDLED_ICONS_DIR,
-        BUNDLED_ICONS_DIR / "hicolor",
-        BUNDLED_ICONS_DIR / "hicolor" / "scalable" / "apps",
-        BUNDLED_ICONS_DIR / "hicolor" / "512x512" / "apps",
-    ]
+    search_dirs: list[Path] = []
+    for b_dir in find_bundled_icon_dirs():
+        if b_dir.is_dir() and b_dir not in search_dirs:
+            search_dirs.append(b_dir)
+            for sub_dir in b_dir.rglob("*"):
+                if sub_dir.is_dir() and sub_dir not in search_dirs:
+                    search_dirs.append(sub_dir)
 
-    # AppImage runtime icon search paths (from $APPDIR)
-    appdir_env = os.environ.get("APPDIR")
-    if appdir_env:
-        appdir_path = Path(appdir_env)
-        for appdir_candidate in [
-            appdir_path / "usr" / "share" / "icons",
-            appdir_path / "usr" / "share" / "icons" / "hicolor",
-            appdir_path / "data" / "icons",
-            appdir_path / "data" / "icons" / "hicolor",
-        ]:
-            if appdir_candidate.is_dir() and appdir_candidate not in search_dirs:
-                search_dirs.append(appdir_candidate)
-
-    # Flatpak runtime icon search paths
-    for flatpak_dir in [
-        Path("/app/share/icons"),
-        Path("/app/share/icons/hicolor"),
-        Path("/app/share/gnome-theme-manager/data/icons"),
-        Path("/app/share/gnome-theme-manager/icons"),
-    ]:
-        if flatpak_dir.is_dir() and flatpak_dir not in search_dirs:
-            search_dirs.append(flatpak_dir)
-
-    # User local and system icon paths
+    # User local and system icon paths (including Flatpak host mounts)
     for candidate in [
         Path.home() / ".local" / "share" / "icons",
         Path.home() / ".local" / "share" / "icons" / "hicolor",
+        Path.home() / ".icons",
+        Path.home() / ".icons" / "hicolor",
+        Path("/run/host/share/icons"),
+        Path("/run/host/share/icons/hicolor"),
+        Path("/run/host/usr/share/icons"),
+        Path("/run/host/usr/share/icons/hicolor"),
+        Path("/run/host/user-share/icons"),
         Path("/usr/local/share/icons"),
         Path("/usr/local/share/icons/hicolor"),
         Path("/usr/share/icons"),
@@ -244,6 +231,9 @@ class MainWindow(Adw.ApplicationWindow):
         self.content_stack.add_named(self.installer_page.get_widget(), "installer")
         self.content_stack.add_named(self.sandbox_page.get_widget(), "sandbox")
 
+        # Apply multi-OS cascading icon fallback resolution to UI elements and all attached pages
+        self._apply_icon_fallbacks(self.toast_overlay)
+
         self._row_to_page_id: dict[Gtk.ListBoxRow, str] = {
             self.row_status: "status",
             self.row_themes_shell: "themes_shell",
@@ -270,7 +260,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.sidebar_list_box.connect("row-selected", self._on_sidebar_row_selected)
         self.refresh_button.connect("clicked", self._on_refresh_button_clicked)
 
-        # Auto-integrate desktop launcher and icons lazily in background
+        # Auto-integrate desktop launcher and icons lazily in background for AppImage
         if os.environ.get("APPIMAGE") or os.environ.get("APPDIR"):
             GLib.idle_add(self._lazy_desktop_integration)
 
@@ -334,6 +324,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.themes_page.refresh()
 
         self.installer_page.on_theme_installed = _on_theme_installed_callback
+        self.store_page.on_theme_installed = _on_theme_installed_callback
 
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
@@ -341,6 +332,7 @@ class MainWindow(Adw.ApplicationWindow):
             self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
+        self.store_page.on_theme_applied = _on_theme_installed_and_applied_callback
 
         def _on_sandbox_propagated_callback() -> None:
             self.status_page.refresh()
@@ -385,6 +377,12 @@ class MainWindow(Adw.ApplicationWindow):
             padding: 4px 14px;
             border-radius: 8px;
             font-weight: 500;
+            color: @window_fg_color;
+        }
+
+        dropdown > button:hover {
+            color: @window_fg_color;
+            background-color: alpha(@window_fg_color, 0.08);
         }
 
         dropdown > button image {
@@ -393,12 +391,87 @@ class MainWindow(Adw.ApplicationWindow):
 
         dropdown > button label {
             font-weight: 500;
+            color: @window_fg_color;
+        }
+
+        dropdown > button:hover label {
+            color: @window_fg_color;
+        }
+
+        /* Fix .warning contrast on rows, combo rows, and dropdown buttons on hover */
+        row.warning,
+        adw-combo-row.warning {
+            background-color: alpha(@warning_color, 0.08);
+        }
+
+        row.warning:hover,
+        adw-combo-row.warning:hover {
+            background-color: alpha(@warning_color, 0.16);
+        }
+
+        row.warning label,
+        row.warning:hover label,
+        adw-combo-row.warning label,
+        adw-combo-row.warning:hover label {
+            color: @window_fg_color;
+        }
+
+        row.warning .subtitle,
+        adw-combo-row.warning .subtitle {
+            color: alpha(@window_fg_color, 0.75);
+        }
+
+        row.warning dropdown > button,
+        row.warning dropdown > button:hover,
+        adw-combo-row.warning dropdown > button,
+        adw-combo-row.warning dropdown > button:hover {
+            color: @window_fg_color;
+            background-color: alpha(@window_fg_color, 0.10);
+        }
+
+        row.warning dropdown > button label,
+        row.warning dropdown > button:hover label,
+        adw-combo-row.warning dropdown > button label,
+        adw-combo-row.warning dropdown > button:hover label {
+            color: @window_fg_color;
+        }
+
+        /* Standard input / entry text colors adhering to current Libadwaita theme */
+        entry,
+        searchentry,
+        editable,
+        entry text,
+        searchentry text,
+        entry > text,
+        searchentry > text,
+        entry.numeric {
+            color: @window_fg_color;
+        }
+
+        entry:focus-within,
+        searchentry:focus-within {
+            color: @window_fg_color;
         }
 
         /* Popover list styling for dropdown menus */
-        popover.menu listview row, popover.menu listview > row {
+        popover listview row,
+        popover.menu listview row,
+        popover.menu listview > row {
             min-height: 38px;
             padding: 6px 12px;
+            color: @window_fg_color;
+        }
+
+        popover listview row:hover,
+        popover listview > row:hover,
+        popover.menu listview row:hover,
+        popover.menu listview > row:hover,
+        popover listview row:selected,
+        popover listview > row:selected,
+        popover.menu listview row:selected,
+        popover.menu listview > row:selected {
+            background-color: @theme_selected_bg_color;
+            color: @theme_selected_fg_color;
         }
 
         /* Color picker HEX entries & buttons */
@@ -483,6 +556,61 @@ class MainWindow(Adw.ApplicationWindow):
             background-color: @window_bg_color;
             opacity: 1;
         }
+
+        /* Zorin OS & Custom Theme compatibility: Reset unwanted box-shadow, border and background on AdwPreferencesGroup headers */
+        preferencesgroup > box > box,
+        preferencesgroup > box > box.header,
+        preferencesgroup > box > .labels {
+            box-shadow: none;
+            border: none;
+            background: transparent;
+            background-color: transparent;
+        }
+
+        /* Ensure boxed-list rows do not show contrasting background boxes when insensitive/disabled */
+        list.boxed-list > row:disabled,
+        preferencesgroup list > row:disabled {
+            background-color: transparent;
+        }
+
+        .card,
+        list.boxed-list {
+            background-color: @card_bg_color;
+        }
+
+        /* High-contrast, theme-adaptive selection states (Fix 2) */
+        list.boxed-list > row:selected,
+        list.boxed-list > row.activatable:selected,
+        list.boxed-list > row:focus:selected,
+        .navigation-sidebar row:selected {
+            background-color: @accent_bg_color;
+            color: @accent_fg_color;
+        }
+
+        list.boxed-list > row:selected label,
+        list.boxed-list > row:selected image,
+        list.boxed-list > row:selected .title,
+        list.boxed-list > row:selected .subtitle {
+            color: @accent_fg_color;
+        }
+
+        list.boxed-list > row:selected .dim-label,
+        list.boxed-list > row:selected .caption {
+            color: alpha(@accent_fg_color, 0.85);
+        }
+
+        list.boxed-list > row.activatable:hover:not(:selected) {
+            background-color: alpha(@accent_bg_color, 0.12);
+        }
+
+        list.boxed-list > row.activatable:active {
+            background-color: alpha(@accent_bg_color, 0.24);
+        }
+
+        list.boxed-list > row:focus-visible {
+            outline: 2px solid @accent_color;
+            outline-offset: -2px;
+        }
         """
         try:
             if hasattr(css_provider, "load_from_string"):
@@ -494,7 +622,7 @@ class MainWindow(Adw.ApplicationWindow):
                 Gtk.StyleContext.add_provider_for_display(
                     display,
                     css_provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+                    Gtk.STYLE_PROVIDER_PRIORITY_USER + 1,
                 )
         except Exception as err:
             logger.debug("Failed to apply custom CSS styling: %s", err)
@@ -561,6 +689,54 @@ class MainWindow(Adw.ApplicationWindow):
                 "Unable to register Adw.Breakpoint: %s",
                 err,
             )
+
+    def _apply_icon_fallbacks(self, root_widget: Gtk.Widget) -> None:
+        """Recursively inspect widgets and resolve fallback icons if missing in active theme."""
+        display = Gdk.Display.get_default()
+        icon_theme = Gtk.IconTheme.get_for_display(display) if display else None
+
+        def visit(w: Gtk.Widget) -> None:
+            if isinstance(w, Gtk.Image):
+                icon_name = w.get_icon_name()
+                if icon_name:
+                    res = resolve_icon(icon_name, icon_theme=icon_theme)
+                    if res.is_fallback:
+                        if (
+                            res.file_path
+                            and res.file_path.is_file()
+                            and (icon_theme is None or not icon_theme.has_icon(res.resolved_name))
+                        ):
+                            w.set_from_file(str(res.file_path))
+                        else:
+                            w.set_from_icon_name(res.resolved_name)
+            elif hasattr(w, "get_icon_name") and hasattr(w, "set_icon_name"):
+                target: Any = w
+                try:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", DeprecationWarning)
+                        current_icon = target.get_icon_name()
+                except Exception:
+                    current_icon = None
+
+                if current_icon and isinstance(current_icon, str):
+                    res = resolve_icon(current_icon, icon_theme=icon_theme)
+                    if res.is_fallback:
+                        try:
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore", DeprecationWarning)
+                                target.set_icon_name(res.resolved_name)
+                        except Exception:
+                            pass
+
+            child = w.get_first_child()
+            while child is not None:
+                visit(child)
+                child = child.get_next_sibling()
+
+        try:
+            visit(root_widget)
+        except Exception as exc:
+            logger.debug("Error during icon fallback traversal: %s", exc)
 
     def _on_sidebar_row_selected(self, list_box: Gtk.ListBox, row: Gtk.ListBoxRow | None) -> None:
         """Handle 'row-selected' signal on sidebar list box."""
@@ -678,6 +854,10 @@ class MainWindow(Adw.ApplicationWindow):
         target_row = self._page_id_to_row.get(page_id)
         if target_row is not None and self.sidebar_list_box.get_selected_row() != target_row:
             self.sidebar_list_box.select_row(target_row)
+
+        visible_child = self.content_stack.get_visible_child()
+        if visible_child is not None:
+            self._apply_icon_fallbacks(visible_child)
 
         if self.split_view.get_collapsed():
             self.split_view.set_show_content(True)
@@ -805,6 +985,8 @@ class MainWindow(Adw.ApplicationWindow):
 
     def _lazy_desktop_integration(self) -> bool:
         """Run desktop integration in background without blocking UI startup."""
+        if not (os.environ.get("APPIMAGE") or os.environ.get("APPDIR")):
+            return GLib.SOURCE_REMOVE
         try:
             self.manager.integrate_desktop()
         except Exception as err:

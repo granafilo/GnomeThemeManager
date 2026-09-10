@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test di unità per la classe Facade ThemeManager."""
+"""Unit tests for the ThemeManager Facade class."""
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -23,14 +23,14 @@ from gnome_theme_manager.core.models import (
 
 @pytest.fixture
 def mock_scanner() -> MagicMock:
-    """Mock per ThemeScanner."""
+    """Mock for ThemeScanner."""
     scanner = MagicMock()
     return scanner
 
 
 @pytest.fixture
 def mock_gsettings() -> MagicMock:
-    """Mock per GSettingsClient."""
+    """Mock for GSettingsClient."""
     gsettings = MagicMock()
     gsettings.is_shell_theme_supported = True
     gsettings.get_current.return_value = ThemeSet(
@@ -45,7 +45,7 @@ def mock_gsettings() -> MagicMock:
 
 @pytest.fixture
 def mock_gtk4_linker() -> MagicMock:
-    """Mock per GTK4ThemeLinker."""
+    """Mock for GTK4ThemeLinker."""
     linker = MagicMock()
     linker.apply_override.return_value = True
     return linker
@@ -53,7 +53,7 @@ def mock_gtk4_linker() -> MagicMock:
 
 @pytest.fixture
 def mock_installer(tmp_path: Path) -> MagicMock:
-    """Mock per ThemeInstaller."""
+    """Mock for ThemeInstaller."""
     installer = MagicMock()
     installer.user_themes_dir = tmp_path / "themes"
     installer.user_icons_dir = tmp_path / "icons"
@@ -62,14 +62,14 @@ def mock_installer(tmp_path: Path) -> MagicMock:
 
 @pytest.fixture
 def mock_presets() -> MagicMock:
-    """Mock per PresetManager."""
+    """Mock for PresetManager."""
     presets = MagicMock()
     return presets
 
 
 @pytest.fixture
 def mock_sandbox() -> MagicMock:
-    """Mock per SandboxBridge."""
+    """Mock for SandboxBridge."""
     sandbox = MagicMock()
     sandbox.get_sandbox_status.return_value = SandboxStatus(
         snap_available=True,
@@ -89,10 +89,18 @@ def mock_sandbox() -> MagicMock:
 
 @pytest.fixture
 def mock_validator() -> MagicMock:
-    """Mock per ThemeValidator."""
+    """Mock for ThemeValidator."""
     validator = MagicMock()
     validator.validate.return_value = MagicMock(valid=True, warnings=[], missing_files=[])
     return validator
+
+
+@pytest.fixture
+def mock_extensions() -> MagicMock:
+    """Mock for ExtensionsManager."""
+    ext = MagicMock()
+    ext.is_user_theme_enabled.return_value = False
+    return ext
 
 
 @pytest.fixture
@@ -104,8 +112,9 @@ def manager(
     mock_presets: MagicMock,
     mock_sandbox: MagicMock,
     mock_validator: MagicMock,
+    mock_extensions: MagicMock,
 ) -> ThemeManager:
-    """Istanza di ThemeManager con componenti iniettati (mock)."""
+    """ThemeManager instance with injected mock components."""
     return ThemeManager(
         scanner=mock_scanner,
         gsettings=mock_gsettings,
@@ -114,11 +123,12 @@ def manager(
         presets=mock_presets,
         sandbox_bridge=mock_sandbox,
         validator=mock_validator,
+        extensions=mock_extensions,
     )
 
 
 # -----------------------------------------------------------------------------
-# Test Inizializzazione e Stato di Sistema
+# System Status and Initialization Tests
 # -----------------------------------------------------------------------------
 
 
@@ -128,7 +138,7 @@ def test_manager_properties(
     mock_gsettings: MagicMock,
     mock_sandbox: MagicMock,
 ) -> None:
-    """Verifica che i componenti siano accessibili tramite le relative proprietà."""
+    """Verify that components are accessible via relative properties."""
     assert manager.scanner == mock_scanner
     assert manager.gsettings == mock_gsettings
     assert manager.gtk4_linker is not None
@@ -138,7 +148,7 @@ def test_manager_properties(
 
 
 def test_manager_get_system_status(manager: ThemeManager, mock_installer: MagicMock) -> None:
-    """Verifica il report diagnostico restituito da get_system_status()."""
+    """Verify diagnostic report returned by get_system_status()."""
     status: SystemStatus = manager.get_system_status()
     assert status.gsettings_available is True
     assert status.shell_theme_supported is True
@@ -147,15 +157,15 @@ def test_manager_get_system_status(manager: ThemeManager, mock_installer: MagicM
 
 
 def test_manager_get_current_themes(manager: ThemeManager, mock_gsettings: MagicMock) -> None:
-    """Verifica il recupero dei temi attivi da get_current_themes()."""
+    """Verify retrieval of active themes from get_current_themes()."""
     current = manager.get_current_themes()
     assert current.gtk_theme == "Nordic"
     mock_gsettings.get_current.assert_called_once()
 
 
 def test_manager_gsettings_unavailable() -> None:
-    """Verifica che l'assenza di GSettings sollevi GSettingsUnavailableError."""
-    # Inizializziamo senza passare gsettings mock e forzando _gsettings = None
+    """Verify that missing GSettings raises GSettingsUnavailableError."""
+    # Initialize without mock gsettings and forcing _gsettings = None
     mgr = ThemeManager(gsettings=None)
     mgr._gsettings = None
 
@@ -168,14 +178,14 @@ def test_manager_gsettings_unavailable() -> None:
 
 
 # -----------------------------------------------------------------------------
-# Test Elenco e Ricerca Temi
+# Theme Listing and Search Tests
 # -----------------------------------------------------------------------------
 
 
 def test_manager_list_themes_by_type(
     manager: ThemeManager, mock_scanner: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica che list_themes deleghi correttamente a scanner per i vari tipi."""
+    """Verify that list_themes delegates correctly to scanner for each type."""
     t_gtk = Theme("ThemeGTK", ThemeType.GTK, tmp_path / "1", True)
     t_icon = Theme("ThemeIcon", ThemeType.ICON, tmp_path / "2", True)
     t_cursor = Theme("ThemeCursor", ThemeType.CURSOR, tmp_path / "3", True)
@@ -199,7 +209,7 @@ def test_manager_list_themes_by_type(
 
 
 def test_manager_find_theme(manager: ThemeManager, mock_scanner: MagicMock, tmp_path: Path) -> None:
-    """Verifica che find_theme deleghi a scanner."""
+    """Verify that find_theme delegates to scanner."""
     t = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     mock_scanner.find_theme.return_value = t
 
@@ -209,7 +219,7 @@ def test_manager_find_theme(manager: ThemeManager, mock_scanner: MagicMock, tmp_
 
 
 # -----------------------------------------------------------------------------
-# Test Applicazione Temi
+# Theme Application Tests
 # -----------------------------------------------------------------------------
 
 
@@ -220,7 +230,7 @@ def test_manager_apply_themes_success(
     mock_gtk4_linker: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica l'applicazione completa di un ThemeSet valido."""
+    """Verify complete application of a valid ThemeSet."""
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     icon_theme = Theme("Papirus", ThemeType.ICON, tmp_path / "Papirus", True)
     cursor_theme = Theme("Adwaita", ThemeType.CURSOR, tmp_path / "Adwaita", False)
@@ -256,17 +266,17 @@ def test_manager_apply_themes_success(
 
 
 def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> None:
-    """Verifica end-to-end che applicando un tema con GTK4 e poi uno senza GTK4, l'override venga rimosso da ~/.config/gtk-4.0/."""
+    """Verify end-to-end that applying a GTK4 theme then a non-GTK4 theme removes override from ~/.config/gtk-4.0/."""
     config_dir = tmp_path / "config" / "gtk-4.0"
     user_themes = tmp_path / "user_themes"
 
-    # Tema A con GTK4
+    # Theme A with GTK4
     theme_a_dir = user_themes / "ThemeWithGTK4"
     gtk4_a = theme_a_dir / "gtk-4.0"
     gtk4_a.mkdir(parents=True)
     (gtk4_a / "gtk.css").write_text("/* theme A css */")
 
-    # Tema B valido come GTK generico ma senza CSS
+    # Theme B valid as generic GTK but without CSS
     theme_b_dir = user_themes / "ThemeWithoutGTK4"
     theme_b_dir.mkdir(parents=True)
     (theme_b_dir / "index.theme").write_text("[Desktop Entry]\nName=ThemeWithoutGTK4\n")
@@ -292,13 +302,13 @@ def test_manager_apply_themes_gtk4_override_stale_cleanup(tmp_path: Path) -> Non
         validator=mock_val,
     )
 
-    # 1. Applica Tema A -> override attivo
+    # 1. Apply Theme A -> override active
     res_a = mgr.apply_themes(ThemeSet(gtk_theme="ThemeWithGTK4"))
     assert res_a.gtk4_override_applied is True
     assert (config_dir / "gtk.css").exists()
     assert linker.is_override_active() is True
 
-    # 2. Applica Tema B -> override rimosso
+    # 2. Apply Theme B -> override removed
     res_b = mgr.apply_themes(ThemeSet(gtk_theme="ThemeWithoutGTK4"))
     assert res_b.gtk4_override_applied is False
     assert not (config_dir / "gtk.css").exists()
@@ -311,7 +321,7 @@ def test_manager_apply_themes_sandbox_propagation_filtering(
     mock_sandbox: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica che la propagazione sandbox avvenga solo se gtk_theme o icon_theme sono presenti."""
+    """Verify that sandbox propagation occurs only if gtk_theme or icon_theme is present."""
     cursor_theme = Theme("Adwaita", ThemeType.CURSOR, tmp_path / "Adwaita", False)
     shell_theme = Theme("Nordic", ThemeType.SHELL, tmp_path / "Nordic", True)
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
@@ -322,17 +332,17 @@ def test_manager_apply_themes_sandbox_propagation_filtering(
         (ThemeType.GTK, "Nordic"): gtk_theme,
     }.get((t_type, name))
 
-    # 1. Solo Cursore -> sandbox non chiamato
+    # 1. Cursor only -> sandbox not called
     res_cursor = manager.apply_themes(ThemeSet(cursor_theme="Adwaita"), propagate_sandbox=True)
     assert res_cursor.sandbox_propagation is None
     mock_sandbox.propagate_all.assert_not_called()
 
-    # 2. Solo Shell -> sandbox non chiamato
+    # 2. Shell only -> sandbox not called
     res_shell = manager.apply_themes(ThemeSet(shell_theme="Nordic"), propagate_sandbox=True)
     assert res_shell.sandbox_propagation is None
     mock_sandbox.propagate_all.assert_not_called()
 
-    # 3. Tema GTK o Icone -> sandbox chiamato
+    # 3. GTK or Icon theme -> sandbox called
     manager.apply_themes(ThemeSet(gtk_theme="Nordic"), propagate_sandbox=True)
     mock_sandbox.propagate_all.assert_called_once_with(gtk_theme="Nordic", icon_theme=None)
 
@@ -343,7 +353,7 @@ def test_manager_apply_themes_sandbox_failure_produces_warnings(
     mock_sandbox: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica che un errore di propagazione sandbox restituisca ApplyResult con warning senza sollevare eccezioni."""
+    """Verify that sandbox propagation error returns ApplyResult with warning without raising exceptions."""
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     mock_scanner.find_theme.return_value = gtk_theme
 
@@ -364,21 +374,21 @@ def test_manager_apply_themes_sandbox_failure_produces_warnings(
 def test_manager_apply_themes_missing_theme_fallback_and_raises(
     manager: ThemeManager, mock_scanner: MagicMock
 ) -> None:
-    """Verifica che la mancanza di un tema applichi il fallback o sollevi se use_fallback=False."""
+    """Verify that missing theme applies fallback or raises if use_fallback=False."""
     mock_scanner.find_theme.return_value = None
 
-    # Quando use_fallback=True (default), non solleva eccezioni ma usa il fallback con warning
+    # When use_fallback=True (default), does not raise exceptions but uses fallback with warning
     res = manager.apply_themes(ThemeSet(gtk_theme="NonExistent"))
     assert res.gtk_theme is not None
     assert any("fallback in use" in w for w in res.warnings)
 
-    # Quando use_fallback=False, solleva ThemeNotFoundError
+    # When use_fallback=False, raises ThemeNotFoundError
     with pytest.raises(ThemeNotFoundError, match="GTK theme 'NonExistent' was not found"):
         manager.apply_themes(ThemeSet(gtk_theme="NonExistent"), use_fallback=False)
 
 
 def test_manager_apply_themes_invalid_color_scheme(manager: ThemeManager) -> None:
-    """Verifica che uno schema colore non supportato sollevi ValueError."""
+    """Verify that unsupported color scheme raises ValueError."""
     with pytest.raises(ValueError, match="Invalid color scheme 'neon-dark'"):
         manager.apply_themes(ThemeSet(color_scheme="neon-dark"))
 
@@ -389,7 +399,7 @@ def test_manager_apply_themes_shell_unsupported_adds_warning(
     mock_gsettings: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica che l'assenza del supporto Shell aggiunga un warning a ApplyResult."""
+    """Verify that absence of Shell support adds a warning to ApplyResult."""
     shell_theme = Theme("Nordic", ThemeType.SHELL, tmp_path / "Nordic", True)
     mock_scanner.find_theme.return_value = shell_theme
     mock_gsettings.is_shell_theme_supported = False
@@ -407,7 +417,7 @@ def test_manager_apply_themes_no_gtk4_override(
     mock_gtk4_linker: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica che apply_gtk4_override=False disabiliti il linker GTK4."""
+    """Verify that apply_gtk4_override=False disables GTK4 linker."""
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     mock_scanner.find_theme.return_value = gtk_theme
 
@@ -423,7 +433,7 @@ def test_manager_apply_unified_theme(
     mock_gsettings: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica l'applicazione unificata per GTK e Shell."""
+    """Verify unified application for GTK and Shell."""
     gtk_theme = Theme("Nordic", ThemeType.GTK, tmp_path / "Nordic", True)
     shell_theme = Theme("Nordic", ThemeType.SHELL, tmp_path / "Nordic", True)
 
@@ -440,7 +450,7 @@ def test_manager_apply_unified_theme(
 def test_manager_apply_unified_theme_not_found(
     manager: ThemeManager, mock_scanner: MagicMock
 ) -> None:
-    """Verifica che un tema unificato inesistente sollevi ThemeNotFoundError."""
+    """Verify that non-existent unified theme raises ThemeNotFoundError."""
     mock_scanner.find_theme.return_value = None
 
     with pytest.raises(ThemeNotFoundError, match="was not found as GTK or GNOME Shell"):
@@ -448,7 +458,7 @@ def test_manager_apply_unified_theme_not_found(
 
 
 # -----------------------------------------------------------------------------
-# Test Preset e Gestione File
+# Presets and File Management Tests
 # -----------------------------------------------------------------------------
 
 
@@ -459,7 +469,7 @@ def test_manager_preset_workflow(
     mock_scanner: MagicMock,
     tmp_path: Path,
 ) -> None:
-    """Verifica il flusso completo di salvataggio, lista, applicazione ed eliminazione preset."""
+    """Verify complete workflow of saving, listing, applying, and deleting presets."""
     current_set = ThemeSet(gtk_theme="Nordic", icon_theme="Papirus")
     mock_gsettings.get_current.return_value = current_set
 
@@ -496,7 +506,7 @@ def test_manager_preset_workflow(
 def test_manager_install_and_uninstall(
     manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica la delega dei metodi di installazione e disinstallazione a ThemeInstaller."""
+    """Verify delegation of install and uninstall methods to ThemeInstaller."""
     archive = tmp_path / "theme.zip"
     installed_theme = Theme("Installed", ThemeType.GTK, tmp_path / "Installed", True)
     mock_installer.install.return_value = [installed_theme]
@@ -522,7 +532,7 @@ def test_manager_install_and_uninstall(
 def test_manager_inspect_theme_source(
     manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica che inspect_theme_source deleghi a ThemeInstaller.inspect_source."""
+    """Verify that inspect_theme_source delegates to ThemeInstaller.inspect_source."""
     source = tmp_path / "SomeSource"
     mock_installer.inspect_source.return_value = [("MyTheme", source, ThemeType.GTK)]
 
@@ -534,7 +544,7 @@ def test_manager_inspect_theme_source(
 def test_manager_install_theme_directory(
     manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica che install_theme_directory deleghi a ThemeInstaller.install_directory."""
+    """Verify that install_theme_directory delegates to ThemeInstaller.install_directory."""
     source_dir = tmp_path / "MyDir"
     installed_theme = Theme("MyDir", ThemeType.GTK, tmp_path / "MyDir", True)
     mock_installer.install_directory.return_value = [installed_theme]
@@ -553,7 +563,7 @@ def test_manager_install_theme_directory(
 def test_manager_install_theme_polymorphic(
     manager: ThemeManager, mock_installer: MagicMock, tmp_path: Path
 ) -> None:
-    """Verifica che install_theme accetti sia archivi che directory delegando a ThemeInstaller.install."""
+    """Verify that install_theme accepts both archives and directories delegating to ThemeInstaller.install."""
     source = tmp_path / "generic_source"
     installed_theme = Theme("GenTheme", ThemeType.GTK, tmp_path / "GenTheme", True)
     mock_installer.install.return_value = [installed_theme]
@@ -570,7 +580,7 @@ def test_manager_install_theme_polymorphic(
 
 
 def test_manager_get_sandbox_status(manager: ThemeManager, mock_sandbox: MagicMock) -> None:
-    """Verifica che get_sandbox_status deleghi a SandboxBridge.get_sandbox_status."""
+    """Verify that get_sandbox_status delegates to SandboxBridge.get_sandbox_status."""
     expected = SandboxStatus(snap_available=True, flatpak_available=True)
     mock_sandbox.get_sandbox_status.return_value = expected
 
@@ -582,7 +592,7 @@ def test_manager_get_sandbox_status(manager: ThemeManager, mock_sandbox: MagicMo
 def test_manager_propagate_sandbox_with_explicit_themes(
     manager: ThemeManager, mock_sandbox: MagicMock
 ) -> None:
-    """Verifica che propagate_sandbox deleghi a SandboxBridge.propagate_all con i temi specificati."""
+    """Verify that propagate_sandbox delegates to SandboxBridge.propagate_all with specified themes."""
     expected = PropagationResult(flatpak_success=True, snap_success=True)
     mock_sandbox.propagate_all.return_value = expected
 
@@ -596,7 +606,7 @@ def test_manager_propagate_sandbox_with_active_themes(
     mock_gsettings: MagicMock,
     mock_sandbox: MagicMock,
 ) -> None:
-    """Verifica che propagate_sandbox usi i temi correnti se non specificati."""
+    """Verify that propagate_sandbox uses current themes if not specified."""
     mock_gsettings.get_current.return_value = ThemeSet(
         gtk_theme="ActiveGTK", icon_theme="ActiveIcons"
     )
@@ -615,7 +625,7 @@ def test_manager_apply_themes_invalid_structure_raises(
     mock_scanner: MagicMock,
     mock_validator: MagicMock,
 ) -> None:
-    """Verifica che applicare un tema con struttura non valida sollevi ThemeValidationError."""
+    """Verify that applying a theme with invalid structure raises ThemeValidationError."""
     from gnome_theme_manager.core.errors import ThemeValidationError
 
     mock_scanner.find_theme.return_value = Theme(

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Test unitari per shortcut, focus behavior e filtri della finestra principale (Task 0.3)."""
+"""Unit tests for shortcuts, focus behavior, and main window filters (Task 0.3)."""
 
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -25,13 +25,13 @@ else:
 
 @pytest.fixture
 def mock_app_and_manager():
-    """Crea mock per Adw.Application e ThemeManager."""
+    """Create mock for Adw.Application and ThemeManager."""
     if is_gtk_available():
         app = Adw.Application(application_id="io.github.granafilo.GnomeThemeManagerTest")
     else:
         app = MagicMock()
     manager = MagicMock()
-    # Mocking percorsi utente per evitare errori nell'inizializzazione
+    # Mock user paths to avoid initialization errors
     manager.get_system_status.return_value.user_themes_path = Path("/home/user/.local/share/themes")
     manager.get_system_status.return_value.user_icons_path = Path("/home/user/.local/share/icons")
     manager.get_system_status.return_value.sandbox_status = None
@@ -42,9 +42,9 @@ def mock_app_and_manager():
 
 
 def test_window_shortcuts(mock_app_and_manager):
-    """Verifica che le scorciatoie di chiusura (Ctrl+W, Ctrl+Q) siano configurate e associate alla finestra."""
+    """Verify that close shortcuts (Ctrl+W, Ctrl+Q) are configured and bound to window."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     app, manager = mock_app_and_manager
     window = GnomeThemeWindow(app, manager=manager)
@@ -59,20 +59,20 @@ def test_window_shortcuts(mock_app_and_manager):
 
 
 def test_focus_behavior_unselect(mock_app_and_manager):
-    """Verifica che il focus behavior deselezioni la riga attiva nella list box dei temi."""
+    """Verify that focus behavior deselects active row in themes list box."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     app, manager = mock_app_and_manager
     window = GnomeThemeWindow(app, manager=manager)
 
-    # Inseriamo una riga fittizia e selezioniamola
+    # Insert a dummy row and select it
     row = Gtk.ListBoxRow()
     window.themes_page.themes_list_box.append(row)
     window.themes_page.themes_list_box.select_row(row)
     assert window.themes_page.themes_list_box.get_selected_row() == row
 
-    # Simula la pressione del GestureClick impostato
+    # Simulate click gesture trigger
     controllers = [
         window.observe_controllers().get_item(i)
         for i in range(window.observe_controllers().get_n_items())
@@ -80,16 +80,16 @@ def test_focus_behavior_unselect(mock_app_and_manager):
     gesture_clicks = [c for c in controllers if isinstance(c, Gtk.GestureClick)]
     assert len(gesture_clicks) > 0
 
-    # Invoca la rimozione del focus e selezione manuale
+    # Invoke focus removal and manual deselection
     window.set_focus(None)
     window.themes_page.themes_list_box.select_row(None)
     assert window.themes_page.themes_list_box.get_selected_row() is None
 
 
 def test_system_themes_toggle_persistence(mock_app_and_manager):
-    """Verifica il filtro del checkbutton Nascondi temi di sistema per categoria in sessione."""
+    """Verify Hide system themes checkbutton filter per category across session."""
     if not is_gtk_available():
-        pytest.skip("PyGObject / GTK4 non disponibili.")
+        pytest.skip("PyGObject / GTK4 unavailable.")
 
     app, manager = mock_app_and_manager
 
@@ -99,11 +99,11 @@ def test_system_themes_toggle_persistence(mock_app_and_manager):
     assert page.system_themes_toggle is not None
     assert page.system_themes_toggle.get_active() is False
 
-    # Modifica stato toggle per la categoria attiva (GTK)
+    # Change toggle state for active category (GTK)
     page.system_themes_toggle.set_active(True)
     assert page._toggle_states[ThemeType.GTK] is True
 
-    # Passa a ICON, modifica toggle ad False, verifica che le due categorie abbiano stati indipendenti
+    # Switch to ICON, change toggle to False, verify both categories maintain independent states
     page.set_category(ThemeType.ICON)
     page.system_themes_toggle.set_active(False)
     assert page._toggle_states[ThemeType.GTK] is True

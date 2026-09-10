@@ -48,6 +48,8 @@ def _parse_po_file(po_path: Path) -> dict[str, str]:
             if current_msgid is not None and current_msgstr is not None:
                 k = "".join(current_msgid)
                 v = "".join(current_msgstr)
+                if k and k in translations:
+                    raise ValueError(f"Duplicate message definition in {po_path}: msgid '{k}'")
                 translations[k] = v
 
             current_msgid = [unescape(line_s[6:])]
@@ -67,6 +69,8 @@ def _parse_po_file(po_path: Path) -> dict[str, str]:
     if current_msgid is not None and current_msgstr is not None:
         k = "".join(current_msgid)
         v = "".join(current_msgstr)
+        if k and k in translations:
+            raise ValueError(f"Duplicate message definition in {po_path}: msgid '{k}'")
         translations[k] = v
 
     return translations

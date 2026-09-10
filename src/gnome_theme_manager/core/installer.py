@@ -232,16 +232,26 @@ def detect_theme_types(theme_dir: Path) -> list[ThemeType]:
     """
     detected: list[ThemeType] = []
 
-    # 1. Check GTK Theme
-    gtk_subdirs = ["gtk-2.0", "gtk-3.0", "gtk-4.0"]
+    # 1. Check GTK Theme / Libadwaita
+    gtk_subdirs = ["gtk-2.0", "gtk-3.0", "gtk-4.0", "libadwaita"]
     has_gtk_dir = any((theme_dir / sub).is_dir() for sub in gtk_subdirs)
+    has_gtk_file = (
+        (theme_dir / "gtk.css").is_file()
+        or (theme_dir / "libadwaita.css").is_file()
+        or (theme_dir / "gtk-4.0" / "libadwaita.css").is_file()
+        or (theme_dir / "gtk-4.0" / "gtk.css").is_file()
+    )
     index_theme = theme_dir / "index.theme"
 
-    is_gtk = has_gtk_dir
+    is_gtk = has_gtk_dir or has_gtk_file
     if index_theme.is_file() and not is_gtk:
         try:
             content = index_theme.read_text(encoding="utf-8", errors="ignore")
-            if "[Desktop Entry]" in content or "[GtkTheme]" in content:
+            if (
+                "[Desktop Entry]" in content
+                or "[GtkTheme]" in content
+                or "[X-GNOME-Metatheme]" in content
+            ):
                 is_gtk = True
         except (OSError, UnicodeDecodeError):
             pass
@@ -351,6 +361,34 @@ def inspect_extracted_tree(
     return targets
 
 
+def _is_dir_writable(path: Path) -> bool:
+    """Check if a directory exists and is writable, or can be created as writable."""
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test_file = path / f".write_test_{os.getpid()}"
+        test_file.touch(exist_ok=True)
+        test_file.unlink(missing_ok=True)
+        return True
+    except (OSError, PermissionError):
+        return False
+
+
+def _get_writable_dir(preferred: Path, fallbacks: list[Path]) -> Path:
+    """Return preferred path if writable, otherwise the first writable fallback."""
+    if _is_dir_writable(preferred):
+        return preferred
+    for fb in fallbacks:
+        expanded = fb.expanduser()
+        if expanded != preferred and _is_dir_writable(expanded):
+            logger.warning(
+                "Preferred theme directory '%s' is not writable; falling back to '%s'",
+                preferred,
+                expanded,
+            )
+            return expanded
+    return preferred
+
+
 class ThemeInstaller:
     """Manages safe installation and uninstallation of user themes."""
 
@@ -366,10 +404,14 @@ class ThemeInstaller:
             user_icons_dir: User directory for Icon and Cursor themes (default: ~/.local/share/icons).
         """
         self.user_themes_dir = (
-            Path(user_themes_dir).expanduser() if user_themes_dir else USER_THEMES_DIRS[0]
+            Path(user_themes_dir).expanduser()
+            if user_themes_dir
+            else _get_writable_dir(USER_THEMES_DIRS[0], USER_THEMES_DIRS)
         )
         self.user_icons_dir = (
-            Path(user_icons_dir).expanduser() if user_icons_dir else USER_ICONS_DIRS[0]
+            Path(user_icons_dir).expanduser()
+            if user_icons_dir
+            else _get_writable_dir(USER_ICONS_DIRS[0], USER_ICONS_DIRS)
         )
 
     def ensure_user_directories(self) -> list[Path]:
@@ -394,7 +436,10 @@ class ThemeInstaller:
                 dirs_to_ensure.append(expanded)
 
         for directory in dirs_to_ensure:
-            directory.mkdir(parents=True, exist_ok=True)
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+            except (OSError, PermissionError) as err:
+                logger.debug("Could not create directory %s: %s", directory, err)
 
         return dirs_to_ensure
 
@@ -491,15 +536,15 @@ class ThemeInstaller:
         # Determine target base directories (XDG vs Legacy)
         self.ensure_user_directories()
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = USER_THEMES_DIRS[1]
-            base_icons_dir = USER_ICONS_DIRS[1]
+            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
         elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
             custom_path = Path(target_dir).expanduser()
             base_themes_dir = custom_path
             base_icons_dir = custom_path
         else:
-            base_themes_dir = self.user_themes_dir
-            base_icons_dir = self.user_icons_dir
+            base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
 
         # Pass 1: Conflict pre-validation across all components
         if not overwrite:
@@ -541,6 +586,8 @@ class ThemeInstaller:
 
                 target_base_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True)
+                if t_type == ThemeType.GTK:
+                    self._ensure_gtk4_libadwaita_symlinks(dest_dir)
                 processed_dirs.add(dir_key)
 
             installed_themes.append(
@@ -553,6 +600,96 @@ class ThemeInstaller:
             )
 
         return installed_themes
+
+    @staticmethod
+    def _ensure_gtk4_libadwaita_symlinks(dest_dir: Path) -> None:
+        """Ensure libadwaita files are symlinked into gtk-4.0 folder if required by the OS.
+
+        If running on GNOME 50+ or GNOME 42+ and Libadwaita stylesheets exist in the theme
+        (such as libadwaita.css, libadwaita/, etc.), ensure they are placed as symlinks
+        inside <theme>/gtk-4.0/ alongside standard GTK4 stylesheets.
+        """
+        from .gnome_version import detect_gnome_version, is_gnome_50_plus
+
+        ver = detect_gnome_version()
+        requires_libadwaita = is_gnome_50_plus(ver) or (ver is not None and ver[0] >= 42)
+        if not requires_libadwaita:
+            return
+
+        # Check for any libadwaita files in the theme
+        has_libadw_root = (dest_dir / "libadwaita.css").is_file()
+        has_libadw_dir_css = (dest_dir / "libadwaita" / "libadwaita.css").is_file()
+        has_libadw_dir_gtk = (dest_dir / "libadwaita" / "gtk.css").is_file()
+        has_libadw_dark_root = (dest_dir / "libadwaita-dark.css").is_file()
+        has_libadw_dir_dark = (dest_dir / "libadwaita" / "libadwaita-dark.css").is_file()
+        has_libadw_dir_gtk_dark = (dest_dir / "libadwaita" / "gtk-dark.css").is_file()
+
+        has_any_libadwaita = (
+            has_libadw_root
+            or has_libadw_dir_css
+            or has_libadw_dir_gtk
+            or has_libadw_dark_root
+            or has_libadw_dir_dark
+            or has_libadw_dir_gtk_dark
+        )
+
+        gtk4_dir = dest_dir / "gtk-4.0"
+
+        if has_any_libadwaita:
+            gtk4_dir.mkdir(parents=True, exist_ok=True)
+
+            # 1. Symlink libadwaita.css into gtk-4.0/ if not already present
+            dest_libadw = gtk4_dir / "libadwaita.css"
+            if not dest_libadw.exists():
+                try:
+                    if has_libadw_root:
+                        dest_libadw.symlink_to("../libadwaita.css")
+                    elif has_libadw_dir_css:
+                        dest_libadw.symlink_to("../libadwaita/libadwaita.css")
+                    elif has_libadw_dir_gtk:
+                        dest_libadw.symlink_to("../libadwaita/gtk.css")
+                except OSError as exc:
+                    logger.debug("Failed creating libadwaita.css symlink in %s: %s", gtk4_dir, exc)
+
+            # 2. Symlink libadwaita-dark.css into gtk-4.0/ if not already present
+            dest_libadw_dark = gtk4_dir / "libadwaita-dark.css"
+            if not dest_libadw_dark.exists():
+                try:
+                    if has_libadw_dark_root:
+                        dest_libadw_dark.symlink_to("../libadwaita-dark.css")
+                    elif has_libadw_dir_dark:
+                        dest_libadw_dark.symlink_to("../libadwaita/libadwaita-dark.css")
+                    elif has_libadw_dir_gtk_dark:
+                        dest_libadw_dark.symlink_to("../libadwaita/gtk-dark.css")
+                except OSError as exc:
+                    logger.debug(
+                        "Failed creating libadwaita-dark.css symlink in %s: %s", gtk4_dir, exc
+                    )
+
+            # 3. If gtk-4.0/gtk.css is missing, point it to libadwaita.css
+            dest_gtk = gtk4_dir / "gtk.css"
+            if not dest_gtk.exists() and dest_libadw.exists():
+                try:
+                    dest_gtk.symlink_to("libadwaita.css")
+                except OSError:
+                    pass
+
+        # 4. If GNOME 50+ and theme has gtk-4.0/gtk.css but no libadwaita.css, create symlink
+        if is_gnome_50_plus(ver) and gtk4_dir.is_dir():
+            dest_libadw = gtk4_dir / "libadwaita.css"
+            dest_gtk = gtk4_dir / "gtk.css"
+            if dest_gtk.exists() and not dest_libadw.exists():
+                try:
+                    dest_libadw.symlink_to("gtk.css")
+                except OSError:
+                    pass
+            dest_libadw_dark = gtk4_dir / "libadwaita-dark.css"
+            dest_gtk_dark = gtk4_dir / "gtk-dark.css"
+            if dest_gtk_dark.exists() and not dest_libadw_dark.exists():
+                try:
+                    dest_libadw_dark.symlink_to("gtk-dark.css")
+                except OSError:
+                    pass
 
     def install(
         self,
@@ -603,15 +740,15 @@ class ThemeInstaller:
 
         # Determine target base directories (XDG vs Legacy)
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = USER_THEMES_DIRS[1]
-            base_icons_dir = USER_ICONS_DIRS[1]
+            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
         elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
             custom_path = Path(target_dir).expanduser()
             base_themes_dir = custom_path
             base_icons_dir = custom_path
         else:
-            base_themes_dir = self.user_themes_dir
-            base_icons_dir = self.user_icons_dir
+            base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
 
         with tempfile.TemporaryDirectory() as tmp_dir_str:
             tmp_dir = Path(tmp_dir_str)

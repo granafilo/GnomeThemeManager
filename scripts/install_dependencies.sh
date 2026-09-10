@@ -2,11 +2,11 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 # ==============================================================================
-# Script di installazione dipendenze di sistema e di sviluppo
+# System and Development Dependency Installation Script
 #
-# Utilizzo:
-#   ./scripts/install_dependencies.sh          # Configura .venv e pacchetti locali
-#   ./scripts/install_dependencies.sh --global # Installa anche i tool di test globalmente (pytest, mypy, ruff)
+# Usage:
+#   ./scripts/install_dependencies.sh          # Configure .venv and local packages
+#   ./scripts/install_dependencies.sh --global # Also install test tools globally (pytest, mypy, ruff)
 # ==============================================================================
 
 set -e
@@ -24,42 +24,42 @@ for arg in "$@"; do
 done
 
 echo "======================================================"
-echo " 1. Verifica/Installazione pacchetti di sistema (APT)"
+echo " 1. Checking/Installing System Packages (APT)"
 echo "======================================================"
 
 PACKAGES_TO_INSTALL=()
 
-# Controllo supporto venv / ensurepip
+# Check venv / ensurepip support
 if ! python3 -m venv --help &>/dev/null || ! python3 -c "import ensurepip" 2>/dev/null; then
     PACKAGES_TO_INSTALL+=(python3-venv python3.12-venv python3-pip)
 fi
 
-# Controllo PyGObject / GTK4 / Libadwaita
+# Check PyGObject / GTK4 / Libadwaita
 if ! python3 -c "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1')" 2>/dev/null; then
     PACKAGES_TO_INSTALL+=(python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1)
 fi
 
-# Se richiesta l'installazione globale (fuori da venv)
+# If global installation requested (outside venv)
 if [ "$GLOBAL_INSTALL" -eq 1 ]; then
-    echo "Opzione --global rilevata: installazione pacchetti di sistema..."
+    echo "Option --global detected: installing system packages..."
     PACKAGES_TO_INSTALL+=(python3-pytest python3-pytest-cov mypy)
 fi
 
 if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
-    echo "Installazione pacchetti APT: ${PACKAGES_TO_INSTALL[*]}"
+    echo "Installing APT packages: ${PACKAGES_TO_INSTALL[*]}"
     if command -v sudo &> /dev/null; then
         sudo apt install -y "${PACKAGES_TO_INSTALL[@]}"
     else
         apt install -y "${PACKAGES_TO_INSTALL[@]}"
     fi
 else
-    echo "✓ Tutti i pacchetti di sistema APT richiesti sono già installati."
+    echo "✓ All required APT system packages are already installed."
 fi
 
-# Installazione globale di Ruff se richiesta
+# Global installation of Ruff if requested
 if [ "$GLOBAL_INSTALL" -eq 1 ]; then
     if ! command -v ruff &> /dev/null; then
-        echo "Installazione globale di Ruff..."
+        echo "Installing Ruff globally..."
         if command -v snap &> /dev/null; then
             if command -v sudo &> /dev/null; then
                 sudo snap install ruff --classic || pip install --user --break-system-packages ruff || true
@@ -70,25 +70,25 @@ if [ "$GLOBAL_INSTALL" -eq 1 ]; then
             pip install --user --break-system-packages ruff || true
         fi
     else
-        echo "✓ Ruff già disponibile globalmente."
+        echo "✓ Ruff already available globally."
     fi
 fi
 
 echo ""
 echo "======================================================"
-echo " 2. Configurazione Virtual Environment (.venv)"
+echo " 2. Virtual Environment Setup (.venv)"
 echo "======================================================"
 
 if [ -d ".venv" ] && [ ! -f ".venv/bin/activate" ]; then
-    echo "Rimozione virtualenv parziale/corrotto precedente..."
+    echo "Removing previous partial/corrupted virtualenv..."
     rm -rf .venv
 fi
 
 if [ ! -d ".venv" ]; then
-    echo "Creazione virtualenv con accesso a system-site-packages..."
+    echo "Creating virtualenv with access to system-site-packages..."
     python3 -m venv --system-site-packages .venv
 else
-    echo "✓ Virtualenv .venv pronto."
+    echo "✓ Virtualenv .venv ready."
 fi
 
 # shellcheck disable=SC1091
@@ -96,7 +96,7 @@ source .venv/bin/activate
 
 echo ""
 echo "======================================================"
-echo " 3. Installazione dipendenze Python nel virtualenv"
+echo " 3. Installing Python Dependencies in Virtualenv"
 echo "======================================================"
 pip install --upgrade pip
 pip install -e ".[dev]"
@@ -104,7 +104,7 @@ pip install mypy ruff
 
 echo ""
 echo "======================================================"
-echo " 4. Compilazione traduzioni gettext"
+echo " 4. Compiling gettext Translations"
 echo "======================================================"
 if [ -f "scripts/compile_translations.py" ]; then
     python3 scripts/compile_translations.py
@@ -112,10 +112,11 @@ fi
 
 echo ""
 echo "======================================================"
-echo " ✓ Installazione completata con successo!"
+echo " ✓ Installation completed successfully!"
 echo "======================================================"
-echo "Per eseguire i test:       ./scripts/run_tests.sh"
+echo "To run tests:             ./scripts/run_tests.sh"
 if [ "$GLOBAL_INSTALL" -eq 1 ]; then
-    echo "                      oppure 'pytest -v' / 'ruff check .' (anche fuori dal venv)"
+    echo "                          or 'pytest -v' / 'ruff check .' (also outside venv)"
 fi
-echo "Per avviare l'applicazione: ./scripts/run_app.sh"
+echo "To launch the application: ./scripts/run_app.sh"
+

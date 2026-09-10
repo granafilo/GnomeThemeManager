@@ -23,7 +23,7 @@ from gnome_theme_manager.core.models import (
 
 
 def test_theme_availability_checker_host(tmp_path: Path) -> None:
-    """Verifica che ThemeAvailabilityChecker rilevi la presenza su host per ciascun tipo di tema."""
+    """Verify that ThemeAvailabilityChecker detects host presence for each theme type."""
     user_themes = tmp_path / "user_themes"
     user_themes.mkdir(parents=True)
     theme_dir = user_themes / "Nordic"
@@ -43,16 +43,16 @@ def test_theme_availability_checker_host(tmp_path: Path) -> None:
 
 
 def test_theme_availability_checker_snap_and_flatpak(tmp_path: Path) -> None:
-    """Verifica il check disponibilità per target snap e flatpak."""
+    """Verify availability check for snap and flatpak targets."""
     scanner = MagicMock()
     checker = ThemeAvailabilityChecker(scanner=scanner)
 
-    # Snap: i temi in KNOWN_SNAP_COMMON_THEMES (es. yaru, adwaita) sono disponibili
+    # Snap: themes in KNOWN_SNAP_COMMON_THEMES (e.g. yaru, adwaita) are available
     assert checker.check("Yaru", ThemeType.GTK, target="snap") is True
     assert checker.check("Adwaita", ThemeType.GTK, target="snap") is True
     assert checker.check("CustomExoticTheme", ThemeType.GTK, target="snap") is False
 
-    # Flatpak: i temi presenti sul filesystem host (accessibili via override filesystem) sono disponibili se trovati
+    # Flatpak: themes present on the host filesystem (accessible via filesystem override) are available if found
     (tmp_path / "Nordic").mkdir(parents=True, exist_ok=True)
     scanner.find_theme.side_effect = lambda name, t_type: (
         Theme(name=name, theme_type=t_type, path=tmp_path / name, is_user_level=True)
@@ -64,11 +64,11 @@ def test_theme_availability_checker_snap_and_flatpak(tmp_path: Path) -> None:
 
 
 def test_theme_availability_checker_check_all_targets(tmp_path: Path) -> None:
-    """Verifica che check_all_targets ritorni True solo se il tema è disponibile su tutti i target (host, snap, flatpak)."""
+    """Verify that check_all_targets returns True only if the theme is available on all targets (host, snap, flatpak)."""
     scanner = MagicMock()
     checker = ThemeAvailabilityChecker(scanner=scanner)
 
-    # Yaru esiste su host e snap e flatpak
+    # Yaru exists on host, snap and flatpak
     (tmp_path / "Yaru").mkdir(parents=True, exist_ok=True)
     (tmp_path / "Nordic").mkdir(parents=True, exist_ok=True)
     scanner.find_theme.side_effect = lambda name, t_type: (
@@ -78,12 +78,12 @@ def test_theme_availability_checker_check_all_targets(tmp_path: Path) -> None:
     )
 
     assert checker.check_all_targets("Yaru", ThemeType.GTK) is True
-    # Nordic non è in snap known common themes
+    # Nordic is not in snap known common themes
     assert checker.check_all_targets("Nordic", ThemeType.GTK) is False
 
 
 def test_fallback_config_roundtrip(tmp_path: Path) -> None:
-    """Verifica salvataggio e caricamento della configurazione fallbacks.json."""
+    """Verify saving and loading fallbacks.json configuration."""
     config_file = tmp_path / "fallbacks.json"
     fm = FallbackManager(config_file=config_file)
 
@@ -108,7 +108,7 @@ def test_fallback_config_roundtrip(tmp_path: Path) -> None:
 
 
 def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
-    """Verifica che al primo avvio (file inesistente), FallbackManager rilevi i default dai temi di sistema."""
+    """Verify that on first run (nonexistent file), FallbackManager detects defaults from system themes."""
     config_file = tmp_path / "fallbacks.json"
     scanner_mock = MagicMock()
     scanner_mock.find_theme.return_value = Theme(
@@ -142,12 +142,12 @@ def test_fallback_manager_first_run_defaults(tmp_path: Path) -> None:
 
 
 def test_manager_apply_missing_theme_uses_fallback(tmp_path: Path) -> None:
-    """Verifica che se un tema non è presente sul filesystem per un target o in generale,
-    venga applicato il fallback configurato dell'utente senza sollevare alert bloccanti
-    e restituendo un info banner/warning 'fallback in use'.
+    """Verify that if a theme is not present on the filesystem for a target or in general,
+    the user's configured fallback is applied without raising blocking alerts
+    and returning an info banner/warning 'fallback in use'.
     """
     scanner = MagicMock()
-    # "MissingTheme" non esiste sul filesystem; "Adwaita" è il fallback ed esiste
+    # "MissingTheme" does not exist on filesystem; "Adwaita" is fallback and exists
     fallback_gtk = Theme(
         name="Adwaita",
         theme_type=ThemeType.GTK,
@@ -192,7 +192,7 @@ def test_manager_apply_missing_theme_uses_fallback(tmp_path: Path) -> None:
         fallback_manager=fallback_mgr,
     )
 
-    # Applicazione di un tema inesistente
+    # Apply nonexistent theme
     result = mgr.apply_themes(ThemeSet(gtk_theme="MissingTheme"))
 
     assert result.gtk_theme == "Adwaita"
@@ -203,9 +203,9 @@ def test_manager_apply_missing_theme_uses_fallback(tmp_path: Path) -> None:
 
 
 def test_manager_get_available_fallback_options(tmp_path: Path) -> None:
-    """Verifica che la lista delle opzioni fallback listi SOLO i temi disponibili su tutti i target."""
+    """Verify that fallback options list ONLY themes available across all targets."""
     scanner = MagicMock()
-    # Scanner trova Yaru (universalmente disponibile) e CustomTheme (solo host)
+    # Scanner finds Yaru (universally available) and CustomTheme (host only)
     theme_yaru_gtk = Theme("Yaru", ThemeType.GTK, tmp_path / "Yaru", False)
     theme_custom_gtk = Theme("CustomTheme", ThemeType.GTK, tmp_path / "CustomTheme", True)
     theme_yaru_icon = Theme("Yaru", ThemeType.ICON, tmp_path / "Yaru", False)
@@ -225,13 +225,13 @@ def test_manager_get_available_fallback_options(tmp_path: Path) -> None:
     fm = FallbackManager(config_file=tmp_path / "fallbacks.json", scanner=scanner)
     opts = fm.get_available_fallback_themes(ThemeType.GTK)
 
-    # Yaru deve essere presente, CustomTheme (non presente su snap) non deve essere tra le opzioni fallback universali
+    # Yaru must be present, CustomTheme (not in snap) must not be among universal fallback options
     assert "Yaru" in opts
     assert "CustomTheme" not in opts
 
 
 def test_derive_available_theme_dynamic_discovery(tmp_path: Path) -> None:
-    """Verifica che derive_available_theme scopra dinamicamente temi alternativi disponibili."""
+    """Verify that derive_available_theme dynamically discovers available alternative themes."""
     scanner = MagicMock()
     theme_yaru_dark = Theme("Yaru-dark", ThemeType.GTK, tmp_path / "Yaru-dark", False)
     scanner.scan_all.return_value = [theme_yaru_dark]
@@ -240,7 +240,7 @@ def test_derive_available_theme_dynamic_discovery(tmp_path: Path) -> None:
     )
 
     checker = ThemeAvailabilityChecker(scanner=scanner)
-    # Tema custom sconosciuto scuro deve risolvere verso Yaru-dark
+    # Unknown custom dark theme should resolve towards Yaru-dark
     derived = checker.derive_available_theme(
         "NonExistent-Dark-Custom", ThemeType.GTK, target="snap"
     )
@@ -248,7 +248,7 @@ def test_derive_available_theme_dynamic_discovery(tmp_path: Path) -> None:
 
 
 def test_fallback_manager_dynamic_resolution_missing_configured(tmp_path: Path) -> None:
-    """Verifica che FallbackManager risolva verso un tema valido se il configurato non esiste sul disco."""
+    """Verify that FallbackManager resolves towards a valid theme if configured does not exist on disk."""
     scanner = MagicMock()
     theme_system = Theme("SystemDefault", ThemeType.GTK, tmp_path / "SystemDefault", False)
     scanner.find_theme.return_value = None

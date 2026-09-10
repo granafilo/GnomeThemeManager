@@ -61,3 +61,23 @@ class StoreDownloadError(StoreError):
 
 class StoreNetworkError(StoreError):
     """Raised when network connectivity or API timeout issues occur."""
+
+
+class ExtensionError(GnomeThemeManagerError):
+    """Base exception for all GNOME Shell extension operations."""
+
+
+class ExtensionNotFoundError(ExtensionError):
+    """Raised when an extension is not found locally or remotely."""
+
+
+class ExtensionIncompatibleError(ExtensionError):
+    """Raised when an extension is not compatible with the active GNOME Shell version."""
+
+
+class ExtensionNetworkError(ExtensionError):
+    """Raised when network operations against extensions.gnome.org fail."""
+
+
+class ExtensionInstallError(ExtensionError):
+    """Raised when installing or unpacking an extension fails."""

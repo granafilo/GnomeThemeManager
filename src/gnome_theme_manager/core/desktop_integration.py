@@ -24,7 +24,16 @@ logger = logging.getLogger("gnome_theme_manager.core.desktop_integration")
 APP_ID: str = "io.github.granafilo.ThemeManager"
 MIME_TYPE: str = "application/vnd.appimage"
 MIME_ICON_NAME: str = "application-vnd.appimage"
-ICON_SIZES: list[str] = ["128x128", "256x256", "512x512"]
+ICON_SIZES: list[str] = [
+    "16x16",
+    "24x24",
+    "32x32",
+    "48x48",
+    "64x64",
+    "128x128",
+    "256x256",
+    "512x512",
+]
 
 MIME_XML_CONTENT: str = """<?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
@@ -84,6 +93,13 @@ def generate_desktop_entry_content(exec_path: str | None = None) -> str:
         appimage_env = os.environ.get("APPIMAGE")
         if appimage_env and Path(appimage_env).is_file():
             exec_path = f'"{appimage_env}"'
+        elif shutil.which("gnome-theme-manager"):
+            exec_path = "gnome-theme-manager --gui"
+        elif shutil.which("flatpak") and (
+            Path(f"/var/lib/flatpak/app/{APP_ID}").is_dir()
+            or (Path.home() / ".local" / "share" / "flatpak" / "app" / APP_ID).is_dir()
+        ):
+            exec_path = f"/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=gnome-theme-manager {APP_ID} --gui"
         else:
             exec_path = "gnome-theme-manager --gui"
 
@@ -91,14 +107,16 @@ def generate_desktop_entry_content(exec_path: str | None = None) -> str:
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=GNOME Theme Manager\n"
+        "GenericName=Theme Manager\n"
         "Comment=Manage GTK, Shell, Icon, and Cursor themes on GNOME\n"
         f"Exec={exec_path}\n"
         f"Icon={APP_ID}\n"
         "Terminal=false\n"
-        "Categories=GTK;Settings;\n"
-        "Keywords=theme;gtk;icon;cursor;gnome;settings;\n"
+        "Categories=Utility;Settings;DesktopSettings;GNOME;GTK;\n"
+        "Keywords=theme;gtk;icon;cursor;gnome;settings;customization;appearance;\n"
         f"MimeType={MIME_TYPE};\n"
         "StartupNotify=true\n"
+        f"StartupWMClass={APP_ID}\n"
     )
 
 
@@ -165,6 +183,12 @@ def integrate_desktop(
     Returns:
         bool: True if integration succeeded.
     """
+    if not custom_target_apps_dir and (
+        Path("/.flatpak-info").exists() or os.environ.get("FLATPAK_ID")
+    ):
+        logger.debug("Flatpak sandbox detected; skipping AppImage desktop integration")
+        return True
+
     apps_dir = custom_target_apps_dir or get_user_applications_dir()
     icons_dir = custom_target_icons_dir or get_user_icons_dir()
     mime_dir = custom_target_mime_dir or get_user_mime_dir()
@@ -262,14 +286,26 @@ def integrate_desktop(
                     shutil.copy2(src_svg, dest_mime_svg)
                     changed = True
 
-        # 5. Remove any user-level index.theme in hicolor to avoid shadowing system hicolor theme
+        # 5. Ensure user-level index.theme in hicolor so gtk-update-icon-cache can build cache
         user_hicolor_index = icons_dir / "index.theme"
-        if user_hicolor_index.is_file():
-            try:
-                user_hicolor_index.unlink()
-                changed = True
-            except OSError:
-                pass
+        if not user_hicolor_index.is_file():
+            sys_hicolor_index = Path("/usr/share/icons/hicolor/index.theme")
+            if sys_hicolor_index.is_file():
+                try:
+                    shutil.copy2(sys_hicolor_index, user_hicolor_index)
+                    changed = True
+                except OSError:
+                    pass
+            else:
+                try:
+                    user_hicolor_index.write_text(
+                        "[Icon Theme]\nName=Hicolor\nComment=Fallback icon theme\nHidden=true\n"
+                        "Directories=16x16/apps,24x24/apps,32x32/apps,48x48/apps,64x64/apps,128x128/apps,256x256/apps,512x512/apps,scalable/apps\n",
+                        encoding="utf-8",
+                    )
+                    changed = True
+                except OSError:
+                    pass
 
         # 6. Refresh databases only if files were created or modified
         if changed:

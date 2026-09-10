@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<component type="desktop-application">
+  <id>io.github.granafilo.ThemeManager</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>GNOME Theme Manager</name>
+  <summary>Modern GTK4 &amp; Libadwaita theme, icon, cursor and shell manager for GNOME</summary>
+  
+  <description>
+    <p>
+      GNOME Theme Manager is a modern desktop application for Ubuntu, Fedora, Debian, and all GNOME-based Linux distributions.
+      It allows users to discover, install, apply, and customize GTK4/3 themes, icon packs, cursor sets,
+      and GNOME Shell themes seamlessly through a native Libadwaita user interface or a powerful CLI.
+    </p>
+    <p>Main features include:</p>
+    <ul>
+      <li>Online Theme Store with direct Pling and OpenDesktop integration</li>
+      <li>GNOME Shell Extensions manager with real-time toggle switches</li>
+      <li>Scanning and management of user (~/.themes, ~/.icons, ~/.local/share) and system themes</li>
+      <li>One-click GTK4 and Libadwaita theme overrides via CSS symlinking</li>
+      <li>Archive theme installer supporting .tar.gz, .tar.xz, and .zip archives</li>
+      <li>Global Theme presets to save, restore, and share complete desktop theme configurations</li>
+      <li>Flatpak and Snap sandbox compatibility checks and automatic theme propagation</li>
+      <li>Native GNOME Libadwaita GUI and fast Command Line Interface (CLI)</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.granafilo.ThemeManager.desktop</launchable>
+  
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main Window of GNOME Theme Manager displaying active themes and preset management</caption>
+      <image type="source">https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/docs/screenshots/main-window.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/granafilo/GnomeThemeManager</url>
+  <url type="bugtracker">https://github.com/granafilo/GnomeThemeManager/issues</url>
+  
+  <categories>
+    <category>Settings</category>
+    <category>DesktopSettings</category>
+    <category>GTK</category>
+  </categories>
+
+  <provides>
+    <binary>gnome-theme-manager</binary>
+  </provides>
+
+  <releases>
+    <release version="1.5.0" date="2026-09-05">
+      <description>
+        <p>Release 1.5.0: Flatpak distribution support with standalone bundle (.flatpak) and click-to-install (.flatpakref); integrated Online Theme Store for OpenDesktop and Pling with 1-click download and installation; full-screen high-definition screenshot viewer; and comprehensive GNOME Shell Extensions manager.</p>
+      </description>
+    </release>
+    <release version="1.4.8" date="2026-08-28">
+      <description>
+        <p>Release 1.4.8: Dynamic system and sandbox theme fallback discovery; 1-click Light/Dark color scheme preference selector across Status, Themes, and Editor; real-time live GSettings desktop synchronization; in-app interactive sandbox guide modal; and asynchronous diagnostics performance optimizations.</p>
+      </description>
+    </release>
+    <release version="1.4.1" date="2026-08-22">
+      <description>
+        <p>Release 1.4.1: Custom theme icon pickers; unified custom theme folder structure (GTK + Shell); improved Theme Editor state management with Open Theme dialog; and user theme deletion with active theme protections.</p>
+      </description>
+    </release>
+    <release version="1.4.0" date="2026-08-21">
+      <description>
+        <p>Release 1.4.0: Global Theme in-place editing; custom theme icon pickers; comprehensive Desktop Typography and text scaling controls; GNOME Terminal ANSI color derivation, preferences, and profile management.</p>
+      </description>
+    </release>
+    <release version="1.3.0" date="2026-08-21">
+      <description>
+        <p>Release 1.3.0: Resilient fallback themes system across Host, Flatpak, and Snap; optional User Themes extension auto-enablement; and bundled UI fallback icons.</p>
+      </description>
+    </release>
+    <release version="1.2.0" date="2026-08-20">
+      <description>
+        <p>Release 1.2.0: Theme Editor &amp; Component Mixer, GTK and GNOME Shell color customization, persistent theme forks, session draft auto-save and recovery, and adaptive wallpaper color palette extraction.</p>
+      </description>
+    </release>
+    <release version="1.1.0" date="2026-08-20">
+      <description>
+        <p>Release 1.1.0: Global Themes unified view, structural Theme Validator, corruption detection and pre-apply warnings, in-app and desktop live previews with auto-rollback, icon pack preview grid, automated user directory creation, and assisted theme installer.</p>
+      </description>
+    </release>
+    <release version="1.0.0" date="2026-08-15">
+      <description>
+        <p>Release 1.0.0: GTK4/Libadwaita GUI, Preset 2.0, Shell themes and user-theme extension management, unified modals, AppStream packaging and translations.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1" />
+</component>
