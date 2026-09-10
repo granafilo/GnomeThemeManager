@@ -9,7 +9,7 @@
 
 A modern, native theme manager and customization suite for the **GNOME Desktop environment** (GTK4 & Libadwaita).
 
-**Current release:** v1.5.0
+**Current release:** v1.5.1
 
 ---
 

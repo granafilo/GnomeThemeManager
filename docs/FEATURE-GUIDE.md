@@ -138,11 +138,21 @@ Finishing touches before moving to the online Store:
 
 ---
 
-## Phase 5 — Online Store (v1.5)
+## Phase 5 — Online Store (v1.5) ✅
 
 - **5.1/5.2** Search, preview and install themes from public catalogs.
 - **5.3** Extensions browser with enable/disable.
 - **5.4** 24h cache for fast browsing.
+
+---
+
+## Phase 1.5.1 — Extensions Stabilization (v1.5.1) ✅
+
+- **Multi-image screenshot carousel**: Browse all available screenshots for an extension directly from the detail view.
+- **Unrestricted search**: Search finds all extensions from the official catalog regardless of Shell version, highlighting compatibility clearly.
+- **Harmonized catalog alignment**: Consistent column spacing and pixel-perfect first-letter alignment for "Installed" and "Details".
+- **Resilient downloads & rollbacks**: Atomic cleanup of corrupted or partial downloads and extracted files upon failure.
+- **Incompatibility safety warnings**: Confirmation prompts before installing or updating extensions not verified for your GNOME Shell version.
 
 ---
 

@@ -54,6 +54,11 @@
   </provides>
 
   <releases>
+    <release version="1.5.1" date="2026-09-10">
+      <description>
+        <p>Release 1.5.1: Extensions catalog stabilization with multi-photo screenshot carousel gallery, unrestricted catalog search for all GNOME Shell versions, pixel-perfect column alignment, offline caching with atomic rollbacks, and reinforced incompatibility warnings.</p>
+      </description>
+    </release>
     <release version="1.5.0" date="2026-09-05">
       <description>
         <p>Release 1.5.0: Flatpak distribution support with standalone bundle (.flatpak) and click-to-install (.flatpakref); integrated Online Theme Store for OpenDesktop and Pling with 1-click download and installation; full-screen high-definition screenshot viewer; and comprehensive GNOME Shell Extensions manager.</p>
