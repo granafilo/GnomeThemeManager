@@ -140,9 +140,10 @@ Finishing touches before moving to the online Store:
 
 ## Phase 5 — Online Store (v1.5) ✅
 
-- **5.1/5.2** Search, preview and install themes from public catalogs.
-- **5.3** Extensions browser with enable/disable.
-- **5.4** 24h cache for fast browsing.
+- **5.1 Store Client (pling.com)**: Full API integration with Pling and OpenDesktop OCS catalog for searching and fetching themes across GTK, Shell, Icon packs, and Cursors.
+- **5.2 Store UI**: Multi-column responsive card grid, category filters, high-resolution screenshot lightbox preview, download progress feedback, and 1-click automatic install into `~/.themes` and `~/.icons`.
+- **5.3 Extensions Browser**: Built-in GNOME Shell extensions browser with live enable/disable toggles, individual settings launch, and extensions.gnome.org links.
+- **5.4 Local Caching**: Resilient local caching of search results, catalogs, and metadata ensuring instant browsing.
 
 ---
 

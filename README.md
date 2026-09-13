@@ -91,9 +91,9 @@ Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https:
   ```
 
 #### 📦 Method 2 (Offline / Standalone Single-File): `.flatpak` Bundle
-Download the standalone single-file bundle `GNOMEThemeManager-1.5.0-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+Download the standalone single-file bundle `GNOMEThemeManager-1.5.1-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-flatpak install --user --bundle GNOMEThemeManager-1.5.0-x86_64.flatpak
+flatpak install --user --bundle GNOMEThemeManager-1.5.1-x86_64.flatpak
 ```
 
 #### 🌐 Method 3 (Flathub - Future / Upstream)
@@ -171,9 +171,21 @@ For complete instructions on development workflows, virtualenv setup, translatio
 
 ---
 
+## 🗺️ Roadmap & Coming Soon
+
+Development is actively progressing towards **Phase 6 — Profiles & Automations (v1.6)**:
+- 🌗 **Light & Dark Profiles**: Group and switch theme presets depending on time or lighting condition.
+- ⚡ **Auto-Switching**: Dynamic reaction to GNOME `color-scheme` changes.
+- 🚀 **Autostart Services**: Automated background application at system startup via user systemd units.
+- 📤 **Profile Bundling**: Single-file export and import of complete profiles and presets.
+
+For complete release history and upcoming milestones, see **[Roadmap](docs/ROADMAP.md)**.
+
+---
+
 ## 📚 Documentation
 
-- 📦 **[Installation & System Requirements](INSTALL.md)**: Distro-specific dependencies and AppImage setup.
+- 📦 **[Installation & System Requirements](INSTALL.md)**: Distro-specific dependencies and Flatpak setup.
 - 🛠️ **[Development & Quality Guide](docs/DEVELOPMENT.md)**: Testing, linting, type-checking, and i18n workflows.
 - 📦 **[Sandbox Integration (Snap & Flatpak)](docs/SANDBOX.md)**: Details on sandbox permissions and theme propagation.
 - 🗺️ **[Roadmap](docs/ROADMAP.md)**: Project milestones and upcoming features.

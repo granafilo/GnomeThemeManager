@@ -540,7 +540,7 @@ host/snap/flatpak con fallback theme scegliibili dall'utente.
 - **Task 4.5.4 — Theme Editor Improvements [P2]**: Avvio editor sulle impostazioni desktop attive, dialog "Open Global Theme", azione "Reset", aggiornamento in-place del nome e fix dei selettori CSS Shell Quick Settings.
 - **Task 4.5.5 — Theme Deletion Protections [P1]**: Azione delete su temi utente con protezioni attive per tema in uso, fix `NameError` logger nell'installer e cancellazione di temi incompleti/invalidi.
 - **Task 4.5.6 — Core GTK Fallback Override Fix [P1]**: Fix della logica di fallback per applicare direttamente il tema selezionato alle GSettings.
-- **Task 4.5.7 — AppImage & Asset Fixes [P2]**: Unificazione risoluzione cartelle temi, launcher icon resolution resiliente.
+- **Task 4.5.7 — Standalone & Asset Fixes [P2]**: Unificazione risoluzione cartelle temi, launcher icon resolution resiliente.
 - **Task 4.5.8 — i18n & Packaging [P2]**: Aggiornamento cataloghi PO/MO en/it, `metainfo.xml`, README e CHANGELOG.
 
 ---
