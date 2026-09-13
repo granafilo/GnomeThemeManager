@@ -134,6 +134,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
         self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
         self.set_default_size(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+        self.add_css_class("main-window")
 
         # Apply application-wide CSS styling for enhanced readability and typography
         self._setup_custom_styling()
@@ -155,6 +156,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.toast_overlay: Adw.ToastOverlay = self.builder.get_object("toast_overlay")
         self.split_view: Adw.NavigationSplitView = self.builder.get_object("split_view")
         self.sidebar_page: Adw.NavigationPage = self.builder.get_object("sidebar_page")
+        self.sidebar_header_bar: Adw.HeaderBar = self.builder.get_object("sidebar_header_bar")
         self.sidebar_list_box: Gtk.ListBox = self.builder.get_object("sidebar_list_box")
         self.content_page: Adw.NavigationPage = self.builder.get_object("content_page")
         self.content_header_bar: Adw.HeaderBar = self.builder.get_object("content_header_bar")
@@ -357,6 +359,11 @@ class MainWindow(Adw.ApplicationWindow):
         /* Typography scale enhancement */
         window.main-window {
             font-size: 1.04rem;
+        }
+
+        /* Ensure sidebar and content headerbars align perfectly */
+        headerbar {
+            min-height: 46px;
         }
 
         /* ActionRow titles & subtitles comfortable scale */
