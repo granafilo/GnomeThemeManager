@@ -226,3 +226,43 @@ toolbarview > headerbar {
 .navigation-sidebar > row:not(.activatable):hover {
     background-color: transparent;
 }
+
+/* 13. Simulated Terminal Live Preview Window */
+.terminal-preview-window {
+    background-color: @card_bg_color;
+    border: 1px solid @borders;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px alpha(@borders, 0.35);
+}
+
+.terminal-window-header {
+    background-color: alpha(@card_shade_color, 0.6);
+    border-bottom: 1px solid alpha(@borders, 0.6);
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    min-height: 36px;
+    padding: 0 8px;
+}
+
+.terminal-window-btn {
+    min-width: 11px;
+    min-height: 11px;
+    border-radius: 9999px;
+}
+
+.terminal-window-btn-close {
+    background-color: @destructive_bg_color;
+}
+
+.terminal-window-btn-minimize {
+    background-color: @warning_bg_color;
+}
+
+.terminal-window-btn-maximize {
+    background-color: @success_bg_color;
+}
+
+.terminal-preview-body {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}

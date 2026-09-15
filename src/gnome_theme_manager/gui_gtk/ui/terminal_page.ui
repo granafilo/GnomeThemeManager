@@ -26,29 +26,121 @@
                     <property name="spacing">20</property>
 
                     <!-- Terminal Live Preview Box -->
+                    <!-- Terminal Live Preview (Simulated Window) -->
                     <child>
-                      <object class="GtkFrame" id="terminal_preview_frame">
-                        <property name="child">
-                          <object class="GtkBox" id="terminal_preview_box">
-                            <property name="orientation">vertical</property>
-                            <property name="spacing">8</property>
-                            <property name="margin-start">16</property>
-                            <property name="margin-end">16</property>
-                            <property name="margin-top">16</property>
-                            <property name="margin-bottom">16</property>
-                            <child>
-                              <object class="GtkLabel" id="terminal_preview_label">
-                                <property name="xalign">0</property>
-                                <property name="use-markup">true</property>
-                                <property name="wrap">true</property>
-                                <property name="label"><![CDATA[<tt><b>user@gnome</b>:<b>~</b>$ uname -a
-Linux 6.8.0-generic x86_64 GNU/Linux
-<b>user@gnome</b>:<b>~</b>$ echo "GNOME Terminal Palette Theme"
-<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> <span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> <span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span></tt>]]></property>
+                      <object class="GtkBox" id="terminal_preview_box">
+                        <property name="orientation">vertical</property>
+                        <style>
+                          <class name="terminal-preview-window"/>
+                        </style>
+
+                        <!-- Simulated Window Header / Titlebar -->
+                        <child>
+                          <object class="GtkCenterBox" id="terminal_preview_header">
+                            <style>
+                              <class name="terminal-window-header"/>
+                            </style>
+                            <!-- Start: Window Controls (3 dots) -->
+                            <child type="start">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">7</property>
+                                <property name="margin-start">12</property>
+                                <property name="valign">center</property>
+                                <child>
+                                  <object class="GtkBox">
+                                    <style>
+                                      <class name="terminal-window-btn"/>
+                                      <class name="terminal-window-btn-close"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <style>
+                                      <class name="terminal-window-btn"/>
+                                      <class name="terminal-window-btn-minimize"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkBox">
+                                    <style>
+                                      <class name="terminal-window-btn"/>
+                                      <class name="terminal-window-btn-maximize"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- Center: Window Title -->
+                            <child type="center">
+                              <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">6</property>
+                                <property name="valign">center</property>
+                                <child>
+                                  <object class="GtkImage">
+                                    <property name="icon-name">utilities-terminal-symbolic</property>
+                                    <property name="pixel-size">14</property>
+                                    <style>
+                                      <class name="dim-label"/>
+                                    </style>
+                                  </object>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="terminal_preview_title">
+                                    <property name="label">user@gnome: ~</property>
+                                    <property name="valign">center</property>
+                                    <style>
+                                      <class name="caption"/>
+                                      <class name="heading"/>
+                                    </style>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+
+                            <!-- End: Spacer to balance CenterBox -->
+                            <child type="end">
+                              <object class="GtkBox">
+                                <property name="margin-end">12</property>
+                                <property name="width-request">50</property>
                               </object>
                             </child>
                           </object>
-                        </property>
+                        </child>
+
+                        <!-- Terminal Body Area with comfortable padding -->
+                        <child>
+                          <object class="GtkBox" id="terminal_preview_body">
+                            <property name="orientation">vertical</property>
+                            <style>
+                              <class name="terminal-preview-body"/>
+                            </style>
+                            <child>
+                              <object class="GtkLabel" id="terminal_preview_label">
+                                <property name="xalign">0</property>
+                                <property name="yalign">0</property>
+                                <property name="use-markup">true</property>
+                                <property name="wrap">true</property>
+                                <property name="margin-start">20</property>
+                                <property name="margin-end">20</property>
+                                <property name="margin-top">16</property>
+                                <property name="margin-bottom">20</property>
+                                <style>
+                                  <class name="monospace"/>
+                                </style>
+                                <property name="label"><![CDATA[<tt><b>user@gnome</b>:<b>~</b>$ uname -a
+Linux 6.8.0-generic x86_64 GNU/Linux
+<b>user@gnome</b>:<b>~</b>$ echo "GNOME Terminal Palette Theme"
+<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> <span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> <span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span>
+<b>user@gnome</b>:<b>~</b>$ █</tt>]]></property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
 
