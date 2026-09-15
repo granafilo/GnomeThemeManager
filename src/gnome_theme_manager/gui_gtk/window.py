@@ -720,7 +720,14 @@ class MainWindow(Adw.ApplicationWindow):
         if self.feedback_revealer is not None:
             self.feedback_revealer.set_reveal_child(True)
 
-        if timeout > 0:
+        if timeout < 0:
+            effective_timeout = 0
+        elif timeout > 0:
+            effective_timeout = timeout
+        else:
+            effective_timeout = 6 if has_error_kw else 4
+
+        if effective_timeout > 0:
 
             def _auto_hide() -> bool:
                 if self.feedback_revealer is not None:
@@ -728,12 +735,12 @@ class MainWindow(Adw.ApplicationWindow):
                 self._feedback_timeout_id = None
                 return GLib.SOURCE_REMOVE
 
-            self._feedback_timeout_id = GLib.timeout_add_seconds(timeout, _auto_hide)
+            self._feedback_timeout_id = GLib.timeout_add_seconds(effective_timeout, _auto_hide)
 
         if self.feedback_revealer is None and self.toast_overlay is not None:
             toast = Adw.Toast.new(message)
-            if timeout > 0:
-                toast.set_timeout(timeout)
+            if effective_timeout > 0:
+                toast.set_timeout(effective_timeout)
             self.toast_overlay.add_toast(toast)
 
     def _lazy_desktop_integration(self) -> bool:

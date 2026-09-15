@@ -434,18 +434,28 @@
                   </object>
                 </child>
                 <property name="content">
-                  <object class="GtkBox" id="content_container_box">
-                    <property name="orientation">vertical</property>
-                    <child>
+                  <object class="GtkOverlay" id="content_overlay">
+                    <property name="child">
+                      <object class="GtkStack" id="content_stack">
+                        <property name="transition-type">crossfade</property>
+                        <property name="transition-duration">200</property>
+                        <property name="vexpand">true</property>
+                        <property name="hexpand">true</property>
+                      </object>
+                    </property>
+                    <child type="overlay">
                       <object class="GtkRevealer" id="feedback_revealer">
                         <property name="reveal-child">false</property>
                         <property name="transition-type">slide-down</property>
+                        <property name="transition-duration">250</property>
+                        <property name="valign">start</property>
+                        <property name="halign">fill</property>
                         <property name="child">
                           <object class="AdwClamp">
                             <property name="maximum-size">540</property>
                             <property name="margin-start">16</property>
                             <property name="margin-end">16</property>
-                            <property name="margin-top">8</property>
+                            <property name="margin-top">10</property>
                             <property name="margin-bottom">8</property>
                             <property name="child">
                               <object class="GtkBox" id="feedback_box">
@@ -456,7 +466,7 @@
                                 <property name="margin-top">8</property>
                                 <property name="margin-bottom">8</property>
                                 <style>
-                                  <class name="card"/>
+                                  <class name="floating-feedback-card"/>
                                 </style>
                                 <child>
                                   <object class="GtkImage" id="feedback_icon">
@@ -477,7 +487,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="feedback_close_button">
-                                    <property name="icon-name">application-exit-symbolic</property>
+                                    <property name="icon-name">window-close-symbolic</property>
                                     <property name="tooltip-text" translatable="yes">Dismiss notification</property>
                                     <property name="valign">center</property>
                                     <style>
@@ -490,14 +500,6 @@
                             </property>
                           </object>
                         </property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkStack" id="content_stack">
-                        <property name="transition-type">crossfade</property>
-                        <property name="transition-duration">200</property>
-                        <property name="vexpand">true</property>
-                        <property name="hexpand">true</property>
                       </object>
                     </child>
                   </object>

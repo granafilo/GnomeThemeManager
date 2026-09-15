@@ -266,3 +266,60 @@ toolbarview > headerbar {
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
 }
+
+/* 14. Floating Alert / Feedback Toast Card (.floating-feedback-card) */
+.floating-feedback-card {
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px alpha(black, 0.35);
+    padding: 6px 16px;
+    border: none;
+}
+
+.floating-feedback-card label {
+    font-weight: 600;
+}
+
+.floating-feedback-card.success {
+    background-color: @success_bg_color;
+    color: @success_fg_color;
+}
+
+.floating-feedback-card.success label,
+.floating-feedback-card.success image,
+.floating-feedback-card.success button {
+    color: @success_fg_color;
+}
+
+.floating-feedback-card.warning {
+    background-color: @warning_bg_color;
+    color: @warning_fg_color;
+}
+
+.floating-feedback-card.warning label,
+.floating-feedback-card.warning image,
+.floating-feedback-card.warning button {
+    color: @warning_fg_color;
+}
+
+.floating-feedback-card.error {
+    background-color: @destructive_bg_color;
+    color: @destructive_fg_color;
+}
+
+.floating-feedback-card.error label,
+.floating-feedback-card.error image,
+.floating-feedback-card.error button {
+    color: @destructive_fg_color;
+}
+
+.floating-feedback-card:not(.success):not(.warning):not(.error) {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+
+.floating-feedback-card:not(.success):not(.warning):not(.error) label,
+.floating-feedback-card:not(.success):not(.warning):not(.error) image,
+.floating-feedback-card:not(.success):not(.warning):not(.error) button {
+    color: @accent_fg_color;
+}
+
