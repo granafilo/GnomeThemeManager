@@ -47,7 +47,7 @@ version = {attr = "gnome_theme_manager.__version__"}
 
 [tool.setuptools.package-data]
 "gnome_theme_manager" = ["locale/**/*", "locale/*/LC_MESSAGES/*.mo"]
-"gnome_theme_manager.gui_gtk" = ["ui/*.ui"]
+"gnome_theme_manager.gui_gtk" = ["ui/*.ui", "style.css"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

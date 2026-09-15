@@ -23,7 +23,7 @@
             <property name="description" translatable="yes">Select a folder or compressed archive (.zip, .tar.gz, .tar.xz) to install new themes.</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">450</property>
+                <property name="maximum-size">540</property>
                 <property name="child">
                   <object class="GtkBox">
                     <property name="orientation">horizontal</property>
@@ -115,7 +115,7 @@
             <property name="hexpand">true</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">860</property>
+                <property name="maximum-size">800</property>
                 <property name="tightening-threshold">600</property>
                 <property name="margin-top">24</property>
                 <property name="margin-bottom">24</property>
@@ -286,7 +286,7 @@
             <property name="description" translatable="yes">The theme was successfully installed in user directories.</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">450</property>
+                <property name="maximum-size">540</property>
                 <property name="child">
                   <object class="GtkBox">
                     <property name="orientation">vertical</property>
@@ -324,7 +324,7 @@
             <property name="description" translatable="yes">An error occurred during inspection or installation.</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">450</property>
+                <property name="maximum-size">540</property>
                 <property name="child">
                   <object class="GtkBox">
                     <property name="orientation">horizontal</property>

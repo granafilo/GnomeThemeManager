@@ -106,6 +106,7 @@ class TerminalPage:
 
         if self.terminal_preview_box:
             self.terminal_preview_box.add_css_class("terminal-preview-box")
+            self.terminal_preview_box.add_css_class("gtm-preview-frame")
         self._preview_css_provider = Gtk.CssProvider()
 
         # Terminal Environment UI (Prompt 2.1 Step 4)

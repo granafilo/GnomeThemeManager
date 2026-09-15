@@ -30,6 +30,9 @@
                   <object class="AdwHeaderBar" id="sidebar_header_bar">
                     <property name="show-end-title-buttons">false</property>
                     <property name="show-start-title-buttons">true</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                   </object>
                 </child>
                 <property name="content">
@@ -48,10 +51,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">system-users-symbolic</property>
@@ -63,9 +62,6 @@
                                     <property name="label" translatable="yes">Current Status</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -78,10 +74,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">user-desktop-symbolic</property>
@@ -93,9 +85,6 @@
                                     <property name="label" translatable="yes">GNOME Shell</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -108,10 +97,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">app-logo-symbolic</property>
@@ -123,9 +108,6 @@
                                     <property name="label" translatable="yes">Applications (GTK)</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -138,10 +120,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">face-slightly-smiling-plus-symbolic</property>
@@ -153,9 +131,6 @@
                                     <property name="label" translatable="yes">Icons</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -168,10 +143,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">input-mouse-symbolic</property>
@@ -183,9 +154,6 @@
                                     <property name="label" translatable="yes">Cursors</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -198,10 +166,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">starred-symbolic</property>
@@ -213,9 +177,6 @@
                                     <property name="label" translatable="yes">Global Themes</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -228,10 +189,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                    <object class="GtkImage">
                                     <property name="icon-name">applications-graphics-symbolic</property>
@@ -243,9 +200,6 @@
                                     <property name="label" translatable="yes">Theme Editor</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -258,10 +212,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">preferences-desktop-font-symbolic</property>
@@ -273,9 +223,6 @@
                                     <property name="label" translatable="yes">Fonts</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -288,10 +235,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">utilities-terminal-symbolic</property>
@@ -303,9 +246,6 @@
                                     <property name="label" translatable="yes">Terminal</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -318,10 +258,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">software-store-symbolic</property>
@@ -333,9 +269,6 @@
                                     <property name="label" translatable="yes">Online Store</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -348,10 +281,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">application-x-addon-symbolic</property>
@@ -363,9 +292,6 @@
                                     <property name="label" translatable="yes">GNOME Extensions</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -378,10 +304,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">system-software-install-symbolic</property>
@@ -393,9 +315,6 @@
                                     <property name="label" translatable="yes">Theme Installer</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -408,10 +327,6 @@
                               <object class="GtkBox">
                                 <property name="orientation">horizontal</property>
                                 <property name="spacing">12</property>
-                                <property name="margin-start">12</property>
-                                <property name="margin-end">12</property>
-                                <property name="margin-top">10</property>
-                                <property name="margin-bottom">10</property>
                                 <child>
                                   <object class="GtkImage">
                                     <property name="icon-name">changes-allow-symbolic</property>
@@ -423,9 +338,6 @@
                                     <property name="label" translatable="yes">Sandbox Tools</property>
                                     <property name="xalign">0</property>
                                     <property name="hexpand">true</property>
-                                    <style>
-                                      <class name="heading"/>
-                                    </style>
                                   </object>
                                 </child>
                               </object>
@@ -450,6 +362,9 @@
                   <object class="AdwHeaderBar" id="content_header_bar">
                     <property name="show-start-title-buttons">false</property>
                     <property name="show-end-title-buttons">true</property>
+                    <style>
+                      <class name="flat"/>
+                    </style>
                     <child type="end">
                       <object class="GtkButton" id="refresh_button">
                         <property name="icon-name">emblem-synchronizing-symbolic</property>
@@ -470,7 +385,7 @@
                         <property name="transition-type">slide-down</property>
                         <property name="child">
                           <object class="AdwClamp">
-                            <property name="maximum-size">560</property>
+                            <property name="maximum-size">540</property>
                             <property name="margin-start">16</property>
                             <property name="margin-end">16</property>
                             <property name="margin-top">8</property>

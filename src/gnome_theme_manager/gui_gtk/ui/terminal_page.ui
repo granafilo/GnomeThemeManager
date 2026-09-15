@@ -15,7 +15,7 @@
             <property name="hscrollbar-policy">never</property>
             <child>
               <object class="AdwClamp">
-                <property name="maximum-size">720</property>
+                <property name="maximum-size">800</property>
                 <property name="margin-top">20</property>
                 <property name="margin-bottom">24</property>
                 <property name="margin-start">16</property>

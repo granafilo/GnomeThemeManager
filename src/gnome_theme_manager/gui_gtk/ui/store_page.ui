@@ -22,7 +22,7 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">960</property>
+                <property name="maximum-size">1000</property>
                 <property name="tightening-threshold">680</property>
                 <property name="margin-start">20</property>
                 <property name="margin-end">20</property>
@@ -71,6 +71,7 @@
                           <object class="GtkButton" id="category_card_gtk_shell">
                             <style>
                               <class name="card"/>
+                              <class name="gtm-preview-card"/>
                               <class name="store-hub-category-card"/>
                             </style>
                             <property name="child">
@@ -136,6 +137,7 @@
                           <object class="GtkButton" id="category_card_icons">
                             <style>
                               <class name="card"/>
+                              <class name="gtm-preview-card"/>
                               <class name="store-hub-category-card"/>
                             </style>
                             <property name="child">
@@ -201,6 +203,7 @@
                           <object class="GtkButton" id="category_card_cursors">
                             <style>
                               <class name="card"/>
+                              <class name="gtm-preview-card"/>
                               <class name="store-hub-category-card"/>
                             </style>
                             <property name="child">
@@ -283,7 +286,7 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">1200</property>
+                <property name="maximum-size">1000</property>
                 <property name="tightening-threshold">800</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
@@ -543,7 +546,7 @@
             <property name="vscrollbar-policy">automatic</property>
             <property name="child">
               <object class="AdwClamp">
-                <property name="maximum-size">920</property>
+                <property name="maximum-size">1000</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>
                 <property name="margin-top">20</property>

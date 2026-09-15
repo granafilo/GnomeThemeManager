@@ -133,6 +133,7 @@ class _GlobalThemeCard(Gtk.Box):
             self.is_active = matches
 
         self.add_css_class("card")
+        self.add_css_class("gtm-preview-card")
         self.set_margin_top(4)
         self.set_margin_bottom(4)
 

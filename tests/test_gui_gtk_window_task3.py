@@ -147,4 +147,3 @@ def test_headerbars_alignment_and_sizegroup(mock_app_and_manager):
     assert window.feedback_revealer.get_reveal_child() is True
     window.clear_feedback()
     assert window.feedback_revealer.get_reveal_child() is False
-

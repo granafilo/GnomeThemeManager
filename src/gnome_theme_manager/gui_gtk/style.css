@@ -1,0 +1,216 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* GNOME Theme Manager - Native Semantic Stylesheet */
+/* Target: GNOME 46 / Libadwaita 1.5+ (Strict HIG, ZERO-HEX) */
+
+/* 1. Visual Preview Cards (.gtm-preview-card) */
+.gtm-preview-card {
+    background-color: @card_bg_color;
+    border: 1px solid @borders;
+    border-radius: 12px;
+    padding: 12px;
+    transition: box-shadow 150ms ease-in-out, border-color 150ms ease-in-out;
+}
+
+.gtm-preview-card:hover {
+    box-shadow: 0 2px 8px alpha(@borders, 0.35);
+    border-color: alpha(@accent_color, 0.50);
+}
+
+.gtm-preview-card:active {
+    box-shadow: none;
+    background-color: alpha(@accent_bg_color, 0.10);
+}
+
+.gtm-preview-card:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
+}
+
+.gtm-preview-card:disabled {
+    opacity: 0.50;
+}
+
+/* 2. Frameless Preview Canvas / Output (.gtm-preview-frame) */
+.gtm-preview-frame {
+    background-color: @window_bg_color;
+    border: 1px solid @borders;
+    border-radius: 8px;
+}
+
+/* 3. Color Swatch Circles (.gtm-swatch-circle) */
+.gtm-swatch-circle {
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 9999px;
+    border: 1px solid @borders;
+}
+
+/* 4. Semantic Status Badges (.gtm-status-badge) */
+.gtm-status-badge {
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-weight: 600;
+}
+
+.gtm-status-badge.active,
+.gtm-status-badge.accent {
+    background-color: alpha(@accent_bg_color, 0.15);
+    color: @accent_color;
+}
+
+.gtm-status-badge.warning {
+    background-color: alpha(@warning_bg_color, 0.15);
+    color: @warning_color;
+}
+
+.gtm-status-badge.success {
+    background-color: alpha(@success_bg_color, 0.15);
+    color: @success_color;
+}
+
+.gtm-status-badge.destructive {
+    background-color: alpha(@destructive_bg_color, 0.15);
+    color: @destructive_color;
+}
+
+/* 5. Online Store Components */
+.store-hub-category-card,
+.store-theme-card {
+    background-color: @card_bg_color;
+    border: 1px solid @borders;
+    border-radius: 12px;
+    transition: box-shadow 150ms ease-in-out, border-color 150ms ease-in-out;
+}
+
+.store-hub-category-card:hover,
+.store-theme-card:hover {
+    box-shadow: 0 2px 8px alpha(@borders, 0.35);
+    border-color: alpha(@accent_color, 0.50);
+}
+
+.store-banner-box {
+    background: linear-gradient(135deg, alpha(@accent_bg_color, 0.20) 0%, alpha(@accent_bg_color, 0.05) 100%);
+    border-radius: 12px;
+    min-height: 150px;
+}
+
+.store-banner-box picture,
+.store-banner-box image {
+    border-radius: 12px;
+}
+
+.store-lightbox-bg {
+    background-color: @popover_bg_color;
+    padding: 16px;
+}
+
+.store-detail-preview-frame {
+    background-color: alpha(@window_bg_color, 0.50);
+    border: 1px solid alpha(@borders, 0.30);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.store-thumb-btn {
+    border-radius: 8px;
+    padding: 2px;
+    border: 2px solid transparent;
+}
+
+.store-thumb-btn.suggested-action {
+    border-color: @accent_color;
+}
+
+/* 6. Solid Backgrounds to Prevent Bleed-Through */
+adwstatuspage,
+.solid-loading-page,
+stack#content_stack,
+stack#extensions_root,
+stack#page_root,
+#loading_page {
+    background-color: @window_bg_color;
+    opacity: 1;
+}
+
+/* 7. Platform / Distribution Compatibility (e.g. Zorin OS) */
+preferencesgroup > box > box,
+preferencesgroup > box > box.header,
+preferencesgroup > box > .labels {
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    background-color: transparent;
+}
+
+/* 8. Functional Boxed Lists & Interaction States */
+list.boxed-list > row:disabled,
+preferencesgroup list > row:disabled {
+    background-color: transparent;
+}
+
+list.boxed-list > row:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: -2px;
+}
+
+/* 9. Warning & Contrast Semantics */
+row.warning,
+adw-combo-row.warning {
+    background-color: alpha(@warning_color, 0.08);
+}
+
+row.warning:hover,
+adw-combo-row.warning:hover {
+    background-color: alpha(@warning_color, 0.16);
+}
+
+row.warning label,
+row.warning:hover label,
+adw-combo-row.warning label,
+adw-combo-row.warning:hover label {
+    color: @window_fg_color;
+}
+
+row.warning .subtitle,
+adw-combo-row.warning .subtitle {
+    color: alpha(@window_fg_color, 0.75);
+}
+
+row.warning dropdown > button,
+row.warning dropdown > button:hover,
+adw-combo-row.warning dropdown > button,
+adw-combo-row.warning dropdown > button:hover {
+    color: @window_fg_color;
+    background-color: alpha(@window_fg_color, 0.10);
+}
+
+row.warning dropdown > button label,
+row.warning dropdown > button:hover label,
+adw-combo-row.warning dropdown > button label,
+adw-combo-row.warning dropdown > button:hover label {
+    color: @window_fg_color;
+}
+
+/* 10. General Interactive Focus Ring */
+button:focus-visible,
+entry:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
+}
+
+/* 11. Headerbar & Top Toolbar Separator Removal */
+headerbar,
+headerbar:backdrop,
+headerbar.flat,
+window > .titlebar,
+window > .titlebar:not(.flat),
+window > .titlebar headerbar,
+window > .titlebar headerbar:not(.flat),
+toolbarview > .top-bar,
+toolbarview > .top-bar.raised,
+toolbarview > .top-bar.raised.border,
+toolbarview > headerbar {
+    box-shadow: none;
+    border: none;
+    border-bottom: none;
+}
