@@ -3491,4 +3491,14 @@ msgstr "Updating extension..."
 msgid "Offline mode: displaying cached extensions catalog."
 msgstr "Offline mode: displaying cached extensions catalog."
 
+msgid "Appearance"
+msgstr "Appearance"
 
+msgid "Tools"
+msgstr "Tools"
+
+msgid "Active (applied to GTK4 and Libadwaita)"
+msgstr "Active (applied to GTK4 and Libadwaita)"
+
+msgid "Inactive (standard Libadwaita theme)"
+msgstr "Inactive (standard Libadwaita theme)"

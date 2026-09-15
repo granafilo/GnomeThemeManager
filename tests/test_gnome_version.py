@@ -3,6 +3,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from gnome_theme_manager.core.gnome_version import (
     _parse_version_string,
     detect_gnome_version,
@@ -170,8 +172,10 @@ def test_theme_validator_gnome_50_has_gtk4_but_no_libadwaita_warning(tmp_path: P
         assert any("lacks dedicated libadwaita.css" in w for w in result.warnings)
 
 
-def test_gtk4_linker_links_libadwaita_css(tmp_path: Path) -> None:
+def test_gtk4_linker_links_libadwaita_css(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify GTK4ThemeLinker links libadwaita.css into ~/.config/gtk-4.0/."""
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "xdg_config"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg_data"))
     theme_dir = tmp_path / "AdwaitaNext"
     gtk4_dir = theme_dir / "gtk-4.0"
     gtk4_dir.mkdir(parents=True)

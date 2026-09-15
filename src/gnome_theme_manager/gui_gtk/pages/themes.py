@@ -589,16 +589,21 @@ class ThemesPage:
                     img.add_css_class("dim-label")
                 row.add_prefix(img)
 
+                row.set_tooltip_text(item.path_display)
+
                 if item.is_invalid:
                     warn_badge = Gtk.Label(label=_("Incomplete"))
                     warn_badge.add_css_class("caption")
+                    warn_badge.add_css_class("gtm-status-badge")
                     warn_badge.add_css_class("warning")
                     warn_badge.set_valign(Gtk.Align.CENTER)
                     row.add_suffix(warn_badge)
 
                 badge = Gtk.Label(label=_("User") if item.is_user_level else _("System"))
                 badge.add_css_class("caption")
-                badge.add_css_class("dim-label")
+                badge.add_css_class("gtm-status-badge")
+                if item.is_user_level:
+                    badge.add_css_class("accent")
                 badge.set_valign(Gtk.Align.CENTER)
                 row.add_suffix(badge)
 

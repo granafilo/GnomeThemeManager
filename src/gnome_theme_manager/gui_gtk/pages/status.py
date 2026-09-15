@@ -166,6 +166,13 @@ class StatusPage:
         self.row_flatpak_status: Adw.ActionRow = self.builder.get_object("row_flatpak_status")
         self.row_snap_status: Adw.ActionRow = self.builder.get_object("row_snap_status")
 
+        # Status and origin badges
+        self.gtk_theme_badge: Gtk.Label | None = self.builder.get_object("gtk_theme_badge")
+        self.icon_theme_badge: Gtk.Label | None = self.builder.get_object("icon_theme_badge")
+        self.cursor_theme_badge: Gtk.Label | None = self.builder.get_object("cursor_theme_badge")
+        self.shell_theme_badge: Gtk.Label | None = self.builder.get_object("shell_theme_badge")
+        self.gtk4_override_badge: Gtk.Label | None = self.builder.get_object("gtk4_override_badge")
+
         self.on_notify_message: Callable[[str, bool], None] | None = None
 
         self._color_scheme_options: list[tuple[str, str]] = [
@@ -441,24 +448,49 @@ class StatusPage:
         t = snapshot.themes
         s = snapshot.system_status
 
-        self.row_gtk_theme.set_subtitle(
-            f"{format_optional_value(t.gtk_theme)} ({snapshot.gtk_path})"
-            if snapshot.gtk_path
-            else format_optional_value(t.gtk_theme)
-        )
-        self.row_icon_theme.set_subtitle(
-            f"{format_optional_value(t.icon_theme)} ({snapshot.icon_path})"
-            if snapshot.icon_path
-            else format_optional_value(t.icon_theme)
-        )
-        self.row_cursor_theme.set_subtitle(
-            f"{format_optional_value(t.cursor_theme)} ({snapshot.cursor_path})"
-            if snapshot.cursor_path
-            else format_optional_value(t.cursor_theme)
-        )
-        self.row_shell_theme.set_subtitle(
-            format_shell_theme(t.shell_theme, s.shell_theme_supported)
-        )
+        gtk_name = format_optional_value(t.gtk_theme)
+        self.row_gtk_theme.set_subtitle(gtk_name)
+        if snapshot.gtk_path:
+            self.row_gtk_theme.set_tooltip_text(snapshot.gtk_path)
+            is_user = "/.local/" in snapshot.gtk_path or "/.themes" in snapshot.gtk_path
+            self._update_badge(
+                self.gtk_theme_badge, _("User") if is_user else _("System"), is_accent=is_user
+            )
+        elif self.gtk_theme_badge is not None:
+            self.gtk_theme_badge.set_visible(False)
+
+        icon_name = format_optional_value(t.icon_theme)
+        self.row_icon_theme.set_subtitle(icon_name)
+        if snapshot.icon_path:
+            self.row_icon_theme.set_tooltip_text(snapshot.icon_path)
+            is_user = "/.local/" in snapshot.icon_path or "/.icons" in snapshot.icon_path
+            self._update_badge(
+                self.icon_theme_badge, _("User") if is_user else _("System"), is_accent=is_user
+            )
+        elif self.icon_theme_badge is not None:
+            self.icon_theme_badge.set_visible(False)
+
+        cursor_name = format_optional_value(t.cursor_theme)
+        self.row_cursor_theme.set_subtitle(cursor_name)
+        if snapshot.cursor_path:
+            self.row_cursor_theme.set_tooltip_text(snapshot.cursor_path)
+            is_user = "/.local/" in snapshot.cursor_path or "/.icons" in snapshot.cursor_path
+            self._update_badge(
+                self.cursor_theme_badge, _("User") if is_user else _("System"), is_accent=is_user
+            )
+        elif self.cursor_theme_badge is not None:
+            self.cursor_theme_badge.set_visible(False)
+
+        shell_text = format_shell_theme(t.shell_theme, s.shell_theme_supported)
+        self.row_shell_theme.set_subtitle(shell_text)
+        if snapshot.shell_path:
+            self.row_shell_theme.set_tooltip_text(snapshot.shell_path)
+            is_user = "/.local/" in snapshot.shell_path or "/.themes" in snapshot.shell_path
+            self._update_badge(
+                self.shell_theme_badge, _("User") if is_user else _("System"), is_accent=is_user
+            )
+        elif self.shell_theme_badge is not None:
+            self.shell_theme_badge.set_visible(False)
 
         if self.row_color_scheme is not None:
             curr_cs = t.color_scheme or "default"
@@ -472,9 +504,11 @@ class StatusPage:
                 self._updating_color_scheme = False
 
         if s.gtk4_override_status == Gtk4OverrideStatus.ACTIVE:
-            self.row_gtk4_override.set_subtitle(_("Active"))
+            self.row_gtk4_override.set_subtitle(_("Active (applied to GTK4 and Libadwaita)"))
+            self._update_badge(self.gtk4_override_badge, _("Active"), is_success=True)
         else:
-            self.row_gtk4_override.set_subtitle(_("Inactive"))
+            self.row_gtk4_override.set_subtitle(_("Inactive (standard Libadwaita theme)"))
+            self._update_badge(self.gtk4_override_badge, _("Inactive"))
 
         self.row_gsettings_status.set_subtitle(
             format_boolean(s.gsettings_available, _("Available"), _("Not available"))
@@ -544,6 +578,25 @@ class StatusPage:
                 self._updating_prefs = False
 
         self.widget.set_visible_child_name("ready")
+
+    def _update_badge(
+        self,
+        badge: Gtk.Label | None,
+        text: str,
+        is_accent: bool = False,
+        is_success: bool = False,
+    ) -> None:
+        """Update status badge label, style class, and visibility."""
+        if badge is None:
+            return
+        badge.set_text(text)
+        badge.remove_css_class("accent")
+        badge.remove_css_class("success")
+        if is_accent:
+            badge.add_css_class("accent")
+        elif is_success:
+            badge.add_css_class("success")
+        badge.set_visible(True)
 
     def _populate_fallback_dropdowns(self, snapshot: StatusSnapshot | None = None) -> None:
         """Populate the 5 fallback dropdowns filtering for universal availability."""

@@ -50,6 +50,8 @@
     border-radius: 9999px;
     padding: 2px 8px;
     font-weight: 600;
+    background-color: alpha(@window_fg_color, 0.08);
+    color: alpha(@window_fg_color, 0.75);
 }
 
 .gtm-status-badge.active,
@@ -213,4 +215,14 @@ toolbarview > headerbar {
     box-shadow: none;
     border: none;
     border-bottom: none;
+}
+
+/* 12. Navigation Sidebar Non-Activatable Section Headers */
+.navigation-sidebar > row:not(.activatable) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+.navigation-sidebar > row:not(.activatable):hover {
+    background-color: transparent;
 }

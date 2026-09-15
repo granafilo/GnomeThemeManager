@@ -2251,7 +2251,7 @@ msgstr "Componenti Supportati"
 #: src/gnome_theme_manager/cli/main.py:133
 #: src/gnome_theme_manager/gui_gtk/pages/themes.py:599
 msgid "System"
-msgstr "System"
+msgstr "Sistema"
 
 #: src/gnome_theme_manager/gui_gtk/pages/themes.py:112
 msgid "System (/usr/share/...)"
@@ -3491,4 +3491,14 @@ msgstr "Aggiornamento dell'estensione..."
 msgid "Offline mode: displaying cached extensions catalog."
 msgstr "Modalità offline: visualizzazione del catalogo estensioni salvato in cache."
 
+msgid "Appearance"
+msgstr "Aspetto"
 
+msgid "Tools"
+msgstr "Strumenti"
+
+msgid "Active (applied to GTK4 and Libadwaita)"
+msgstr "Attivo (applicato a GTK4 e Libadwaita)"
+
+msgid "Inactive (standard Libadwaita theme)"
+msgstr "Inattivo (tema standard Libadwaita)"
