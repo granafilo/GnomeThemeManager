@@ -374,7 +374,7 @@ class TerminalPage:
                 f'<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> '
                 f'<span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> '
                 f'<span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span>\n'
-                f'<b>user@gnome</b>:<b>~</b>$ █</tt>'
+                f"<b>user@gnome</b>:<b>~</b>$ █</tt>"
             )
             self.terminal_preview_label.set_markup(markup)
 
