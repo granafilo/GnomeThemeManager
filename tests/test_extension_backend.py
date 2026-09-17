@@ -375,3 +375,33 @@ def test_rest_backend_install_rollback_on_failure(
     # Verify extension directory was completely rolled back and cleaned up
     user_ext_dir = mock_mgr.user_extensions_dir / uuid
     assert not user_ext_dir.exists()
+
+
+def test_rest_backend_install_flatpak_spawn_fallback(
+    tmp_path: Path, mock_mgr: ExtensionsManager
+) -> None:
+    """Verify that when local unpack fails with PermissionError, installation delegates to host via flatpak-spawn."""
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    uuid = "spawn_ext@example.com"
+
+    valid_bundle = tmp_path / "valid.zip"
+    with zipfile.ZipFile(valid_bundle, "w") as zf:
+        zf.writestr("metadata.json", '{"name": "test"}')
+
+    def which_side_effect(cmd: str) -> str | None:
+        if cmd == "flatpak-spawn":
+            return "/usr/bin/flatpak-spawn"
+        return None
+
+    mock_proc = MagicMock()
+    mock_proc.returncode = 0
+
+    with patch("shutil.which", side_effect=which_side_effect):
+        with patch.object(Path, "mkdir", side_effect=PermissionError("Read-only file system")):
+            with patch("subprocess.run", return_value=mock_proc) as mock_run:
+                success = backend.install(uuid, bundle_path=valid_bundle)
+                assert success is True
+                assert mock_run.called
+                args = mock_run.call_args[0][0]
+                assert args[0] == "flatpak-spawn"
+                assert args[1] == "--host"

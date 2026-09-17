@@ -492,7 +492,21 @@ class ExtensionsManager:
             try:
                 shutil.rmtree(user_ext_dir)
                 return True
-            except Exception as err:
+            except (OSError, PermissionError) as err:
+                logger.debug("Local direct removal failed for %s: %s", uuid, err)
+                if shutil.which("flatpak-spawn"):
+                    try:
+                        host_dir = f"$HOME/.local/share/gnome-shell/extensions/{uuid}"
+                        res_spawn = subprocess.run(
+                            ["flatpak-spawn", "--host", "sh", "-c", f"rm -rf '{host_dir}'"],
+                            capture_output=True,
+                            timeout=5,
+                            check=False,
+                        )
+                        if res_spawn.returncode == 0:
+                            return True
+                    except Exception as spawn_err:
+                        logger.debug("flatpak-spawn removal failed: %s", spawn_err)
                 logger.error("Failed to delete extension directory %s: %s", user_ext_dir, err)
         return False
 

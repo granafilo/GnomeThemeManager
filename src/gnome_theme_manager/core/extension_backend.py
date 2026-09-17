@@ -556,9 +556,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             )
 
         download_url = f"{EGO_DOWNLOAD_URL}/{urllib.parse.quote(uuid)}.shell-extension.zip?version_tag={version_tag}"
-        target_directory = target_dir or Path(
-            os.path.expanduser("~/.cache/gnome-theme-manager/extensions")
-        )
+        target_directory = target_dir or (EXTENSIONS_CACHE_DIR / "bundles")
         target_directory.mkdir(parents=True, exist_ok=True)
         dest_file = target_directory / f"{uuid}.zip"
 
@@ -601,7 +599,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
         if bundle_path is None or not bundle_path.is_file():
             bundle_path = self.download_bundle(uuid)
 
-        # 1. Try gnome-extensions CLI
+        # 1. Try local gnome-extensions CLI
         if shutil.which("gnome-extensions"):
             try:
                 proc = subprocess.run(
@@ -621,8 +619,9 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             except Exception as err:
                 logger.warning("CLI install failed: %s", err)
 
-        # 2. Fallback: manual unpack to user extensions directory
+        # 2. Try direct local unpack to user extensions directory
         user_ext_dir = self.mgr.user_extensions_dir / uuid
+        unpack_error: Exception | None = None
         try:
             user_ext_dir.mkdir(parents=True, exist_ok=True)
             with zipfile.ZipFile(bundle_path, "r") as zf:
@@ -635,11 +634,76 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             logger.info("Extracted extension %s to %s", uuid, user_ext_dir)
             return True
         except Exception as err:
-            logger.error("Manual extraction failed for %s: %s", uuid, err)
+            unpack_error = err
+            logger.warning(
+                "Local extraction failed for %s (%s); trying Flatpak host bridge...",
+                uuid,
+                err,
+            )
             if user_ext_dir.exists():
                 shutil.rmtree(user_ext_dir, ignore_errors=True)
-                logger.info("Rolled back incomplete extension directory: %s", user_ext_dir)
-            raise ExtensionInstallError(f"Failed to extract extension bundle: {err}") from err
+
+        # 3. Flatpak Host Fallback: If sandbox filesystem is read-only, delegate to host via flatpak-spawn
+        if shutil.which("flatpak-spawn"):
+            try:
+                home_path = Path.home().resolve()
+                resolved_bundle = bundle_path.resolve()
+                if resolved_bundle.is_relative_to(home_path):
+                    rel_bundle = resolved_bundle.relative_to(home_path)
+                    host_bundle = f"$HOME/{rel_bundle}"
+                else:
+                    host_bundle = str(resolved_bundle)
+
+                host_dest = f"$HOME/.local/share/gnome-shell/extensions/{uuid}"
+
+                # 3a. Try host gnome-extensions CLI
+                proc_cli = subprocess.run(
+                    [
+                        "flatpak-spawn",
+                        "--host",
+                        "gnome-extensions",
+                        "install",
+                        "--force",
+                        os.path.expandvars(host_bundle),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc_cli.returncode == 0:
+                    logger.info("Installed extension %s via host gnome-extensions", uuid)
+                    return True
+
+                # 3b. Try host python3 extraction
+                py_script = (
+                    "import zipfile, os; from pathlib import Path; "
+                    f"b = Path(os.path.expandvars('{host_bundle}')); "
+                    f"d = Path(os.path.expandvars('{host_dest}')); "
+                    "d.mkdir(parents=True, exist_ok=True); "
+                    "with zipfile.ZipFile(b) as zf: zf.extractall(d)"
+                )
+                proc_py = subprocess.run(
+                    ["flatpak-spawn", "--host", "python3", "-c", py_script],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc_py.returncode == 0:
+                    logger.info("Extracted extension %s to host via flatpak-spawn python3", uuid)
+                    return True
+                logger.warning(
+                    "flatpak-spawn host extraction failed: code %s, stderr: %s",
+                    proc_py.returncode,
+                    proc_py.stderr,
+                )
+            except Exception as host_err:
+                logger.warning("flatpak-spawn fallback error: %s", host_err)
+
+        if unpack_error:
+            raise ExtensionInstallError(
+                f"Failed to extract extension bundle: {unpack_error}"
+            ) from unpack_error
+        return False
 
     def uninstall(self, uuid: str) -> bool:
         return self.mgr.uninstall_extension(uuid)
