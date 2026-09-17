@@ -138,6 +138,44 @@ def test_terminal_page_apply_palette_ptyxis(mock_theme_manager: MagicMock) -> No
         assert notifications[0][1] is False
 
 
+def test_terminal_page_apply_palette_alacritty(mock_theme_manager: MagicMock) -> None:
+    """Verify applying palette when Alacritty is selected passes terminal_id='alacritty' and succeeds."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gnome_theme_manager.gui_gtk.pages.terminal import TerminalPage
+
+    palette = TerminalPalette(
+        name="Alacritty Test",
+        foreground_color="#CDD6F4",
+        background_color="#1E1E2E",
+    )
+    mock_theme_manager.list_terminal_profiles.return_value = []
+    mock_theme_manager.get_derived_terminal_palette.return_value = palette
+    mock_theme_manager.get_current_terminal_palette.return_value = palette
+    mock_theme_manager.apply_terminal_palette.return_value = True
+
+    with patch(
+        "gnome_theme_manager.gui_gtk.pages.terminal.is_terminal_installed", return_value=True
+    ):
+        page = TerminalPage(manager=mock_theme_manager)
+        page.refresh()
+
+        # Select alacritty
+        page._selected_terminal_id = "alacritty"
+
+        notifications: list[tuple[str, bool]] = []
+        page.on_notify_message = lambda msg, is_err: notifications.append((msg, is_err))
+
+        page.on_apply_button_clicked(page.apply_button)
+
+        assert mock_theme_manager.apply_terminal_palette.called
+        call_kwargs = mock_theme_manager.apply_terminal_palette.call_args[1]
+        assert call_kwargs.get("terminal_id") == "alacritty"
+        assert len(notifications) == 1
+        assert notifications[0][1] is False
+
+
 def test_terminal_page_uninstalled_terminal_install_hint(
     mock_theme_manager: MagicMock,
 ) -> None:

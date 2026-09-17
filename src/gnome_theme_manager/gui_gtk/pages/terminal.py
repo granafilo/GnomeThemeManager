@@ -422,8 +422,9 @@ class TerminalPage:
             self._notify(msg, is_error=True)
             return
 
-        # Scenario C - Terminal does not use GSettings
-        if not profile.supports_profiles and profile.terminal_id not in ("kgx", "ptyxis"):
+        # Scenario C - Terminal does not use GSettings profiles and lacks automated palette backend
+        supported_theme_terminals = ("kgx", "ptyxis", "gnome-terminal", "alacritty", "kitty")
+        if not profile.supports_profiles and profile.terminal_id not in supported_theme_terminals:
             msg = _("{terminal} does not use GSettings profiles. Config path: {path}").format(
                 terminal=profile.terminal_name, path=profile.config_file_path
             )
@@ -431,27 +432,28 @@ class TerminalPage:
             self._notify(msg, is_error=True)
             return
 
-        # Scenario B - Schema accessibility check for GSettings
-        term_info = self.manager.detect_terminal()
-        schema_acc = getattr(term_info, "schema_accessible", True)
-        if (
-            isinstance(schema_acc, bool)
-            and not schema_acc
-            and getattr(term_info, "terminal_id", "") == self._selected_terminal_id
-        ):
-            self._show_error_dialog(
-                _("GSettings schema unavailable"),
-                _(
-                    "The terminal GSettings schema is not accessible. Check application permissions."
-                ),
-            )
-            self._notify(
-                _(
-                    "The terminal GSettings schema is not accessible. Check application permissions."
-                ),
-                is_error=True,
-            )
-            return
+        # Scenario B - Schema accessibility check for GSettings terminals
+        if profile.terminal_id in ("gnome-terminal", "tilix"):
+            term_info = self.manager.detect_terminal()
+            schema_acc = getattr(term_info, "schema_accessible", True)
+            if (
+                isinstance(schema_acc, bool)
+                and not schema_acc
+                and getattr(term_info, "terminal_id", "") == self._selected_terminal_id
+            ):
+                self._show_error_dialog(
+                    _("GSettings schema unavailable"),
+                    _(
+                        "The terminal GSettings schema is not accessible. Check application permissions."
+                    ),
+                )
+                self._notify(
+                    _(
+                        "The terminal GSettings schema is not accessible. Check application permissions."
+                    ),
+                    is_error=True,
+                )
+                return
 
         palette = self._build_current_palette()
         target_pid = self._selected_profile_id

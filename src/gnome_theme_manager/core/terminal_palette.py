@@ -898,8 +898,65 @@ def apply_palette_to_gnome_terminal(
 # -----------------------------------------------------------------------------
 
 
+def _safe_write_file_with_host_fallback(file_path: Path, content: str) -> bool:
+    """Safely write a text file locally, falling back to flatpak-spawn if sandboxed."""
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content, encoding="utf-8")
+        return True
+    except (PermissionError, OSError) as err:
+        logger.debug(
+            "Local write to %s failed: %s. Attempting flatpak-spawn fallback...", file_path, err
+        )
+        if shutil.which("flatpak-spawn"):
+            try:
+                py_code = (
+                    "import pathlib, sys\n"
+                    f"p = pathlib.Path({str(file_path)!r})\n"
+                    "p.parent.mkdir(parents=True, exist_ok=True)\n"
+                    "p.write_text(sys.stdin.read(), encoding='utf-8')\n"
+                )
+                proc = subprocess.run(
+                    ["flatpak-spawn", "--host", "python3", "-c", py_code],
+                    input=content,
+                    text=True,
+                    capture_output=True,
+                    timeout=5,
+                    check=False,
+                )
+                if proc.returncode == 0:
+                    return True
+                logger.warning("flatpak-spawn file write failed: %s", proc.stderr)
+            except Exception as host_err:
+                logger.warning("flatpak-spawn write error: %s", host_err)
+    return False
+
+
+def _safe_read_file_with_host_fallback(file_path: Path) -> str | None:
+    """Safely read a text file locally, falling back to flatpak-spawn if sandboxed."""
+    try:
+        if file_path.is_file():
+            return file_path.read_text(encoding="utf-8")
+    except (PermissionError, OSError):
+        pass
+    if shutil.which("flatpak-spawn"):
+        try:
+            res = subprocess.run(
+                ["flatpak-spawn", "--host", "cat", str(file_path)],
+                capture_output=True,
+                text=True,
+                timeout=3,
+                check=False,
+            )
+            if res.returncode == 0:
+                return res.stdout
+        except Exception:
+            pass
+    return None
+
+
 def _dconf_read(path: str) -> str | None:
-    """Safely read a key directly from dconf CLI.
+    """Safely read a key directly from dconf CLI with host fallback.
 
     Args:
         path: Path to the dconf key.
@@ -920,11 +977,27 @@ def _dconf_read(path: str) -> str | None:
             return val if val else None
     except Exception as err:
         logger.debug("Failed dconf read for %s: %s", path, err)
+
+    if shutil.which("flatpak-spawn"):
+        try:
+            res = subprocess.run(
+                ["flatpak-spawn", "--host", "dconf", "read", path],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False,
+            )
+            if res.returncode == 0:
+                val = res.stdout.strip()
+                return val if val else None
+        except Exception:
+            pass
+
     return None
 
 
 def _dconf_write(path: str, value: str) -> bool:
-    """Safely write a key directly to dconf CLI.
+    """Safely write a key directly to dconf CLI with host fallback.
 
     Args:
         path: Path to the dconf key.
@@ -941,10 +1014,25 @@ def _dconf_write(path: str, value: str) -> bool:
             timeout=2,
             check=False,
         )
-        return res.returncode == 0
+        if res.returncode == 0:
+            return True
     except Exception as err:
         logger.debug("Failed dconf write for %s: %s", path, err)
-        return False
+
+    if shutil.which("flatpak-spawn"):
+        try:
+            res = subprocess.run(
+                ["flatpak-spawn", "--host", "dconf", "write", path, value],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False,
+            )
+            return res.returncode == 0
+        except Exception:
+            pass
+
+    return False
 
 
 # -----------------------------------------------------------------------------
@@ -972,7 +1060,6 @@ def export_ptyxis_palette(
     """
     if target_dir is None:
         target_dir = Path.home() / ".local/share/org.gnome.Ptyxis/palettes"
-    target_dir.mkdir(parents=True, exist_ok=True)
 
     safe_filename = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in name).strip("_")
     if not safe_filename:
@@ -1012,7 +1099,8 @@ def export_ptyxis_palette(
 
     lines.append("")
     content = "\n".join(lines)
-    file_path.write_text(content, encoding="utf-8")
+    if not _safe_write_file_with_host_fallback(file_path, content):
+        file_path.write_text(content, encoding="utf-8")
 
     # If Flatpak user dir exists, synchronize there as well
     for flatpak_base in [
@@ -1022,11 +1110,7 @@ def export_ptyxis_palette(
         Path.home() / ".var/app/app.devsuite.Ptyxis/data/org.gnome.Ptyxis/palettes",
     ]:
         if flatpak_base.parent.is_dir():
-            try:
-                flatpak_base.mkdir(parents=True, exist_ok=True)
-                (flatpak_base / f"{safe_filename}.palette").write_text(content, encoding="utf-8")
-            except Exception:
-                pass
+            _safe_write_file_with_host_fallback(flatpak_base / f"{safe_filename}.palette", content)
 
     return file_path
 
@@ -1439,3 +1523,474 @@ def apply_palette_to_ptyxis(
         )
 
     return applied_profile
+
+
+# -----------------------------------------------------------------------------
+# Alacritty and Kitty File-Based Palette Management (CachyOS, Arch, etc.)
+# -----------------------------------------------------------------------------
+
+
+def _parse_pango_font(font_str: str) -> tuple[str, float]:
+    """Split Pango font description into family name and size.
+
+    Args:
+        font_str: Pango font string (e.g. 'FiraCode Nerd Font 11' or 'Monospace 10.5').
+
+    Returns:
+        Tuple of (font_family, font_size_float).
+    """
+    parts = font_str.strip().rsplit(" ", 1)
+    if len(parts) == 2:
+        try:
+            size = float(parts[1])
+            return parts[0].strip(), size
+        except ValueError:
+            pass
+    return font_str.strip(), 11.0
+
+
+def apply_palette_to_alacritty(
+    palette: TerminalPalette,
+    config_path: Path | None = None,
+) -> bool:
+    """Apply a TerminalPalette to Alacritty configuration (alacritty.toml).
+
+    Preserves existing user configurations outside of color/font/window/cursor sections.
+
+    Args:
+        palette: TerminalPalette containing ANSI colors, fonts, opacity.
+        config_path: Optional custom Path to alacritty.toml.
+
+    Returns:
+        True if applied and written successfully, False otherwise.
+    """
+    if config_path is None:
+        config_path = Path.home() / ".config/alacritty/alacritty.toml"
+
+    opacity = (
+        max(0.0, min(1.0, 1.0 - (palette.background_transparency_percent / 100.0)))
+        if palette.use_transparent_background
+        else 1.0
+    )
+
+    alacritty_colors_norm = [
+        ("black", palette.palette[0] if len(palette.palette) > 0 else "#241f31"),
+        ("red", palette.palette[1] if len(palette.palette) > 1 else "#c01c28"),
+        ("green", palette.palette[2] if len(palette.palette) > 2 else "#26a269"),
+        ("yellow", palette.palette[3] if len(palette.palette) > 3 else "#a2734c"),
+        ("blue", palette.palette[4] if len(palette.palette) > 4 else "#12488b"),
+        ("magenta", palette.palette[5] if len(palette.palette) > 5 else "#a347ba"),
+        ("cyan", palette.palette[6] if len(palette.palette) > 6 else "#2aa1b3"),
+        ("white", palette.palette[7] if len(palette.palette) > 7 else "#d0d0d0"),
+    ]
+
+    alacritty_colors_bright = [
+        ("black", palette.palette[8] if len(palette.palette) > 8 else "#5e5c64"),
+        ("red", palette.palette[9] if len(palette.palette) > 9 else "#f66151"),
+        ("green", palette.palette[10] if len(palette.palette) > 10 else "#33d17a"),
+        ("yellow", palette.palette[11] if len(palette.palette) > 11 else "#e9ad0c"),
+        ("blue", palette.palette[12] if len(palette.palette) > 12 else "#2a7bde"),
+        ("magenta", palette.palette[13] if len(palette.palette) > 13 else "#c061cb"),
+        ("cyan", palette.palette[14] if len(palette.palette) > 14 else "#33c7de"),
+        ("white", palette.palette[15] if len(palette.palette) > 15 else "#ffffff"),
+    ]
+
+    c_shape = "Block"
+    if palette.cursor_shape == "ibeam":
+        c_shape = "Beam"
+    elif palette.cursor_shape == "underline":
+        c_shape = "Underline"
+
+    c_blink = "Always"
+    if palette.cursor_blink_mode == "on":
+        c_blink = "On"
+    elif palette.cursor_blink_mode == "off":
+        c_blink = "Off"
+
+    managed_prefixes: tuple[str, ...] = (
+        "colors",
+        "cursor",
+    )
+    if not palette.use_system_font and palette.font:
+        managed_prefixes = managed_prefixes + ("font",)
+
+    # Read existing content if available
+    existing_content = _safe_read_file_with_host_fallback(config_path) or ""
+    kept_sections: list[tuple[str, list[str]]] = []
+    current_sec = ""
+    current_lines: list[str] = []
+
+    for line in existing_content.splitlines():
+        trimmed = line.strip()
+        if trimmed.startswith("[") and trimmed.endswith("]") and not trimmed.startswith("[["):
+            sec_name = trimmed[1:-1].strip()
+            if current_sec or current_lines:
+                kept_sections.append((current_sec, current_lines))
+            current_sec = sec_name
+            current_lines = []
+        else:
+            current_lines.append(line)
+    if current_sec or current_lines:
+        kept_sections.append((current_sec, current_lines))
+
+    # Filter out managed sections and update window opacity
+    new_output_lines: list[str] = []
+    window_handled = False
+
+    for sec_name, lines in kept_sections:
+        is_managed = any(
+            sec_name == pfx or sec_name.startswith(f"{pfx}.") for pfx in managed_prefixes
+        )
+        if is_managed:
+            continue
+
+        if sec_name == "window":
+            window_handled = True
+            new_output_lines.append("[window]")
+            op_set = False
+            for l in lines:
+                if l.strip().startswith("opacity") and "=" in l:
+                    new_output_lines.append(f"opacity = {opacity:.2f}")
+                    op_set = True
+                else:
+                    new_output_lines.append(l)
+            if not op_set:
+                new_output_lines.append(f"opacity = {opacity:.2f}")
+            new_output_lines.append("")
+        elif sec_name:
+            new_output_lines.append(f"[{sec_name}]")
+            new_output_lines.extend(lines)
+            new_output_lines.append("")
+        else:
+            new_output_lines.extend(lines)
+            if lines:
+                new_output_lines.append("")
+
+    if not window_handled:
+        new_output_lines.append("[window]")
+        new_output_lines.append(f"opacity = {opacity:.2f}")
+        new_output_lines.append("")
+
+    # Add Colors
+    new_output_lines.append("[colors.primary]")
+    new_output_lines.append(f'background = "{palette.background_color}"')
+    new_output_lines.append(f'foreground = "{palette.foreground_color}"')
+    if palette.bold_color:
+        new_output_lines.append(f'bold = "{palette.bold_color}"')
+    new_output_lines.append("")
+
+    if palette.cursor_background_color or palette.cursor_foreground_color:
+        new_output_lines.append("[colors.cursor]")
+        if palette.cursor_foreground_color:
+            new_output_lines.append(f'text = "{palette.cursor_foreground_color}"')
+        if palette.cursor_background_color:
+            new_output_lines.append(f'cursor = "{palette.cursor_background_color}"')
+        new_output_lines.append("")
+
+    new_output_lines.append("[colors.normal]")
+    for k, v in alacritty_colors_norm:
+        new_output_lines.append(f'{k} = "{v}"')
+    new_output_lines.append("")
+
+    new_output_lines.append("[colors.bright]")
+    for k, v in alacritty_colors_bright:
+        new_output_lines.append(f'{k} = "{v}"')
+    new_output_lines.append("")
+
+    # Add Cursor
+    new_output_lines.append("[cursor]")
+    new_output_lines.append(f'style = {{ shape = "{c_shape}", blinking = "{c_blink}" }}')
+    new_output_lines.append("")
+
+    # Add Font if custom
+    if not palette.use_system_font and palette.font:
+        fam, size = _parse_pango_font(palette.font)
+        new_output_lines.append("[font]")
+        new_output_lines.append(f"size = {size}")
+        new_output_lines.append("")
+        new_output_lines.append("[font.normal]")
+        new_output_lines.append(f'family = "{fam}"')
+        new_output_lines.append("")
+
+    final_toml = "\n".join(new_output_lines).strip() + "\n"
+    success = _safe_write_file_with_host_fallback(config_path, final_toml)
+    if not success:
+        logger.warning("Failed writing Alacritty config to %s", config_path)
+    return success
+
+
+def read_current_alacritty_palette(
+    config_path: Path | None = None,
+) -> TerminalPalette | None:
+    """Read active palette and preferences from Alacritty config file (alacritty.toml).
+
+    Args:
+        config_path: Optional custom Path to alacritty.toml.
+
+    Returns:
+        TerminalPalette if config exists and contains styling, None otherwise.
+    """
+    if config_path is None:
+        config_path = Path.home() / ".config/alacritty/alacritty.toml"
+
+    content = _safe_read_file_with_host_fallback(config_path)
+    if not content or not content.strip():
+        return None
+
+    current_sec = ""
+    kv_by_sec: dict[str, dict[str, str]] = {}
+    for line in content.splitlines():
+        trimmed = line.strip()
+        if trimmed.startswith("#"):
+            continue
+        if trimmed.startswith("[") and trimmed.endswith("]") and not trimmed.startswith("[["):
+            current_sec = trimmed[1:-1].strip()
+        elif "=" in trimmed:
+            k, _, v = trimmed.partition("=")
+            key = k.strip()
+            val = v.strip().strip("'\"")
+            kv_by_sec.setdefault(current_sec, {})[key] = val
+
+    prim = kv_by_sec.get("colors.primary", {})
+    bg = prim.get("background", "#1e1e2e")
+    fg = prim.get("foreground", "#cdd6f4")
+
+    norm = kv_by_sec.get("colors.normal", {})
+    bright = kv_by_sec.get("colors.bright", {})
+    color_keys = ["black", "red", "green", "yellow", "blue", "magenta", "cyan", "white"]
+
+    pal = list(DEFAULT_ANSI_PALETTE)
+    for idx, name in enumerate(color_keys):
+        if name in norm:
+            pal[idx] = norm[name]
+        if name in bright:
+            pal[idx + 8] = bright[name]
+
+    opacity_val = kv_by_sec.get("window", {}).get("opacity")
+    use_trans = False
+    trans_pct = 0
+    if opacity_val:
+        try:
+            op = float(opacity_val)
+            if op < 0.999:
+                use_trans = True
+                trans_pct = round((1.0 - op) * 100)
+        except ValueError:
+            pass
+
+    font_fam = kv_by_sec.get("font.normal", {}).get("family", "")
+    font_sz = kv_by_sec.get("font", {}).get("size", "")
+    font_str = f"{font_fam} {font_sz}".strip() if font_fam else "Monospace 11"
+    use_sys_font = not bool(font_fam)
+
+    cursor_style = kv_by_sec.get("cursor", {}).get("style", "")
+    c_shape = "block"
+    c_blink = "system"
+    if "Beam" in cursor_style:
+        c_shape = "ibeam"
+    elif "Underline" in cursor_style:
+        c_shape = "underline"
+
+    if "On" in cursor_style:
+        c_blink = "on"
+    elif "Off" in cursor_style:
+        c_blink = "off"
+
+    return TerminalPalette(
+        name="Alacritty",
+        foreground_color=fg,
+        background_color=bg,
+        palette=pal,
+        use_system_font=use_sys_font,
+        font=font_str,
+        cursor_shape=c_shape,
+        cursor_blink_mode=c_blink,
+        use_transparent_background=use_trans,
+        background_transparency_percent=trans_pct,
+    )
+
+
+def apply_palette_to_kitty(
+    palette: TerminalPalette,
+    config_path: Path | None = None,
+) -> bool:
+    """Apply a TerminalPalette to Kitty configuration (kitty.conf).
+
+    Args:
+        palette: TerminalPalette containing ANSI colors, fonts, opacity.
+        config_path: Optional custom Path to kitty.conf.
+
+    Returns:
+        True if applied successfully, False otherwise.
+    """
+    if config_path is None:
+        config_path = Path.home() / ".config/kitty/kitty.conf"
+
+    opacity = (
+        max(0.0, min(1.0, 1.0 - (palette.background_transparency_percent / 100.0)))
+        if palette.use_transparent_background
+        else 1.0
+    )
+
+    c_shape = "block"
+    if palette.cursor_shape == "ibeam":
+        c_shape = "beam"
+    elif palette.cursor_shape == "underline":
+        c_shape = "underline"
+
+    c_blink = "-1"
+    if palette.cursor_blink_mode == "off":
+        c_blink = "0"
+    elif palette.cursor_blink_mode == "on":
+        c_blink = "0.5"
+
+    existing_content = _safe_read_file_with_host_fallback(config_path) or ""
+    managed_keys = {
+        "foreground",
+        "background",
+        "background_opacity",
+        "cursor",
+        "cursor_text_color",
+        "cursor_shape",
+        "cursor_blink_interval",
+    }
+    for i in range(16):
+        managed_keys.add(f"color{i}")
+    if not palette.use_system_font and palette.font:
+        managed_keys.add("font_family")
+        managed_keys.add("font_size")
+
+    kept_lines: list[str] = []
+    for line in existing_content.splitlines():
+        trimmed = line.strip()
+        if trimmed and not trimmed.startswith("#"):
+            first_word = trimmed.split()[0]
+            if first_word in managed_keys:
+                continue
+        kept_lines.append(line)
+
+    new_lines: list[str] = [
+        "# Gnome Theme Manager Managed Colors",
+        f"foreground {palette.foreground_color}",
+        f"background {palette.background_color}",
+        f"background_opacity {opacity:.2f}",
+        f"cursor {palette.cursor_background_color or palette.foreground_color}",
+        f"cursor_text_color {palette.cursor_foreground_color or palette.background_color}",
+        f"cursor_shape {c_shape}",
+        f"cursor_blink_interval {c_blink}",
+    ]
+    for idx, col in enumerate(palette.palette[:16]):
+        new_lines.append(f"color{idx} {col}")
+
+    if not palette.use_system_font and palette.font:
+        fam, size = _parse_pango_font(palette.font)
+        new_lines.append(f"font_family {fam}")
+        new_lines.append(f"font_size {size}")
+
+    combined = "\n".join(kept_lines).rstrip() + "\n\n" + "\n".join(new_lines) + "\n"
+    success = _safe_write_file_with_host_fallback(config_path, combined)
+
+    # Hot reload running kitty instances via SIGUSR1
+    try:
+        subprocess.run(
+            ["pkill", "-SIGUSR1", "-x", "kitty"],
+            capture_output=True,
+            timeout=2,
+            check=False,
+        )
+    except Exception:
+        pass
+    if shutil.which("flatpak-spawn"):
+        try:
+            subprocess.run(
+                ["flatpak-spawn", "--host", "pkill", "-SIGUSR1", "-x", "kitty"],
+                capture_output=True,
+                timeout=2,
+                check=False,
+            )
+        except Exception:
+            pass
+
+    return success
+
+
+def read_current_kitty_palette(
+    config_path: Path | None = None,
+) -> TerminalPalette | None:
+    """Read active palette and preferences from Kitty config file (kitty.conf).
+
+    Args:
+        config_path: Optional custom Path to kitty.conf.
+
+    Returns:
+        TerminalPalette if config exists and contains styling, None otherwise.
+    """
+    if config_path is None:
+        config_path = Path.home() / ".config/kitty/kitty.conf"
+
+    content = _safe_read_file_with_host_fallback(config_path)
+    if not content or not content.strip():
+        return None
+
+    kv: dict[str, str] = {}
+    for line in content.splitlines():
+        trimmed = line.strip()
+        if trimmed and not trimmed.startswith("#"):
+            parts = trimmed.split(None, 1)
+            if len(parts) == 2:
+                kv[parts[0]] = parts[1].strip()
+
+    if not any(k in kv for k in ("foreground", "background", "color0")):
+        return None
+
+    fg = kv.get("foreground", "#cdd6f4")
+    bg = kv.get("background", "#1e1e2e")
+    pal = list(DEFAULT_ANSI_PALETTE)
+    for i in range(16):
+        ck = f"color{i}"
+        if ck in kv:
+            pal[i] = kv[ck]
+
+    opacity_val = kv.get("background_opacity")
+    use_trans = False
+    trans_pct = 0
+    if opacity_val:
+        try:
+            op = float(opacity_val)
+            if op < 0.999:
+                use_trans = True
+                trans_pct = round((1.0 - op) * 100)
+        except ValueError:
+            pass
+
+    font_fam = kv.get("font_family", "")
+    font_sz = kv.get("font_size", "")
+    font_str = f"{font_fam} {font_sz}".strip() if font_fam else "Monospace 11"
+    use_sys_font = not bool(font_fam)
+
+    c_shape_raw = kv.get("cursor_shape", "block")
+    c_shape = "block"
+    if c_shape_raw == "beam":
+        c_shape = "ibeam"
+    elif c_shape_raw == "underline":
+        c_shape = "underline"
+
+    c_blink_raw = kv.get("cursor_blink_interval", "-1")
+    c_blink = "system"
+    if c_blink_raw == "0":
+        c_blink = "off"
+    elif c_blink_raw not in ("-1", "0"):
+        c_blink = "on"
+
+    return TerminalPalette(
+        name="Kitty",
+        foreground_color=fg,
+        background_color=bg,
+        palette=pal,
+        use_system_font=use_sys_font,
+        font=font_str,
+        cursor_shape=c_shape,
+        cursor_blink_mode=c_blink,
+        use_transparent_background=use_trans,
+        background_transparency_percent=trans_pct,
+    )

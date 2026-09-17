@@ -1271,7 +1271,9 @@ class ThemeManager:
         """
         from .terminal_palette import (
             detect_installed_terminal,
+            read_current_alacritty_palette,
             read_current_gnome_terminal_palette,
+            read_current_kitty_palette,
             read_current_ptyxis_palette,
         )
 
@@ -1283,6 +1285,10 @@ class ThemeManager:
 
         if tid == "ptyxis":
             return read_current_ptyxis_palette(profile_id=profile_id)
+        if tid == "alacritty":
+            return read_current_alacritty_palette()
+        if tid == "kitty":
+            return read_current_kitty_palette()
         return read_current_gnome_terminal_palette(profile_id=profile_id)
 
     def get_derived_terminal_palette(self, theme_name: str | None = None) -> TerminalPalette:
@@ -1514,8 +1520,10 @@ class ThemeManager:
             True if applied successfully, False otherwise.
         """
         from .terminal_palette import (
+            apply_palette_to_alacritty,
             apply_palette_to_gnome_console,
             apply_palette_to_gnome_terminal,
+            apply_palette_to_kitty,
             apply_palette_to_ptyxis,
             detect_installed_terminal,
         )
@@ -1532,6 +1540,10 @@ class ThemeManager:
             return apply_palette_to_gnome_console(palette)
         if tid == "gnome-terminal":
             return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
+        if tid == "alacritty":
+            return apply_palette_to_alacritty(palette)
+        if tid == "kitty":
+            return apply_palette_to_kitty(palette)
         logger.warning(
             "Terminal '%s' does not currently support automated palette application", tid
         )

@@ -261,3 +261,131 @@ def test_gnome_terminal_supports_transparency_detection() -> None:
             # Vanilla distro (Debian)
             mock_get_inst.return_value = mock_profile_vanilla
             assert gnome_terminal_supports_transparency("vanilla-uuid") is False
+
+
+def test_alacritty_palette_apply_and_read(tmp_path: Path) -> None:
+    """Verify Alacritty palette generation, file writing, and reading."""
+    from gnome_theme_manager.core.terminal_palette import (
+        apply_palette_to_alacritty,
+        read_current_alacritty_palette,
+    )
+
+    alacritty_cfg = tmp_path / "alacritty.toml"
+    palette = TerminalPalette(
+        name="CachyOS Alacritty",
+        foreground_color="#cdd6f4",
+        background_color="#1e1e2e",
+        palette=[f"#{i:02x}{i:02x}{i:02x}" for i in range(16)],
+        use_system_font=False,
+        font="FiraCode Nerd Font 12",
+        cursor_shape="ibeam",
+        cursor_blink_mode="on",
+        use_transparent_background=True,
+        background_transparency_percent=15,
+    )
+
+    ok = apply_palette_to_alacritty(palette, config_path=alacritty_cfg)
+    assert ok is True
+    assert alacritty_cfg.is_file()
+
+    content = alacritty_cfg.read_text(encoding="utf-8")
+    assert "[colors.primary]" in content
+    assert 'background = "#1e1e2e"' in content
+    assert 'foreground = "#cdd6f4"' in content
+    assert "opacity = 0.85" in content
+    assert 'family = "FiraCode Nerd Font"' in content
+    assert "size = 12.0" in content
+
+    read_back = read_current_alacritty_palette(config_path=alacritty_cfg)
+    assert read_back is not None
+    assert read_back.background_color == "#1e1e2e"
+    assert read_back.foreground_color == "#cdd6f4"
+    assert read_back.use_transparent_background is True
+    assert read_back.background_transparency_percent == 15
+    assert read_back.cursor_shape == "ibeam"
+    assert read_back.cursor_blink_mode == "on"
+    assert "FiraCode Nerd Font" in read_back.font
+
+
+def test_alacritty_palette_preserves_user_settings(tmp_path: Path) -> None:
+    """Verify Alacritty palette application preserves custom user keys and sections."""
+    from gnome_theme_manager.core.terminal_palette import apply_palette_to_alacritty
+
+    alacritty_cfg = tmp_path / "alacritty.toml"
+    initial_content = (
+        "[env]\n"
+        'TERM = "alacritty"\n\n'
+        "[window]\n"
+        "padding = { x = 8, y = 8 }\n"
+        'decorations = "Full"\n'
+        "opacity = 0.50\n\n"
+        "[keyboard]\n"
+        "bindings = []\n"
+    )
+    alacritty_cfg.write_text(initial_content, encoding="utf-8")
+
+    palette = TerminalPalette(
+        name="Updated Palette",
+        foreground_color="#ffffff",
+        background_color="#000000",
+        use_transparent_background=False,
+    )
+
+    ok = apply_palette_to_alacritty(palette, config_path=alacritty_cfg)
+    assert ok is True
+
+    updated = alacritty_cfg.read_text(encoding="utf-8")
+    assert 'TERM = "alacritty"' in updated
+    assert "padding = { x = 8, y = 8 }" in updated
+    assert 'decorations = "Full"' in updated
+    assert "opacity = 1.00" in updated
+    assert "bindings = []" in updated
+    assert 'background = "#000000"' in updated
+
+
+def test_kitty_palette_apply_and_read(tmp_path: Path) -> None:
+    """Verify Kitty palette generation, file writing, and reading."""
+    from gnome_theme_manager.core.terminal_palette import (
+        apply_palette_to_kitty,
+        read_current_kitty_palette,
+    )
+
+    kitty_cfg = tmp_path / "kitty.conf"
+    initial_content = "map ctrl+c copy_to_clipboard\ntab_bar_style powerline\n"
+    kitty_cfg.write_text(initial_content, encoding="utf-8")
+
+    palette = TerminalPalette(
+        name="CachyOS Kitty",
+        foreground_color="#d0d0d0",
+        background_color="#101010",
+        palette=[f"#{i:02x}{i:02x}{i:02x}" for i in range(16)],
+        use_system_font=False,
+        font="JetBrains Mono 11",
+        cursor_shape="underline",
+        cursor_blink_mode="off",
+        use_transparent_background=True,
+        background_transparency_percent=10,
+    )
+
+    ok = apply_palette_to_kitty(palette, config_path=kitty_cfg)
+    assert ok is True
+    assert kitty_cfg.is_file()
+
+    content = kitty_cfg.read_text(encoding="utf-8")
+    assert "map ctrl+c copy_to_clipboard" in content
+    assert "tab_bar_style powerline" in content
+    assert "foreground #d0d0d0" in content
+    assert "background #101010" in content
+    assert "background_opacity 0.90" in content
+    assert "font_family JetBrains Mono" in content
+    assert "cursor_shape underline" in content
+    assert "cursor_blink_interval 0" in content
+
+    read_back = read_current_kitty_palette(config_path=kitty_cfg)
+    assert read_back is not None
+    assert read_back.background_color == "#101010"
+    assert read_back.foreground_color == "#d0d0d0"
+    assert read_back.use_transparent_background is True
+    assert read_back.background_transparency_percent == 10
+    assert read_back.cursor_shape == "underline"
+    assert read_back.cursor_blink_mode == "off"
