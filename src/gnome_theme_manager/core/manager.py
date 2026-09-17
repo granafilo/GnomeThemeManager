@@ -50,7 +50,6 @@ from .store_client import StoreCategory, StoreClient, StoreItem
 from .terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
-    apply_palette_to_gnome_terminal,
     derive_terminal_palette_from_colors,
 )
 from .theme_editor import ThemeComposition, ThemeMixer
@@ -1258,17 +1257,38 @@ class ThemeManager:
     # Terminal Palette (Task 4.4)
     # -------------------------------------------------------------------------
 
-    def get_current_terminal_palette(self, profile_id: str | None = None) -> TerminalPalette | None:
-        """Read current terminal palette and preferences from GNOME Terminal.
+    def get_current_terminal_palette(
+        self, profile_id: str | None = None, terminal_id: str | None = None
+    ) -> TerminalPalette | None:
+        """Read current terminal palette and preferences.
 
         Args:
             profile_id: Optional profile UUID.
+            terminal_id: Optional terminal identifier (e.g. 'ptyxis', 'gnome-terminal').
 
         Returns:
             TerminalPalette if available, None otherwise.
         """
-        from .terminal_palette import read_current_gnome_terminal_palette
+        from .terminal_palette import (
+            detect_installed_terminal,
+            read_current_alacritty_palette,
+            read_current_gnome_terminal_palette,
+            read_current_kitty_palette,
+            read_current_ptyxis_palette,
+        )
 
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
+
+        if tid == "ptyxis":
+            return read_current_ptyxis_palette(profile_id=profile_id)
+        if tid == "alacritty":
+            return read_current_alacritty_palette()
+        if tid == "kitty":
+            return read_current_kitty_palette()
         return read_current_gnome_terminal_palette(profile_id=profile_id)
 
     def get_derived_terminal_palette(self, theme_name: str | None = None) -> TerminalPalette:
@@ -1292,57 +1312,124 @@ class ThemeManager:
         palette_name = f"{target_theme} Palette" if target_theme else "Desktop Theme Palette"
         return derive_terminal_palette_from_colors(colors, name=palette_name)
 
-    def list_terminal_profiles(self) -> list[TerminalProfileSummary]:
-        """List all GNOME Terminal profiles.
+    def list_terminal_profiles(
+        self, terminal_id: str | None = None
+    ) -> list[TerminalProfileSummary]:
+        """List terminal profiles for the detected or specified terminal emulator.
+
+        Args:
+            terminal_id: Optional terminal identifier (e.g. 'ptyxis', 'gnome-terminal').
 
         Returns:
             List of TerminalProfileSummary instances.
         """
-        from .terminal_palette import list_gnome_terminal_profiles
+        from .terminal_palette import (
+            detect_installed_terminal,
+            list_gnome_terminal_profiles,
+            list_ptyxis_profiles,
+        )
 
-        return list_gnome_terminal_profiles()
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
+
+        if tid == "ptyxis":
+            return list_ptyxis_profiles()
+        if tid == "gnome-terminal":
+            return list_gnome_terminal_profiles()
+        return []
 
     def create_terminal_profile(
-        self, name: str, palette: TerminalPalette | None = None
+        self,
+        name: str,
+        palette: TerminalPalette | None = None,
+        terminal_id: str | None = None,
     ) -> str | None:
-        """Create a new GNOME Terminal profile.
+        """Create a new terminal profile.
 
         Args:
             name: Visible name for the profile.
             palette: Optional initial palette/preferences.
+            terminal_id: Optional terminal identifier.
 
         Returns:
             UUID of newly created profile, or None on failure.
         """
-        from .terminal_palette import create_gnome_terminal_profile
+        from .terminal_palette import (
+            create_gnome_terminal_profile,
+            create_ptyxis_profile,
+            detect_installed_terminal,
+        )
 
-        return create_gnome_terminal_profile(name, palette=palette)
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
 
-    def delete_terminal_profile(self, profile_id: str) -> bool:
-        """Delete an inactive GNOME Terminal profile.
+        if tid == "ptyxis":
+            return create_ptyxis_profile(name, palette=palette)
+        if tid == "gnome-terminal":
+            return create_gnome_terminal_profile(name, palette=palette)
+        return None
+
+    def delete_terminal_profile(self, profile_id: str, terminal_id: str | None = None) -> bool:
+        """Delete an inactive terminal profile.
 
         Args:
             profile_id: UUID of the profile to remove.
+            terminal_id: Optional terminal identifier.
 
         Returns:
             True if removed, False if profile is active/default or error occurred.
         """
-        from .terminal_palette import delete_gnome_terminal_profile
+        from .terminal_palette import (
+            delete_gnome_terminal_profile,
+            delete_ptyxis_profile,
+            detect_installed_terminal,
+        )
 
-        return delete_gnome_terminal_profile(profile_id)
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
 
-    def set_default_terminal_profile(self, profile_id: str) -> bool:
-        """Set a GNOME Terminal profile as the default.
+        if tid == "ptyxis":
+            return delete_ptyxis_profile(profile_id)
+        if tid == "gnome-terminal":
+            return delete_gnome_terminal_profile(profile_id)
+        return False
+
+    def set_default_terminal_profile(self, profile_id: str, terminal_id: str | None = None) -> bool:
+        """Set a terminal profile as the default.
 
         Args:
             profile_id: UUID of the profile to set as default.
+            terminal_id: Optional terminal identifier.
 
         Returns:
             True if successful, False otherwise.
         """
-        from .terminal_palette import set_default_gnome_terminal_profile
+        from .terminal_palette import (
+            detect_installed_terminal,
+            set_default_gnome_terminal_profile,
+            set_default_ptyxis_profile,
+        )
 
-        return set_default_gnome_terminal_profile(profile_id)
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
+
+        if tid == "ptyxis":
+            return set_default_ptyxis_profile(profile_id)
+        if tid == "gnome-terminal":
+            return set_default_gnome_terminal_profile(profile_id)
+        return False
 
     def detect_os(self) -> Any:
         """Detect host Linux distribution, version, and default package manager."""
@@ -1417,26 +1504,50 @@ class ThemeManager:
         return get_terminal_profile(terminal_id=terminal_id, os_info=os_info)
 
     def apply_terminal_palette(
-        self, palette: TerminalPalette, profile_id: str | None = None
+        self,
+        palette: TerminalPalette,
+        profile_id: str | None = None,
+        terminal_id: str | None = None,
     ) -> bool:
-        """Apply terminal palette to the detected terminal emulator.
+        """Apply terminal palette to the detected or target terminal emulator.
 
         Args:
             palette: TerminalPalette to apply.
-            profile_id: Optional GNOME Terminal profile UUID.
+            profile_id: Optional profile UUID.
+            terminal_id: Optional terminal identifier (e.g. 'ptyxis', 'gnome-terminal').
 
         Returns:
             True if applied successfully, False otherwise.
         """
         from .terminal_palette import (
+            apply_palette_to_alacritty,
             apply_palette_to_gnome_console,
+            apply_palette_to_gnome_terminal,
+            apply_palette_to_kitty,
+            apply_palette_to_ptyxis,
             detect_installed_terminal,
         )
 
-        term = detect_installed_terminal()
-        if term is not None and term.terminal_type == "kgx":
+        tid = terminal_id
+        if tid is None:
+            term = detect_installed_terminal()
+            if term is not None:
+                tid = term.terminal_type
+
+        if tid == "ptyxis":
+            return apply_palette_to_ptyxis(palette, profile_id=profile_id)
+        if tid == "kgx":
             return apply_palette_to_gnome_console(palette)
-        return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
+        if tid == "gnome-terminal":
+            return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
+        if tid == "alacritty":
+            return apply_palette_to_alacritty(palette)
+        if tid == "kitty":
+            return apply_palette_to_kitty(palette)
+        logger.warning(
+            "Terminal '%s' does not currently support automated palette application", tid
+        )
+        return False
 
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation

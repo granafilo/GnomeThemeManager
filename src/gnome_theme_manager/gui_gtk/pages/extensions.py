@@ -798,7 +798,7 @@ class ExtensionsPage:
             switch.set_valign(Gtk.Align.CENTER)
             switch.connect(
                 "state-set",
-                lambda _sw, state, e=ext: self._on_switch_state_set(e, state),
+                lambda sw, state, e=ext: self._on_switch_state_set(sw, e, state),
             )
             header_box.append(switch)
             expander.add_suffix(header_box)
@@ -1329,9 +1329,16 @@ class ExtensionsPage:
                                             self.detail_description_label.set_text(
                                                 _clean_html_description(full_details.description)
                                             )
-                                    if full_details.rating is not None and item.rating is None:
-                                        item.rating = full_details.rating
-                                    if full_details.downloads > 0 and item.downloads == 0:
+                                    if (
+                                        isinstance(full_details.rating, (int, float))
+                                        and item.rating is None
+                                    ):
+                                        item.rating = float(full_details.rating)
+                                    if (
+                                        isinstance(full_details.downloads, int)
+                                        and full_details.downloads > 0
+                                        and item.downloads == 0
+                                    ):
                                         item.downloads = full_details.downloads
 
                             GLib.idle_add(apply_enrich)
@@ -1781,15 +1788,26 @@ class ExtensionsPage:
                     item.is_installed = True
                     item.is_enabled = True
                     item.has_update = False
-                    if self.manager.extensions:
-                        self.manager.extensions.list_extensions()
+                    self._reload_installed_extensions()
                     self._update_detail_actions(item)
                     self._sync_item_in_catalog(item)
-                    msg = (
-                        _("Extension '{name}' updated successfully.").format(name=item.name)
-                        if is_update
-                        else _("Extension '{name}' installed successfully.").format(name=item.name)
-                    )
+                    is_loaded = True
+                    if self.manager.extensions and hasattr(
+                        self.manager.extensions, "is_extension_loaded"
+                    ):
+                        try:
+                            if self.manager.extensions.is_extension_loaded(item.uuid) is False:
+                                is_loaded = False
+                        except Exception:
+                            pass
+                    if is_update:
+                        msg = _("Extension '{name}' updated successfully.").format(name=item.name)
+                    elif is_loaded:
+                        msg = _("Extension '{name}' installed successfully.").format(name=item.name)
+                    else:
+                        msg = _(
+                            "Extension '{name}' installed. Please log out and back in to activate it in GNOME Shell."
+                        ).format(name=item.name)
                     if self.on_notify_message:
                         self.on_notify_message(msg, False)
                 else:
@@ -1925,15 +1943,19 @@ class ExtensionsPage:
 
     # --- Installed Extension Operations ---
 
-    def _on_switch_state_set(self, ext: GnomeExtension, target_state: bool) -> bool:
+    def _on_switch_state_set(
+        self, switch: Gtk.Switch, ext: GnomeExtension, target_state: bool
+    ) -> bool:
         """Handle switch toggle by user."""
-        self._on_extension_switch_toggled(ext, target_state)
-        return False
+        ok = self._on_extension_switch_toggled(ext, target_state)
+        if not ok:
+            switch.set_state(not target_state)
+        return True
 
-    def _on_extension_switch_toggled(self, ext: GnomeExtension, active: bool) -> None:
+    def _on_extension_switch_toggled(self, ext: GnomeExtension, active: bool) -> bool:
         """Execute extension state toggle and notify."""
         if not self.manager.extensions:
-            return
+            return False
 
         ok = self.manager.extensions.toggle_extension(ext.uuid, active)
         ext.enabled = active if ok else not active
@@ -1950,6 +1972,7 @@ class ExtensionsPage:
             msg = _("Failed to toggle extension '{name}'.").format(name=ext.name)
             if self.on_notify_message:
                 self.on_notify_message(msg, True)
+        return ok
 
     def _update_app_status(self) -> None:
         """Update header button, banner, and expander based on Extension Manager status."""

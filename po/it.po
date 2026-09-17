@@ -1266,6 +1266,10 @@ msgstr "Estensione '{name}' abilitata."
 msgid "Extension '{name}' installed successfully."
 msgstr "Estensione '{name}' installata con successo."
 
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:1796
+msgid "Extension '{name}' installed. Please log out and back in to activate it in GNOME Shell."
+msgstr "Estensione '{name}' installata. Effettua il logout e il login per attivarla in GNOME Shell."
+
 #: src/gnome_theme_manager/gui_gtk/pages/extensions.py:1844
 #: src/gnome_theme_manager/gui_gtk/pages/extensions.py:2086
 msgid "Extension '{name}' removed."
@@ -3864,4 +3868,8 @@ msgstr "👁️ Anteprima Desktop Live Attiva"
 #: src/gnome_theme_manager/gui_gtk/pages/themes.py:798
 msgid "👁️ Preview on Desktop"
 msgstr "👁️ Anteprima sul desktop"
+
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:790
+msgid "Transparency is not supported by this terminal profile."
+msgstr "La trasparenza non è supportata dal profilo di questo terminale."
 

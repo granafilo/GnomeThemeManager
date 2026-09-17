@@ -214,3 +214,68 @@ def test_extensions_manager_uninstall(tmp_path: Path) -> None:
         assert ext_dir.exists()
         assert manager.uninstall_extension("test@ext.org") is True
         assert not ext_dir.exists()
+
+
+def test_enable_extension_dbus_returns_false(tmp_path: Path) -> None:
+    """Verify enable_extension does not fall through to GSettings when DBus explicitly rejects."""
+    manager = ExtensionsManager(user_extensions_dir=tmp_path)
+    mock_res = MagicMock()
+    mock_res.get_child_value.return_value.get_boolean.return_value = False
+    mock_proxy = MagicMock()
+    mock_proxy.call_sync.return_value = mock_res
+
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.extensions.Gio") as mock_gio,
+        patch("gnome_theme_manager.core.extensions.GLib"),
+    ):
+        mock_gio.DBusProxy.new_sync.return_value = mock_proxy
+        assert manager.enable_extension("invalid@ext.org") is False
+
+
+def test_is_extension_loaded(tmp_path: Path) -> None:
+    """Verify is_extension_loaded queries DBus GetExtensionInfo."""
+    manager = ExtensionsManager(user_extensions_dir=tmp_path)
+    mock_res = MagicMock()
+    mock_res.get_child_value.return_value.unpack.return_value = {"name": "Test Ext"}
+    mock_proxy = MagicMock()
+    mock_proxy.call_sync.return_value = mock_res
+
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.extensions.Gio") as mock_gio,
+        patch("gnome_theme_manager.core.extensions.GLib"),
+    ):
+        mock_gio.DBusProxy.new_sync.return_value = mock_proxy
+        assert manager.is_extension_loaded("test@ext.org") is True
+
+
+def test_list_extensions_merges_dbus_and_disk(tmp_path: Path) -> None:
+    """Verify list_extensions returns live DBus extensions and supplements with disk extensions."""
+    user_ext_dir = tmp_path / "user_exts"
+    disk_ext = user_ext_dir / "unloaded@ext.org"
+    disk_ext.mkdir(parents=True, exist_ok=True)
+    (disk_ext / "metadata.json").write_text(
+        json.dumps({"name": "Unloaded Ext", "uuid": "unloaded@ext.org"})
+    )
+
+    manager = ExtensionsManager(user_extensions_dir=user_ext_dir)
+
+    mock_res = MagicMock()
+    mock_res.get_child_value.return_value.unpack.return_value = {
+        "live@ext.org": {"name": "Live Ext", "enabled": True, "state": 1.0, "type": 2}
+    }
+    mock_proxy = MagicMock()
+    mock_proxy.call_sync.return_value = mock_res
+
+    with (
+        patch("gnome_theme_manager.core.extensions._GIO_AVAILABLE", True),
+        patch("gnome_theme_manager.core.extensions.Gio") as mock_gio,
+        patch("gnome_theme_manager.core.extensions.GLib"),
+        patch.object(manager, "get_enabled_uuids", return_value={"live@ext.org"}),
+    ):
+        mock_gio.DBusProxy.new_sync.return_value = mock_proxy
+        exts = manager.list_extensions()
+        uuids = [e.uuid for e in exts]
+        assert "live@ext.org" in uuids
+        assert "unloaded@ext.org" in uuids

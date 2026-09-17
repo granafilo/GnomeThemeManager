@@ -39,6 +39,18 @@ except (ImportError, ModuleNotFoundError):
     Retry = None  # type: ignore[assignment,misc]
     _REQUESTS_AVAILABLE = False
 
+try:
+    import gi
+
+    gi.require_version("Gio", "2.0")
+    from gi.repository import Gio, GLib
+
+    _GIO_AVAILABLE = True
+except (ImportError, ValueError, AttributeError):  # pragma: no cover
+    Gio = None
+    GLib = None
+    _GIO_AVAILABLE = False
+
 from .constants import EXTENSIONS_CACHE_DIR
 from .errors import (
     ExtensionError,
@@ -556,9 +568,7 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             )
 
         download_url = f"{EGO_DOWNLOAD_URL}/{urllib.parse.quote(uuid)}.shell-extension.zip?version_tag={version_tag}"
-        target_directory = target_dir or Path(
-            os.path.expanduser("~/.cache/gnome-theme-manager/extensions")
-        )
+        target_directory = target_dir or (EXTENSIONS_CACHE_DIR / "bundles")
         target_directory.mkdir(parents=True, exist_ok=True)
         dest_file = target_directory / f"{uuid}.zip"
 
@@ -596,12 +606,67 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
 
         return dest_file
 
+    def _install_via_dbus(self, uuid: str) -> bool | None:
+        """Attempt to install extension remotely via GNOME Shell DBus.
+
+        Returns:
+            True if installation succeeded, False if cancelled by user,
+            None if DBus method is unavailable/failed and fallback should be used.
+        """
+        if not (_GIO_AVAILABLE and Gio is not None and GLib is not None):
+            return None
+
+        try:
+            bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+            proxy = Gio.DBusProxy.new_sync(
+                bus,
+                Gio.DBusProxyFlags.NONE,
+                None,
+                "org.gnome.Shell.Extensions",
+                "/org/gnome/Shell/Extensions",
+                "org.gnome.Shell.Extensions",
+                None,
+            )
+            # Timeout 120s allows the user to review the GNOME Shell prompt dialog and download
+            res = proxy.call_sync(
+                "InstallRemoteExtension",
+                GLib.Variant("(s)", (uuid,)),
+                Gio.DBusCallFlags.NONE,
+                120000,
+                None,
+            )
+            if res is not None:
+                result_str = str(res.get_child_value(0).get_string()).strip().lower()
+                if result_str in ("successful", "success", "already-installed"):
+                    logger.info("Installed extension %s via GNOME Shell DBus", uuid)
+                    return True
+                elif result_str == "cancelled":
+                    logger.info("Installation of extension %s was cancelled by user", uuid)
+                    return False
+                else:
+                    logger.warning(
+                        "DBus InstallRemoteExtension for %s returned: %s", uuid, result_str
+                    )
+                    return None
+        except Exception as dbus_err:
+            logger.debug("DBus InstallRemoteExtension failed for %s: %s", uuid, dbus_err)
+            return None
+        return None
+
     def install(self, uuid: str, bundle_path: Path | None = None) -> bool:
         """Install extension from local bundle or by downloading it."""
+        # 1. Primary for remote extensions: DBus org.gnome.Shell.Extensions InstallRemoteExtension
+        # GNOME Shell natively downloads, installs to ~/.local/share/gnome-shell/extensions/<uuid>,
+        # compiles schemas, and hot-loads into the running shell without session restart.
+        if bundle_path is None:
+            dbus_res = self._install_via_dbus(uuid)
+            if dbus_res is not None:
+                return dbus_res
+
         if bundle_path is None or not bundle_path.is_file():
             bundle_path = self.download_bundle(uuid)
 
-        # 1. Try gnome-extensions CLI
+        # 2. Try local gnome-extensions CLI
         if shutil.which("gnome-extensions"):
             try:
                 proc = subprocess.run(
@@ -621,8 +686,9 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
             except Exception as err:
                 logger.warning("CLI install failed: %s", err)
 
-        # 2. Fallback: manual unpack to user extensions directory
+        # 3. Direct local unpack to user extensions directory
         user_ext_dir = self.mgr.user_extensions_dir / uuid
+        unpack_error: Exception | None = None
         try:
             user_ext_dir.mkdir(parents=True, exist_ok=True)
             with zipfile.ZipFile(bundle_path, "r") as zf:
@@ -632,14 +698,96 @@ class GnomeExtensionsRestBackend(ExtensionBackend):
                     if not target_path.resolve().is_relative_to(user_ext_dir.resolve()):
                         raise ExtensionInstallError(f"Unsafe path in zip bundle: {member.filename}")
                 zf.extractall(user_ext_dir)
+
+            # Compile schemas if bundled
+            schemas_dir = user_ext_dir / "schemas"
+            if schemas_dir.is_dir() and shutil.which("glib-compile-schemas"):
+                try:
+                    subprocess.run(
+                        ["glib-compile-schemas", str(schemas_dir)],
+                        capture_output=True,
+                        timeout=5,
+                        check=False,
+                    )
+                except Exception as compile_err:
+                    logger.debug("Schema compilation failed in %s: %s", schemas_dir, compile_err)
+
             logger.info("Extracted extension %s to %s", uuid, user_ext_dir)
             return True
         except Exception as err:
-            logger.error("Manual extraction failed for %s: %s", uuid, err)
+            unpack_error = err
+            logger.warning(
+                "Local extraction failed for %s (%s); trying Flatpak host bridge...",
+                uuid,
+                err,
+            )
             if user_ext_dir.exists():
                 shutil.rmtree(user_ext_dir, ignore_errors=True)
-                logger.info("Rolled back incomplete extension directory: %s", user_ext_dir)
-            raise ExtensionInstallError(f"Failed to extract extension bundle: {err}") from err
+
+        # 4. Flatpak Host Fallback: If sandbox filesystem is read-only, delegate to host via flatpak-spawn
+        if shutil.which("flatpak-spawn"):
+            try:
+                home_path = Path.home().resolve()
+                resolved_bundle = bundle_path.resolve()
+                if resolved_bundle.is_relative_to(home_path):
+                    rel_bundle = resolved_bundle.relative_to(home_path)
+                    host_bundle = f"$HOME/{rel_bundle}"
+                else:
+                    host_bundle = str(resolved_bundle)
+
+                host_dest = f"$HOME/.local/share/gnome-shell/extensions/{uuid}"
+
+                # 4a. Try host gnome-extensions CLI
+                proc_cli = subprocess.run(
+                    [
+                        "flatpak-spawn",
+                        "--host",
+                        "gnome-extensions",
+                        "install",
+                        "--force",
+                        os.path.expandvars(host_bundle),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc_cli.returncode == 0:
+                    logger.info("Installed extension %s via host gnome-extensions", uuid)
+                    return True
+
+                # 4b. Try host python3 extraction
+                py_script = (
+                    "import zipfile, os, subprocess, shutil; from pathlib import Path; "
+                    f"b = Path(os.path.expandvars('{host_bundle}')); "
+                    f"d = Path(os.path.expandvars('{host_dest}')); "
+                    "d.mkdir(parents=True, exist_ok=True); "
+                    "with zipfile.ZipFile(b) as zf: zf.extractall(d); "
+                    "sd = d / 'schemas'; "
+                    "if sd.is_dir() and shutil.which('glib-compile-schemas'): "
+                    "subprocess.run(['glib-compile-schemas', str(sd)], check=False)"
+                )
+                proc_py = subprocess.run(
+                    ["flatpak-spawn", "--host", "python3", "-c", py_script],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if proc_py.returncode == 0:
+                    logger.info("Extracted extension %s to host via flatpak-spawn python3", uuid)
+                    return True
+                logger.warning(
+                    "flatpak-spawn host extraction failed: code %s, stderr: %s",
+                    proc_py.returncode,
+                    proc_py.stderr,
+                )
+            except Exception as host_err:
+                logger.warning("flatpak-spawn fallback error: %s", host_err)
+
+        if unpack_error:
+            raise ExtensionInstallError(
+                f"Failed to extract extension bundle: {unpack_error}"
+            ) from unpack_error
+        return False
 
     def uninstall(self, uuid: str) -> bool:
         return self.mgr.uninstall_extension(uuid)

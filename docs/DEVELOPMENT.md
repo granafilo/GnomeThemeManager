@@ -177,7 +177,7 @@ chmod +x scripts/build-flatpak.sh
 ```
 
 The script builds the local OSTree repository and exports bundles to `dist/`:
-- `dist/GNOMEThemeManager-1.5.2-x86_64.flatpak` (Offline standalone bundle)
+- `dist/GNOMEThemeManager-1.5.3-x86_64.flatpak` (Offline standalone bundle)
 - `dist/GNOMEThemeManager.flatpakref` (Single-click installer)
 
 ---

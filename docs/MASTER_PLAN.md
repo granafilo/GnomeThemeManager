@@ -38,7 +38,8 @@ po/                # file .po per i18n (EN sorgente, IT traduzione)
   - Ubuntu 24.04 LTS — GNOME 46 (target di riferimento principale)
   - Zorin OS 17+ — GNOME 46 (compatibilità layout e zorin-appearance)
   - Fedora 44 — GNOME 50 (stack GNOME 50 e supporto Libadwaita)
-  - CachyOS — GNOME 50 (rolling release Arch-based, supporto fogli stile Libadwaita GNOME 50+)
+  - CachyOS — GNOME 50 (rolling release Arch-based, supporto fogli stile Libadwaita GNOME 50+, Alacritty e Kitty)
+  - Debian 13 "Trixie" (13.07) — GNOME 46+ (supporto vanilla GNOME Terminal senza chiavi di trasparenza, integrazione desktop automatica, gestione estensioni con host bridge flatpak-spawn)
 
 ### 0.4 Dipendenze esterne consentite
 Solo PyGObject + `requests` (da Fase 3). Nessuna altra senza approvazione esplicita.

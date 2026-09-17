@@ -27,6 +27,7 @@ from ...core.terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
     export_palette_to_json,
+    gnome_terminal_supports_transparency,
 )
 from ..widgets.color_picker import ColorPickerButton
 from ..widgets.font_utils import safe_set_font_desc
@@ -253,6 +254,8 @@ class TerminalPage:
         if 0 <= idx < len(self._supported_terminals):
             self._selected_terminal_id = self._supported_terminals[idx]
             self._update_terminal_ui()
+            self._selected_profile_id = None
+            self._reload_profiles_list()
 
             # Immediate alert notification if the selected terminal is not installed
             profile = self.manager.get_terminal_profile(self._selected_terminal_id)
@@ -419,8 +422,9 @@ class TerminalPage:
             self._notify(msg, is_error=True)
             return
 
-        # Scenario C - Terminal does not use GSettings
-        if not profile.supports_profiles and profile.terminal_id not in ("kgx", "ptyxis"):
+        # Scenario C - Terminal does not use GSettings profiles and lacks automated palette backend
+        supported_theme_terminals = ("kgx", "ptyxis", "gnome-terminal", "alacritty", "kitty")
+        if not profile.supports_profiles and profile.terminal_id not in supported_theme_terminals:
             msg = _("{terminal} does not use GSettings profiles. Config path: {path}").format(
                 terminal=profile.terminal_name, path=profile.config_file_path
             )
@@ -428,32 +432,37 @@ class TerminalPage:
             self._notify(msg, is_error=True)
             return
 
-        # Scenario B - Schema accessibility check for GSettings
-        term_info = self.manager.detect_terminal()
-        schema_acc = getattr(term_info, "schema_accessible", True)
-        if (
-            isinstance(schema_acc, bool)
-            and not schema_acc
-            and getattr(term_info, "terminal_id", "") == self._selected_terminal_id
-        ):
-            self._show_error_dialog(
-                _("GSettings schema unavailable"),
-                _(
-                    "The terminal GSettings schema is not accessible. Check application permissions."
-                ),
-            )
-            self._notify(
-                _(
-                    "The terminal GSettings schema is not accessible. Check application permissions."
-                ),
-                is_error=True,
-            )
-            return
+        # Scenario B - Schema accessibility check for GSettings terminals
+        if profile.terminal_id in ("gnome-terminal", "tilix"):
+            term_info = self.manager.detect_terminal()
+            schema_acc = getattr(term_info, "schema_accessible", True)
+            if (
+                isinstance(schema_acc, bool)
+                and not schema_acc
+                and getattr(term_info, "terminal_id", "") == self._selected_terminal_id
+            ):
+                self._show_error_dialog(
+                    _("GSettings schema unavailable"),
+                    _(
+                        "The terminal GSettings schema is not accessible. Check application permissions."
+                    ),
+                )
+                self._notify(
+                    _(
+                        "The terminal GSettings schema is not accessible. Check application permissions."
+                    ),
+                    is_error=True,
+                )
+                return
 
         palette = self._build_current_palette()
         target_pid = self._selected_profile_id
         try:
-            success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
+            success = self.manager.apply_terminal_palette(
+                palette,
+                profile_id=target_pid,
+                terminal_id=self._selected_terminal_id,
+            )
             if success:
                 self._notify(
                     _("Terminal preferences applied successfully."),
@@ -483,7 +492,9 @@ class TerminalPage:
 
         self._updating_profiles_ui = True
         try:
-            self._profiles = self.manager.list_terminal_profiles()
+            self._profiles = self.manager.list_terminal_profiles(
+                terminal_id=self._selected_terminal_id
+            )
             if not self._profiles:
                 # Fallback: single mock item
                 self._profiles = [
@@ -522,12 +533,12 @@ class TerminalPage:
             # Can set default only if it is not already default
             if self.set_default_button:
                 self.set_default_button.set_sensitive(not curr_prof.is_default)
-            # Can delete only if it is NOT the default/active profile
+            # Cannot delete default profile
             if self.delete_profile_button:
                 self.delete_profile_button.set_sensitive(not curr_prof.is_default)
 
     def _get_current_profile_summary(self) -> TerminalProfileSummary | None:
-        """Return summary of selected profile."""
+        """Helper to get currently selected profile summary object."""
         if not self.profile_combo_row or not self._profiles:
             return None
         idx = self.profile_combo_row.get_selected()
@@ -548,7 +559,9 @@ class TerminalPage:
     def _load_selected_profile(self) -> None:
         """Load settings for the currently selected profile."""
         curr_id = self._selected_profile_id
-        profile_data = self.manager.get_current_terminal_palette(profile_id=curr_id)
+        profile_data = self.manager.get_current_terminal_palette(
+            profile_id=curr_id, terminal_id=self._selected_terminal_id
+        )
         if profile_data is not None:
             self._load_palette(profile_data)
         else:
@@ -560,7 +573,9 @@ class TerminalPage:
         curr = self._get_current_profile_summary()
         if not curr:
             return
-        if self.manager.set_default_terminal_profile(curr.id):
+        if self.manager.set_default_terminal_profile(
+            curr.id, terminal_id=self._selected_terminal_id
+        ):
             self._notify(_("Profile set as default: {}").format(curr.name), is_error=False)
             self._reload_profiles_list()
         else:
@@ -573,7 +588,9 @@ class TerminalPage:
             if not name.strip():
                 return
             palette = self._build_current_palette()
-            new_id = self.manager.create_terminal_profile(name.strip(), palette=palette)
+            new_id = self.manager.create_terminal_profile(
+                name.strip(), palette=palette, terminal_id=self._selected_terminal_id
+            )
             if new_id:
                 self._selected_profile_id = new_id
                 self._reload_profiles_list()
@@ -595,7 +612,9 @@ class TerminalPage:
             return
 
         def on_confirm() -> None:
-            if self.manager.delete_terminal_profile(curr.id):
+            if self.manager.delete_terminal_profile(
+                curr.id, terminal_id=self._selected_terminal_id
+            ):
                 self._selected_profile_id = None
                 self._reload_profiles_list()
                 self._load_selected_profile()
@@ -754,12 +773,33 @@ class TerminalPage:
             if i < len(palette.palette):
                 picker.set_color_hex(palette.palette[i])
 
+        supports_transparency = True
+        if self._selected_terminal_id == "gnome-terminal":
+            supports_transparency = gnome_terminal_supports_transparency(self._selected_profile_id)
+        elif self._selected_terminal_id in ("kgx", "konsole"):
+            supports_transparency = False
+
         if self.transparency_switch_row:
-            self.transparency_switch_row.set_active(palette.use_transparent_background)
+            if supports_transparency:
+                self.transparency_switch_row.set_sensitive(True)
+                self.transparency_switch_row.set_subtitle(
+                    _("Enable transparent background for terminal windows")
+                )
+                self.transparency_switch_row.set_active(palette.use_transparent_background)
+            else:
+                self.transparency_switch_row.set_active(False)
+                self.transparency_switch_row.set_sensitive(False)
+                self.transparency_switch_row.set_subtitle(
+                    _("Transparency is not supported by this terminal profile.")
+                )
         if self.transparency_percent_row:
-            self.transparency_percent_row.set_sensitive(palette.use_transparent_background)
+            self.transparency_percent_row.set_sensitive(
+                supports_transparency and palette.use_transparent_background
+            )
         if self.transparency_spin_button:
-            self.transparency_spin_button.set_value(palette.background_transparency_percent)
+            self.transparency_spin_button.set_value(
+                palette.background_transparency_percent if supports_transparency else 0
+            )
 
         if self.use_system_font_row:
             self.use_system_font_row.set_active(palette.use_system_font)
@@ -839,7 +879,8 @@ class TerminalPage:
         """Handle transparent background switch toggle."""
         if self.transparency_switch_row and self.transparency_percent_row:
             active = self.transparency_switch_row.get_active()
-            self.transparency_percent_row.set_sensitive(active)
+            sensitive = self.transparency_switch_row.get_sensitive()
+            self.transparency_percent_row.set_sensitive(active and sensitive)
 
     def _on_system_font_toggled(self, _row: Any, _param: Any) -> None:
         """Handle system monospace font switch toggle."""

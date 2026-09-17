@@ -312,10 +312,26 @@ def _find_binary(name: str) -> Path | None:
         Path("/run/host/usr/bin"),
         Path("/run/host/bin"),
         Path("/run/host/usr/local/bin"),
+        Path("/var/lib/flatpak/exports/bin"),
+        Path.home() / ".local" / "share" / "flatpak" / "exports" / "bin",
     ):
         cand = prefix / name
         if cand.is_file() and os.access(cand, os.X_OK):
             return cand
+
+    if shutil.which("flatpak-spawn"):
+        try:
+            res = subprocess.run(
+                ["flatpak-spawn", "--host", "which", name],
+                capture_output=True,
+                text=True,
+                timeout=1.5,
+                check=False,
+            )
+            if res.returncode == 0 and res.stdout.strip():
+                return Path(res.stdout.strip().splitlines()[0])
+        except Exception:
+            pass
 
     return None
 
@@ -325,14 +341,41 @@ def is_terminal_installed(binary: str, desktop_file: str = "") -> bool:
     if binary and _find_binary(binary) is not None:
         return True
 
+    desktop_candidates: list[str] = []
     if desktop_file:
-        for app_dir in (
-            Path("/usr/share/applications"),
-            Path("/run/host/usr/share/applications"),
-            Path("/usr/local/share/applications"),
-            Path.home() / ".local" / "share" / "applications",
-        ):
-            if (app_dir / desktop_file).is_file():
+        desktop_candidates.append(desktop_file)
+        if desktop_file.lower() not in desktop_candidates:
+            desktop_candidates.append(desktop_file.lower())
+    if binary == "alacritty" or "alacritty" in desktop_file.lower():
+        for alacritty_id in ("Alacritty.desktop", "alacritty.desktop"):
+            if alacritty_id not in desktop_candidates:
+                desktop_candidates.append(alacritty_id)
+    if binary == "kitty" or "kitty" in desktop_file.lower():
+        for kitty_id in ("kitty.desktop", "Kitty.desktop"):
+            if kitty_id not in desktop_candidates:
+                desktop_candidates.append(kitty_id)
+    if binary == "ptyxis" or "ptyxis" in desktop_file.lower():
+        for ptyxis_id in ("app.devsuite.Ptyxis.desktop", "org.gnome.Ptyxis.desktop"):
+            if ptyxis_id not in desktop_candidates:
+                desktop_candidates.append(ptyxis_id)
+    if (
+        binary == "wezterm" or "wezterm" in desktop_file.lower()
+    ) and "org.wezfurlong.wezterm.desktop" not in desktop_candidates:
+        desktop_candidates.append("org.wezfurlong.wezterm.desktop")
+
+    app_dirs = (
+        Path("/usr/share/applications"),
+        Path("/run/host/usr/share/applications"),
+        Path("/usr/local/share/applications"),
+        Path.home() / ".local" / "share" / "applications",
+        Path("/var/lib/flatpak/exports/share/applications"),
+        Path("/run/host/var/lib/flatpak/exports/share/applications"),
+        Path.home() / ".local" / "share" / "flatpak" / "exports" / "share" / "applications",
+    )
+
+    for cand in desktop_candidates:
+        for app_dir in app_dirs:
+            if (app_dir / cand).is_file():
                 return True
 
     return False

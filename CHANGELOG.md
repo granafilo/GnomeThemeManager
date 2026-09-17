@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.5.3] - 2026-09-17
+
+### Added
+- **Debian 13 "Trixie" (13.07) Full Compatibility**:
+  - Resilient vanilla GNOME Terminal support on upstream distributions lacking transparency patches; dynamically adapt UI transparency controls and subtitles without schema key crash.
+  - Automatic desktop integration post Flatpak installation: exports `.desktop` launcher and scalable application icons directly into `~/.local/share` so the app is immediately visible in the application grid without session restart.
+  - Resilient GNOME Shell extension installation: transparent host bridge via `flatpak-spawn` when user directory is mounted read-only, writable state caching in `~/.local/state/gnome-theme-manager/`, and dynamic D-Bus hot-loading into GNOME Shell via `InstallRemoteExtension`.
+  - Session-mode extension detection for `user-theme` on Debian/Ubuntu with user notification to install via APT when managed as a system package.
+- **CachyOS & Arch Multi-Terminal Support**:
+  - Full automated palette and preference application for **Alacritty** (`~/.config/alacritty/alacritty.toml`) with section preservation (`[env]`, `[keyboard]`, padding), opacity, fonts, and instant hot-reloading.
+  - Automated palette application for **Kitty** (`~/.config/kitty/kitty.conf`) with ANSI colors, opacity, and live `SIGUSR1` process reload.
+  - Sandbox-safe host file writing and `dconf` CLI fallback via `flatpak-spawn` for Ptyxis, Alacritty, and Kitty.
+  - Expanded Flatpak filesystem permissions for `~/.config/alacritty`, `~/.config/kitty`, and `~/.local/share/org.gnome.Ptyxis`.
+
+### Fixed
+- **Terminal GUI Apply Blockers**: Unblocked file-configured terminals (`alacritty`, `kitty`) from GSettings profile rejection, and scoped schema accessibility checks exclusively to GSettings-dependent terminals.
+- **Terminal Binary & Desktop File Detection**: Added case-insensitive matching (`Alacritty.desktop` / `alacritty.desktop`) and `flatpak-spawn --host which` detection.
+
 ## [1.5.2] - 2026-09-17
 
 ### Added

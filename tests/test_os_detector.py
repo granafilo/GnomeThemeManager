@@ -381,6 +381,43 @@ def test_get_install_command_with_os_info() -> None:
         == "sudo pacman -S --noconfirm gnome-shell-extensions"
     )
 
+    # Ptyxis on Ubuntu 24.04 and Zorin OS
+    ubuntu_noble = OSInfo("ubuntu", "24.04", "apt", "Ubuntu 24.04")
+    zorin_os = OSInfo("zorin", "18", "apt", "Zorin OS 18")
+    ubuntu_oracular = OSInfo("ubuntu", "24.10", "apt", "Ubuntu 24.10")
+
+    assert (
+        get_install_command("ptyxis", os_info=ubuntu_noble)
+        == "flatpak install -y flathub app.devsuite.Ptyxis"
+    )
+    assert (
+        get_install_command("ptyxis", os_info=zorin_os)
+        == "flatpak install -y flathub app.devsuite.Ptyxis"
+    )
+    assert get_install_command("ptyxis", os_info=ubuntu_oracular) == "sudo apt install -y ptyxis"
+
+    # WezTerm
+    assert (
+        get_install_command("wezterm", os_info=ubuntu_noble)
+        == "flatpak install -y flathub org.wezfurlong.wezterm"
+    )
+    assert (
+        get_install_command("wezterm", os_info=fedora_info)
+        == "flatpak install -y flathub org.wezfurlong.wezterm"
+    )
+    assert get_install_command("wezterm", os_info=arch_info) == "sudo pacman -S --noconfirm wezterm"
+
+    # Warp
+    assert (
+        get_install_command("warp", os_info=ubuntu_noble)
+        == "curl -fsSL https://app.warp.dev/download?package=deb -o /tmp/warp.deb && sudo apt install -y /tmp/warp.deb && rm /tmp/warp.deb"
+    )
+    assert (
+        get_install_command("warp", os_info=fedora_info)
+        == "sudo dnf install -y https://app.warp.dev/download?package=rpm"
+    )
+    assert get_install_command("warp", os_info=arch_info) == "yay -S --noconfirm warp-terminal-bin"
+
 
 def test_get_install_command_fallback_and_custom() -> None:
     """Verify unmapped dependency and unknown package manager fallback."""
