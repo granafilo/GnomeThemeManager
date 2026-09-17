@@ -12,8 +12,7 @@ def compile_po(po_path, mo_path):
 
     # Regex to match msgid/msgstr pairs
     pattern = re.compile(
-        r'msgid\s+((?:"(?:[^"\\]|\\.)*"\s*)+)\s*'
-        r'msgstr\s+((?:"(?:[^"\\]|\\.)*"\s*)+)'
+        r'msgid\s+((?:"(?:[^"\\]|\\.)*"\s*)+)\s*' r'msgstr\s+((?:"(?:[^"\\]|\\.)*"\s*)+)'
     )
 
     pairs = []

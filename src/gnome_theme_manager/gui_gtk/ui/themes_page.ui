@@ -65,7 +65,7 @@
                 <property name="vscrollbar-policy">automatic</property>
                 <property name="child">
                   <object class="AdwClamp">
-                    <property name="maximum-size">840</property>
+                    <property name="maximum-size">800</property>
                     <property name="tightening-threshold">560</property>
                     <property name="margin-start">16</property>
                     <property name="margin-end">16</property>
@@ -207,7 +207,7 @@
             <!-- Bottom action bar -->
             <child>
               <object class="AdwClamp">
-                <property name="maximum-size">840</property>
+                <property name="maximum-size">800</property>
                 <property name="tightening-threshold">560</property>
                 <property name="margin-start">16</property>
                 <property name="margin-end">16</property>

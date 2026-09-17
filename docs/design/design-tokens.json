@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "GnomeThemeManager Design Tokens",
+  "version": "1.0.0",
+  "target": "GNOME 46 / Libadwaita 1.5+ (Strict HIG)",
+  "tokens": {
+    "colors": {
+      "surfaces": {
+        "window": "@window_bg_color",
+        "view": "@view_bg_color",
+        "card": "@card_bg_color",
+        "headerbar": "@headerbar_bg_color",
+        "popover": "@popover_bg_color",
+        "shade": "@card_shade_color"
+      },
+      "foregrounds": {
+        "window": "@window_fg_color",
+        "view": "@view_fg_color",
+        "card": "@card_fg_color",
+        "headerbar": "@headerbar_fg_color",
+        "muted": "alpha(@window_fg_color, 0.70)",
+        "dim": "alpha(@window_fg_color, 0.50)"
+      },
+      "borders": {
+        "subtle": "@borders",
+        "outline": "@window_outline_color",
+        "focus": "@accent_color"
+      },
+      "accent": {
+        "primary": "@accent_bg_color",
+        "primary_fg": "@accent_fg_color",
+        "standalone": "@accent_color",
+        "hover_tint": "alpha(@accent_bg_color, 0.08)",
+        "active_tint": "alpha(@accent_bg_color, 0.16)"
+      },
+      "severity": {
+        "destructive": "@destructive_bg_color",
+        "destructive_fg": "@destructive_fg_color",
+        "destructive_standalone": "@destructive_color",
+        "warning": "@warning_bg_color",
+        "warning_fg": "@warning_fg_color",
+        "warning_standalone": "@warning_color",
+        "success": "@success_bg_color",
+        "success_fg": "@success_fg_color",
+        "success_standalone": "@success_color"
+      },
+      "elevation": {
+        "card_hover_shadow": "0 2px 8px alpha(@borders, 0.35)"
+      }
+    },
+    "spacing": {
+      "none": "0px",
+      "xxs": "2px",
+      "xs": "4px",
+      "small": "6px",
+      "medium": "12px",
+      "large": "16px",
+      "xl": "24px",
+      "xxl": "32px"
+    },
+    "radius": {
+      "none": "0px",
+      "small": "6px",
+      "medium": "8px",
+      "card": "12px",
+      "pill": "9999px"
+    },
+    "typography": {
+      "families": {
+        "interface": "@system-font",
+        "monospace": "monospace"
+      },
+      "scale": {
+        "caption": {
+          "style_class": "caption",
+          "weight": "normal",
+          "relative_scale": "0.8"
+        },
+        "body": {
+          "style_class": "default",
+          "weight": "normal",
+          "relative_scale": "1.0"
+        },
+        "heading": {
+          "style_class": "heading",
+          "weight": "bold",
+          "relative_scale": "1.0"
+        },
+        "title_4": {
+          "style_class": "title-4",
+          "weight": "bold",
+          "relative_scale": "1.1"
+        },
+        "title_3": {
+          "style_class": "title-3",
+          "weight": "bold",
+          "relative_scale": "1.25"
+        },
+        "title_2": {
+          "style_class": "title-2",
+          "weight": "bold",
+          "relative_scale": "1.5"
+        },
+        "title_1": {
+          "style_class": "title-1",
+          "weight": "bold",
+          "relative_scale": "1.8"
+        }
+      }
+    },
+    "layout": {
+      "clamp_compact": "540px",
+      "clamp_standard": "800px",
+      "clamp_wide": "1000px"
+    }
+  }
+}

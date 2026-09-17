@@ -1,149 +1,120 @@
+<div align="center">
+
+<img src="data/icons/hicolor/scalable/apps/io.github.granafilo.ThemeManager.svg" width="96" height="96" alt="GNOME Theme Manager Logo" />
+
 # GNOME Theme Manager
 
-![Platform](https://img.shields.io/badge/Platform-Linux%20GNOME-4EAA25?logo=gnome&logoColor=white)
-![GUI](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
-![License](https://img.shields.io/badge/License-GPL--3.0-blue)
-[![Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
-[![Flatpak](https://img.shields.io/badge/Flatpak-Sandbox-blue?logo=flatpak&logoColor=white)](https://github.com/granafilo/GnomeThemeManager/releases)
+A modern, native theme manager and customization suite designed for the **GNOME Desktop Environment** using **GTK4** and **Libadwaita**.
 
-A modern, native theme manager and customization suite for the **GNOME Desktop environment** (GTK4 & Libadwaita).
+[![Platform: GNOME](https://img.shields.io/badge/Platform-Linux%20GNOME%2042%2B-4EAA25?logo=gnome&logoColor=white)](https://www.gnome.org/)
+[![Toolkit: GTK4 & Libadwaita](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)](https://gnome.pages.gitlab.gnome.org/libadwaita/)
+[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Packaging: Flatpak](https://img.shields.io/badge/Packaging-Flatpak-4A90E2?logo=flatpak&logoColor=white)](https://github.com/granafilo/GnomeThemeManager/releases)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
+[![CI Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
 
-**Current release:** v1.5.1
+**Current release:** v1.5.2
+
+[![GNOME Theme Manager Showcase](docs/screenshot/01-current-status.png)](docs/screenshot/01-current-status.png)
+
+</div>
 
 ---
 
 ## ✨ Features
 
-- **🌐 Online Theme Store**:
-  - Browse, search, and filter thousands of themes from **Pling** and **OpenDesktop** across GTK, Shell, Icons, and Cursors.
-  - High-resolution screenshot inspection, author ratings, download counts, and 1-click automatic installation into `~/.themes` and `~/.icons`.
+- **🌐 Integrated Online Store**:
+  - Discover, search, and filter thousands of themes from **Pling** and **OpenDesktop** across GTK, GNOME Shell, Icons, and Cursors.
+  - Inspect high-resolution screenshots, author ratings, and install with 1-click directly into `~/.themes` and `~/.icons`.
 - **🧩 GNOME Shell Extensions Manager**:
-  - Live list of user and system extensions with instant enable/disable toggles.
-  - Direct access to individual extension settings dialogs, system Extensions app, and extensions.gnome.org catalog.
-- **🎨 Unified Theme Management**:
-  - Browse, preview, and apply **GTK 3/4**, **GNOME Shell**, **Icon Packs**, and **Cursors**.
-  - **Global Themes**: Save, switch, and share complete desktop setups in 1 click with live GSettings synchronization.
-  - **🌗 Color Scheme Preferences**: 1-click toggling between Default (Light), Dark, and Light appearance across all views.
+  - Manage user and system extensions with instant enable/disable toggles.
+  - Access extension preferences dialogs directly, or browse the official catalog with compatibility checks.
+- **🎨 Unified Theme & Global Presets**:
+  - Manage and preview **GTK 3/4**, **GNOME Shell**, **Icon Packs**, and **Cursor** themes in one place.
+  - **Global Themes**: Save, switch, and export comprehensive desktop setups in a single click with real-time GSettings synchronization.
+  - **🌗 Color Scheme Integration**: Synchronize seamlessly with GNOME dark and light appearance modes.
 - **🖌️ Interactive Theme Editor & Mixer**:
-  - Mix installed components into custom Global Themes with localized option bindings.
-  - Customize extracted GTK and Shell palette colors with live preview and safe auto-rollback.
-  - Extract adaptive accent color palettes from your desktop wallpaper.
+  - Mix individual elements from different themes into tailored Global Themes.
+  - Live color palette editing with safety rollback.
+  - Wallpaper-based adaptive color palette extraction.
 - **🔤 Typography & Font Control**:
-  - Configure Interface, Document, and Monospace fonts with native font dialogs.
-  - Live adjustment of global display text scaling factor.
-- **💻 GNOME Terminal Palette Customizer**:
-  - Manage profiles, derive 16-color ANSI palettes from themes, adjust background transparency, and configure terminal fonts.
-- **📦 Smart Installer & Theme Validation**:
-  - Drag-and-drop or select `.zip` / `.tar.*` archives and folders with pre-install integrity checks.
-  - Safe theme uninstallation with active-theme protections.
-- **🛡️ Sandbox Integration & In-App Guide**:
-  - Automatic theme sync for **Flatpak** overrides and **Snap** custom content connectors.
-  - In-app interactive guide modal and conditional runtime diagnostics.
+  - Configure Interface, Document, and Monospace fonts with native font pickers.
+  - Real-time global text scaling factor adjustment.
+- **💻 GNOME Terminal Palettes**:
+  - Customize profiles, derive 16-color ANSI palettes from themes, adjust background transparency, and manage monospace fonts.
+- **📦 Smart Archive Installer & Safety Protections**:
+  - Drag-and-drop `.zip` and `.tar.*` archives with pre-installation validation.
+  - Active-theme protection prevents accidental deletion of themes currently in use.
+- **🛡️ First-Class Sandbox Integration**:
+  - Automatic filesystem overrides for **Flatpak** applications (`xdg-data/themes:ro`, `xdg-data/icons:ro`).
+  - Native custom Content Snap generation for **Snap** applications.
 
 ---
 
-## 🖥️ Compatibility & Tested Environments
+## 📸 Screenshots
 
-GNOME Theme Manager is designed for modern GNOME desktop environments (GNOME 42+) and is actively tested on:
+| 🌐 Integrated Online Store | 🖌️ Interactive Theme Editor & Mixer |
+| :---: | :---: |
+| [![Online Store](docs/screenshot/02-online-store.png)](docs/screenshot/02-online-store.png) | [![Theme Editor](docs/screenshot/03-theme-editor.png)](docs/screenshot/03-theme-editor.png) |
+
+| 🎨 Global Themes & Desktop Presets | 🧩 GNOME Shell Extensions Manager |
+| :---: | :---: |
+| [![Global Themes](docs/screenshot/04-global-themes.png)](docs/screenshot/04-global-themes.png) | [![Extensions Manager](docs/screenshot/05-extension-manager.png)](docs/screenshot/05-extension-manager.png) |
+
+---
+
+## 🖥️ Compatibility
+
+GNOME Theme Manager targets modern GNOME desktop releases (GNOME 42+) and is actively tested on:
 
 | Distribution | GNOME Version | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| **Ubuntu 24.04 LTS** | GNOME 46 | ✅ Verified | Primary reference target; full Libadwaita & GSettings integration |
-| **Zorin OS 17+** | GNOME 46 | ✅ Verified | Custom appearance extensions & layout compatibility |
+| **Ubuntu 24.04 LTS** | GNOME 46 | ✅ Verified | Primary reference target; native Libadwaita & GSettings |
+| **Zorin OS 17+** | GNOME 46 | ✅ Verified | Validated with custom desktop layouts |
 | **Fedora 44** | GNOME 50 | ✅ Verified | Upstream GNOME stack & Libadwaita stylesheets |
-| **CachyOS** | GNOME 50 | ✅ Verified | Cutting-edge rolling release; full GNOME 50+ Libadwaita CSS stylesheets support |
+| **CachyOS / Arch** | GNOME 50 | ✅ Verified | Rolling release testing with native Libadwaita styles |
 
 ---
 
-## Prerequisites
+## 📦 Installation
 
-### Make the launcher executable
+GNOME Theme Manager is distributed primarily via **Flatpak**, guaranteeing sandboxed security along with native system configuration access.
 
-To run local helper scripts, custom desktop launchers, or build scripts, ensure execution permissions are granted:
-
-```bash
-# Local development and build helper scripts:
-chmod +x scripts/build-flatpak.sh scripts/run_app.sh scripts/run_tests.sh scripts/run_cli.sh
-```
-
-### Sandbox Integration (Flatpak & Snap)
-
-- **Flatpak**: Automatic theme propagation via filesystem overrides (`xdg-data/themes:ro`, `xdg-data/icons:ro`).
-- **Snap**: Native integration via `gtk-common-themes` and local dynamic Content Snaps.
-
-For deep-dive details on sandbox integration and snap configuration, see **[docs/SANDBOX.md](docs/SANDBOX.md)**.
-
----
-
-## ⚡ Quick Start
-
-### 📦 Installation on Linux (Flatpak)
-
-GNOME Theme Manager is distributed primarily via **Flatpak**, offering sandboxed security with full native desktop customization capabilities.
-
-#### 🚀 Method 1 (Recommended / Click-to-Install): `.flatpakref`
+### Method 1: Single-Click Installer (`.flatpakref`)
 Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
-- **GUI**: Double-click `GNOMEThemeManager.flatpakref` in Files (Nautilus) or open it with GNOME Software / App Center to install with 1 click.
-- **CLI (passwordless / user space)**:
+- **GUI**: Double-click the file in Nautilus (Files) or open with GNOME Software.
+- **Terminal (User mode, no root required)**:
   ```bash
   flatpak install --user GNOMEThemeManager.flatpakref
   ```
 
-#### 📦 Method 2 (Offline / Standalone Single-File): `.flatpak` Bundle
-Download the standalone single-file bundle `GNOMEThemeManager-1.5.1-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+### Method 2: Standalone Bundle (`.flatpak`)
+For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.2-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-flatpak install --user --bundle GNOMEThemeManager-1.5.1-x86_64.flatpak
+flatpak install --user --bundle GNOMEThemeManager-1.5.2-x86_64.flatpak
 ```
 
-#### 🌐 Method 3 (Flathub - Future / Upstream)
-```bash
-flatpak install flathub io.github.granafilo.ThemeManager
-```
-
-#### 🎯 Running the Application
-Once installed, launch the application from the GNOME App Grid or via terminal:
+### Launching the Application
+Launch GNOME Theme Manager from your desktop application grid or directly from the terminal:
 ```bash
 flatpak run io.github.granafilo.ThemeManager
 ```
 
 ---
 
-### 🔨 Build Flatpak Locally
-To build the Flatpak repository, standalone `.flatpak` bundle, and `.flatpakref` on your system:
-```bash
-chmod +x scripts/build-flatpak.sh
-./scripts/build-flatpak.sh
-```
+## 💻 CLI Usage
 
----
-
-### 💻 Run from Source (GUI & CLI)
-
-Clone the repository and run using the automated launcher scripts:
+GNOME Theme Manager includes a standalone, scriptable CLI:
 
 ```bash
-# 1. Setup environment and install dependencies
-./scripts/install_dependencies.sh
-
-# 2. Launch the GTK4 / Libadwaita GUI
-./scripts/run_app.sh
-```
-
----
-
-## 💻 CLI Usage Examples
-
-GNOME Theme Manager includes a full-featured CLI for terminal lovers and scripting:
-
-```bash
-# Show currently applied themes
+# View active theme configuration
 gnome-theme-manager current
 
-# List available themes
+# List available GTK or icon themes
 gnome-theme-manager list --type gtk
+gnome-theme-manager list --type icon
 
-# Apply a combination of themes
+# Apply a custom combination
 gnome-theme-manager apply --gtk "Adwaita-dark" --icon "Papirus" --color-scheme prefer-dark
 
 # Manage Global Theme presets
@@ -157,42 +128,34 @@ gnome-theme-manager install -f ~/Downloads/Nordic.tar.xz
 
 ---
 
-## 🛠️ Development & Testing
+## Prerequisites
 
-We provide full automation for development, testing, and formatting:
+### Make the launcher executable
+If you are running the project from source or executing local helper tools and desktop launcher scripts, make sure execution permissions are granted:
 
 ```bash
-# Run entire test suite (Pytest + Coverage + Ruff + Mypy)
-./scripts/run_tests.sh
+# Grant execution permissions to developer helper scripts and launchers:
+chmod +x scripts/run_cli.sh scripts/run_app.sh scripts/build-flatpak.sh scripts/run_tests.sh
 ```
 
-For complete instructions on development workflows, virtualenv setup, translation tools, and contributing guidelines, check out:
-👉 **[Development Guide](docs/DEVELOPMENT.md)** | **[Contributing Guidelines](CONTRIBUTING.md)**
+### Sandbox Integration (Flatpak & Snap)
+- **Flatpak**: Theme propagation is applied automatically via user-level filesystem overrides (`xdg-data/themes:ro`, `xdg-data/icons:ro`).
+- **Snap**: System and custom themes are interfaced via `gtk-common-themes` and local Content Snaps.
+
+For troubleshooting and manual permission overrides, refer to **[docs/SANDBOX.md](docs/SANDBOX.md)**.
 
 ---
 
-## 🗺️ Roadmap & Coming Soon
+## 🛠️ Contributing & Development
 
-Development is actively progressing towards **Phase 6 — Profiles & Automations (v1.6)**:
-- 🌗 **Light & Dark Profiles**: Group and switch theme presets depending on time or lighting condition.
-- ⚡ **Auto-Switching**: Dynamic reaction to GNOME `color-scheme` changes.
-- 🚀 **Autostart Services**: Automated background application at system startup via user systemd units.
-- 📤 **Profile Bundling**: Single-file export and import of complete profiles and presets.
-
-For complete release history and upcoming milestones, see **[Roadmap](docs/ROADMAP.md)**.
-
----
-
-## 📚 Documentation
-
-- 📦 **[Installation & System Requirements](INSTALL.md)**: Distro-specific dependencies and Flatpak setup.
-- 🛠️ **[Development & Quality Guide](docs/DEVELOPMENT.md)**: Testing, linting, type-checking, and i18n workflows.
-- 📦 **[Sandbox Integration (Snap & Flatpak)](docs/SANDBOX.md)**: Details on sandbox permissions and theme propagation.
-- 🗺️ **[Roadmap](docs/ROADMAP.md)**: Project milestones and upcoming features.
-- 📝 **[Changelog](CHANGELOG.md)**: Version history and release notes.
+We welcome community contributions! Please review our guidelines before submitting a pull request:
+- 📖 **[Developer Guide](docs/DEVELOPMENT.md)**: Distro dependencies, virtualenv setup, pytest, mypy, and Flatpak packaging.
+- 📐 **[Architecture Overview](docs/ARCHITECTURE.md)**: Core vs UI separation, GSettings bridges, and data storage.
+- 🤝 **[Contributing Guidelines](CONTRIBUTING.md)**: Pull request checklist, commit conventions, and code standards.
+- 🗺️ **[Project Roadmap](docs/ROADMAP.md)**: Upcoming milestones and planned features (Phase 6+).
 
 ---
 
 ## ⚖️ License
 
-GNOME Theme Manager is open-source software licensed under the [GNU General Public License v3.0 or later (GPL-3.0-or-later)](LICENSE).
+GNOME Theme Manager is free and open-source software licensed under the **[GNU General Public License v3.0 or later (GPL-3.0-or-later)](LICENSE)**.

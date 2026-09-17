@@ -638,9 +638,11 @@ class ThemeManager:
         return sorted(themes, key=lambda t: (t.theme_type.value, t.name.lower()))
 
     def invalidate_themes_cache(self) -> None:
-        """Invalidate scanner cache so next theme list call rescans the filesystem."""
+        """Invalidate scanner and validator caches so next theme list call rescans the filesystem."""
         if hasattr(self._scanner, "invalidate_cache"):
             self._scanner.invalidate_cache()
+        if hasattr(self._validator, "invalidate_cache"):
+            self._validator.invalidate_cache()
 
     def find_theme(self, name: str, theme_type: ThemeType) -> Theme | None:
         """Find a specific theme by name and type on the filesystem.

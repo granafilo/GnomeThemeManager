@@ -5,7 +5,8 @@
   <requires lib="gtk" version="4.0"/>
   <requires lib="libadwaita" version="1.0"/>
   <object class="GtkStack" id="page_root">
-    <property name="transition-type">none</property>
+    <property name="transition-type">crossfade</property>
+    <property name="transition-duration">150</property>
     <property name="vexpand">true</property>
     <property name="hexpand">true</property>
 
@@ -70,6 +71,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_gtk_theme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GTK Theme (Applications)</property>
                         <property name="subtitle" translatable="yes">Not set</property>
                         <child type="prefix">
@@ -78,11 +80,22 @@
                             <property name="pixel-size">24</property>
                           </object>
                         </child>
+                        <child type="suffix">
+                          <object class="GtkLabel" id="gtk_theme_badge">
+                            <property name="valign">center</property>
+                            <property name="visible">false</property>
+                            <style>
+                              <class name="gtm-status-badge"/>
+                              <class name="caption"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_icon_theme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Icon Theme</property>
                         <property name="subtitle" translatable="yes">Not set</property>
                         <child type="prefix">
@@ -91,11 +104,22 @@
                             <property name="pixel-size">24</property>
                           </object>
                         </child>
+                        <child type="suffix">
+                          <object class="GtkLabel" id="icon_theme_badge">
+                            <property name="valign">center</property>
+                            <property name="visible">false</property>
+                            <style>
+                              <class name="gtm-status-badge"/>
+                              <class name="caption"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_cursor_theme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Cursor Theme</property>
                         <property name="subtitle" translatable="yes">Not set</property>
                         <child type="prefix">
@@ -104,11 +128,22 @@
                             <property name="pixel-size">24</property>
                           </object>
                         </child>
+                        <child type="suffix">
+                          <object class="GtkLabel" id="cursor_theme_badge">
+                            <property name="valign">center</property>
+                            <property name="visible">false</property>
+                            <style>
+                              <class name="gtm-status-badge"/>
+                              <class name="caption"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
                       <object class="AdwActionRow" id="row_shell_theme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GNOME Shell Theme</property>
                         <property name="subtitle" translatable="yes">System Default</property>
                         <child type="prefix">
@@ -117,11 +152,22 @@
                             <property name="pixel-size">24</property>
                           </object>
                         </child>
+                        <child type="suffix">
+                          <object class="GtkLabel" id="shell_theme_badge">
+                            <property name="valign">center</property>
+                            <property name="visible">false</property>
+                            <style>
+                              <class name="gtm-status-badge"/>
+                              <class name="caption"/>
+                            </style>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
                       <object class="AdwComboRow" id="row_color_scheme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Color Scheme</property>
                         <property name="subtitle" translatable="yes">Choose between default, dark, or light appearance for applications</property>
                         <child type="prefix">
@@ -143,12 +189,23 @@
                     <child>
                       <object class="AdwActionRow" id="row_gtk4_override">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GTK4 Override Status</property>
                         <property name="subtitle" translatable="yes">Not available (applied during theme switch)</property>
                         <child type="prefix">
                           <object class="GtkImage">
                             <property name="icon-name">utilities-system-monitor-symbolic</property>
                             <property name="pixel-size">24</property>
+                          </object>
+                        </child>
+                        <child type="suffix">
+                          <object class="GtkLabel" id="gtk4_override_badge">
+                            <property name="valign">center</property>
+                            <property name="visible">false</property>
+                            <style>
+                              <class name="gtm-status-badge"/>
+                              <class name="caption"/>
+                            </style>
                           </object>
                         </child>
                       </object>
@@ -164,6 +221,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_gsettings_status">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GSettings / Gio</property>
                         <property name="subtitle" translatable="yes">Available</property>
                         <child type="prefix">
@@ -177,6 +235,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_user_themes_path">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">User Themes Folder</property>
                         <property name="subtitle" translatable="yes">~/.local/share/themes</property>
                         <child type="prefix">
@@ -190,6 +249,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_user_icons_path">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">User Icons Folder</property>
                         <property name="subtitle" translatable="yes">~/.local/share/icons</property>
                         <child type="prefix">
@@ -211,6 +271,7 @@
                     <child>
                       <object class="AdwComboRow" id="dropdown_fallback_gtk3">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GTK3 Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GTK3 applications</property>
                       </object>
@@ -218,6 +279,7 @@
                     <child>
                       <object class="AdwComboRow" id="dropdown_fallback_gtk4">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GTK4 Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GTK4 and Libadwaita applications</property>
                       </object>
@@ -225,6 +287,7 @@
                     <child>
                       <object class="AdwComboRow" id="dropdown_fallback_shell">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">GNOME Shell Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for GNOME Shell</property>
                       </object>
@@ -232,6 +295,7 @@
                     <child>
                       <object class="AdwComboRow" id="dropdown_fallback_icons">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Icons Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback pack for icons</property>
                       </object>
@@ -239,6 +303,7 @@
                     <child>
                       <object class="AdwComboRow" id="dropdown_fallback_cursors">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Cursors Fallback</property>
                         <property name="subtitle" translatable="yes">Fallback theme for mouse cursors</property>
                       </object>
@@ -254,6 +319,7 @@
                     <child>
                       <object class="AdwSwitchRow" id="row_auto_enable_user_theme">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Auto-enable User Themes extension</property>
                         <property name="subtitle" translatable="yes">Automatically activate GNOME Shell User Themes extension when applying a shell theme without showing confirmation prompt.</property>
                       </object>
@@ -269,6 +335,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_flatpak_status">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Flatpak</property>
                         <property name="subtitle" translatable="yes">Available</property>
                         <child type="prefix">
@@ -282,6 +349,7 @@
                     <child>
                       <object class="AdwActionRow" id="row_snap_status">
                         <property name="subtitle-lines">2</property>
+                        <property name="title-lines">1</property>
                         <property name="title" translatable="yes">Snap</property>
                         <property name="subtitle" translatable="yes">Available</property>
                         <child type="prefix">

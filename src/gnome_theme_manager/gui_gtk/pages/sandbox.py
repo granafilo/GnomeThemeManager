@@ -384,7 +384,7 @@ class SandboxPage:
 
                 if has_custom_snap:
                     self.snap_installed_content_row.set_subtitle(
-                        f"{expected_snap_name} ({_('Installed & Active')})"
+                        GLib.markup_escape_text(f"{expected_snap_name} ({_('Installed & Active')})")
                     )
                     if connected_targets:
                         apps_list = ", ".join(connected_targets)

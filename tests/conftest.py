@@ -1,26 +1,14 @@
-import gi
-
-gi.require_version("Gtk", "4.0")
-gi.require_version("Adw", "1")
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import gi
 import pytest
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
 from gi.repository import Gio, GLib  # noqa: F401
 
 import gnome_theme_manager
-
-
-@pytest.fixture(autouse=True)
-def default_test_locale_en(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Ensure tests run with English locale by default unless explicitly overridden."""
-    monkeypatch.setenv("LANGUAGE", "en")
-    monkeypatch.setenv("LC_ALL", "C.UTF-8")
-    monkeypatch.setenv("LANG", "C.UTF-8")
-    # Bind gettext to English identity/fallback
-    gnome_theme_manager._ = lambda s: s
-
-
 from gnome_theme_manager.core.gsettings import Gtk4OverrideStatus
 from gnome_theme_manager.core.manager import ThemeManager
 from gnome_theme_manager.core.models import (
@@ -31,6 +19,16 @@ from gnome_theme_manager.core.models import (
     ThemeSet,
     ThemeType,
 )
+
+
+@pytest.fixture(autouse=True)
+def default_test_locale_en(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure tests run with English locale by default unless explicitly overridden."""
+    monkeypatch.setenv("LANGUAGE", "en")
+    monkeypatch.setenv("LC_ALL", "C.UTF-8")
+    monkeypatch.setenv("LANG", "C.UTF-8")
+    # Bind gettext to English identity/fallback
+    gnome_theme_manager._ = lambda s: s
 
 
 @pytest.fixture

@@ -710,9 +710,9 @@ class ThemeEditorPage:
 
             swatch_box = Gtk.Box()
             swatch_box.set_size_request(24, 24)
-            swatch_box.add_css_class("card")
+            swatch_box.add_css_class("gtm-swatch-circle")
             swatch_provider = Gtk.CssProvider()
-            css_data = f"box {{ background-color: {color_hex}; border-radius: 9999px; min-width: 24px; min-height: 24px; border: 2px solid rgba(255,255,255,0.3); }}"
+            css_data = f"box {{ background-color: {color_hex}; }}"
             try:
                 swatch_provider.load_from_data(css_data.encode("utf-8"))
             except Exception:

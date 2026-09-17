@@ -3,6 +3,7 @@
 """Custom color picker button and dialog wrapper."""
 
 import logging
+import math
 import re
 from typing import Any, ClassVar
 
@@ -73,7 +74,8 @@ class ColorPickerButton(Gtk.Box):
 
         btn_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         self.swatch = Gtk.DrawingArea()
-        swatch_size = 28 if compact else 22
+        self.swatch.add_css_class("gtm-swatch-circle")
+        swatch_size = 28 if compact else 24
         self.swatch.set_content_width(swatch_size)
         self.swatch.set_content_height(swatch_size)
         self.swatch.set_valign(Gtk.Align.CENTER)
@@ -102,25 +104,12 @@ class ColorPickerButton(Gtk.Box):
         width: int,
         height: int,
     ) -> None:
-        """Draw rounded color swatch preview using Cairo."""
+        """Draw circular color swatch preview using Cairo."""
         rgba = hex_to_rgba(self._current_hex)
-        radius = 5.0
-        # Draw rounded rectangle
-        degrees = 3.141592653589793 / 180.0
-        cr.new_sub_path()
-        cr.arc(width - radius, radius, radius, -90 * degrees, 0 * degrees)
-        cr.arc(width - radius, height - radius, radius, 0 * degrees, 90 * degrees)
-        cr.arc(radius, height - radius, radius, 90 * degrees, 180 * degrees)
-        cr.arc(radius, radius, radius, 180 * degrees, 270 * degrees)
-        cr.close_path()
-
+        radius = min(width, height) / 2.0
+        cr.arc(width / 2.0, height / 2.0, radius, 0, 2 * math.pi)
         cr.set_source_rgba(rgba.red, rgba.green, rgba.blue, rgba.alpha)
-        cr.fill_preserve()
-
-        # Outline border
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.4)
-        cr.set_line_width(1.0)
-        cr.stroke()
+        cr.fill()
 
     def get_color_hex(self) -> str:
         """Return current hex color string."""

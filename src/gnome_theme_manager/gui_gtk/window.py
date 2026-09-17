@@ -47,6 +47,9 @@ logger = logging.getLogger("gnome_theme_manager.gui_gtk.window")
 # Path to associated UI template file
 UI_FILE = Path(__file__).parent / "ui" / "window.ui"
 
+# Path to centralized semantic stylesheet
+STYLE_FILE = Path(__file__).parent / "style.css"
+
 # Path to bundled fallback icons directory (data/icons)
 BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons"
 
@@ -54,11 +57,11 @@ BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons
 COLLAPSE_BREAKPOINT_WIDTH: int = 0
 
 # Main window minimum geometry to keep sidebar + content fully usable
-MIN_WINDOW_WIDTH: int = 1060
+MIN_WINDOW_WIDTH: int = 1100
 MIN_WINDOW_HEIGHT: int = 700
 
 # Main window default geometry at startup
-DEFAULT_WINDOW_WIDTH: int = 1120
+DEFAULT_WINDOW_WIDTH: int = 1160
 DEFAULT_WINDOW_HEIGHT: int = 740
 
 
@@ -134,6 +137,7 @@ class MainWindow(Adw.ApplicationWindow):
         # Minimum sizing ensuring all pages/cards are fully visible without truncation and satisfying Libadwaita constraints
         self.set_size_request(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
         self.set_default_size(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+        self.add_css_class("main-window")
 
         # Apply application-wide CSS styling for enhanced readability and typography
         self._setup_custom_styling()
@@ -155,6 +159,7 @@ class MainWindow(Adw.ApplicationWindow):
         self.toast_overlay: Adw.ToastOverlay = self.builder.get_object("toast_overlay")
         self.split_view: Adw.NavigationSplitView = self.builder.get_object("split_view")
         self.sidebar_page: Adw.NavigationPage = self.builder.get_object("sidebar_page")
+        self.sidebar_header_bar: Adw.HeaderBar = self.builder.get_object("sidebar_header_bar")
         self.sidebar_list_box: Gtk.ListBox = self.builder.get_object("sidebar_list_box")
         self.content_page: Adw.NavigationPage = self.builder.get_object("content_page")
         self.content_header_bar: Adw.HeaderBar = self.builder.get_object("content_header_bar")
@@ -321,14 +326,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.themes_page.on_theme_applied = _on_theme_applied_callback
 
         def _on_theme_installed_callback() -> None:
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
 
         self.installer_page.on_theme_installed = _on_theme_installed_callback
         self.store_page.on_theme_installed = _on_theme_installed_callback
 
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
             self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
@@ -349,283 +354,31 @@ class MainWindow(Adw.ApplicationWindow):
         self._setup_focus_behavior()
 
     def _setup_custom_styling(self) -> None:
-        """Inject CSS styles for enhanced readability, larger font scale, and comfortable spacing."""
+        """Load and apply application-wide semantic CSS stylesheet."""
         from gi.repository import Gdk
 
-        css_provider = Gtk.CssProvider()
-        css_data = """
-        /* Typography scale enhancement */
-        window.main-window {
-            font-size: 1.04rem;
-        }
+        if not STYLE_FILE.is_file():
+            logger.debug("Custom style file not found: %s", STYLE_FILE)
+            return
 
-        /* ActionRow titles & subtitles comfortable scale */
-        row.activatable, preferencesgroup list {
-            min-height: 52px;
-        }
-
-        /* Slightly larger sidebar icons and rows */
-        .navigation-sidebar > row {
-            min-height: 44px;
-            padding: 4px 6px;
-        }
-
-        /* Modern Libadwaita GtkDropDown styling */
-        dropdown > button {
-            min-width: 180px;
-            min-height: 38px;
-            padding: 4px 14px;
-            border-radius: 8px;
-            font-weight: 500;
-            color: @window_fg_color;
-        }
-
-        dropdown > button:hover {
-            color: @window_fg_color;
-            background-color: alpha(@window_fg_color, 0.08);
-        }
-
-        dropdown > button image {
-            margin-left: 8px;
-        }
-
-        dropdown > button label {
-            font-weight: 500;
-            color: @window_fg_color;
-        }
-
-        dropdown > button:hover label {
-            color: @window_fg_color;
-        }
-
-        /* Fix .warning contrast on rows, combo rows, and dropdown buttons on hover */
-        row.warning,
-        adw-combo-row.warning {
-            background-color: alpha(@warning_color, 0.08);
-        }
-
-        row.warning:hover,
-        adw-combo-row.warning:hover {
-            background-color: alpha(@warning_color, 0.16);
-        }
-
-        row.warning label,
-        row.warning:hover label,
-        adw-combo-row.warning label,
-        adw-combo-row.warning:hover label {
-            color: @window_fg_color;
-        }
-
-        row.warning .subtitle,
-        adw-combo-row.warning .subtitle {
-            color: alpha(@window_fg_color, 0.75);
-        }
-
-        row.warning dropdown > button,
-        row.warning dropdown > button:hover,
-        adw-combo-row.warning dropdown > button,
-        adw-combo-row.warning dropdown > button:hover {
-            color: @window_fg_color;
-            background-color: alpha(@window_fg_color, 0.10);
-        }
-
-        row.warning dropdown > button label,
-        row.warning dropdown > button:hover label,
-        adw-combo-row.warning dropdown > button label,
-        adw-combo-row.warning dropdown > button:hover label {
-            color: @window_fg_color;
-        }
-
-        /* Standard input / entry text colors adhering to current Libadwaita theme */
-        entry,
-        searchentry,
-        editable,
-        entry text,
-        searchentry text,
-        entry > text,
-        searchentry > text,
-        entry.numeric {
-            color: @window_fg_color;
-        }
-
-        entry:focus-within,
-        searchentry:focus-within {
-            color: @window_fg_color;
-        }
-
-        /* Popover list styling for dropdown menus */
-        popover listview row,
-        popover.menu listview row,
-        popover.menu listview > row {
-            min-height: 38px;
-            padding: 6px 12px;
-            color: @window_fg_color;
-        }
-
-        popover listview row:hover,
-        popover listview > row:hover,
-        popover.menu listview row:hover,
-        popover.menu listview > row:hover,
-        popover listview row:selected,
-        popover listview > row:selected,
-        popover.menu listview row:selected,
-        popover.menu listview > row:selected {
-            background-color: @theme_selected_bg_color;
-            color: @theme_selected_fg_color;
-        }
-
-        /* Color picker HEX entries & buttons */
-        entry.numeric {
-            min-height: 36px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-weight: 500;
-        }
-
-        /* Card list padding and border radius */
-        .boxed-list {
-            margin-top: 6px;
-            margin-bottom: 6px;
-        }
-
-        /* Online Store Cards & Banners */
-        .store-hub-category-card {
-            background-color: alpha(@card_bg_color, 0.75);
-            border: 1px solid alpha(@borders, 0.45);
-            border-radius: 16px;
-            padding: 4px;
-            transition: all 200ms ease-in-out;
-        }
-
-        .store-hub-category-card:hover {
-            background-color: alpha(@card_bg_color, 0.95);
-            border-color: alpha(@accent_color, 0.7);
-        }
-
-        .store-theme-card {
-            background-color: alpha(@card_bg_color, 0.75);
-            border: 1px solid alpha(@borders, 0.45);
-            border-radius: 16px;
-            padding: 12px;
-        }
-
-        .store-theme-card:hover {
-            background-color: alpha(@card_bg_color, 0.95);
-            border-color: alpha(@accent_color, 0.6);
-        }
-
-        .store-banner-box {
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
-            border-radius: 12px;
-            min-height: 150px;
-        }
-
-        .store-banner-box picture, .store-banner-box image {
-            border-radius: 12px;
-        }
-
-        .store-detail-preview-frame {
-            background-color: alpha(@window_bg_color, 0.5);
-            border: 1px solid alpha(@borders, 0.3);
-            border-radius: 14px;
-            padding: 16px;
-        }
-
-        .store-thumb-btn {
-            border-radius: 8px;
-            padding: 2px;
-            border: 2px solid transparent;
-        }
-
-        .store-thumb-btn.suggested-action {
-            border-color: @accent_color;
-        }
-
-        .store-lightbox-bg {
-            background-color: #0b0d13;
-            padding: 16px;
-        }
-
-        /* Solid opaque background for status pages and loading stacks to completely prevent bleed-through */
-        adwstatuspage,
-        .solid-loading-page,
-        stack#content_stack,
-        stack#extensions_root,
-        stack#page_root,
-        #loading_page {
-            background-color: @window_bg_color;
-            opacity: 1;
-        }
-
-        /* Zorin OS & Custom Theme compatibility: Reset unwanted box-shadow, border and background on AdwPreferencesGroup headers */
-        preferencesgroup > box > box,
-        preferencesgroup > box > box.header,
-        preferencesgroup > box > .labels {
-            box-shadow: none;
-            border: none;
-            background: transparent;
-            background-color: transparent;
-        }
-
-        /* Ensure boxed-list rows do not show contrasting background boxes when insensitive/disabled */
-        list.boxed-list > row:disabled,
-        preferencesgroup list > row:disabled {
-            background-color: transparent;
-        }
-
-        .card,
-        list.boxed-list {
-            background-color: @card_bg_color;
-        }
-
-        /* High-contrast, theme-adaptive selection states (Fix 2) */
-        list.boxed-list > row:selected,
-        list.boxed-list > row.activatable:selected,
-        list.boxed-list > row:focus:selected,
-        .navigation-sidebar row:selected {
-            background-color: @accent_bg_color;
-            color: @accent_fg_color;
-        }
-
-        list.boxed-list > row:selected label,
-        list.boxed-list > row:selected image,
-        list.boxed-list > row:selected .title,
-        list.boxed-list > row:selected .subtitle {
-            color: @accent_fg_color;
-        }
-
-        list.boxed-list > row:selected .dim-label,
-        list.boxed-list > row:selected .caption {
-            color: alpha(@accent_fg_color, 0.85);
-        }
-
-        list.boxed-list > row.activatable:hover:not(:selected) {
-            background-color: alpha(@accent_bg_color, 0.12);
-        }
-
-        list.boxed-list > row.activatable:active {
-            background-color: alpha(@accent_bg_color, 0.24);
-        }
-
-        list.boxed-list > row:focus-visible {
-            outline: 2px solid @accent_color;
-            outline-offset: -2px;
-        }
-        """
         try:
-            if hasattr(css_provider, "load_from_string"):
-                css_provider.load_from_string(css_data)
+            css_provider = Gtk.CssProvider()
+            if hasattr(css_provider, "load_from_path"):
+                css_provider.load_from_path(str(STYLE_FILE))
+            elif hasattr(css_provider, "load_from_string"):
+                css_provider.load_from_string(STYLE_FILE.read_text(encoding="utf-8"))
             else:
-                css_provider.load_from_data(css_data.encode("utf-8"))
+                css_provider.load_from_data(STYLE_FILE.read_bytes())
+
             display = Gdk.Display.get_default()
             if display is not None:
                 Gtk.StyleContext.add_provider_for_display(
                     display,
                     css_provider,
-                    Gtk.STYLE_PROVIDER_PRIORITY_USER + 1,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
                 )
         except Exception as err:
-            logger.debug("Failed to apply custom CSS styling: %s", err)
+            logger.warning("Failed to apply custom CSS styling: %s", err)
 
     def _setup_shortcuts(self, app: Adw.Application) -> None:
         """Configure actions and accelerators for close (Ctrl+W) and quit (Ctrl+Q)."""
@@ -756,7 +509,7 @@ class MainWindow(Adw.ApplicationWindow):
         elif self._current_page_id and (
             self._current_page_id == "themes" or self._current_page_id.startswith("themes_")
         ):
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
 
     def _on_edit_global_theme_requested(self, theme: Any) -> None:
         """Navigate to the editor page and load a user Global Theme for editing."""
@@ -831,7 +584,10 @@ class MainWindow(Adw.ApplicationWindow):
                 self.refresh_button.set_sensitive(not ctrl.is_loading)
 
         if page_id.startswith("themes") and not self.themes_page.is_loading:
-            self.themes_page.refresh()
+            if self.themes_page.current_snapshot is None:
+                self.themes_page.refresh()
+            else:
+                self.themes_page._update_filtered_list()
         elif page_id == "status" and not self.status_page.is_loading:
             self.status_page.refresh()
         elif page_id == "global_themes" and not self.global_themes_page.is_loading:
@@ -967,7 +723,14 @@ class MainWindow(Adw.ApplicationWindow):
         if self.feedback_revealer is not None:
             self.feedback_revealer.set_reveal_child(True)
 
-        if timeout > 0:
+        if timeout < 0:
+            effective_timeout = 0
+        elif timeout > 0:
+            effective_timeout = timeout
+        else:
+            effective_timeout = 6 if has_error_kw else 4
+
+        if effective_timeout > 0:
 
             def _auto_hide() -> bool:
                 if self.feedback_revealer is not None:
@@ -975,12 +738,12 @@ class MainWindow(Adw.ApplicationWindow):
                 self._feedback_timeout_id = None
                 return GLib.SOURCE_REMOVE
 
-            self._feedback_timeout_id = GLib.timeout_add_seconds(timeout, _auto_hide)
+            self._feedback_timeout_id = GLib.timeout_add_seconds(effective_timeout, _auto_hide)
 
         if self.feedback_revealer is None and self.toast_overlay is not None:
             toast = Adw.Toast.new(message)
-            if timeout > 0:
-                toast.set_timeout(timeout)
+            if effective_timeout > 0:
+                toast.set_timeout(effective_timeout)
             self.toast_overlay.add_toast(toast)
 
     def _lazy_desktop_integration(self) -> bool:

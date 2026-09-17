@@ -54,6 +54,11 @@
   </provides>
 
   <releases>
+    <release version="1.5.2" date="2026-09-17">
+      <description>
+        <p>Release 1.5.2: UI styling modernization with semantic Libadwaita design system, flat headerbars, high-contrast alert badges, simulated terminal window preview, robust Pango markup escaping in Sandbox tools, mtime caching and instant theme category transitions.</p>
+      </description>
+    </release>
     <release version="1.5.1" date="2026-09-10">
       <description>
         <p>Release 1.5.1: Extensions catalog stabilization with multi-photo screenshot carousel gallery, unrestricted catalog search for all GNOME Shell versions, pixel-perfect column alignment, offline caching with atomic rollbacks, and reinforced incompatibility warnings.</p>

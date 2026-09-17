@@ -1,121 +1,189 @@
-# 🛠️ Development & Testing Guide
+# 🛠️ Developer & Contributor Guide
 
-This guide covers setting up your local environment, running the automated test suite, code quality checks, and internationalization workflows for **GNOME Theme Manager**.
+Welcome to the **GNOME Theme Manager** development guide. This document outlines local environment setup, testing standards, static analysis, translation workflows, and Flatpak packaging.
 
 ---
 
-## ⚡ 1. Automated Environment Setup (Recommended)
+## 1. System Requirements & Dependencies
 
-We provide automated helper scripts located in the `scripts/` directory to bootstrap your environment effortlessly:
+GNOME Theme Manager requires **Python 3.10+**, **GTK 4**, **Libadwaita**, and GObject Introspection.
 
+### Debian / Ubuntu 22.04 LTS / 24.04 LTS & Zorin OS
 ```bash
-# 1. Standard setup: installs system packages via APT, creates .venv, and installs dev dependencies
+sudo apt update
+sudo apt install -y \
+  python3-gi \
+  python3-gi-cairo \
+  gir1.2-gtk-4.0 \
+  gir1.2-adw-1 \
+  python3-venv \
+  python3-pip \
+  gettext
+```
+
+### Fedora 38+
+```bash
+sudo dnf install -y \
+  python3-gobject \
+  gtk4 \
+  libadwaita \
+  python3-pip \
+  gettext
+```
+
+### Arch Linux / CachyOS
+```bash
+sudo pacman -S --needed \
+  python-gobject \
+  gtk4 \
+  libadwaita \
+  python-pip \
+  gettext
+```
+
+---
+
+## 2. Setting Up the Local Environment
+
+We recommend developing within a virtual environment configured with `--system-site-packages` so Python can access the system GObject bindings (`gi`).
+
+### Automated Setup (Recommended)
+We provide an automated bootstrap script in `scripts/`:
+```bash
+# Creates .venv, installs dev requirements, and compiles translation catalogs
 ./scripts/install_dependencies.sh
-
-# Or global setup: also installs pytest, mypy, and ruff globally on the host system
-./scripts/install_dependencies.sh --global
 ```
 
-### What `install_dependencies.sh` does:
-- Verifies system libraries: `python3-gi`, `python3-gi-cairo`, `gir1.2-gtk-4.0`, `gir1.2-adw-1`, `python3-venv`.
-- Creates a virtual environment with `--system-site-packages` in `.venv`.
-- Installs Python dependencies in editable mode: `pip install -e ".[dev]"`.
-- Installs `mypy` and `ruff`.
-- Compiles gettext `.mo` translation catalogs.
-
----
-
-## 🧪 2. Running Tests & Quality Checks
-
-### Run All Checks at Once
+### Manual Setup
 ```bash
-./scripts/run_tests.sh
-```
-This script runs:
-1. **Pytest** with code coverage on `src/gnome_theme_manager/`.
-2. **Ruff** linter (`ruff check src tests`) and code format check (`ruff format --check src tests`).
-3. **Mypy** strict static type checking (`mypy --strict src`).
+# 1. Create virtual environment with access to system GTK4 bindings
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
 
-### Running Tools Individually
+# 2. Upgrade pip and install editable package with dev dependencies
+pip install --upgrade pip
+pip install -e ".[dev]"
 
-Inside `.venv` (or globally if installed with `--global`):
-
-```bash
-# Run unit & integration tests
-pytest -v
-
-# Run tests with coverage report
-pytest -v --cov=gnome_theme_manager
-
-# Linting
-ruff check src tests
-
-# Code formatting
-ruff format src tests
-
-# Strict type checking
-mypy --strict src
+# 3. Compile translation catalogs
+python3 scripts/compile_translations.py
 ```
 
 ---
 
-## 🚀 3. Running from Source
+## 3. Running from Source
 
-You can run the application directly from source without installing it globally:
+You can execute both the GTK4/Libadwaita GUI and the CLI directly from source:
 
-### Using the launcher script
+### Using Helper Scripts
 ```bash
-# Launch the GTK4 / Libadwaita Graphical Interface:
+# Launch the Libadwaita GUI
 ./scripts/run_app.sh
 
-# Run CLI commands:
-./scripts/run_app.sh current
-./scripts/run_app.sh list
-./scripts/run_app.sh apply --gtk "Adwaita-dark" --icon "Papirus"
+# Run CLI subcommands
+./scripts/run_cli.sh current
+./scripts/run_cli.sh list --type gtk
 ```
 
-### Running directly with Python
+### Using Python Directly
 ```bash
 source .venv/bin/activate
 export PYTHONPATH="$PWD/src"
 
-# GUI:
+# Launch GUI
 python3 -m gnome_theme_manager gui
 
-# CLI:
+# Launch CLI
 python3 -m gnome_theme_manager.cli.main --help
 ```
 
 ---
 
-## 🌐 4. Translations & Localization (i18n)
+## 4. Code Quality & Testing Standards
 
-GNOME Theme Manager uses `gettext` for multi-language support.
+All pull requests must pass the complete automated test suite, linting, and type verification.
 
-### Compiling translations
+### Run All Checks in One Step
 ```bash
-python3 scripts/compile_translations.py
+./scripts/run_tests.sh
 ```
 
-### Testing translations in different locales
+### Individual Quality Commands
+
+#### 1. Unit & Integration Tests (pytest)
+We enforce a minimum test coverage of **80%** on `src/gnome_theme_manager/core/`. All tests must be isolated and deterministic (using `tmp_path` fixtures).
 ```bash
-# Italian
-LC_ALL=it_IT.UTF-8 LANG=it_IT.UTF-8 ./scripts/run_app.sh
+pytest -v --cov=gnome_theme_manager
+```
 
-# English (Default)
-LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 ./scripts/run_app.sh
+#### 2. Linter & Code Formatter (Ruff)
+```bash
+# Check code style and formatting
+ruff check src tests
+ruff format --check src tests
 
-# Automated translation tests
+# Auto-fix lint and format issues
+ruff check --fix src tests
+ruff format src tests
+```
+
+#### 3. Strict Static Type Checking (Mypy)
+All code must comply with PEP 484 and pass strict type checks:
+```bash
+mypy --strict src
+```
+
+#### 4. Version Consistency Check
+Verifies single source of truth across `__init__.py`, `README.md`, `CHANGELOG.md`, and AppStream metadata:
+```bash
+python3 scripts/check_version_coherence.py
+```
+
+---
+
+## 5. Internationalization (i18n)
+
+GNOME Theme Manager uses standard GNU `gettext`.
+
+### Guidelines
+- Every user-visible string must be wrapped with `_("...")`.
+- Whenever a string is added or updated, update both `po/en.po` and `po/it.po`.
+- `.mo` files are compiled build artifacts (gitignored).
+
+### Compiling and Testing Translations
+```bash
+# Compile all .po catalogs to .mo
+python3 scripts/compile_translations.py
+
+# Test UI under Italian locale
+LANG=it_IT.UTF-8 ./scripts/run_app.sh
+
+# Test UI under default English locale
+LANG=en_US.UTF-8 ./scripts/run_app.sh
+
+# Run translation test suite
 pytest tests/test_i18n.py
 ```
 
 ---
 
-## 📦 5. Building the AppImage Bundle
+## 6. Building Flatpak Locally
 
-To package the standalone AppImage executable:
+The primary distribution target is Flatpak using the GNOME 46 runtime.
+
+### Build and Package
 ```bash
-chmod +x scripts/build-appimage.sh
-./scripts/build-appimage.sh
+chmod +x scripts/build-flatpak.sh
+./scripts/build-flatpak.sh
 ```
-The output `.AppImage` bundle will be generated in `dist/`.
+
+The script builds the local OSTree repository and exports bundles to `dist/`:
+- `dist/GNOMEThemeManager-1.5.2-x86_64.flatpak` (Offline standalone bundle)
+- `dist/GNOMEThemeManager.flatpakref` (Single-click installer)
+
+---
+
+## 7. Architecture Rules for Contributors
+
+1. **Strict Core Separation**: All business logic, theme scanning, file operations, and D-Bus calls reside exclusively in `src/gnome_theme_manager/core/`. Both the GUI (`gui_gtk/`) and CLI (`cli/`) must consume the same public Core APIs.
+2. **No `print()` in Production**: Never use `print()` in `core/` or `gui_gtk/`. Use Python's standard `logging` module.
+3. **State Storage**: Never store application state in `~/.config/`. Use `~/.local/state/gnome-theme-manager/` (or `~/.cache/gnome-theme-manager/` for transient caches).

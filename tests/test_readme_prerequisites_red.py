@@ -18,6 +18,6 @@ def test_readme_has_prerequisites_section() -> None:
     # Verify notes on Flatpak/Snap and launcher executable permissions
     assert "Flatpak" in content, "Missing references to Flatpak in Prerequisites section"
     assert "Snap" in content, "Missing references to Snap in Prerequisites section"
-    assert "executable" in content or "permissions" in content or "chmod" in content, (
-        "Missing instructions on launcher executable permissions"
-    )
+    assert (
+        "executable" in content or "permissions" in content or "chmod" in content
+    ), "Missing instructions on launcher executable permissions"

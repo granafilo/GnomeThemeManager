@@ -279,8 +279,13 @@ class ThemesPage:
         title_text = get_category_title(self.active_category)
         self.category_title_label.set_text(title_text)
 
-    def refresh(self, sync: bool = False) -> None:
-        """Scan and refresh installed themes from backend."""
+    def refresh(self, sync: bool = False, force: bool = False) -> None:
+        """Scan and refresh installed themes from backend.
+
+        Args:
+            sync: If True, execute synchronously on the current thread.
+            force: If True, invalidate scanner and validator caches to force fresh disk scan.
+        """
         if (self._is_loading or self._is_applying) and not sync:
             logger.debug("Operation already running: refresh request ignored.")
             return
@@ -293,14 +298,20 @@ class ThemesPage:
             self.on_loading_changed(True)
         self.search_entry.set_sensitive(False)
         self.apply_button.set_sensitive(False)
-        self.widget.set_visible_child_name("loading")
+
+        # Only display the loading spinner on initial cold load;
+        # keep existing list visible during subsequent background refreshes for instant UX.
+        if self._snapshot is None:
+            self.widget.set_visible_child_name("loading")
 
         def worker_fetch() -> tuple[ThemesSnapshot | None, Exception | None]:
             try:
                 if self.manager is None:
                     raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
-                self.manager.invalidate_themes_cache()
+                if force:
+                    self.manager.invalidate_themes_cache()
+
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
                 presentation_items: list[ThemeItemPresentation] = []
                 for t in themes_list:
@@ -589,16 +600,21 @@ class ThemesPage:
                     img.add_css_class("dim-label")
                 row.add_prefix(img)
 
+                row.set_tooltip_text(item.path_display)
+
                 if item.is_invalid:
                     warn_badge = Gtk.Label(label=_("Incomplete"))
                     warn_badge.add_css_class("caption")
+                    warn_badge.add_css_class("gtm-status-badge")
                     warn_badge.add_css_class("warning")
                     warn_badge.set_valign(Gtk.Align.CENTER)
                     row.add_suffix(warn_badge)
 
                 badge = Gtk.Label(label=_("User") if item.is_user_level else _("System"))
                 badge.add_css_class("caption")
-                badge.add_css_class("dim-label")
+                badge.add_css_class("gtm-status-badge")
+                if item.is_user_level:
+                    badge.add_css_class("accent")
                 badge.set_valign(Gtk.Align.CENTER)
                 row.add_suffix(badge)
 

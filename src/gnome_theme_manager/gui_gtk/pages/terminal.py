@@ -62,6 +62,7 @@ class TerminalPage:
 
         self.terminal_preview_box: Gtk.Box = builder.get_object("terminal_preview_box")
         self.terminal_preview_label: Gtk.Label = builder.get_object("terminal_preview_label")
+        self.terminal_preview_title: Gtk.Label | None = builder.get_object("terminal_preview_title")
 
         # Profiles UI
         self.profile_combo_row: Adw.ComboRow = builder.get_object("profile_combo_row")
@@ -106,6 +107,7 @@ class TerminalPage:
 
         if self.terminal_preview_box:
             self.terminal_preview_box.add_css_class("terminal-preview-box")
+            self.terminal_preview_box.add_css_class("terminal-preview-window")
         self._preview_css_provider = Gtk.CssProvider()
 
         # Terminal Environment UI (Prompt 2.1 Step 4)
@@ -361,7 +363,9 @@ class TerminalPage:
         if self.profiles_group:
             self.profiles_group.set_visible(profile.supports_profiles)
 
-        # 7. Update preview label
+        # 7. Update preview title and label
+        if self.terminal_preview_title:
+            self.terminal_preview_title.set_label(f"user@gnome: ~ — {profile.terminal_name}")
         if self.terminal_preview_label:
             markup = (
                 f"<tt><b>user@gnome</b>:<b>~</b>$ uname -a\n"
@@ -369,9 +373,10 @@ class TerminalPage:
                 f'<b>user@gnome</b>:<b>~</b>$ echo "{profile.terminal_name} Palette Theme"\n'
                 f'<span foreground="#3584e4">■</span> <span foreground="#26a269">■</span> '
                 f'<span foreground="#c01c28">■</span> <span foreground="#a347ba">■</span> '
-                f'<span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span></tt>'
+                f'<span foreground="#e9ad0c">■</span> <span foreground="#2aa1b3">■</span>\n'
+                f"<b>user@gnome</b>:<b>~</b>$ █</tt>"
             )
-            self.terminal_preview_label.set_label(markup)
+            self.terminal_preview_label.set_markup(markup)
 
     def _show_error_dialog(self, heading: str, body: str) -> None:
         """Present an informational error dialogue to the user (Fix 4)."""
@@ -859,8 +864,11 @@ class TerminalPage:
         c_yel = self._ansi_pickers[3].get_color_hex() if len(self._ansi_pickers) > 3 else "#e9ad0c"
         c_cya = self._ansi_pickers[6].get_color_hex() if len(self._ansi_pickers) > 6 else "#2aa1b3"
 
-        # Apply background color directly to preview box widget using CSS provider (clean CSS without !important)
-        css_data = f".terminal-preview-box {{ background-color: {bg}; border-radius: 8px; }}"
+        # Apply background color directly to preview widgets using CSS provider
+        css_data = (
+            f".terminal-preview-body {{ background-color: {bg}; }}\n"
+            f".terminal-preview-box {{ background-color: {bg}; border-radius: 12px; }}"
+        )
         try:
             if hasattr(self._preview_css_provider, "load_from_string"):
                 self._preview_css_provider.load_from_string(css_data)
@@ -884,7 +892,9 @@ class TerminalPage:
             f"<span foreground='{c_blue}'><b>~</b></span>$ echo \"GNOME Terminal Palette Theme\"\n"
             f"<span foreground='{c_blue}'>■</span> <span foreground='{c_green}'>■</span> "
             f"<span foreground='{c_red}'>■</span> <span foreground='{c_mag}'>■</span> "
-            f"<span foreground='{c_yel}'>■</span> <span foreground='{c_cya}'>■</span></tt>"
+            f"<span foreground='{c_yel}'>■</span> <span foreground='{c_cya}'>■</span>\n"
+            f"<span foreground='{c_green}'><b>user@gnome</b></span>:"
+            f"<span foreground='{c_blue}'><b>~</b></span>$ <span foreground='{fg}'>█</span></tt>"
         )
         if self.terminal_preview_label:
             self.terminal_preview_label.set_markup(markup)

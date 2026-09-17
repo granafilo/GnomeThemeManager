@@ -153,6 +153,7 @@ class _StoreCardWidget(Gtk.Box):
         self.on_quick_install = on_quick_install
 
         self.add_css_class("store-theme-card")
+        self.add_css_class("gtm-preview-card")
         self.set_cursor_from_name("pointer")
         self.set_hexpand(True)
         self.set_margin_start(4)

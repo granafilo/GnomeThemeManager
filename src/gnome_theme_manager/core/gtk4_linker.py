@@ -163,7 +163,23 @@ class GTK4ThemeLinker:
         if path.is_symlink() and entry.get("managed_kind") == "symlink":
             try:
                 current_target = os.readlink(path)
-                return current_target == entry.get("target")
+                expected_target = entry.get("target")
+                if current_target == expected_target:
+                    return True
+                if current_target and expected_target:
+                    c_norm = (
+                        current_target.replace("/run/host", "", 1)
+                        if current_target.startswith("/run/host")
+                        else current_target
+                    )
+                    e_norm = (
+                        expected_target.replace("/run/host", "", 1)
+                        if expected_target.startswith("/run/host")
+                        else expected_target
+                    )
+                    if c_norm == e_norm:
+                        return True
+                return False
             except Exception:
                 return False
 
@@ -340,12 +356,19 @@ class GTK4ThemeLinker:
                 if needs_backup:
                     backup_path = self._backup_entry(dest_path, name)
 
+                target_to_link = None
+                if source_file:
+                    target_to_link = source_file.resolve()
+                    target_str = str(target_to_link)
+                    if target_str.startswith("/run/host/"):
+                        target_to_link = Path(target_str.replace("/run/host", "", 1))
+
                 new_entry = {
                     "kind": current_state["kind"]
                     if needs_backup or not existing_entry
                     else existing_entry["kind"],
                     "managed_kind": "symlink",
-                    "target": str(source_file.resolve()) if source_file else None,
+                    "target": str(target_to_link) if target_to_link else None,
                     "backup": str(backup_path) if backup_path else None,
                     "original_fingerprint": current_state["original_fingerprint"]
                     if needs_backup or not existing_entry
@@ -368,7 +391,7 @@ class GTK4ThemeLinker:
                     )
                 )
 
-                if not source_file:
+                if not source_file or not target_to_link:
                     self._safe_remove(dest_path)
                     new_entry["managed_fingerprint"] = "missing"
                     new_entries[name] = new_entry
@@ -376,7 +399,7 @@ class GTK4ThemeLinker:
 
                 self._safe_remove(dest_path)
                 try:
-                    dest_path.symlink_to(source_file.resolve())
+                    dest_path.symlink_to(target_to_link)
                 except OSError:
                     if source_file.is_dir():
                         shutil.copytree(source_file, dest_path)
@@ -449,13 +472,44 @@ class GTK4ThemeLinker:
     def is_override_active(self) -> bool:
         """Check if GTK4 override is currently active and valid in ~/.config/gtk-4.0/."""
         target_css = self.config_dir / "gtk.css"
-        if not target_css.exists() or not target_css.is_file():
+        target_valid = target_css.is_file()
+
+        if not target_valid and target_css.is_symlink():
+            try:
+                raw_target = os.readlink(target_css)
+                if raw_target.startswith("/run/host"):
+                    host_target = Path(raw_target.replace("/run/host", "", 1))
+                    target_valid = host_target.is_file()
+                else:
+                    flatpak_target = Path(f"/run/host{raw_target}")
+                    target_valid = flatpak_target.is_file()
+            except Exception:
+                pass
+
+        if not target_valid:
             return False
+
+        # If secondary files exist as symlinks, verify they are not dangling
+        for secondary_name in ("gtk-dark.css", "assets"):
+            sec_path = self.config_dir / secondary_name
+            if sec_path.is_symlink():
+                sec_valid = sec_path.exists()
+                if not sec_valid:
+                    try:
+                        r_target = os.readlink(sec_path)
+                        if r_target.startswith("/run/host"):
+                            sec_valid = Path(r_target.replace("/run/host", "", 1)).exists()
+                        else:
+                            sec_valid = Path(f"/run/host{r_target}").exists()
+                    except Exception:
+                        pass
+                if not sec_valid:
+                    return False
 
         manifest = self._load_manifest()
         entries = manifest.get("entries", {})
         if "gtk.css" not in entries:
-            return False
+            return True
 
         return self._is_manager_owned(target_css, entries["gtk.css"])
 
