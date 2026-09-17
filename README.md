@@ -1,4 +1,10 @@
+<div align="center">
+
+<img src="data/icons/hicolor/scalable/apps/io.github.granafilo.ThemeManager.svg" width="96" height="96" alt="GNOME Theme Manager Logo" />
+
 # GNOME Theme Manager
+
+A modern, native theme manager and customization suite designed for the **GNOME Desktop Environment** using **GTK4** and **Libadwaita**.
 
 [![Platform: GNOME](https://img.shields.io/badge/Platform-Linux%20GNOME%2042%2B-4EAA25?logo=gnome&logoColor=white)](https://www.gnome.org/)
 [![Toolkit: GTK4 & Libadwaita](https://img.shields.io/badge/GUI-GTK4%20%7C%20Libadwaita-3584E4)](https://gnome.pages.gitlab.gnome.org/libadwaita/)
@@ -7,9 +13,11 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![CI Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
 
-A modern, native theme manager and customization suite designed for the **GNOME Desktop Environment** using **GTK4** and **Libadwaita**.
-
 **Current release:** v1.5.1
+
+[![GNOME Theme Manager Showcase](docs/screenshot/01-current-status.png)](docs/screenshot/01-current-status.png)
+
+</div>
 
 ---
 
@@ -40,6 +48,18 @@ A modern, native theme manager and customization suite designed for the **GNOME 
 - **🛡️ First-Class Sandbox Integration**:
   - Automatic filesystem overrides for **Flatpak** applications (`xdg-data/themes:ro`, `xdg-data/icons:ro`).
   - Native custom Content Snap generation for **Snap** applications.
+
+---
+
+## 📸 Screenshots
+
+| 🌐 Integrated Online Store | 🖌️ Interactive Theme Editor & Mixer |
+| :---: | :---: |
+| [![Online Store](docs/screenshot/02-online-store.png)](docs/screenshot/02-online-store.png) | [![Theme Editor](docs/screenshot/03-theme-editor.png)](docs/screenshot/03-theme-editor.png) |
+
+| 🎨 Global Themes & Desktop Presets | 🧩 GNOME Shell Extensions Manager |
+| :---: | :---: |
+| [![Global Themes](docs/screenshot/04-global-themes.png)](docs/screenshot/04-global-themes.png) | [![Extensions Manager](docs/screenshot/05-extension-manager.png)](docs/screenshot/05-extension-manager.png) |
 
 ---
 
