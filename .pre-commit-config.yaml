@@ -1,0 +1,30 @@
+# .pre-commit-config.yaml
+repos:
+  # 1. Ruff (Linting e Formatting)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Usa l'ultima versione stabile (controlla periodicamente se c'è un update)
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        name: Ruff Lint
+        args: [src, tests]
+      - id: ruff-format
+        name: Ruff Format Check
+        args: [src, tests]
+
+  # 2. Hook locali per MyPy e Pytest
+  - repo: local
+    hooks:
+      - id: mypy-strict
+        name: MyPy Strict Check
+        entry: mypy --strict .
+        language: system
+        types: [python]
+        pass_filenames: false # Esegue mypy su tutto il progetto, non solo sui file modificati
+
+      - id: pytest-with-xvfb
+        name: Pytest (con fallback xvfb)
+        # Se xvfb-run è installato (come in CI), lo usa. Altrimenti usa pytest normale.
+        entry: bash -c 'command -v xvfb-run >/dev/null && xvfb-run -a pytest -v || pytest -v'
+        language: system
+        pass_filenames: false
