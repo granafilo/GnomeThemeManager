@@ -9,7 +9,7 @@ import gettext
 import locale
 import os
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 # In Flatpak sandbox, ensure host schemas and data directories are included in XDG_DATA_DIRS
 if os.path.exists("/.flatpak-info") or os.environ.get("FLATPAK_ID"):

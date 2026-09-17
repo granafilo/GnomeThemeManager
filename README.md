@@ -13,7 +13,7 @@ A modern, native theme manager and customization suite designed for the **GNOME 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![CI Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
 
-**Current release:** v1.5.1
+**Current release:** v1.5.2
 
 [![GNOME Theme Manager Showcase](docs/screenshot/01-current-status.png)](docs/screenshot/01-current-status.png)
 
@@ -89,9 +89,9 @@ Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https:
   ```
 
 ### Method 2: Standalone Bundle (`.flatpak`)
-For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.1-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.2-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-flatpak install --user --bundle GNOMEThemeManager-1.5.1-x86_64.flatpak
+flatpak install --user --bundle GNOMEThemeManager-1.5.2-x86_64.flatpak
 ```
 
 ### Launching the Application

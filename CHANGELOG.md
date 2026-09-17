@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.5.2] - 2026-09-17
+
+### Added
+- **Design System & Semantic Styling**: Integrated native Libadwaita design system with semantic CSS color tokens, flat headerbar layouts, synchronized sidebar and content header heights, and modern high-contrast alert badge pills.
+- **Modern Terminal Preview**: Simulated window frame with titlebar dots and interior padding for realistic terminal palette inspections.
+- **Enterprise Documentation**: Redesigned README with visual badges, architectural diagrams, and high-resolution screenshot gallery.
+
+### Changed & Optimized
+- **Instant Themes View Navigation**: Category transitions (GTK, Shell, Icons, Cursors) now filter in-memory data instantly (0ms) without re-scanning disk or flashing blank loading spinners.
+- **Theme Validation Cache**: Added mtime-based validation result caching in `ThemeValidator` to prevent repetitive disk I/O.
+- **High-Performance Icon Validation**: Early exit and inheritance verification in icon theme validation, reducing scan times from 2.6s to 80ms on cold runs.
+- **Selective Cache Invalidation**: Scanner cache is only invalidated upon explicit refresh or post theme installation/removal.
+
+### Fixed
+- **Pango Markup Entity Escaping**: Fully escaped ampersand entities in Sandbox Tools row markup to prevent GTK markup parser warnings.
+- **Window Minimum Geometry**: Increased minimum window width and default geometry to prevent layout truncation and AdwToastOverlay warnings.
+- **Sandbox Symlink Normalization**: Resolved relative and canonical symlinks properly during sandbox propagation.
+- **Linter & Type Cleanliness**: Reorganized top-level imports and configured targeted per-file-ignores for PyGObject GI dynamic bindings.
+
 ## [1.5.1] - 2026-09-13
 
 ### Added
