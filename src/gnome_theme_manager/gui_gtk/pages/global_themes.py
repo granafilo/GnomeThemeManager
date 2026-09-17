@@ -286,6 +286,7 @@ class GlobalThemesPage:
         # Internal state
         self._all_themes: list[GlobalTheme] = []
         self._is_loading: bool = False
+        self._has_loaded_once: bool = False
         self._filter_text: str = ""
 
         # Callbacks
@@ -330,7 +331,8 @@ class GlobalThemesPage:
             return
 
         self._set_loading(True)
-        self.widget.set_visible_child_name("loading")
+        if not self._has_loaded_once:
+            self.widget.set_visible_child_name("loading")
 
         if sync:
             self._do_load()
@@ -359,6 +361,7 @@ class GlobalThemesPage:
 
     def _on_load_success(self, themes: list[GlobalTheme]) -> None:
         """Update UI with loaded themes."""
+        self._has_loaded_once = True
         self._all_themes = themes
         self._set_loading(False)
         self._render_themes()

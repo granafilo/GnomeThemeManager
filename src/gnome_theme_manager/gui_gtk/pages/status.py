@@ -288,7 +288,8 @@ class StatusPage:
 
         if self.on_loading_changed:
             self.on_loading_changed(True)
-        self.widget.set_visible_child_name("loading")
+        if self._last_snapshot is None:
+            self.widget.set_visible_child_name("loading")
 
         def worker_fetch() -> tuple[StatusSnapshot | None, Exception | None]:
             try:

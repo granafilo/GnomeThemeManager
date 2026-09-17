@@ -279,8 +279,13 @@ class ThemesPage:
         title_text = get_category_title(self.active_category)
         self.category_title_label.set_text(title_text)
 
-    def refresh(self, sync: bool = False) -> None:
-        """Scan and refresh installed themes from backend."""
+    def refresh(self, sync: bool = False, force: bool = False) -> None:
+        """Scan and refresh installed themes from backend.
+
+        Args:
+            sync: If True, execute synchronously on the current thread.
+            force: If True, invalidate scanner and validator caches to force fresh disk scan.
+        """
         if (self._is_loading or self._is_applying) and not sync:
             logger.debug("Operation already running: refresh request ignored.")
             return
@@ -293,14 +298,20 @@ class ThemesPage:
             self.on_loading_changed(True)
         self.search_entry.set_sensitive(False)
         self.apply_button.set_sensitive(False)
-        self.widget.set_visible_child_name("loading")
+
+        # Only display the loading spinner on initial cold load;
+        # keep existing list visible during subsequent background refreshes for instant UX.
+        if self._snapshot is None:
+            self.widget.set_visible_child_name("loading")
 
         def worker_fetch() -> tuple[ThemesSnapshot | None, Exception | None]:
             try:
                 if self.manager is None:
                     raise GnomeThemeManagerError(_("ThemeManager unavailable or not initialized."))
 
-                self.manager.invalidate_themes_cache()
+                if force:
+                    self.manager.invalidate_themes_cache()
+
                 themes_list = self.manager.list_themes(theme_type=None, user_only=False)
                 presentation_items: list[ThemeItemPresentation] = []
                 for t in themes_list:

@@ -147,3 +147,33 @@ def test_headerbars_alignment_and_sizegroup(mock_app_and_manager):
     assert window.feedback_revealer.get_reveal_child() is True
     window.clear_feedback()
     assert window.feedback_revealer.get_reveal_child() is False
+
+
+def test_window_minimum_geometry(mock_app_and_manager):
+    """Verify window minimum and default geometry prevent content truncation and warning spam."""
+    if not is_gtk_available():
+        pytest.skip("PyGObject / GTK4 unavailable.")
+
+    from gnome_theme_manager.gui_gtk.window import (
+        DEFAULT_WINDOW_HEIGHT,
+        DEFAULT_WINDOW_WIDTH,
+        MIN_WINDOW_HEIGHT,
+        MIN_WINDOW_WIDTH,
+    )
+
+    app, manager = mock_app_and_manager
+    window = GnomeThemeWindow(app, manager=manager)
+
+    # Minimum width must accommodate split view content (> 1088px)
+    assert MIN_WINDOW_WIDTH >= 1100
+    assert MIN_WINDOW_HEIGHT >= 700
+    assert DEFAULT_WINDOW_WIDTH >= MIN_WINDOW_WIDTH
+    assert DEFAULT_WINDOW_HEIGHT >= MIN_WINDOW_HEIGHT
+
+    width, height = window.get_size_request()
+    assert width == MIN_WINDOW_WIDTH
+    assert height == MIN_WINDOW_HEIGHT
+
+    def_w, def_h = window.get_default_size()
+    assert def_w == DEFAULT_WINDOW_WIDTH
+    assert def_h == DEFAULT_WINDOW_HEIGHT

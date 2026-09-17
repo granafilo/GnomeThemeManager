@@ -51,6 +51,14 @@ class ThemeValidationResult:
 class ThemeValidator:
     """Validates structural integrity and compliance of installed or imported themes."""
 
+    def __init__(self) -> None:
+        """Initialize validator with in-memory result cache."""
+        self._cache: dict[tuple[Path, ThemeType, float], ThemeValidationResult] = {}
+
+    def invalidate_cache(self) -> None:
+        """Clear cached validation results."""
+        self._cache.clear()
+
     def validate(self, theme_path: Path, theme_type: ThemeType) -> ThemeValidationResult:
         """Validate a theme directory based on its expected ThemeType.
 
@@ -62,6 +70,21 @@ class ThemeValidator:
             ThemeValidationResult containing validity boolean, warnings, and missing files list.
         """
         path = Path(theme_path)
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            mtime = 0.0
+
+        cache_key = (path, theme_type, mtime)
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        res = self._do_validate(path, theme_type)
+        self._cache[cache_key] = res
+        return res
+
+    def _do_validate(self, path: Path, theme_type: ThemeType) -> ThemeValidationResult:
+        """Perform validation inspection without caching."""
         warnings: list[str] = []
         missing_files: list[str] = []
 
@@ -271,20 +294,22 @@ class ThemeValidator:
                 valid=False, warnings=warnings, missing_files=["index.theme"]
             )
 
-        # Count detected standard icons across all subdirectories
-        found_standard_icons: set[str] = set()
-        for p in path.rglob("*"):
-            if p.is_file() and p.suffix.lower() in (".svg", ".png", ".xpm"):
-                stem = p.stem.lower()
-                if stem in STANDARD_ICON_BASENAMES:
-                    found_standard_icons.add(stem)
+        # Only check and warn for standalone icon packs that do NOT inherit from parent themes
+        if not inherits_parents:
+            found_standard_icons: set[str] = set()
+            for p in path.rglob("*"):
+                if p.is_file() and p.suffix.lower() in (".svg", ".png", ".xpm"):
+                    stem = p.stem.lower()
+                    if stem in STANDARD_ICON_BASENAMES:
+                        found_standard_icons.add(stem)
+                        if len(found_standard_icons) >= 5:
+                            break
 
-        # Only warn for standalone icon packs that do NOT inherit from parent themes and have < 5 icons
-        if len(found_standard_icons) < 5 and not inherits_parents:
-            warnings.append(
-                f"Icon pack has only {len(found_standard_icons)} standard icons detected "
-                "(recommended minimum: 5)."
-            )
+            if len(found_standard_icons) < 5:
+                warnings.append(
+                    f"Icon pack has only {len(found_standard_icons)} standard icons detected "
+                    "(recommended minimum: 5)."
+                )
 
         return ThemeValidationResult(
             valid=True,

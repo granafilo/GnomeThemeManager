@@ -57,11 +57,11 @@ BUNDLED_ICONS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "icons
 COLLAPSE_BREAKPOINT_WIDTH: int = 0
 
 # Main window minimum geometry to keep sidebar + content fully usable
-MIN_WINDOW_WIDTH: int = 1060
+MIN_WINDOW_WIDTH: int = 1100
 MIN_WINDOW_HEIGHT: int = 700
 
 # Main window default geometry at startup
-DEFAULT_WINDOW_WIDTH: int = 1120
+DEFAULT_WINDOW_WIDTH: int = 1160
 DEFAULT_WINDOW_HEIGHT: int = 740
 
 
@@ -326,14 +326,14 @@ class MainWindow(Adw.ApplicationWindow):
         self.themes_page.on_theme_applied = _on_theme_applied_callback
 
         def _on_theme_installed_callback() -> None:
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
 
         self.installer_page.on_theme_installed = _on_theme_installed_callback
         self.store_page.on_theme_installed = _on_theme_installed_callback
 
         def _on_theme_installed_and_applied_callback() -> None:
             self.status_page.refresh()
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
             self.global_themes_page.refresh()
 
         self.installer_page.on_theme_applied = _on_theme_installed_and_applied_callback
@@ -509,7 +509,7 @@ class MainWindow(Adw.ApplicationWindow):
         elif self._current_page_id and (
             self._current_page_id == "themes" or self._current_page_id.startswith("themes_")
         ):
-            self.themes_page.refresh()
+            self.themes_page.refresh(force=True)
 
     def _on_edit_global_theme_requested(self, theme: Any) -> None:
         """Navigate to the editor page and load a user Global Theme for editing."""
@@ -584,7 +584,10 @@ class MainWindow(Adw.ApplicationWindow):
                 self.refresh_button.set_sensitive(not ctrl.is_loading)
 
         if page_id.startswith("themes") and not self.themes_page.is_loading:
-            self.themes_page.refresh()
+            if self.themes_page.current_snapshot is None:
+                self.themes_page.refresh()
+            else:
+                self.themes_page._update_filtered_list()
         elif page_id == "status" and not self.status_page.is_loading:
             self.status_page.refresh()
         elif page_id == "global_themes" and not self.global_themes_page.is_loading:
