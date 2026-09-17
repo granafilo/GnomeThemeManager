@@ -91,8 +91,35 @@ def test_theme_manager_get_terminal_profile() -> None:
         validator=MagicMock(),
         extensions=MagicMock(),
     )
+    # Ubuntu 24.04 (Noble) requires Flatpak for Ptyxis
     with patch.object(tm, "detect_terminal", return_value=MagicMock(terminal_id="ptyxis")):
         with patch.object(tm, "detect_os", return_value=OSInfo("ubuntu", "24.04", "apt", "Ubuntu")):
             prof = tm.get_terminal_profile()
             assert prof.terminal_id == "ptyxis"
-            assert "apt install" in prof.install_command
+            assert "flatpak install" in prof.install_command
+
+    # Ubuntu 24.10 (Oracular) has Ptyxis in APT
+    with patch.object(tm, "detect_terminal", return_value=MagicMock(terminal_id="ptyxis")):
+        with patch.object(tm, "detect_os", return_value=OSInfo("ubuntu", "24.10", "apt", "Ubuntu")):
+            prof_modern = tm.get_terminal_profile()
+            assert prof_modern.terminal_id == "ptyxis"
+            assert "apt install" in prof_modern.install_command
+
+
+def test_synthesize_install_command_special_terminals() -> None:
+    """Verify correct commands synthesized for WezTerm, Warp, and Ptyxis on Zorin/Debian."""
+    # Ptyxis on Zorin OS and Debian 12
+    zorin_os = OSInfo("zorin", "18", "apt", "Zorin OS 18")
+    debian_os = OSInfo("debian", "12", "apt", "Debian GNU/Linux 12")
+    assert "flatpak install" in synthesize_install_command("ptyxis", "apt", os_info=zorin_os)
+    assert "flatpak install" in synthesize_install_command("ptyxis", "apt", os_info=debian_os)
+
+    # WezTerm across distros
+    assert "flatpak install" in synthesize_install_command("wezterm", "apt")
+    assert "flatpak install" in synthesize_install_command("wezterm", "dnf")
+    assert "pacman -S" in synthesize_install_command("wezterm", "pacman")
+
+    # Warp across distros
+    assert "warp.deb" in synthesize_install_command("warp", "apt")
+    assert "warp.dev/download?package=rpm" in synthesize_install_command("warp", "dnf")
+    assert "warp-terminal-bin" in synthesize_install_command("warp", "pacman")

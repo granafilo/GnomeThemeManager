@@ -253,6 +253,8 @@ class TerminalPage:
         if 0 <= idx < len(self._supported_terminals):
             self._selected_terminal_id = self._supported_terminals[idx]
             self._update_terminal_ui()
+            self._selected_profile_id = None
+            self._reload_profiles_list()
 
             # Immediate alert notification if the selected terminal is not installed
             profile = self.manager.get_terminal_profile(self._selected_terminal_id)
@@ -453,7 +455,11 @@ class TerminalPage:
         palette = self._build_current_palette()
         target_pid = self._selected_profile_id
         try:
-            success = self.manager.apply_terminal_palette(palette, profile_id=target_pid)
+            success = self.manager.apply_terminal_palette(
+                palette,
+                profile_id=target_pid,
+                terminal_id=self._selected_terminal_id,
+            )
             if success:
                 self._notify(
                     _("Terminal preferences applied successfully."),
@@ -483,7 +489,9 @@ class TerminalPage:
 
         self._updating_profiles_ui = True
         try:
-            self._profiles = self.manager.list_terminal_profiles()
+            self._profiles = self.manager.list_terminal_profiles(
+                terminal_id=self._selected_terminal_id
+            )
             if not self._profiles:
                 # Fallback: single mock item
                 self._profiles = [
@@ -522,12 +530,12 @@ class TerminalPage:
             # Can set default only if it is not already default
             if self.set_default_button:
                 self.set_default_button.set_sensitive(not curr_prof.is_default)
-            # Can delete only if it is NOT the default/active profile
+            # Cannot delete default profile
             if self.delete_profile_button:
                 self.delete_profile_button.set_sensitive(not curr_prof.is_default)
 
     def _get_current_profile_summary(self) -> TerminalProfileSummary | None:
-        """Return summary of selected profile."""
+        """Helper to get currently selected profile summary object."""
         if not self.profile_combo_row or not self._profiles:
             return None
         idx = self.profile_combo_row.get_selected()
@@ -548,7 +556,9 @@ class TerminalPage:
     def _load_selected_profile(self) -> None:
         """Load settings for the currently selected profile."""
         curr_id = self._selected_profile_id
-        profile_data = self.manager.get_current_terminal_palette(profile_id=curr_id)
+        profile_data = self.manager.get_current_terminal_palette(
+            profile_id=curr_id, terminal_id=self._selected_terminal_id
+        )
         if profile_data is not None:
             self._load_palette(profile_data)
         else:
@@ -560,7 +570,9 @@ class TerminalPage:
         curr = self._get_current_profile_summary()
         if not curr:
             return
-        if self.manager.set_default_terminal_profile(curr.id):
+        if self.manager.set_default_terminal_profile(
+            curr.id, terminal_id=self._selected_terminal_id
+        ):
             self._notify(_("Profile set as default: {}").format(curr.name), is_error=False)
             self._reload_profiles_list()
         else:
@@ -573,7 +585,9 @@ class TerminalPage:
             if not name.strip():
                 return
             palette = self._build_current_palette()
-            new_id = self.manager.create_terminal_profile(name.strip(), palette=palette)
+            new_id = self.manager.create_terminal_profile(
+                name.strip(), palette=palette, terminal_id=self._selected_terminal_id
+            )
             if new_id:
                 self._selected_profile_id = new_id
                 self._reload_profiles_list()
@@ -595,7 +609,9 @@ class TerminalPage:
             return
 
         def on_confirm() -> None:
-            if self.manager.delete_terminal_profile(curr.id):
+            if self.manager.delete_terminal_profile(
+                curr.id, terminal_id=self._selected_terminal_id
+            ):
                 self._selected_profile_id = None
                 self._reload_profiles_list()
                 self._load_selected_profile()

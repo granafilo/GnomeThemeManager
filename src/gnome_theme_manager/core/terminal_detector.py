@@ -312,6 +312,8 @@ def _find_binary(name: str) -> Path | None:
         Path("/run/host/usr/bin"),
         Path("/run/host/bin"),
         Path("/run/host/usr/local/bin"),
+        Path("/var/lib/flatpak/exports/bin"),
+        Path.home() / ".local" / "share" / "flatpak" / "exports" / "bin",
     ):
         cand = prefix / name
         if cand.is_file() and os.access(cand, os.X_OK):
@@ -325,14 +327,31 @@ def is_terminal_installed(binary: str, desktop_file: str = "") -> bool:
     if binary and _find_binary(binary) is not None:
         return True
 
+    desktop_candidates: list[str] = []
     if desktop_file:
-        for app_dir in (
-            Path("/usr/share/applications"),
-            Path("/run/host/usr/share/applications"),
-            Path("/usr/local/share/applications"),
-            Path.home() / ".local" / "share" / "applications",
-        ):
-            if (app_dir / desktop_file).is_file():
+        desktop_candidates.append(desktop_file)
+    if binary == "ptyxis" or "ptyxis" in desktop_file.lower():
+        for ptyxis_id in ("app.devsuite.Ptyxis.desktop", "org.gnome.Ptyxis.desktop"):
+            if ptyxis_id not in desktop_candidates:
+                desktop_candidates.append(ptyxis_id)
+    if (
+        binary == "wezterm" or "wezterm" in desktop_file.lower()
+    ) and "org.wezfurlong.wezterm.desktop" not in desktop_candidates:
+        desktop_candidates.append("org.wezfurlong.wezterm.desktop")
+
+    app_dirs = (
+        Path("/usr/share/applications"),
+        Path("/run/host/usr/share/applications"),
+        Path("/usr/local/share/applications"),
+        Path.home() / ".local" / "share" / "applications",
+        Path("/var/lib/flatpak/exports/share/applications"),
+        Path("/run/host/var/lib/flatpak/exports/share/applications"),
+        Path.home() / ".local" / "share" / "flatpak" / "exports" / "share" / "applications",
+    )
+
+    for cand in desktop_candidates:
+        for app_dir in app_dirs:
+            if (app_dir / cand).is_file():
                 return True
 
     return False

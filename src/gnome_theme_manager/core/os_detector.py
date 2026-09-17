@@ -135,6 +135,24 @@ DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
         "pacman": "gnome-console",
         "zypper": "gnome-console",
     },
+    "konsole": {
+        "apt": "konsole",
+        "dnf": "konsole",
+        "pacman": "konsole",
+        "zypper": "konsole",
+    },
+    "xfce4-terminal": {
+        "apt": "xfce4-terminal",
+        "dnf": "xfce4-terminal",
+        "pacman": "xfce4-terminal",
+        "zypper": "xfce4-terminal",
+    },
+    "mate-terminal": {
+        "apt": "mate-terminal",
+        "dnf": "mate-terminal",
+        "pacman": "mate-terminal",
+        "zypper": "mate-terminal",
+    },
     "tilix": {
         "apt": "tilix",
         "dnf": "tilix",
@@ -147,11 +165,35 @@ DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
         "pacman": "terminator",
         "zypper": "terminator",
     },
+    "alacritty": {
+        "apt": "alacritty",
+        "dnf": "alacritty",
+        "pacman": "alacritty",
+        "zypper": "alacritty",
+    },
+    "kitty": {
+        "apt": "kitty",
+        "dnf": "kitty",
+        "pacman": "kitty",
+        "zypper": "kitty",
+    },
     "warp": {
         "apt": "warp-terminal",
         "dnf": "warp-terminal",
         "pacman": "warp-terminal",
         "zypper": "warp-terminal",
+    },
+    "wezterm": {
+        "apt": "wezterm",
+        "dnf": "wezterm",
+        "pacman": "wezterm",
+        "zypper": "wezterm",
+    },
+    "xterm": {
+        "apt": "xterm",
+        "dnf": "xterm",
+        "pacman": "xterm",
+        "zypper": "xterm",
     },
     "urxvt": {
         "apt": "rxvt-unicode",
@@ -419,6 +461,78 @@ def detect_os(
     return uname_result
 
 
+def _is_ubuntu_noble_or_earlier(version_str: str) -> bool:
+    """Check if Ubuntu version is 24.04 (Noble Numbat) or earlier."""
+    if not version_str:
+        return False
+    clean = version_str.strip().lower()
+    if clean in ("noble", "jammy", "focal", "bionic", "xenial"):
+        return True
+    match = re.match(r"^(\d+)(?:\.(\d+))?", clean)
+    if match:
+        major = int(match.group(1))
+        minor = int(match.group(2)) if match.group(2) is not None else 0
+        return bool(major < 24 or (major == 24 and minor <= 4))
+    return False
+
+
+def _resolve_special_dependency_command(
+    dependency: str,
+    target_pm: str,
+    target_distro: str = "",
+    target_version: str = "",
+) -> str | None:
+    """Resolve custom installation commands for special packages not in standard repos."""
+    clean_dep = dependency.strip().lower()
+
+    if clean_dep == "ptyxis":
+        if target_pm == "pacman":
+            return "sudo pacman -S --noconfirm ptyxis"
+        if target_pm == "dnf":
+            return "sudo dnf install -y ptyxis"
+        if target_pm == "zypper":
+            return "sudo zypper install -y ptyxis"
+        if target_pm == "apt":
+            distro_lower = target_distro.lower()
+            if distro_lower in ("zorin", "linuxmint", "mint", "pop", "elementary"):
+                return "flatpak install -y flathub app.devsuite.Ptyxis"
+            if distro_lower == "debian":
+                if not target_version or target_version in (
+                    "10",
+                    "11",
+                    "12",
+                    "bookworm",
+                    "bullseye",
+                ):
+                    return "flatpak install -y flathub app.devsuite.Ptyxis"
+                if target_version.isdigit() and int(target_version) <= 12:
+                    return "flatpak install -y flathub app.devsuite.Ptyxis"
+            if distro_lower == "ubuntu":
+                if _is_ubuntu_noble_or_earlier(target_version):
+                    return "flatpak install -y flathub app.devsuite.Ptyxis"
+                return "sudo apt install -y ptyxis"
+            return "sudo apt install -y ptyxis"
+
+    if clean_dep == "wezterm":
+        if target_pm == "pacman":
+            return "sudo pacman -S --noconfirm wezterm"
+        return "flatpak install -y flathub org.wezfurlong.wezterm"
+
+    if clean_dep == "warp":
+        if target_pm == "pacman":
+            return "yay -S --noconfirm warp-terminal-bin"
+        if target_pm == "dnf":
+            return "sudo dnf install -y https://app.warp.dev/download?package=rpm"
+        if target_pm == "zypper":
+            return "sudo zypper install -y https://app.warp.dev/download?package=rpm"
+        return (
+            "curl -fsSL https://app.warp.dev/download?package=deb -o /tmp/warp.deb "
+            "&& sudo apt install -y /tmp/warp.deb && rm /tmp/warp.deb"
+        )
+
+    return None
+
+
 def get_install_command(
     dependency: str,
     package_manager: str | None = None,
@@ -442,16 +556,41 @@ def get_install_command(
     """
     clean_dep = dependency.strip().lower()
     target_pm = "unknown"
+    target_distro = ""
+    target_version = ""
 
-    if package_manager and package_manager.strip():
-        target_pm = package_manager.strip().lower()
-    elif distro and distro.strip():
-        target_pm = _resolve_package_manager(distro)
-    elif os_info is not None:
+    if os_info is not None:
         target_pm = os_info.package_manager.strip().lower()
+        target_distro = os_info.distro.strip().lower()
+        target_version = os_info.version.strip().lower()
+    elif distro and distro.strip():
+        target_distro = distro.strip().lower()
+        target_pm = (
+            package_manager.strip().lower()
+            if package_manager and package_manager.strip()
+            else _resolve_package_manager(target_distro)
+        )
+    elif package_manager and package_manager.strip():
+        target_pm = package_manager.strip().lower()
     else:
         detected = detect_os()
         target_pm = detected.package_manager.strip().lower()
+        target_distro = detected.distro.strip().lower()
+        target_version = detected.version.strip().lower()
+
+    if package_manager and package_manager.strip():
+        target_pm = package_manager.strip().lower()
+    if distro and distro.strip():
+        target_distro = distro.strip().lower()
+
+    special_cmd = _resolve_special_dependency_command(
+        clean_dep,
+        target_pm,
+        target_distro=target_distro,
+        target_version=target_version,
+    )
+    if special_cmd is not None:
+        return special_cmd
 
     # Determine package specification for this package manager
     pkg_spec = DEPENDENCY_PACKAGE_MAP.get(clean_dep, {}).get(target_pm, dependency.strip())

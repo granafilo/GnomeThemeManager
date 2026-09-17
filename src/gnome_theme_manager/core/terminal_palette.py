@@ -9,6 +9,8 @@ Provides functionality to:
 4. Apply the palette to GNOME Terminal using relocatable GSettings schemas (`org.gnome.Terminal.Legacy.Profile`).
 """
 
+import ast
+import configparser
 import json
 import logging
 import os
@@ -263,6 +265,8 @@ def _find_terminal_binary(name: str) -> Path | None:
         Path("/run/host/usr/bin"),
         Path("/run/host/bin"),
         Path("/run/host/usr/local/bin"),
+        Path("/var/lib/flatpak/exports/bin"),
+        Path.home() / ".local/share/flatpak/exports/bin",
     ]:
         cand = prefix / name
         if cand.is_file() and os.access(cand, os.X_OK):
@@ -320,19 +324,114 @@ def _get_settings_instance(schema_id: str, path: str | None = None) -> Any | Non
         return None
 
 
+def _settings_has_key(settings: Any, key: str) -> bool:
+    """Check safely whether a Gio.Settings instance contains a given key without crashing."""
+    if settings is None:
+        return False
+    try:
+        if hasattr(settings, "list_keys"):
+            res = settings.list_keys()
+            if isinstance(res, (list, tuple, set)):
+                return key in res
+            return True
+        return True
+    except Exception:
+        return False
+
+
+def _safe_get_string(settings: Any, key: str, default: str = "") -> str:
+    """Get a string value from Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            val = settings.get_string(key)
+            return str(val) if val is not None else default
+        except Exception:
+            pass
+    return default
+
+
+def _safe_get_boolean(settings: Any, key: str, default: bool = False) -> bool:
+    """Get a boolean value from Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            val = settings.get_boolean(key)
+            return bool(val) if val is not None else default
+        except Exception:
+            pass
+    return default
+
+
+def _safe_get_double(settings: Any, key: str, default: float = 1.0) -> float:
+    """Get a double value from Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            val = settings.get_double(key)
+            return float(val) if val is not None else default
+        except Exception:
+            pass
+    return default
+
+
+def _safe_set_string(settings: Any, key: str, val: str) -> bool:
+    """Set a string value in Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            settings.set_string(key, val)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def _safe_set_boolean(settings: Any, key: str, val: bool) -> bool:
+    """Set a boolean value in Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            settings.set_boolean(key, val)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def _safe_set_double(settings: Any, key: str, val: float) -> bool:
+    """Set a double value in Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            settings.set_double(key, val)
+            return True
+        except Exception:
+            pass
+    return False
+
+
 def detect_installed_terminal() -> DetectedTerminal | None:
     """Detect available terminal emulator and its GSettings capabilities (Fix 1).
 
     Checks for supported terminals in order of preference:
-    1. GNOME Terminal (gnome-terminal) -> org.gnome.Terminal.Legacy.Profile
-    2. GNOME Console (kgx) -> org.gnome.Console
-    3. Konsole (konsole) -> file-based configuration (no GSettings)
-    4. XFCE Terminal (xfce4-terminal) -> org.xfce.terminal
+    1. Ptyxis (ptyxis) -> org.gnome.Ptyxis
+    2. GNOME Terminal (gnome-terminal) -> org.gnome.Terminal.Legacy.Profile
+    3. GNOME Console (kgx) -> org.gnome.Console
+    4. Konsole (konsole) -> file-based configuration (no GSettings)
+    5. XFCE Terminal (xfce4-terminal) -> org.xfce.terminal
 
     Returns:
         DetectedTerminal instance, or None if no supported terminal is installed.
     """
-    # 1. GNOME Terminal
+    # 1. Ptyxis
+    ptyxis_bin = _find_terminal_binary("ptyxis") or _find_terminal_binary("org.gnome.Ptyxis")
+    if ptyxis_bin is not None:
+        has_schema = schema_exists("org.gnome.Ptyxis")
+        return DetectedTerminal(
+            terminal_type="ptyxis",
+            display_name="Ptyxis",
+            binary_path=ptyxis_bin,
+            schema_id="org.gnome.Ptyxis" if has_schema else None,
+            supports_gsettings=has_schema,
+            schema_accessible=has_schema,
+        )
+
+    # 2. GNOME Terminal
     gt_bin = _find_terminal_binary("gnome-terminal")
     if gt_bin is not None:
         has_schema = schema_exists("org.gnome.Terminal.Legacy.Profile") and schema_exists(
@@ -695,3 +794,551 @@ def apply_palette_to_gnome_terminal(
     except Exception as err:
         logger.warning("Failed to apply palette to GNOME Terminal: %s", err)
         return False
+
+
+# -----------------------------------------------------------------------------
+# dconf Direct CLI Helpers
+# -----------------------------------------------------------------------------
+
+
+def _dconf_read(path: str) -> str | None:
+    """Safely read a key directly from dconf CLI.
+
+    Args:
+        path: Path to the dconf key.
+
+    Returns:
+        Stripped string output if returncode is 0, None otherwise.
+    """
+    try:
+        res = subprocess.run(
+            ["dconf", "read", path],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        if res.returncode == 0:
+            val = res.stdout.strip()
+            return val if val else None
+    except Exception as err:
+        logger.debug("Failed dconf read for %s: %s", path, err)
+    return None
+
+
+def _dconf_write(path: str, value: str) -> bool:
+    """Safely write a key directly to dconf CLI.
+
+    Args:
+        path: Path to the dconf key.
+        value: Exact serialized value to write.
+
+    Returns:
+        True if returncode is 0, False otherwise.
+    """
+    try:
+        res = subprocess.run(
+            ["dconf", "write", path, value],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        return res.returncode == 0
+    except Exception as err:
+        logger.debug("Failed dconf write for %s: %s", path, err)
+        return False
+
+
+# -----------------------------------------------------------------------------
+# Ptyxis Palette and Profile Management (GNOME 47+, CachyOS, Fedora 41+)
+# -----------------------------------------------------------------------------
+
+
+def export_ptyxis_palette(
+    palette: TerminalPalette,
+    name: str = "Gnome-Theme-Manager",
+    target_dir: Path | None = None,
+) -> Path:
+    """Export a TerminalPalette to a Ptyxis INI .palette file.
+
+    Ptyxis loads custom palettes from ~/.local/share/org.gnome.Ptyxis/palettes/
+    or Flatpak data directories.
+
+    Args:
+        palette: TerminalPalette instance to serialize.
+        name: Name for the palette inside Ptyxis.
+        target_dir: Optional custom destination folder (used for testing/overrides).
+
+    Returns:
+        Path to the saved .palette file.
+    """
+    if target_dir is None:
+        target_dir = Path.home() / ".local/share/org.gnome.Ptyxis/palettes"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_filename = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in name).strip("_")
+    if not safe_filename:
+        safe_filename = "custom"
+    file_path = target_dir / f"{safe_filename}.palette"
+
+    lines = [
+        "[Palette]",
+        f"Name={name}",
+        "Primary=true",
+        "",
+        "[Dark]",
+        f"Foreground={palette.foreground_color}",
+        f"Background={palette.background_color}",
+    ]
+    for idx, color in enumerate(palette.palette[:16]):
+        lines.append(f"Color{idx}={color}")
+    if palette.bold_color:
+        lines.append(f"Bold={palette.bold_color}")
+    if palette.cursor_background_color:
+        lines.append(f"Cursor={palette.cursor_background_color}")
+
+    lines.extend(
+        [
+            "",
+            "[Light]",
+            f"Foreground={palette.foreground_color}",
+            f"Background={palette.background_color}",
+        ]
+    )
+    for idx, color in enumerate(palette.palette[:16]):
+        lines.append(f"Color{idx}={color}")
+    if palette.bold_color:
+        lines.append(f"Bold={palette.bold_color}")
+    if palette.cursor_background_color:
+        lines.append(f"Cursor={palette.cursor_background_color}")
+
+    lines.append("")
+    content = "\n".join(lines)
+    file_path.write_text(content, encoding="utf-8")
+
+    # If Flatpak user dir exists, synchronize there as well
+    for flatpak_base in [
+        Path.home() / ".var/app/org.gnome.Ptyxis/data/ptyxis/palettes",
+        Path.home() / ".var/app/org.gnome.Ptyxis/data/org.gnome.Ptyxis/palettes",
+        Path.home() / ".var/app/app.devsuite.Ptyxis/data/ptyxis/palettes",
+        Path.home() / ".var/app/app.devsuite.Ptyxis/data/org.gnome.Ptyxis/palettes",
+    ]:
+        if flatpak_base.parent.is_dir():
+            try:
+                flatpak_base.mkdir(parents=True, exist_ok=True)
+                (flatpak_base / f"{safe_filename}.palette").write_text(content, encoding="utf-8")
+            except Exception:
+                pass
+
+    return file_path
+
+
+def list_ptyxis_profiles() -> list[TerminalProfileSummary]:
+    """List configured Ptyxis profiles with fallback to default profile.
+
+    Returns:
+        List of TerminalProfileSummary instances.
+    """
+    profile_uuids: list[str] = []
+    default_uuid: str | None = None
+
+    settings = _get_settings_instance("org.gnome.Ptyxis")
+    if settings is not None:
+        try:
+            profile_uuids = list(settings.get_strv("profile-uuids"))
+            default_uuid = settings.get_string("default-profile-uuid")
+        except Exception as err:
+            logger.debug("Failed reading Ptyxis profiles from Gio.Settings: %s", err)
+
+    if not profile_uuids:
+        raw_list = _dconf_read("/org/gnome/Ptyxis/profile-uuids")
+        if raw_list:
+            try:
+                parsed = ast.literal_eval(raw_list)
+                if isinstance(parsed, list):
+                    profile_uuids = [str(item) for item in parsed]
+            except Exception:
+                pass
+
+    if not default_uuid:
+        raw_default = _dconf_read("/org/gnome/Ptyxis/default-profile-uuid")
+        if raw_default:
+            default_uuid = raw_default.strip("'\"")
+
+    if not profile_uuids:
+        if default_uuid:
+            profile_uuids = [default_uuid]
+        else:
+            return [TerminalProfileSummary(id="default", name="Default", is_default=True)]
+
+    if not default_uuid and profile_uuids:
+        default_uuid = profile_uuids[0]
+
+    summaries: list[TerminalProfileSummary] = []
+    for pid in profile_uuids:
+        name = ""
+        prof_settings = _get_settings_instance(
+            "org.gnome.Ptyxis.Profile", path=f"/org/gnome/Ptyxis/Profiles/{pid}/"
+        )
+        if prof_settings is not None:
+            try:
+                name = prof_settings.get_string("label")
+            except Exception:
+                pass
+
+        if not name:
+            raw_label = _dconf_read(f"/org/gnome/Ptyxis/Profiles/{pid}/label")
+            if raw_label:
+                name = raw_label.strip("'\"")
+
+        if not name:
+            name = "Default" if pid == default_uuid else f"Profile ({pid[:8]})"
+
+        summaries.append(
+            TerminalProfileSummary(
+                id=pid,
+                name=name,
+                is_default=(pid == default_uuid),
+            )
+        )
+
+    return summaries
+
+
+def set_default_ptyxis_profile(profile_id: str) -> bool:
+    """Set a Ptyxis profile UUID as the default profile.
+
+    Args:
+        profile_id: UUID of the profile.
+
+    Returns:
+        True if updated successfully, False otherwise.
+    """
+    settings = _get_settings_instance("org.gnome.Ptyxis")
+    if settings is not None:
+        try:
+            settings.set_string("default-profile-uuid", profile_id)
+            return True
+        except Exception as err:
+            logger.debug("Failed setting default Ptyxis profile via Gio: %s", err)
+
+    return _dconf_write("/org/gnome/Ptyxis/default-profile-uuid", f"'{profile_id}'")
+
+
+def create_ptyxis_profile(name: str, palette: TerminalPalette | None = None) -> str | None:
+    """Create a new profile in Ptyxis.
+
+    Args:
+        name: Visible label for the new profile.
+        palette: Optional palette to immediately apply.
+
+    Returns:
+        UUID of the created profile, or None on failure.
+    """
+    new_uuid = str(uuid.uuid4())
+    profiles = list_ptyxis_profiles()
+    existing_uuids = [p.id for p in profiles if p.id != "default"]
+    if new_uuid not in existing_uuids:
+        existing_uuids.append(new_uuid)
+
+    success = False
+    settings = _get_settings_instance("org.gnome.Ptyxis")
+    if settings is not None:
+        try:
+            settings.set_strv("profile-uuids", existing_uuids)
+            success = True
+        except Exception as err:
+            logger.debug("Failed updating profile-uuids via Gio: %s", err)
+
+    if not success:
+        formatted = "[" + ", ".join(f"'{u}'" for u in existing_uuids) + "]"
+        success = _dconf_write("/org/gnome/Ptyxis/profile-uuids", formatted)
+
+    # Set label
+    prof_settings = _get_settings_instance(
+        "org.gnome.Ptyxis.Profile", path=f"/org/gnome/Ptyxis/Profiles/{new_uuid}/"
+    )
+    if prof_settings is not None:
+        try:
+            prof_settings.set_string("label", name)
+        except Exception:
+            pass
+    _dconf_write(f"/org/gnome/Ptyxis/Profiles/{new_uuid}/label", f"'{name}'")
+
+    if palette is not None:
+        apply_palette_to_ptyxis(palette, profile_id=new_uuid)
+
+    return new_uuid if success else None
+
+
+def delete_ptyxis_profile(profile_id: str) -> bool:
+    """Delete a Ptyxis profile by UUID. Cannot delete the active default profile."""
+    profiles = list_ptyxis_profiles()
+    target = next((p for p in profiles if p.id == profile_id), None)
+    if target is None or target.is_default:
+        logger.warning("Cannot delete default or nonexistent Ptyxis profile: %s", profile_id)
+        return False
+
+    remaining_uuids = [p.id for p in profiles if p.id != profile_id and p.id != "default"]
+    success = False
+    settings = _get_settings_instance("org.gnome.Ptyxis")
+    if settings is not None:
+        try:
+            settings.set_strv("profile-uuids", remaining_uuids)
+            success = True
+        except Exception:
+            pass
+
+    if not success:
+        formatted = "[" + ", ".join(f"'{u}'" for u in remaining_uuids) + "]"
+        success = _dconf_write("/org/gnome/Ptyxis/profile-uuids", formatted)
+
+    try:
+        subprocess.run(
+            ["dconf", "reset", "-f", f"/org/gnome/Ptyxis/Profiles/{profile_id}/"],
+            capture_output=True,
+            timeout=2,
+            check=False,
+        )
+    except Exception:
+        pass
+
+    return success
+
+
+def read_current_ptyxis_palette(
+    profile_id: str | None = None,
+) -> TerminalPalette | None:
+    """Read active preferences and color scheme for a Ptyxis profile."""
+    if profile_id is None or profile_id == "default":
+        settings = _get_settings_instance("org.gnome.Ptyxis")
+        if settings is not None:
+            try:
+                profile_id = settings.get_string("default-profile-uuid")
+            except Exception:
+                pass
+        if not profile_id or profile_id == "default":
+            raw_default = _dconf_read("/org/gnome/Ptyxis/default-profile-uuid")
+            if raw_default:
+                profile_id = raw_default.strip("'\"")
+
+    label = "Ptyxis"
+    palette_name = "Default"
+    use_custom_font = False
+    font_name = "Monospace 11"
+    opacity = 1.0
+    c_shape = "block"
+    c_blink = "system"
+    aud_bell = False
+
+    # 1. Read app-level font and cursor settings from org.gnome.Ptyxis
+    app_settings = _get_settings_instance("org.gnome.Ptyxis")
+    if app_settings is not None:
+        use_custom_font = not _safe_get_boolean(app_settings, "use-system-font", True)
+        font_name = _safe_get_string(app_settings, "font-name", font_name) or font_name
+        c_shape = _safe_get_string(app_settings, "cursor-shape", c_shape) or c_shape
+        c_blink = _safe_get_string(app_settings, "cursor-blink-mode", c_blink) or c_blink
+        aud_bell = _safe_get_boolean(app_settings, "audible-bell", aud_bell)
+    else:
+        raw_cust_font = _dconf_read("/org/gnome/Ptyxis/use-system-font")
+        if raw_cust_font:
+            use_custom_font = raw_cust_font.lower() != "true"
+        raw_font = _dconf_read("/org/gnome/Ptyxis/font-name")
+        if raw_font:
+            font_name = raw_font.strip("'\"")
+        raw_shape = _dconf_read("/org/gnome/Ptyxis/cursor-shape")
+        if raw_shape:
+            c_shape = raw_shape.strip("'\"")
+        raw_blink = _dconf_read("/org/gnome/Ptyxis/cursor-blink-mode")
+        if raw_blink:
+            c_blink = raw_blink.strip("'\"")
+        raw_bell = _dconf_read("/org/gnome/Ptyxis/audible-bell")
+        if raw_bell:
+            aud_bell = raw_bell.lower() == "true"
+
+    # 2. Read profile-level settings from org.gnome.Ptyxis.Profile
+    if profile_id and profile_id != "default":
+        prof_settings = _get_settings_instance(
+            "org.gnome.Ptyxis.Profile", path=f"/org/gnome/Ptyxis/Profiles/{profile_id}/"
+        )
+        if prof_settings is not None:
+            label = _safe_get_string(prof_settings, "label", label) or label
+            palette_name = _safe_get_string(prof_settings, "palette", palette_name) or palette_name
+            opacity = _safe_get_double(prof_settings, "opacity", opacity)
+        else:
+            raw_pal = _dconf_read(f"/org/gnome/Ptyxis/Profiles/{profile_id}/palette")
+            if raw_pal:
+                palette_name = raw_pal.strip("'\"")
+            raw_label = _dconf_read(f"/org/gnome/Ptyxis/Profiles/{profile_id}/label")
+            if raw_label:
+                label = raw_label.strip("'\"")
+            raw_opac = _dconf_read(f"/org/gnome/Ptyxis/Profiles/{profile_id}/opacity")
+            if raw_opac:
+                try:
+                    opacity = float(raw_opac)
+                except ValueError:
+                    pass
+
+    # Locate the .palette file for palette_name
+    colors = list(DEFAULT_ANSI_PALETTE)
+    fg = "#d0d0d0"
+    bg = "#241f31"
+
+    search_dirs = [
+        Path.home() / ".local/share/org.gnome.Ptyxis/palettes",
+        Path.home() / ".var/app/org.gnome.Ptyxis/data/ptyxis/palettes",
+        Path.home() / ".var/app/org.gnome.Ptyxis/data/org.gnome.Ptyxis/palettes",
+        Path.home() / ".var/app/app.devsuite.Ptyxis/data/ptyxis/palettes",
+        Path.home() / ".var/app/app.devsuite.Ptyxis/data/org.gnome.Ptyxis/palettes",
+        Path("/usr/share/org.gnome.Ptyxis/palettes"),
+    ]
+
+    for sdir in search_dirs:
+        cand = sdir / f"{palette_name}.palette"
+        if not cand.is_file() and sdir.is_dir():
+            for pfile in sdir.glob("*.palette"):
+                try:
+                    cfg = configparser.ConfigParser()
+                    cfg.read(str(pfile), encoding="utf-8")
+                    if (
+                        cfg.has_section("Palette")
+                        and cfg.get("Palette", "Name", fallback="") == palette_name
+                    ):
+                        cand = pfile
+                        break
+                except Exception:
+                    pass
+        if cand.is_file():
+            try:
+                cfg = configparser.ConfigParser()
+                cfg.read(str(cand), encoding="utf-8")
+                sect = (
+                    "Dark"
+                    if cfg.has_section("Dark")
+                    else ("Palette" if cfg.has_section("Palette") else None)
+                )
+                if sect:
+                    fg = cfg.get(sect, "Foreground", fallback=fg)
+                    bg = cfg.get(sect, "Background", fallback=bg)
+                    for i in range(16):
+                        col = cfg.get(sect, f"Color{i}", fallback=None)
+                        if col:
+                            colors[i] = col
+                break
+            except Exception as err:
+                logger.debug("Error reading palette file %s: %s", cand, err)
+
+    use_trans = opacity < 0.999
+    trans_pct = round((1.0 - opacity) * 100) if use_trans else 0
+
+    return TerminalPalette(
+        name=label,
+        foreground_color=fg,
+        background_color=bg,
+        palette=colors,
+        use_system_font=not use_custom_font,
+        font=font_name,
+        cursor_shape=c_shape,
+        cursor_blink_mode=c_blink,
+        audible_bell=aud_bell,
+        use_transparent_background=use_trans,
+        background_transparency_percent=trans_pct,
+    )
+
+
+def apply_palette_to_ptyxis(
+    palette: TerminalPalette,
+    profile_id: str | None = None,
+    palette_name: str = "Gnome-Theme-Manager",
+    target_dir: Path | None = None,
+) -> bool:
+    """Apply a TerminalPalette to Ptyxis terminal emulator.
+
+    Generates the .palette file and assigns the palette and preferences to the target profile.
+
+    Args:
+        palette: TerminalPalette containing ANSI colors, fonts, opacity.
+        profile_id: Optional UUID of the profile. If None, targets default profile.
+        palette_name: Name of the palette to install and assign.
+        target_dir: Optional custom directory to write .palette file to.
+
+    Returns:
+        True if applied successfully, False on failure.
+    """
+    try:
+        export_ptyxis_palette(palette, name=palette_name, target_dir=target_dir)
+    except Exception as err:
+        logger.warning("Failed to write Ptyxis palette file: %s", err)
+        return False
+
+    # Resolve target profile UUID
+    target_uuid = profile_id
+    if not target_uuid or target_uuid == "default":
+        settings = _get_settings_instance("org.gnome.Ptyxis")
+        if settings is not None:
+            try:
+                target_uuid = settings.get_string("default-profile-uuid")
+            except Exception:
+                pass
+        if not target_uuid:
+            raw_default = _dconf_read("/org/gnome/Ptyxis/default-profile-uuid")
+            if raw_default:
+                target_uuid = raw_default.strip("'\"")
+
+    if not target_uuid:
+        target_uuid = str(uuid.uuid4())
+        settings = _get_settings_instance("org.gnome.Ptyxis")
+        if settings is not None:
+            try:
+                settings.set_string("default-profile-uuid", target_uuid)
+                settings.set_strv("profile-uuids", [target_uuid])
+            except Exception:
+                pass
+        _dconf_write("/org/gnome/Ptyxis/default-profile-uuid", f"'{target_uuid}'")
+        _dconf_write("/org/gnome/Ptyxis/profile-uuids", f"['{target_uuid}']")
+
+    # Apply preferences
+    opacity = (
+        max(0.0, min(1.0, 1.0 - (palette.background_transparency_percent / 100.0)))
+        if palette.use_transparent_background
+        else 1.0
+    )
+
+    path = f"/org/gnome/Ptyxis/Profiles/{target_uuid}/"
+    prof_settings = _get_settings_instance("org.gnome.Ptyxis.Profile", path=path)
+
+    applied_profile = False
+    if prof_settings is not None:
+        _safe_set_string(prof_settings, "palette", palette_name)
+        _safe_set_double(prof_settings, "opacity", opacity)
+        applied_profile = True
+    else:
+        _dconf_write(f"{path}palette", f"'{palette_name}'")
+        _dconf_write(f"{path}opacity", f"{opacity:.4f}")
+        applied_profile = True
+
+    # App-level font & cursor settings
+    app_settings = _get_settings_instance("org.gnome.Ptyxis")
+    if app_settings is not None:
+        _safe_set_boolean(app_settings, "use-system-font", palette.use_system_font)
+        if palette.font:
+            _safe_set_string(app_settings, "font-name", palette.font)
+        _safe_set_string(app_settings, "cursor-shape", palette.cursor_shape)
+        _safe_set_string(app_settings, "cursor-blink-mode", palette.cursor_blink_mode)
+        _safe_set_boolean(app_settings, "audible-bell", palette.audible_bell)
+    else:
+        _dconf_write(
+            "/org/gnome/Ptyxis/use-system-font",
+            "true" if palette.use_system_font else "false",
+        )
+        if palette.font:
+            _dconf_write("/org/gnome/Ptyxis/font-name", f"'{palette.font}'")
+        _dconf_write("/org/gnome/Ptyxis/cursor-shape", f"'{palette.cursor_shape}'")
+        _dconf_write("/org/gnome/Ptyxis/cursor-blink-mode", f"'{palette.cursor_blink_mode}'")
+        _dconf_write(
+            "/org/gnome/Ptyxis/audible-bell",
+            "true" if palette.audible_bell else "false",
+        )
+
+    return applied_profile

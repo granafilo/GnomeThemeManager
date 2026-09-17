@@ -224,17 +224,27 @@ GENERIC_FALLBACK_PROFILE = TerminalProfile(
 def synthesize_install_command(
     terminal_id: str,
     package_manager: str,
+    os_info: OSInfo | None = None,
+    distro: str | None = None,
 ) -> str:
     """Synthesize the exact distribution package installation command.
 
     Args:
         terminal_id: Unique identifier of the terminal.
         package_manager: Detected package manager ('apt', 'dnf', 'pacman', 'zypper').
+        os_info: Optional OSInfo instance for distro and version aware synthesis.
+        distro: Optional Linux distribution override.
 
     Returns:
-        Shell command string (e.g. 'sudo dnf install -y ptyxis').
+        Shell command string (e.g. 'sudo dnf install -y ptyxis',
+        'flatpak install -y flathub app.devsuite.Ptyxis').
     """
-    return get_install_command(terminal_id, package_manager=package_manager)
+    return get_install_command(
+        terminal_id,
+        package_manager=package_manager,
+        distro=distro,
+        os_info=os_info,
+    )
 
 
 def get_terminal_profile(
@@ -257,7 +267,7 @@ def get_terminal_profile(
 
     resolved_os = os_info if os_info is not None else detect_os()
     pm = resolved_os.package_manager if resolved_os.package_manager != "unknown" else "apt"
-    install_cmd = synthesize_install_command(clean_id, pm)
+    install_cmd = synthesize_install_command(clean_id, pm, os_info=resolved_os)
 
     return TerminalProfile(
         terminal_id=clean_id,
