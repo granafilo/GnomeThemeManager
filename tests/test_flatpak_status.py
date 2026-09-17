@@ -435,7 +435,7 @@ def test_execute_wizard_step_success() -> None:
     )
 
     lines: list[str] = []
-    res = execute_wizard_step(step, user_mode=True, on_progress=lambda l: lines.append(l))
+    res = execute_wizard_step(step, user_mode=True, on_progress=lambda line: lines.append(line))
     assert res.success is True
     assert res.returncode == 0
     assert "Hello" in res.output

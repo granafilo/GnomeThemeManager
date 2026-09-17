@@ -18,8 +18,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-logger = logging.getLogger("gnome_theme_manager.core")
-
 from .constants import (
     GSETTINGS_KEY_COLOR_SCHEME,
     GSETTINGS_KEY_CURSOR_THEME,
@@ -37,6 +35,8 @@ from .constants import (
 from .errors import GSettingsUnavailableError
 from .fonts import FontConfig
 from .models import ThemeSet
+
+logger = logging.getLogger("gnome_theme_manager.core")
 
 # Protected PyGObject import
 try:
