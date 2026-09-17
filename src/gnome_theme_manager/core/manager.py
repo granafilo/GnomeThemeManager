@@ -1331,7 +1331,9 @@ class ThemeManager:
 
         if tid == "ptyxis":
             return list_ptyxis_profiles()
-        return list_gnome_terminal_profiles()
+        if tid == "gnome-terminal":
+            return list_gnome_terminal_profiles()
+        return []
 
     def create_terminal_profile(
         self,
@@ -1363,7 +1365,9 @@ class ThemeManager:
 
         if tid == "ptyxis":
             return create_ptyxis_profile(name, palette=palette)
-        return create_gnome_terminal_profile(name, palette=palette)
+        if tid == "gnome-terminal":
+            return create_gnome_terminal_profile(name, palette=palette)
+        return None
 
     def delete_terminal_profile(self, profile_id: str, terminal_id: str | None = None) -> bool:
         """Delete an inactive terminal profile.
@@ -1389,7 +1393,9 @@ class ThemeManager:
 
         if tid == "ptyxis":
             return delete_ptyxis_profile(profile_id)
-        return delete_gnome_terminal_profile(profile_id)
+        if tid == "gnome-terminal":
+            return delete_gnome_terminal_profile(profile_id)
+        return False
 
     def set_default_terminal_profile(self, profile_id: str, terminal_id: str | None = None) -> bool:
         """Set a terminal profile as the default.
@@ -1415,7 +1421,9 @@ class ThemeManager:
 
         if tid == "ptyxis":
             return set_default_ptyxis_profile(profile_id)
-        return set_default_gnome_terminal_profile(profile_id)
+        if tid == "gnome-terminal":
+            return set_default_gnome_terminal_profile(profile_id)
+        return False
 
     def detect_os(self) -> Any:
         """Detect host Linux distribution, version, and default package manager."""
@@ -1522,7 +1530,12 @@ class ThemeManager:
             return apply_palette_to_ptyxis(palette, profile_id=profile_id)
         if tid == "kgx":
             return apply_palette_to_gnome_console(palette)
-        return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
+        if tid == "gnome-terminal":
+            return apply_palette_to_gnome_terminal(palette, profile_id=profile_id)
+        logger.warning(
+            "Terminal '%s' does not currently support automated palette application", tid
+        )
+        return False
 
     # -------------------------------------------------------------------------
     # Theme Installation and Uninstallation

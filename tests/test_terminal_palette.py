@@ -156,3 +156,108 @@ def test_list_and_manage_terminal_profiles() -> None:
             # 5. Delete non-default profile -> should succeed
             ok_del_sec = delete_gnome_terminal_profile("secondary-uuid")
             assert ok_del_sec is True
+
+
+def test_gnome_terminal_debian_no_transparency() -> None:
+    """Verify GNOME Terminal read and apply work seamlessly on vanilla GNOME (Debian) without transparency keys."""
+    from gnome_theme_manager.core.terminal_palette import (
+        TerminalPalette,
+        apply_palette_to_gnome_terminal,
+        read_current_gnome_terminal_palette,
+    )
+
+    # Standard vanilla upstream keys (NO use-transparent-background or background-transparency-percent)
+    vanilla_keys = [
+        "visible-name",
+        "foreground-color",
+        "background-color",
+        "palette",
+        "use-system-font",
+        "font",
+        "cursor-shape",
+        "cursor-blink-mode",
+        "audible-bell",
+        "use-theme-colors",
+    ]
+
+    mock_profiles_settings = MagicMock()
+    mock_profiles_settings.get_string.return_value = "vanilla-profile-uuid"
+
+    mock_profile_settings = MagicMock()
+    mock_profile_settings.list_keys.return_value = vanilla_keys
+    mock_profile_settings.get_string.side_effect = lambda k: {
+        "visible-name": "Debian Vanilla",
+        "foreground-color": "#ffffff",
+        "background-color": "#000000",
+        "font": "Monospace 10",
+        "cursor-shape": "block",
+        "cursor-blink-mode": "system",
+    }.get(k, "")
+    mock_profile_settings.get_strv.side_effect = lambda k: (
+        ["#000000"] * 16 if k == "palette" else []
+    )
+    mock_profile_settings.get_boolean.side_effect = lambda k: {
+        "use-system-font": True,
+        "audible-bell": False,
+    }.get(k, False)
+
+    mock_settings_cls = MagicMock()
+    mock_settings_cls.return_value = mock_profiles_settings
+    mock_settings_cls.new_with_path.return_value = mock_profile_settings
+
+    with patch("gnome_theme_manager.core.terminal_palette.schema_exists", return_value=True):
+        with patch("gnome_theme_manager.core.terminal_palette._GIO_AVAILABLE", True):
+            with patch("gnome_theme_manager.core.terminal_palette.Gio") as mock_gio:
+                mock_gio.Settings = mock_settings_cls
+
+                # 1. Reading should succeed and default transparency to False/0 without crashing
+                read_palette = read_current_gnome_terminal_palette(
+                    profile_id="vanilla-profile-uuid"
+                )
+                assert read_palette is not None
+                assert read_palette.name == "Debian Vanilla"
+                assert read_palette.use_transparent_background is False
+                assert read_palette.background_transparency_percent == 0
+
+                # 2. Applying palette should skip nonexistent transparency keys and not crash
+                pal_to_apply = TerminalPalette(
+                    name="Custom Debian",
+                    foreground_color="#e0e0e0",
+                    background_color="#121212",
+                    palette=["#121212"] * 16,
+                    use_transparent_background=True,
+                    background_transparency_percent=25,
+                )
+                success = apply_palette_to_gnome_terminal(
+                    pal_to_apply, profile_id="vanilla-profile-uuid"
+                )
+                assert success is True
+                # Crucial assertion: set_boolean should NEVER be called for use-transparent-background
+                for call in mock_profile_settings.set_boolean.call_args_list:
+                    assert call[0][0] != "use-transparent-background"
+                # Nor should set_int be called for background-transparency-percent
+                for call in mock_profile_settings.set_int.call_args_list:
+                    assert call[0][0] != "background-transparency-percent"
+
+
+def test_gnome_terminal_supports_transparency_detection() -> None:
+    """Verify detection of transparency capability in GNOME Terminal profiles."""
+    from gnome_theme_manager.core.terminal_palette import gnome_terminal_supports_transparency
+
+    mock_profile_patched = MagicMock()
+    mock_profile_patched.list_keys.return_value = ["use-transparent-background", "font"]
+
+    mock_profile_vanilla = MagicMock()
+    mock_profile_vanilla.list_keys.return_value = ["font", "audible-bell"]
+
+    with patch("gnome_theme_manager.core.terminal_palette.schema_exists", return_value=True):
+        with patch(
+            "gnome_theme_manager.core.terminal_palette._get_settings_instance"
+        ) as mock_get_inst:
+            # Patched distro (Ubuntu/Fedora)
+            mock_get_inst.return_value = mock_profile_patched
+            assert gnome_terminal_supports_transparency("patched-uuid") is True
+
+            # Vanilla distro (Debian)
+            mock_get_inst.return_value = mock_profile_vanilla
+            assert gnome_terminal_supports_transparency("vanilla-uuid") is False

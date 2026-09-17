@@ -136,22 +136,55 @@ echo -e "${BLUE}2. Click-to-Install File:${NC}         $FLATPAKREF_FILE"
 echo -e "\n${YELLOW}How to install/update and run the application:${NC}"
 echo -e "  • ${GREEN}Quick Update / Reinstall (Passwordless):${NC}"
 echo -e "    flatpak install --user --reinstall -y $BUNDLE_FILE"
-echo -e "    flatpak override --user --filesystem=~/.local/share/icons:rw --filesystem=~/.local/share/themes:rw --filesystem=~/.icons:rw --filesystem=~/.themes:rw $APP_ID"
+echo -e "    flatpak override --user --filesystem=~/.local/share/icons:create --filesystem=~/.local/share/themes:create --filesystem=~/.local/share/gnome-shell/extensions:create --filesystem=~/.icons:create --filesystem=~/.themes:create $APP_ID"
 echo -e "\n  • ${GREEN}Run the application:${NC}"
 echo -e "    flatpak run $APP_ID"
 echo -e "${GREEN}====================================================${NC}\n"
 
 # If --install or -i flag was passed, reinstall immediately
 if [[ "$*" == *"--install"* ]] || [[ "$*" == *"-i"* ]]; then
+    echo -e "${YELLOW}Creating user theme, icon, and extension directories on host if missing...${NC}"
+    mkdir -p "$HOME/.local/share/themes" "$HOME/.local/share/icons" "$HOME/.local/share/gnome-shell/extensions" "$HOME/.local/share/applications"
+
     echo -e "${YELLOW}Updating/reinstalling Flatpak user package...${NC}"
     flatpak install --user --reinstall -y "$BUNDLE_FILE"
-    echo -e "${YELLOW}Configuring user theme & icon read-write permissions...${NC}"
-    flatpak override --user --filesystem=~/.local/share/icons:rw --filesystem=~/.local/share/themes:rw --filesystem=~/.icons:rw --filesystem=~/.themes:rw "$APP_ID"
-    echo -e "${YELLOW}Refreshing desktop database and icon cache...${NC}"
-    rm -f "$HOME/.local/share/applications/$APP_ID.desktop" 2>/dev/null || true
-    update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
-    gtk-update-icon-cache -q -f -t "$HOME/.local/share/flatpak/exports/share/icons/hicolor" 2>/dev/null || true
-    update-desktop-database "$HOME/.local/share/flatpak/exports/share/applications" 2>/dev/null || true
-    echo -e "${GREEN}✓ Flatpak updated and permissions configured successfully! Launch it with: flatpak run $APP_ID${NC}\n"
-fi
 
+    echo -e "${YELLOW}Configuring user theme, icon & extension permissions...${NC}"
+    flatpak override --user \
+        --filesystem=~/.local/share/icons:create \
+        --filesystem=~/.local/share/themes:create \
+        --filesystem=~/.local/share/gnome-shell/extensions:create \
+        --filesystem=~/.icons:create \
+        --filesystem=~/.themes:create \
+        "$APP_ID"
+
+    echo -e "${YELLOW}Integrating application launcher and icons for immediate desktop visibility...${NC}"
+    # Copy desktop file to ~/.local/share/applications/ so GNOME Shell displays it immediately without session reload
+    EXPORTED_DESKTOP="$HOME/.local/share/flatpak/exports/share/applications/$APP_ID.desktop"
+    TARGET_DESKTOP="$HOME/.local/share/applications/$APP_ID.desktop"
+    if [ -f "$EXPORTED_DESKTOP" ]; then
+        cp -f "$EXPORTED_DESKTOP" "$TARGET_DESKTOP"
+        chmod +x "$TARGET_DESKTOP" 2>/dev/null || true
+    fi
+
+    # Export hicolor icons so GNOME Shell launcher displays the icon immediately
+    for size in 16x16 24x24 32x32 48x48 64x64 128x128 256x256 512x512 scalable; do
+        SRC_ICON="$HOME/.local/share/flatpak/exports/share/icons/hicolor/$size/apps/$APP_ID"
+        DEST_DIR="$HOME/.local/share/icons/hicolor/$size/apps"
+        mkdir -p "$DEST_DIR"
+        for f in "${SRC_ICON}".*; do
+            if [ -f "$f" ]; then
+                cp -f "$f" "$DEST_DIR/" 2>/dev/null || true
+            fi
+        done
+    done
+
+    echo -e "${YELLOW}Refreshing desktop database and icon cache...${NC}"
+    update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+    update-desktop-database "$HOME/.local/share/flatpak/exports/share/applications" 2>/dev/null || true
+    gtk-update-icon-cache -q -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    gtk-update-icon-cache -q -f -t "$HOME/.local/share/flatpak/exports/share/icons/hicolor" 2>/dev/null || true
+
+    echo -e "${GREEN}✓ Flatpak updated and integrated successfully! Visible in app menu without session restart.${NC}"
+    echo -e "${GREEN}  Launch it from app menu or run: flatpak run $APP_ID${NC}\n"
+fi

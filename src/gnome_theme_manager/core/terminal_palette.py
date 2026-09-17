@@ -329,11 +329,24 @@ def _settings_has_key(settings: Any, key: str) -> bool:
     if settings is None:
         return False
     try:
+        # Check list_keys() if available and returns a container
         if hasattr(settings, "list_keys"):
             res = settings.list_keys()
             if isinstance(res, (list, tuple, set)):
                 return key in res
-            return True
+
+        # Check schema.has_key() on real Gio.SettingsSchema
+        schema = getattr(settings, "settings_schema", None)
+        if schema is None and hasattr(settings, "get_property"):
+            try:
+                schema = settings.get_property("settings-schema")
+            except Exception:
+                schema = None
+        if schema is not None and hasattr(schema, "has_key"):
+            val = schema.has_key(key)
+            if isinstance(val, bool):
+                return val
+
         return True
     except Exception:
         return False
@@ -402,6 +415,88 @@ def _safe_set_double(settings: Any, key: str, val: float) -> bool:
             return True
         except Exception:
             pass
+    return False
+
+
+def _safe_get_int(settings: Any, key: str, default: int = 0) -> int:
+    """Get an int value from Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            val = settings.get_int(key)
+            return int(val) if val is not None else default
+        except Exception:
+            pass
+    return default
+
+
+def _safe_set_int(settings: Any, key: str, val: int) -> bool:
+    """Set an int value in Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            settings.set_int(key, val)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def _safe_get_strv(settings: Any, key: str, default: list[str] | None = None) -> list[str]:
+    """Get a string array from Gio.Settings safely without crashing on missing keys."""
+    default_list = default if default is not None else []
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            val = settings.get_strv(key)
+            return list(val) if val is not None else default_list
+        except Exception:
+            pass
+    return default_list
+
+
+def _safe_set_strv(settings: Any, key: str, val: list[str]) -> bool:
+    """Set a string array in Gio.Settings safely without crashing on missing keys."""
+    if settings is not None and _settings_has_key(settings, key):
+        try:
+            settings.set_strv(key, val)
+            return True
+        except Exception:
+            pass
+    return False
+
+
+def gnome_terminal_supports_transparency(profile_id: str | None = None) -> bool:
+    """Check if GNOME Terminal schema and profile support transparency keys.
+
+    Vanilla upstream GNOME Terminal (Debian, Arch, etc.) lacks transparency keys,
+    whereas Ubuntu and Fedora carry downstream patches adding them.
+    """
+    if not schema_exists("org.gnome.Terminal.Legacy.Profile"):
+        return False
+
+    try:
+        if profile_id is None and schema_exists("org.gnome.Terminal.ProfilesList"):
+            profiles_settings = _get_settings_instance("org.gnome.Terminal.ProfilesList")
+            if profiles_settings is not None:
+                profile_id = profiles_settings.get_string("default")
+
+        if profile_id:
+            path = f"/org/gnome/terminal/legacy/profiles:/:{profile_id}/"
+            profile = _get_settings_instance("org.gnome.Terminal.Legacy.Profile", path)
+            if profile is not None:
+                return _settings_has_key(profile, "use-transparent-background")
+    except Exception:
+        pass
+
+    try:
+        from gi.repository import Gio
+
+        source = Gio.SettingsSchemaSource.get_default()
+        if source is not None:
+            schema = source.lookup("org.gnome.Terminal.Legacy.Profile", True)
+            if schema is not None:
+                return bool(schema.has_key("use-transparent-background"))
+    except Exception:
+        pass
+
     return False
 
 
@@ -703,19 +798,19 @@ def read_current_gnome_terminal_palette(
         if profile is None:
             return None
 
-        name = profile.get_string("visible-name") or "GNOME Terminal"
-        fg = profile.get_string("foreground-color") or "#d0d0d0"
-        bg = profile.get_string("background-color") or "#241f31"
-        raw_pal = profile.get_strv("palette")
+        name = _safe_get_string(profile, "visible-name", "GNOME Terminal") or "GNOME Terminal"
+        fg = _safe_get_string(profile, "foreground-color", "#d0d0d0") or "#d0d0d0"
+        bg = _safe_get_string(profile, "background-color", "#241f31") or "#241f31"
+        raw_pal = _safe_get_strv(profile, "palette")
         pal = list(raw_pal) if raw_pal and len(raw_pal) == 16 else list(DEFAULT_ANSI_PALETTE)
 
-        use_sys_font = profile.get_boolean("use-system-font")
-        font = profile.get_string("font") or "Monospace 11"
-        c_shape = profile.get_string("cursor-shape") or "block"
-        c_blink = profile.get_string("cursor-blink-mode") or "system"
-        aud_bell = profile.get_boolean("audible-bell")
-        use_trans = profile.get_boolean("use-transparent-background")
-        trans_pct = profile.get_int("background-transparency-percent")
+        use_sys_font = _safe_get_boolean(profile, "use-system-font", True)
+        font = _safe_get_string(profile, "font", "Monospace 11") or "Monospace 11"
+        c_shape = _safe_get_string(profile, "cursor-shape", "block") or "block"
+        c_blink = _safe_get_string(profile, "cursor-blink-mode", "system") or "system"
+        aud_bell = _safe_get_boolean(profile, "audible-bell", False)
+        use_trans = _safe_get_boolean(profile, "use-transparent-background", False)
+        trans_pct = _safe_get_int(profile, "background-transparency-percent", 0)
 
         return TerminalPalette(
             name=name,
@@ -773,22 +868,24 @@ def apply_palette_to_gnome_terminal(
         if profile is None:
             return False
 
-        profile.set_boolean("use-theme-colors", False)
-        profile.set_string("foreground-color", palette.foreground_color)
-        profile.set_string("background-color", palette.background_color)
-        profile.set_strv("palette", palette.palette)
+        _safe_set_boolean(profile, "use-theme-colors", False)
+        _safe_set_string(profile, "foreground-color", palette.foreground_color)
+        _safe_set_string(profile, "background-color", palette.background_color)
+        _safe_set_strv(profile, "palette", palette.palette)
         if palette.bold_color:
-            profile.set_string("bold-color", palette.bold_color)
+            _safe_set_string(profile, "bold-color", palette.bold_color)
 
         # Profile preferences
-        profile.set_boolean("use-system-font", palette.use_system_font)
+        _safe_set_boolean(profile, "use-system-font", palette.use_system_font)
         if palette.font:
-            profile.set_string("font", palette.font)
-        profile.set_string("cursor-shape", palette.cursor_shape)
-        profile.set_string("cursor-blink-mode", palette.cursor_blink_mode)
-        profile.set_boolean("audible-bell", palette.audible_bell)
-        profile.set_boolean("use-transparent-background", palette.use_transparent_background)
-        profile.set_int("background-transparency-percent", palette.background_transparency_percent)
+            _safe_set_string(profile, "font", palette.font)
+        _safe_set_string(profile, "cursor-shape", palette.cursor_shape)
+        _safe_set_string(profile, "cursor-blink-mode", palette.cursor_blink_mode)
+        _safe_set_boolean(profile, "audible-bell", palette.audible_bell)
+        _safe_set_boolean(profile, "use-transparent-background", palette.use_transparent_background)
+        _safe_set_int(
+            profile, "background-transparency-percent", palette.background_transparency_percent
+        )
 
         return True
     except Exception as err:

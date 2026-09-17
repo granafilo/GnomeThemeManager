@@ -3865,3 +3865,7 @@ msgstr "👁️ Anteprima Desktop Live Attiva"
 msgid "👁️ Preview on Desktop"
 msgstr "👁️ Anteprima sul desktop"
 
+#: src/gnome_theme_manager/gui_gtk/pages/terminal.py:790
+msgid "Transparency is not supported by this terminal profile."
+msgstr "La trasparenza non è supportata dal profilo di questo terminale."
+

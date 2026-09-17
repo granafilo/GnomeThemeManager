@@ -27,6 +27,7 @@ from ...core.terminal_palette import (
     TerminalPalette,
     TerminalProfileSummary,
     export_palette_to_json,
+    gnome_terminal_supports_transparency,
 )
 from ..widgets.color_picker import ColorPickerButton
 from ..widgets.font_utils import safe_set_font_desc
@@ -770,12 +771,33 @@ class TerminalPage:
             if i < len(palette.palette):
                 picker.set_color_hex(palette.palette[i])
 
+        supports_transparency = True
+        if self._selected_terminal_id == "gnome-terminal":
+            supports_transparency = gnome_terminal_supports_transparency(self._selected_profile_id)
+        elif self._selected_terminal_id in ("kgx", "konsole"):
+            supports_transparency = False
+
         if self.transparency_switch_row:
-            self.transparency_switch_row.set_active(palette.use_transparent_background)
+            if supports_transparency:
+                self.transparency_switch_row.set_sensitive(True)
+                self.transparency_switch_row.set_subtitle(
+                    _("Enable transparent background for terminal windows")
+                )
+                self.transparency_switch_row.set_active(palette.use_transparent_background)
+            else:
+                self.transparency_switch_row.set_active(False)
+                self.transparency_switch_row.set_sensitive(False)
+                self.transparency_switch_row.set_subtitle(
+                    _("Transparency is not supported by this terminal profile.")
+                )
         if self.transparency_percent_row:
-            self.transparency_percent_row.set_sensitive(palette.use_transparent_background)
+            self.transparency_percent_row.set_sensitive(
+                supports_transparency and palette.use_transparent_background
+            )
         if self.transparency_spin_button:
-            self.transparency_spin_button.set_value(palette.background_transparency_percent)
+            self.transparency_spin_button.set_value(
+                palette.background_transparency_percent if supports_transparency else 0
+            )
 
         if self.use_system_font_row:
             self.use_system_font_row.set_active(palette.use_system_font)
@@ -855,7 +877,8 @@ class TerminalPage:
         """Handle transparent background switch toggle."""
         if self.transparency_switch_row and self.transparency_percent_row:
             active = self.transparency_switch_row.get_active()
-            self.transparency_percent_row.set_sensitive(active)
+            sensitive = self.transparency_switch_row.get_sensitive()
+            self.transparency_percent_row.set_sensitive(active and sensitive)
 
     def _on_system_font_toggled(self, _row: Any, _param: Any) -> None:
         """Handle system monospace font switch toggle."""
