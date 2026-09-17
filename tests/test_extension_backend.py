@@ -405,3 +405,44 @@ def test_rest_backend_install_flatpak_spawn_fallback(
                 args = mock_run.call_args[0][0]
                 assert args[0] == "flatpak-spawn"
                 assert args[1] == "--host"
+
+
+def test_rest_backend_install_via_dbus_success(mock_mgr: ExtensionsManager) -> None:
+    """Verify that install calls InstallRemoteExtension on DBus and succeeds without downloading."""
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    uuid = "test-dbus@example.com"
+
+    mock_res = MagicMock()
+    mock_res.get_child_value.return_value.get_string.return_value = "successful"
+    mock_proxy = MagicMock()
+    mock_proxy.call_sync.return_value = mock_res
+
+    with patch("gnome_theme_manager.core.extension_backend._GIO_AVAILABLE", True):
+        with patch("gnome_theme_manager.core.extension_backend.Gio") as mock_gio:
+            with patch("gnome_theme_manager.core.extension_backend.GLib"):
+                mock_gio.DBusProxy.new_sync.return_value = mock_proxy
+                success = backend.install(uuid)
+                assert success is True
+                mock_proxy.call_sync.assert_called_once()
+                args = mock_proxy.call_sync.call_args[0]
+                assert args[0] == "InstallRemoteExtension"
+
+
+def test_rest_backend_install_via_dbus_cancelled(mock_mgr: ExtensionsManager) -> None:
+    """Verify that when user cancels DBus install prompt, it returns False and does not unpack."""
+    backend = GnomeExtensionsRestBackend(extensions_manager=mock_mgr)
+    uuid = "test-dbus@example.com"
+
+    mock_res = MagicMock()
+    mock_res.get_child_value.return_value.get_string.return_value = "cancelled"
+    mock_proxy = MagicMock()
+    mock_proxy.call_sync.return_value = mock_res
+
+    with patch("gnome_theme_manager.core.extension_backend._GIO_AVAILABLE", True):
+        with patch("gnome_theme_manager.core.extension_backend.Gio") as mock_gio:
+            with patch("gnome_theme_manager.core.extension_backend.GLib"):
+                mock_gio.DBusProxy.new_sync.return_value = mock_proxy
+                with patch.object(backend, "download_bundle") as mock_dl:
+                    success = backend.install(uuid)
+                    assert success is False
+                    mock_dl.assert_not_called()

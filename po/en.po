@@ -1266,6 +1266,10 @@ msgstr "Extension '{name}' enabled."
 msgid "Extension '{name}' installed successfully."
 msgstr "Extension '{name}' installed successfully."
 
+#: src/gnome_theme_manager/gui_gtk/pages/extensions.py:1796
+msgid "Extension '{name}' installed. Please log out and back in to activate it in GNOME Shell."
+msgstr "Extension '{name}' installed. Please log out and back in to activate it in GNOME Shell."
+
 #: src/gnome_theme_manager/gui_gtk/pages/extensions.py:1844
 #: src/gnome_theme_manager/gui_gtk/pages/extensions.py:2086
 msgid "Extension '{name}' removed."
