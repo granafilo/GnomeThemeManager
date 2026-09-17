@@ -10,6 +10,7 @@ This module encapsulates all read and write calls to:
 """
 
 import logging
+import os
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -547,4 +548,20 @@ class GSettingsClient:
         css_file = GTK4_CONFIG_DIR / "gtk.css"
         if css_file.is_file():
             return Gtk4OverrideStatus.ACTIVE
+
+        # Check for cross-environment symlinks between host and Flatpak (/run/host)
+        if css_file.is_symlink():
+            try:
+                raw_target = os.readlink(css_file)
+                if raw_target.startswith("/run/host"):
+                    host_target = Path(raw_target.replace("/run/host", "", 1))
+                    if host_target.is_file():
+                        return Gtk4OverrideStatus.ACTIVE
+                else:
+                    flatpak_target = Path(f"/run/host{raw_target}")
+                    if flatpak_target.is_file():
+                        return Gtk4OverrideStatus.ACTIVE
+            except Exception:
+                pass
+
         return Gtk4OverrideStatus.INACTIVE

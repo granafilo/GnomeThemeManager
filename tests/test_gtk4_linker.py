@@ -6,11 +6,20 @@ Verifies correct creation, replacement, removal, and integrity checking
 of symbolic links (symlinks) in user configuration directory ~/.config/gtk-4.0/.
 """
 
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 from gnome_theme_manager.core.gtk4_linker import GTK4ThemeLinker
+
+
+@pytest.fixture(autouse=True)
+def isolate_xdg(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Isolate XDG configuration and data directories for tests."""
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / ".config"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / ".local" / "share"))
 
 
 @pytest.fixture
@@ -184,3 +193,41 @@ def test_gtk4_linker_is_override_active_false_when_secondary_symlink_dangling(tm
 
     linker = GTK4ThemeLinker(config_dir=config_dir)
     assert linker.is_override_active() is False
+
+
+def test_gtk4_linker_is_override_active_true_run_host_symlink(tmp_path: Path):
+    """Verify that is_override_active returns True when symlink points to /run/host/<real_file>."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    config_dir.mkdir(parents=True, exist_ok=True)
+
+    real_css = tmp_path / "usr" / "share" / "themes" / "Colloid" / "gtk.css"
+    real_css.parent.mkdir(parents=True, exist_ok=True)
+    real_css.write_text("/* valid */")
+
+    # Symlink points to /run/host + real_css
+    (config_dir / "gtk.css").symlink_to(Path(f"/run/host{real_css}"))
+
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    assert linker.is_override_active() is True
+
+
+def test_gtk4_linker_apply_override_strips_run_host(tmp_path: Path):
+    """Verify that apply_override strips /run/host from target symlink when running in sandbox."""
+    config_dir = tmp_path / "config" / "gtk-4.0"
+    theme_dir = tmp_path / "run" / "host" / "usr" / "share" / "themes" / "MyTheme"
+    theme_gtk4 = theme_dir / "gtk-4.0"
+    theme_gtk4.mkdir(parents=True, exist_ok=True)
+    (theme_gtk4 / "gtk.css").write_text("/* theme */")
+
+    linker = GTK4ThemeLinker(config_dir=config_dir)
+    # Patch resolve of source_file to simulate /run/host/usr/share/themes/MyTheme/gtk-4.0/gtk.css
+    with patch(
+        "pathlib.Path.resolve",
+        return_value=Path("/run/host/usr/share/themes/MyTheme/gtk-4.0/gtk.css"),
+    ):
+        success = linker.apply_override(theme_dir)
+        assert success is True
+
+    linked_target = os.readlink(config_dir / "gtk.css")
+    assert not linked_target.startswith("/run/host")
+    assert linked_target == "/usr/share/themes/MyTheme/gtk-4.0/gtk.css"
