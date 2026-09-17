@@ -13,7 +13,7 @@ A modern, native theme manager and customization suite designed for the **GNOME 
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/License-GPL--3.0--or--later-blue.svg)](LICENSE)
 [![CI Tests](https://github.com/granafilo/GnomeThemeManager/actions/workflows/tests.yml/badge.svg)](https://github.com/granafilo/GnomeThemeManager/actions)
 
-**Current release:** v1.5.2
+**Current release:** v1.5.3
 
 [![GNOME Theme Manager Showcase](docs/screenshot/01-current-status.png)](docs/screenshot/01-current-status.png)
 
@@ -40,8 +40,9 @@ A modern, native theme manager and customization suite designed for the **GNOME 
 - **🔤 Typography & Font Control**:
   - Configure Interface, Document, and Monospace fonts with native font pickers.
   - Real-time global text scaling factor adjustment.
-- **💻 GNOME Terminal Palettes**:
+- **💻 GNOME & Multi-Distro Terminal Palettes**:
   - Customize profiles, derive 16-color ANSI palettes from themes, adjust background transparency, and manage monospace fonts.
+  - Native support for **Ptyxis**, **GNOME Terminal**, **GNOME Console (kgx)**, **Alacritty** (with `alacritty.toml` section preservation & hot-reload), and **Kitty** (`kitty.conf` & `SIGUSR1` reload).
 - **📦 Smart Archive Installer & Safety Protections**:
   - Drag-and-drop `.zip` and `.tar.*` archives with pre-installation validation.
   - Active-theme protection prevents accidental deletion of themes currently in use.
@@ -72,7 +73,8 @@ GNOME Theme Manager targets modern GNOME desktop releases (GNOME 42+) and is act
 | **Ubuntu 24.04 LTS** | GNOME 46 | ✅ Verified | Primary reference target; native Libadwaita & GSettings |
 | **Zorin OS 17+** | GNOME 46 | ✅ Verified | Validated with custom desktop layouts |
 | **Fedora 44** | GNOME 50 | ✅ Verified | Upstream GNOME stack & Libadwaita stylesheets |
-| **CachyOS / Arch** | GNOME 50 | ✅ Verified | Rolling release testing with native Libadwaita styles |
+| **CachyOS / Arch** | GNOME 50 | ✅ Verified | Rolling release testing; Alacritty & Kitty palette hot-reloads |
+| **Debian 13 "Trixie" (13.07)** | GNOME 46+ | ✅ Verified | Vanilla GNOME Terminal without transparency keys; automatic desktop integration |
 
 ---
 
@@ -89,9 +91,9 @@ Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https:
   ```
 
 ### Method 2: Standalone Bundle (`.flatpak`)
-For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.2-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.3-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
 ```bash
-flatpak install --user --bundle GNOMEThemeManager-1.5.2-x86_64.flatpak
+flatpak install --user --bundle GNOMEThemeManager-1.5.3-x86_64.flatpak
 ```
 
 ### Launching the Application
