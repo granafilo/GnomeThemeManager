@@ -67,9 +67,9 @@ def test_init_bundled_icon_theme_registers_search_path() -> None:
     init_bundled_icon_theme(icon_theme)
 
     paths = icon_theme.get_search_path()
-    assert any(
-        str(BUNDLED_ICONS_DIR) in p for p in paths
-    ), f"BUNDLED_ICONS_DIR {BUNDLED_ICONS_DIR} was not added to icon_theme search path: {paths}"
+    assert any(str(BUNDLED_ICONS_DIR) in p for p in paths), (
+        f"BUNDLED_ICONS_DIR {BUNDLED_ICONS_DIR} was not added to icon_theme search path: {paths}"
+    )
 
 
 def test_main_window_initializes_bundled_icons(mock_theme_manager) -> None:

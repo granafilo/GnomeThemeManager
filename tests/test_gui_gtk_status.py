@@ -84,9 +84,9 @@ def test_status_page_ui_structure_and_scrolling() -> None:
     )
     sandbox_props = {p.attrib.get("name"): p.text for p in group_sandbox_obj.findall("property")}
     assert "&" in sandbox_props.get("title", ""), "Sandbox title must contain '&' character"
-    assert "&amp;" in status_ui_path.read_text(
-        encoding="utf-8"
-    ), "Raw UI XML must encode ampersand as &amp;"
+    assert "&amp;" in status_ui_path.read_text(encoding="utf-8"), (
+        "Raw UI XML must encode ampersand as &amp;"
+    )
 
 
 def test_format_optional_value() -> None:

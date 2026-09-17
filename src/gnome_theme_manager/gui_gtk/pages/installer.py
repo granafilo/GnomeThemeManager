@@ -327,9 +327,9 @@ class InstallerPage:
         self._set_state("analyzing")
         self._set_controls_sensitive(False)
 
-        def worker_inspect() -> (
-            tuple[list[tuple[str, ThemeType]] | None, list[str], Exception | None]
-        ):
+        def worker_inspect() -> tuple[
+            list[tuple[str, ThemeType]] | None, list[str], Exception | None
+        ]:
             try:
                 if self.manager is None:
                     return [], [], None
