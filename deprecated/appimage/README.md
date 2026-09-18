@@ -16,7 +16,7 @@
    - Flatpak manifests (`flatpak/io.github.granafilo.ThemeManager.yml`) handle all dependencies (e.g. `dconf` Meson module, Python wheels) deterministically.
 
 3. **Distribution & Packaging**:
-   - Flatpak provides both one-click `.flatpakref` files and standalone `.flatpak` single-file bundles via `scripts/build-flatpak.sh` and GitHub Actions CI.
+   - Flatpak provides standalone `.flatpak` single-file bundles via `scripts/build-flatpak.sh` and GitHub Actions CI.
 
 ---
 

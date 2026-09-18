@@ -82,19 +82,15 @@ GNOME Theme Manager targets modern GNOME desktop releases (GNOME 42+) and is act
 
 GNOME Theme Manager is distributed primarily via **Flatpak**, guaranteeing sandboxed security along with native system configuration access.
 
-### Method 1: Single-Click Installer (`.flatpakref`)
-Download `GNOMEThemeManager.flatpakref` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
-- **GUI**: Double-click the file in Nautilus (Files) or open with GNOME Software.
+### Standalone Bundle (`.flatpak`)
+Download `GNOMEThemeManager-1.5.3-x86_64.flatpak` from the latest [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
+
+- **GUI (All distributions: Ubuntu, Fedora, Debian, Arch, CachyOS, Zorin OS)**:
+  Double-click the `.flatpak` file in Files / Nautilus, or right-click -> Open With GNOME Software, and click **Install**.
 - **Terminal (User mode, no root required)**:
   ```bash
-  flatpak install --user GNOMEThemeManager.flatpakref
+  flatpak install --user GNOMEThemeManager-1.5.3-x86_64.flatpak
   ```
-
-### Method 2: Standalone Bundle (`.flatpak`)
-For offline or air-gapped systems, download the standalone bundle `GNOMEThemeManager-1.5.3-x86_64.flatpak` from [GitHub Releases](https://github.com/granafilo/GnomeThemeManager/releases):
-```bash
-flatpak install --user --bundle GNOMEThemeManager-1.5.3-x86_64.flatpak
-```
 
 ### Launching the Application
 Launch GNOME Theme Manager from your desktop application grid or directly from the terminal:

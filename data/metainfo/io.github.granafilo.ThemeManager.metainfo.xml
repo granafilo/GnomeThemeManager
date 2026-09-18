@@ -71,7 +71,7 @@
     </release>
     <release version="1.5.0" date="2026-09-05">
       <description>
-        <p>Release 1.5.0: Flatpak distribution support with standalone bundle (.flatpak) and click-to-install (.flatpakref); integrated Online Theme Store for OpenDesktop and Pling with 1-click download and installation; full-screen high-definition screenshot viewer; and comprehensive GNOME Shell Extensions manager.</p>
+        <p>Release 1.5.0: Flatpak distribution support with standalone bundle (.flatpak); integrated Online Theme Store for OpenDesktop and Pling with 1-click download and installation; full-screen high-definition screenshot viewer; and comprehensive GNOME Shell Extensions manager.</p>
       </description>
     </release>
     <release version="1.4.8" date="2026-08-28">

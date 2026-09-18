@@ -5,7 +5,7 @@
 # Flatpak Build Script - GNOME Theme Manager
 # ==============================================================================
 # This script cleans previous build directories, runs flatpak-builder,
-# exports the offline bundle (.flatpak), and generates the installation file (.flatpakref).
+# and exports the offline bundle (.flatpak).
 # ==============================================================================
 
 set -eo pipefail
@@ -33,7 +33,6 @@ BUILD_DIR="$ROOT_DIR/build-dir"
 REPO_DIR="$ROOT_DIR/repo"
 OUTPUT_DIR="$ROOT_DIR/dist"
 BUNDLE_FILE="$OUTPUT_DIR/${APP_NAME}-${VERSION}-${ARCH}.flatpak"
-FLATPAKREF_FILE="$OUTPUT_DIR/${APP_NAME}.flatpakref"
 
 echo -e "${BLUE}====================================================${NC}"
 echo -e "${BLUE}  Starting Flatpak generation for ${APP_NAME} v${VERSION}${NC}"
@@ -42,7 +41,7 @@ echo -e "${BLUE}====================================================${NC}"
 # ------------------------------------------------------------------------------
 # 1. Check required tools and Flathub repository
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[1/5] Checking Flatpak tools and runtime...${NC}"
+echo -e "\n${YELLOW}[1/4] Checking Flatpak tools and runtime...${NC}"
 
 if ! command -v flatpak &> /dev/null; then
     echo -e "${RED}Error: 'flatpak' not found. Install it with: sudo apt install flatpak${NC}" >&2
@@ -63,7 +62,7 @@ echo -e "${GREEN}✓ Flatpak tools, flatpak-builder, and Flathub remote configur
 # ------------------------------------------------------------------------------
 # 2. Clean previous build environment
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[2/5] Cleaning cache and build directories...${NC}"
+echo -e "\n${YELLOW}[2/4] Cleaning cache and build directories...${NC}"
 if [ -d "$ROOT_DIR/.flatpak-builder/rofiles" ]; then
     for rof in "$ROOT_DIR/.flatpak-builder/rofiles"/*; do
         if [ -d "$rof" ]; then
@@ -82,7 +81,7 @@ fi
 # ------------------------------------------------------------------------------
 # 3. Build Flatpak package with flatpak-builder
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[3/5] Running flatpak-builder (downloading SDK/Runtime if needed)...${NC}"
+echo -e "\n${YELLOW}[3/4] Running flatpak-builder (downloading SDK/Runtime if needed)...${NC}"
 
 flatpak-builder --force-clean \
     --disable-cache \
@@ -98,41 +97,19 @@ echo -e "${GREEN}✓ Flatpak build completed successfully in local repository.${
 # ------------------------------------------------------------------------------
 # 4. Generate Offline Bundle (.flatpak)
 # ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[4/5] Generating offline bundle (.flatpak)...${NC}"
+echo -e "\n${YELLOW}[4/4] Generating offline bundle (.flatpak)...${NC}"
 
 flatpak build-bundle "$REPO_DIR" "$BUNDLE_FILE" "$APP_ID" stable
 
 echo -e "${GREEN}✓ Offline bundle generated: $BUNDLE_FILE${NC}"
 
 # ------------------------------------------------------------------------------
-# 5. Generate .flatpakref file (Click-to-Install)
-# ------------------------------------------------------------------------------
-echo -e "\n${YELLOW}[5/5] Generating .flatpakref file...${NC}"
-
-cat << EOF > "$FLATPAKREF_FILE"
-[Flatpak Ref]
-Name=${APP_ID}
-Branch=stable
-Title=GNOME Theme Manager
-Comment=Modern GTK4 & Libadwaita theme, icon, cursor and shell manager for GNOME
-Description=Manage GTK, Shell, Icon, and Cursor themes on GNOME seamlessly.
-Icon=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/data/icons/hicolor/512x512/apps/${APP_ID}.png
-Url=https://raw.githubusercontent.com/granafilo/GnomeThemeManager/main/repo
-SuggestRemoteName=gnomethememanager-repo
-RuntimeRepo=https://dl.flathub.org/repo/flathub.flatpakrepo
-IsRuntime=false
-EOF
-
-echo -e "${GREEN}✓ Flatpakref file generated: $FLATPAKREF_FILE${NC}"
-
-# ------------------------------------------------------------------------------
 # Summary and User Instructions
 # ------------------------------------------------------------------------------
 echo -e "\n${GREEN}====================================================${NC}"
-echo -e "${GREEN}  ✓ FLATPAK PACKAGES CREATED SUCCESSFULLY!${NC}"
+echo -e "${GREEN}  ✓ FLATPAK PACKAGE CREATED SUCCESSFULLY!${NC}"
 echo -e "${GREEN}====================================================${NC}"
-echo -e "${BLUE}1. Offline Bundle (single file):${NC} $BUNDLE_FILE"
-echo -e "${BLUE}2. Click-to-Install File:${NC}         $FLATPAKREF_FILE"
+echo -e "${BLUE}Standalone Offline Bundle:${NC} $BUNDLE_FILE"
 echo -e "\n${YELLOW}How to install/update and run the application:${NC}"
 echo -e "  • ${GREEN}Quick Update / Reinstall (Passwordless):${NC}"
 echo -e "    flatpak install --user --reinstall -y $BUNDLE_FILE"
