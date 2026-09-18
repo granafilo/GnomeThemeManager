@@ -27,13 +27,17 @@ finish-args:
 
   # Host and Scoped Theme & Desktop File System Permissions
   - --filesystem=host:ro
-  - --filesystem=~/.local/share/themes:create
-  - --filesystem=~/.local/share/icons:create
-  - --filesystem=~/.local/share/fonts:create
-  - --filesystem=~/.local/share/gnome-shell/extensions:create
   - --filesystem=~/.themes:create
+  - --filesystem=~/.local/share/themes:create
+  - --filesystem=xdg-data/themes:create
   - --filesystem=~/.icons:create
+  - --filesystem=~/.local/share/icons:create
+  - --filesystem=xdg-data/icons:create
   - --filesystem=~/.fonts:create
+  - --filesystem=~/.local/share/fonts:create
+  - --filesystem=xdg-data/fonts:create
+  - --filesystem=~/.local/share/gnome-shell/extensions:create
+  - --filesystem=xdg-data/gnome-shell/extensions:create
   - --filesystem=~/.config/gtk-4.0:create
   - --filesystem=~/.config/gtk-3.0:create
   - --filesystem=~/.config/gnome-theme-manager:create
@@ -41,10 +45,6 @@ finish-args:
   - --filesystem=~/.local/share/org.gnome.Ptyxis:create
   - --filesystem=~/.config/alacritty:create
   - --filesystem=~/.config/kitty:create
-  - --filesystem=xdg-data/themes:create
-  - --filesystem=xdg-data/icons:create
-  - --filesystem=xdg-data/fonts:create
-  - --filesystem=xdg-data/gnome-shell/extensions:create
   - --filesystem=xdg-data/org.gnome.Ptyxis:create
   - --filesystem=xdg-config/gtk-4.0:create
   - --filesystem=xdg-config/gtk-3.0:create

@@ -67,27 +67,43 @@ EXTENSIONS_CACHE_DIR = STATE_DIR / "extensions_cache"
 # -----------------------------------------------------------------------------
 
 
+def _normalize_user_directory(raw_path: str | Path) -> Path:
+    """Normalize a user-scoped directory path to an absolute Path."""
+    p = Path(raw_path).expanduser()
+    if not p.is_absolute():
+        cleaned = str(p).strip().lstrip("/")
+        if cleaned.startswith("home/"):
+            p = Path("/" + cleaned)
+        else:
+            p = Path.home() / p
+    return p.resolve()
+
+
 def get_user_themes_dirs() -> list[Path]:
     """Return user theme directories (~/.local/share/themes, ~/.themes, and $XDG_DATA_HOME/themes)."""
-    xdg_data = os.environ.get("XDG_DATA_HOME")
+    home = Path.home().resolve()
     dirs = [
-        Path.home() / ".local" / "share" / "themes",
-        Path.home() / ".themes",
+        home / ".local" / "share" / "themes",
+        home / ".themes",
     ]
+    xdg_data = os.environ.get("XDG_DATA_HOME")
     if xdg_data and xdg_data.strip():
-        dirs.append(Path(xdg_data).expanduser() / "themes")
+        xdg_path = _normalize_user_directory(xdg_data)
+        dirs.append(xdg_path / "themes")
     return list(dict.fromkeys(dirs))
 
 
 def get_user_icons_dirs() -> list[Path]:
     """Return user icon and cursor directories (~/.local/share/icons, ~/.icons, and $XDG_DATA_HOME/icons)."""
-    xdg_data = os.environ.get("XDG_DATA_HOME")
+    home = Path.home().resolve()
     dirs = [
-        Path.home() / ".local" / "share" / "icons",
-        Path.home() / ".icons",
+        home / ".local" / "share" / "icons",
+        home / ".icons",
     ]
+    xdg_data = os.environ.get("XDG_DATA_HOME")
     if xdg_data and xdg_data.strip():
-        dirs.append(Path(xdg_data).expanduser() / "icons")
+        xdg_path = _normalize_user_directory(xdg_data)
+        dirs.append(xdg_path / "icons")
     return list(dict.fromkeys(dirs))
 
 

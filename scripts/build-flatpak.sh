@@ -113,7 +113,7 @@ echo -e "${BLUE}Standalone Offline Bundle:${NC} $BUNDLE_FILE"
 echo -e "\n${YELLOW}How to install/update and run the application:${NC}"
 echo -e "  • ${GREEN}Quick Update / Reinstall (Passwordless):${NC}"
 echo -e "    flatpak install --user --reinstall -y $BUNDLE_FILE"
-echo -e "    flatpak override --user --filesystem=~/.local/share/icons:create --filesystem=~/.local/share/themes:create --filesystem=~/.local/share/gnome-shell/extensions:create --filesystem=~/.icons:create --filesystem=~/.themes:create $APP_ID"
+echo -e "    flatpak override --user --filesystem=~/.local/share/icons:create --filesystem=~/.local/share/themes:create --filesystem=xdg-data/themes:create --filesystem=xdg-data/icons:create --filesystem=~/.local/share/gnome-shell/extensions:create --filesystem=~/.icons:create --filesystem=~/.themes:create $APP_ID"
 echo -e "\n  • ${GREEN}Run the application:${NC}"
 echo -e "    flatpak run $APP_ID"
 echo -e "${GREEN}====================================================${NC}\n"
@@ -121,18 +121,20 @@ echo -e "${GREEN}====================================================${NC}\n"
 # If --install or -i flag was passed, reinstall immediately
 if [[ "$*" == *"--install"* ]] || [[ "$*" == *"-i"* ]]; then
     echo -e "${YELLOW}Creating user theme, icon, and extension directories on host if missing...${NC}"
-    mkdir -p "$HOME/.local/share/themes" "$HOME/.local/share/icons" "$HOME/.local/share/gnome-shell/extensions" "$HOME/.local/share/applications"
+    mkdir -p "$HOME/.local/share/themes" "$HOME/.local/share/icons" "$HOME/.themes" "$HOME/.icons" "$HOME/.local/share/gnome-shell/extensions" "$HOME/.local/share/applications"
 
     echo -e "${YELLOW}Updating/reinstalling Flatpak user package...${NC}"
     flatpak install --user --reinstall -y "$BUNDLE_FILE"
 
     echo -e "${YELLOW}Configuring user theme, icon & extension permissions...${NC}"
     flatpak override --user \
-        --filesystem=~/.local/share/icons:create \
-        --filesystem=~/.local/share/themes:create \
-        --filesystem=~/.local/share/gnome-shell/extensions:create \
-        --filesystem=~/.icons:create \
         --filesystem=~/.themes:create \
+        --filesystem=~/.local/share/themes:create \
+        --filesystem=xdg-data/themes:create \
+        --filesystem=~/.icons:create \
+        --filesystem=~/.local/share/icons:create \
+        --filesystem=xdg-data/icons:create \
+        --filesystem=~/.local/share/gnome-shell/extensions:create \
         "$APP_ID"
 
     echo -e "${YELLOW}Integrating application launcher and icons for immediate desktop visibility...${NC}"

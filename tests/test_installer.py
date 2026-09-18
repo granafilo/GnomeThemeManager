@@ -4,6 +4,7 @@
 
 import io
 import os
+import shutil
 import tarfile
 import zipfile
 from pathlib import Path
@@ -612,3 +613,121 @@ def test_installer_handles_readonly_preferred_dir(tmp_path: Path) -> None:
         assert (fallback_icons / "FallbackTestTheme" / "index.theme").exists()
     finally:
         ro_icons.chmod(0o755)
+
+
+def test_normalize_user_directory_relative_and_home() -> None:
+    """Verify that relative XDG paths and paths missing leading / are safely normalized to absolute."""
+    from gnome_theme_manager.core.constants import (
+        _normalize_user_directory,
+        get_user_icons_dirs,
+        get_user_themes_dirs,
+    )
+    from gnome_theme_manager.core.installer import _resolve_user_path
+
+    # Path starting with home/ without leading slash
+    p1 = _normalize_user_directory("home/admin/share")
+    assert p1.is_absolute()
+    assert str(p1) == "/home/admin/share"
+
+    # Arbitrary relative path
+    p2 = _normalize_user_directory(".custom_dir/share")
+    assert p2.is_absolute()
+    assert p2 == (Path.home() / ".custom_dir" / "share").resolve()
+
+    # _resolve_user_path helper
+    default_dir = Path.home() / ".local" / "share" / "themes"
+    res1 = _resolve_user_path("home/admin/share/themes", default_dir)
+    assert res1.is_absolute()
+    assert str(res1) == "/home/admin/share/themes"
+
+    res2 = _resolve_user_path(None, default_dir)
+    assert res2 == default_dir.resolve()
+
+    # Environment variable XDG_DATA_HOME with relative path
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("XDG_DATA_HOME", "home/admin/share")
+        theme_dirs = get_user_themes_dirs()
+        for d in theme_dirs:
+            assert d.is_absolute()
+        assert Path("/home/admin/share/themes") in theme_dirs
+
+        icon_dirs = get_user_icons_dirs()
+        for d in icon_dirs:
+            assert d.is_absolute()
+        assert Path("/home/admin/share/icons") in icon_dirs
+
+
+def test_installer_readonly_filesystem_errno30_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify that encountering Errno 30 (Read-only filesystem) triggers fallback to alternate user directory."""
+    primary_themes = tmp_path / "ro_themes"
+    fallback_themes = tmp_path / "fallback_themes"
+    fallback_themes.mkdir(parents=True)
+
+    monkeypatch.setattr(
+        "gnome_theme_manager.core.installer.USER_THEMES_DIRS",
+        [primary_themes, fallback_themes],
+    )
+
+    installer = ThemeInstaller(user_themes_dir=primary_themes)
+
+    source_dir = tmp_path / "MyMockTheme"
+    (source_dir / "gtk-3.0").mkdir(parents=True)
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* theme */")
+
+    # Simulate primary_themes failing with [Errno 30] Read-only file system
+    orig_copytree = shutil.copytree
+
+    def mock_copytree(src: Path | str, dst: Path | str, *args: object, **kwargs: object) -> Path:
+        if str(dst).startswith(str(primary_themes)):
+            raise OSError(30, "Read-only file system", str(dst))
+        return orig_copytree(src, dst, *args, **kwargs)
+
+    monkeypatch.setattr(shutil, "copytree", mock_copytree)
+
+    installed = installer.install_directory(source_dir, overwrite=True)
+    assert len(installed) == 1
+    assert installed[0].path == fallback_themes / "MyMockTheme"
+    assert (fallback_themes / "MyMockTheme" / "gtk-3.0" / "gtk.css").exists()
+
+
+def test_installer_host_spawn_tar_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that in Flatpak sandbox, if directories fail with read-only, host tar spawn is attempted."""
+    dest_dir = tmp_path / "host_installed_theme"
+
+    source_dir = tmp_path / "SourceTheme"
+    (source_dir / "gtk-3.0").mkdir(parents=True)
+    (source_dir / "gtk-3.0" / "gtk.css").write_text("/* theme */")
+
+    monkeypatch.setattr(
+        "gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", lambda: True
+    )
+    monkeypatch.setattr(
+        "shutil.which", lambda cmd: "/usr/bin/flatpak-spawn" if cmd == "flatpak-spawn" else None
+    )
+
+    installer = ThemeInstaller(user_themes_dir=tmp_path / "themes")
+
+    called_host_tar = []
+
+    def mock_host_tar(s: Path, d: Path) -> bool:
+        called_host_tar.append((s, d))
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "gtk-3.0").mkdir(parents=True, exist_ok=True)
+        (d / "gtk-3.0" / "gtk.css").write_text("/* theme */")
+        return True
+
+    monkeypatch.setattr(installer, "_install_via_host_tar", mock_host_tar)
+    monkeypatch.setattr(installer, "_get_alternate_user_dir", lambda *args: None)
+
+    # Force OSError 30 on copytree
+    def fail_copytree(*args: object, **kwargs: object) -> None:
+        raise OSError(30, "Read-only file system")
+
+    monkeypatch.setattr(shutil, "copytree", fail_copytree)
+
+    res_path = installer._safe_copy_or_fallback(source_dir, dest_dir, ThemeType.GTK)
+    assert res_path == dest_dir
+    assert len(called_host_tar) == 1
+    assert called_host_tar[0] == (source_dir, dest_dir)

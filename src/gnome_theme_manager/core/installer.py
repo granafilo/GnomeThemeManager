@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import zipfile
@@ -361,6 +362,20 @@ def inspect_extracted_tree(
     return targets
 
 
+def _resolve_user_path(raw_path: str | Path | None, fallback: Path) -> Path:
+    """Resolve a theme/icon destination directory to an absolute Path anchored at home if relative."""
+    if raw_path is None:
+        return fallback.resolve()
+    p = Path(raw_path).expanduser()
+    if not p.is_absolute():
+        cleaned = str(p).strip().lstrip("/")
+        if cleaned.startswith("home/"):
+            p = Path("/" + cleaned)
+        else:
+            p = Path.home() / p
+    return p.resolve()
+
+
 def _is_dir_writable(path: Path) -> bool:
     """Check if a directory exists and is writable, or can be created as writable."""
     try:
@@ -375,18 +390,19 @@ def _is_dir_writable(path: Path) -> bool:
 
 def _get_writable_dir(preferred: Path, fallbacks: list[Path]) -> Path:
     """Return preferred path if writable, otherwise the first writable fallback."""
-    if _is_dir_writable(preferred):
-        return preferred
+    pref = preferred.resolve()
+    if _is_dir_writable(pref):
+        return pref
     for fb in fallbacks:
-        expanded = fb.expanduser()
-        if expanded != preferred and _is_dir_writable(expanded):
+        expanded = fb.expanduser().resolve()
+        if expanded != pref and _is_dir_writable(expanded):
             logger.warning(
                 "Preferred theme directory '%s' is not writable; falling back to '%s'",
-                preferred,
+                pref,
                 expanded,
             )
             return expanded
-    return preferred
+    return pref
 
 
 class ThemeInstaller:
@@ -403,16 +419,29 @@ class ThemeInstaller:
             user_themes_dir: User directory for GTK and Shell themes (default: ~/.local/share/themes).
             user_icons_dir: User directory for Icon and Cursor themes (default: ~/.local/share/icons).
         """
-        self.user_themes_dir = (
-            Path(user_themes_dir).expanduser()
+        fallback_themes = (
+            USER_THEMES_DIRS[0]
+            if USER_THEMES_DIRS
+            else (Path.home() / ".local" / "share" / "themes").resolve()
+        )
+        fallback_icons = (
+            USER_ICONS_DIRS[0]
+            if USER_ICONS_DIRS
+            else (Path.home() / ".local" / "share" / "icons").resolve()
+        )
+
+        resolved_themes = (
+            _resolve_user_path(user_themes_dir, fallback_themes)
             if user_themes_dir
-            else _get_writable_dir(USER_THEMES_DIRS[0], USER_THEMES_DIRS)
+            else _get_writable_dir(fallback_themes, USER_THEMES_DIRS)
         )
-        self.user_icons_dir = (
-            Path(user_icons_dir).expanduser()
+        resolved_icons = (
+            _resolve_user_path(user_icons_dir, fallback_icons)
             if user_icons_dir
-            else _get_writable_dir(USER_ICONS_DIRS[0], USER_ICONS_DIRS)
+            else _get_writable_dir(fallback_icons, USER_ICONS_DIRS)
         )
+        self.user_themes_dir = resolved_themes
+        self.user_icons_dir = resolved_icons
 
     def ensure_user_directories(self) -> list[Path]:
         """Ensure all standard user theme directories exist on the filesystem.
@@ -426,12 +455,12 @@ class ThemeInstaller:
         dirs_to_ensure: list[Path] = [self.user_themes_dir, self.user_icons_dir]
 
         for d in USER_THEMES_DIRS:
-            expanded = d.expanduser()
+            expanded = _resolve_user_path(d, d)
             if expanded not in dirs_to_ensure:
                 dirs_to_ensure.append(expanded)
 
         for d in USER_ICONS_DIRS:
-            expanded = d.expanduser()
+            expanded = _resolve_user_path(d, d)
             if expanded not in dirs_to_ensure:
                 dirs_to_ensure.append(expanded)
 
@@ -486,6 +515,116 @@ class ThemeInstaller:
             targets = inspect_extracted_tree(tmp_dir, fallback_name=name)
             return [(t_name, source_path, t_type) for t_name, _, t_type in targets]
 
+    def _safe_copy_or_fallback(
+        self,
+        source_dir: Path,
+        dest_dir: Path,
+        t_type: ThemeType,
+    ) -> Path:
+        """Copy theme directory with read-only filesystem fallback handling."""
+        target_base_dir = dest_dir.parent
+        try:
+            target_base_dir.mkdir(parents=True, exist_ok=True)
+            if dest_dir.exists():
+                shutil.rmtree(dest_dir)
+            shutil.copytree(source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True)
+            return dest_dir
+        except OSError as err:
+            is_ro = getattr(err, "errno", None) == 30 or isinstance(err, PermissionError)
+            if not is_ro:
+                raise
+
+            logger.warning(
+                "Destination directory '%s' is read-only (%s); attempting fallback user directory...",
+                dest_dir,
+                err,
+            )
+            # Try alternate standard user directory (e.g. ~/.themes <-> ~/.local/share/themes)
+            alt_base = self._get_alternate_user_dir(target_base_dir, t_type)
+            if alt_base and alt_base != target_base_dir:
+                try:
+                    alt_base.mkdir(parents=True, exist_ok=True)
+                    alt_dest = alt_base / dest_dir.name
+                    if alt_dest.exists():
+                        shutil.rmtree(alt_dest)
+                    shutil.copytree(
+                        source_dir, alt_dest, symlinks=True, ignore_dangling_symlinks=True
+                    )
+                    logger.info(
+                        "Successfully installed theme into fallback user directory: %s", alt_dest
+                    )
+                    return alt_dest
+                except OSError as alt_err:
+                    logger.warning("Fallback directory '%s' also failed: %s", alt_base, alt_err)
+
+            # Flatpak Host Fallback: If sandbox filesystem is read-only, try flatpak-spawn host bridge
+            from .sandbox_bridge import is_in_flatpak_sandbox
+
+            if is_in_flatpak_sandbox() and shutil.which("flatpak-spawn"):
+                logger.info(
+                    "Attempting Flatpak host spawn extraction fallback for '%s'...", dest_dir
+                )
+                if self._install_via_host_tar(source_dir, dest_dir):
+                    return dest_dir
+
+            raise OSError(
+                getattr(err, "errno", 30) or 30,
+                f"Theme directory '{dest_dir}' is on a read-only file system or permission was denied. "
+                f"Ensure Flatpak filesystem permissions (--filesystem=~/.themes:create and --filesystem=~/.local/share/themes:create) are active.",
+                str(dest_dir),
+            ) from err
+
+    def _get_alternate_user_dir(self, current_base: Path, t_type: ThemeType) -> Path | None:
+        """Find an alternative user directory if the current one is read-only."""
+        home = Path.home().resolve()
+        if t_type in (ThemeType.GTK, ThemeType.SHELL):
+            standard = [
+                (home / ".local" / "share" / "themes").resolve(),
+                (home / ".themes").resolve(),
+            ]
+            candidates = list(dict.fromkeys(USER_THEMES_DIRS + standard))
+        else:
+            standard = [
+                (home / ".local" / "share" / "icons").resolve(),
+                (home / ".icons").resolve(),
+            ]
+            candidates = list(dict.fromkeys(USER_ICONS_DIRS + standard))
+
+        curr_res = current_base.resolve()
+        for c in candidates:
+            c_res = _resolve_user_path(c, c)
+            if c_res != curr_res and _is_dir_writable(c_res):
+                return c_res
+        return None
+
+    @staticmethod
+    def _install_via_host_tar(source_dir: Path, dest_dir: Path) -> bool:
+        """Install directory via flatpak-spawn host bridge by piping tar stream."""
+        try:
+            tar_cmd = ["tar", "-cf", "-", "-C", str(source_dir), "."]
+            host_cmd = [
+                "flatpak-spawn",
+                "--host",
+                "sh",
+                "-c",
+                f'mkdir -p "{dest_dir}" && tar -xf - -C "{dest_dir}"',
+            ]
+            p_tar = subprocess.Popen(tar_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p_host = subprocess.Popen(
+                host_cmd,
+                stdin=p_tar.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            if p_tar.stdout:
+                p_tar.stdout.close()
+            _, _err_host = p_host.communicate(timeout=20)
+            p_tar.wait(timeout=5)
+            return p_host.returncode == 0
+        except Exception as ex:
+            logger.debug("Failed host tar installation fallback: %s", ex)
+            return False
+
     def install_directory(
         self,
         directory_path: Path,
@@ -533,15 +672,26 @@ class ThemeInstaller:
         if custom_name and len({t[1] for t in targets}) == 1:
             targets = [(custom_name, t[1], t[2]) for t in targets]
 
-        # Determine target base directories (XDG vs Legacy)
-        self.ensure_user_directories()
+        legacy_themes_pref = (
+            USER_THEMES_DIRS[1]
+            if len(USER_THEMES_DIRS) > 1
+            else (Path.home() / ".themes").resolve()
+        )
+        legacy_icons_pref = (
+            USER_ICONS_DIRS[1] if len(USER_ICONS_DIRS) > 1 else (Path.home() / ".icons").resolve()
+        )
+
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
-            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
-        elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
-            custom_path = Path(target_dir).expanduser()
-            base_themes_dir = custom_path
-            base_icons_dir = custom_path
+            base_themes_dir = _get_writable_dir(legacy_themes_pref, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(legacy_icons_pref, USER_ICONS_DIRS)
+        elif isinstance(target_dir, (str, Path)) and str(target_dir).lower() not in (
+            "",
+            "xdg",
+            "none",
+        ):
+            custom_path = _resolve_user_path(target_dir, self.user_themes_dir)
+            base_themes_dir = _get_writable_dir(custom_path, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(custom_path, USER_ICONS_DIRS)
         else:
             base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
             base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
@@ -581,11 +731,7 @@ class ThemeInstaller:
 
             dir_key = (name, source_dir)
             if dir_key not in processed_dirs:
-                if dest_dir.exists():
-                    shutil.rmtree(dest_dir)
-
-                target_base_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copytree(source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True)
+                dest_dir = self._safe_copy_or_fallback(source_dir, dest_dir, t_type)
                 if t_type == ThemeType.GTK:
                     self._ensure_gtk4_libadwaita_symlinks(dest_dir)
                 processed_dirs.add(dir_key)
@@ -739,13 +885,26 @@ class ThemeInstaller:
         installed_themes: list[Theme] = []
 
         # Determine target base directories (XDG vs Legacy)
+        legacy_themes_pref = (
+            USER_THEMES_DIRS[1]
+            if len(USER_THEMES_DIRS) > 1
+            else (Path.home() / ".themes").resolve()
+        )
+        legacy_icons_pref = (
+            USER_ICONS_DIRS[1] if len(USER_ICONS_DIRS) > 1 else (Path.home() / ".icons").resolve()
+        )
+
         if isinstance(target_dir, str) and target_dir.lower() == "legacy":
-            base_themes_dir = _get_writable_dir(USER_THEMES_DIRS[1], USER_THEMES_DIRS)
-            base_icons_dir = _get_writable_dir(USER_ICONS_DIRS[1], USER_ICONS_DIRS)
-        elif isinstance(target_dir, (str, Path)) and target_dir not in (None, "xdg"):
-            custom_path = Path(target_dir).expanduser()
-            base_themes_dir = custom_path
-            base_icons_dir = custom_path
+            base_themes_dir = _get_writable_dir(legacy_themes_pref, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(legacy_icons_pref, USER_ICONS_DIRS)
+        elif isinstance(target_dir, (str, Path)) and str(target_dir).lower() not in (
+            "",
+            "xdg",
+            "none",
+        ):
+            custom_path = _resolve_user_path(target_dir, self.user_themes_dir)
+            base_themes_dir = _get_writable_dir(custom_path, USER_THEMES_DIRS)
+            base_icons_dir = _get_writable_dir(custom_path, USER_ICONS_DIRS)
         else:
             base_themes_dir = _get_writable_dir(self.user_themes_dir, USER_THEMES_DIRS)
             base_icons_dir = _get_writable_dir(self.user_icons_dir, USER_ICONS_DIRS)
@@ -803,13 +962,9 @@ class ThemeInstaller:
 
                 dir_key = (name, source_dir)
                 if dir_key not in processed_dirs:
-                    if dest_dir.exists():
-                        shutil.rmtree(dest_dir)
-
-                    target_base_dir.mkdir(parents=True, exist_ok=True)
-                    shutil.copytree(
-                        source_dir, dest_dir, symlinks=True, ignore_dangling_symlinks=True
-                    )
+                    dest_dir = self._safe_copy_or_fallback(source_dir, dest_dir, t_type)
+                    if t_type == ThemeType.GTK:
+                        self._ensure_gtk4_libadwaita_symlinks(dest_dir)
                     processed_dirs.add(dir_key)
 
                 installed_themes.append(
