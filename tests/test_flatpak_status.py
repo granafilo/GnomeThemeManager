@@ -519,3 +519,149 @@ def test_theme_manager_execute_wizard_step_delegates() -> None:
         user_mode=True,
         on_progress=None,
     )
+
+
+def test_wrap_host_command() -> None:
+    """Verify wrap_host_command behaves properly on host and in sandbox."""
+    from gnome_theme_manager.core import wrap_host_command
+
+    # Outside sandbox: no change
+    with patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=False):
+        assert wrap_host_command(["flatpak", "remotes"]) == ["flatpak", "remotes"]
+
+    # In sandbox with flatpak-spawn: wraps command
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value="/usr/bin/flatpak-spawn"),
+    ):
+        assert wrap_host_command(["flatpak", "remotes"]) == [
+            "flatpak-spawn",
+            "--host",
+            "flatpak",
+            "remotes",
+        ]
+        # Already wrapped: does not double wrap
+        assert wrap_host_command(["flatpak-spawn", "--host", "flatpak"]) == [
+            "flatpak-spawn",
+            "--host",
+            "flatpak",
+        ]
+
+    # In sandbox without flatpak-spawn: returns unchanged
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value=None),
+    ):
+        assert wrap_host_command(["flatpak", "remotes"]) == ["flatpak", "remotes"]
+
+
+def test_execute_wizard_step_in_flatpak_sandbox() -> None:
+    """Verify execute_wizard_step delegates to host via flatpak-spawn when sandboxed."""
+    from gnome_theme_manager.core import WizardStepInfo, execute_wizard_step
+
+    step = WizardStepInfo(
+        step_id="add_flathub",
+        title="Flathub",
+        description="Add repo",
+        command_user="flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo",
+        command_system="pkexec flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo",
+    )
+
+    mock_process = MagicMock()
+    mock_process.stdout = iter(["Repository added."])
+    mock_process.returncode = 0
+    mock_process.wait.return_value = None
+
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value="/usr/bin/flatpak-spawn"),
+        patch("subprocess.Popen", return_value=mock_process) as mock_popen,
+    ):
+        res = execute_wizard_step(step, user_mode=True)
+        assert res.success is True
+        assert res.returncode == 0
+        assert "Repository added." in res.output
+        mock_popen.assert_called_once()
+        call_args = mock_popen.call_args[0][0]
+        assert call_args[:2] == ["flatpak-spawn", "--host"]
+        assert "remote-add" in call_args
+
+
+def test_execute_wizard_step_in_flatpak_sandbox_missing_spawn() -> None:
+    """Verify execute_wizard_step returns error when flatpak-spawn is missing in sandbox."""
+    from gnome_theme_manager.core import WizardStepInfo, execute_wizard_step
+
+    step = WizardStepInfo(
+        step_id="test_missing_spawn",
+        title="Test",
+        description="Desc",
+        command_user="flatpak remotes",
+        command_system="flatpak remotes",
+    )
+
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value=None),
+    ):
+        res = execute_wizard_step(step, user_mode=True)
+        assert res.success is False
+        assert res.returncode == 127
+        assert "flatpak-spawn" in (res.error_message or "").lower()
+
+
+def test_check_flatpak_status_in_flatpak_sandbox() -> None:
+    """Verify check_flatpak_status queries host remotes via flatpak-spawn when sandboxed."""
+    bridge = SandboxBridge()
+    mock_ext_mgr = MagicMock()
+    mock_ext_mgr.is_user_theme_enabled.return_value = True
+
+    def fake_subprocess_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        if "remotes" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="flathub\n",
+                stderr="",
+            )
+        elif "info" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="installed",
+                stderr="",
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="")
+
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value="/usr/bin/flatpak-spawn"),
+        patch("subprocess.run", side_effect=fake_subprocess_run) as mock_run,
+    ):
+        status = bridge.check_flatpak_status(user_mode=True, extensions_manager=mock_ext_mgr)
+        assert status.flatpak_installed is True
+        assert status.flathub_configured is True
+        assert status.extension_manager_installed is True
+        assert mock_run.call_count >= 1
+        first_call_cmd = mock_run.call_args_list[0][0][0]
+        assert first_call_cmd[:2] == ["flatpak-spawn", "--host"]
+
+
+def test_repair_flatpak_in_flatpak_sandbox() -> None:
+    """Verify repair_flatpak delegates to host via flatpak-spawn when sandboxed."""
+    bridge = SandboxBridge()
+    mock_proc = MagicMock()
+    mock_proc.stdout = iter(["Repairing..."])
+    mock_proc.returncode = 0
+    mock_proc.wait.return_value = None
+
+    with (
+        patch("gnome_theme_manager.core.sandbox_bridge.is_in_flatpak_sandbox", return_value=True),
+        patch("shutil.which", return_value="/usr/bin/flatpak-spawn"),
+        patch("subprocess.Popen", return_value=mock_proc) as mock_popen,
+    ):
+        res = bridge.repair_flatpak(user_mode=True)
+        assert res.success is True
+        mock_popen.assert_called_once()
+        cmd_args = mock_popen.call_args[0][0]
+        assert cmd_args[:2] == ["flatpak-spawn", "--host"]
+        assert cmd_args[2:] == ["flatpak", "repair", "--user"]

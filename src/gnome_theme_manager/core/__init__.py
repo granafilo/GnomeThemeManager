@@ -106,8 +106,10 @@ from .sandbox_bridge import (
     check_flatpak_status,
     execute_wizard_step,
     get_flatpak_wizard_steps,
+    is_in_flatpak_sandbox,
     repair_and_propagate_flatpak,
     repair_flatpak,
+    wrap_host_command,
 )
 from .scanner import ThemeScanner
 from .shell_editor import (
@@ -292,6 +294,7 @@ __all__ = [
     "import_palette_from_json",
     "inspect_extracted_tree",
     "integrate_desktop",
+    "is_in_flatpak_sandbox",
     "list_gnome_terminal_profiles",
     "list_ptyxis_profiles",
     "parse_css_define_colors",
@@ -304,4 +307,5 @@ __all__ = [
     "set_default_gnome_terminal_profile",
     "set_default_ptyxis_profile",
     "theme_type_to_store_category",
+    "wrap_host_command",
 ]

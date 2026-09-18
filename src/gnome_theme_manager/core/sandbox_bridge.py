@@ -109,6 +109,25 @@ def is_in_flatpak_sandbox() -> bool:
     return Path("/.flatpak-info").exists() or bool(os.environ.get("FLATPAK_ID"))
 
 
+def wrap_host_command(cmd: list[str]) -> list[str]:
+    """Wrap command with flatpak-spawn --host when executing inside a Flatpak sandbox.
+
+    Args:
+        cmd: List of command arguments.
+
+    Returns:
+        List of command arguments prefixed with flatpak-spawn --host if sandboxed.
+    """
+    if (
+        is_in_flatpak_sandbox()
+        and shutil.which("flatpak-spawn") is not None
+        and cmd
+        and cmd[0] != "flatpak-spawn"
+    ):
+        return ["flatpak-spawn", "--host", *cmd]
+    return list(cmd)
+
+
 class SandboxBridge:
     """Propagates GNOME themes to sandboxed applications managed by Snap and Flatpak."""
 
@@ -166,10 +185,13 @@ class SandboxBridge:
                 )
 
         if flatpak_avail:
-            if shutil.which("flatpak") is not None:
+            can_run_flatpak = shutil.which("flatpak") is not None or (
+                is_in_flatpak_sandbox() and shutil.which("flatpak-spawn") is not None
+            )
+            if can_run_flatpak:
                 try:
                     res = subprocess.run(
-                        ["flatpak", "override", "--user", "--show"],
+                        wrap_host_command(["flatpak", "override", "--user", "--show"]),
                         capture_output=True,
                         text=True,
                         timeout=10,
@@ -493,7 +515,11 @@ class SandboxBridge:
         flathub_configured = False
         extension_manager_installed = False
 
-        if flatpak_installed and shutil.which("flatpak") is not None:
+        can_run_flatpak = shutil.which("flatpak") is not None or (
+            is_in_flatpak_sandbox() and shutil.which("flatpak-spawn") is not None
+        )
+
+        if flatpak_installed and can_run_flatpak:
             # 1. Check Flathub remote
             remotes_cmd = ["flatpak", "remotes", "--columns=name"]
             if user_mode is True:
@@ -503,7 +529,7 @@ class SandboxBridge:
 
             try:
                 res = subprocess.run(
-                    remotes_cmd,
+                    wrap_host_command(remotes_cmd),
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -530,7 +556,7 @@ class SandboxBridge:
                 try:
                     # Check Flatpak info without scope restriction to detect both system-wide and user installations
                     res_info = subprocess.run(
-                        ["flatpak", "info", "com.mattjakeman.ExtensionManager"],
+                        wrap_host_command(["flatpak", "info", "com.mattjakeman.ExtensionManager"]),
                         capture_output=True,
                         text=True,
                         timeout=10,
@@ -542,7 +568,20 @@ class SandboxBridge:
 
         # 3. Native Extension Manager binary fallback if not found in flatpak
         if not extension_manager_installed:
-            extension_manager_installed = shutil.which("extension-manager") is not None
+            if is_in_flatpak_sandbox() and shutil.which("flatpak-spawn") is not None:
+                try:
+                    res_which = subprocess.run(
+                        ["flatpak-spawn", "--host", "which", "extension-manager"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        check=False,
+                    )
+                    extension_manager_installed = res_which.returncode == 0
+                except (subprocess.SubprocessError, FileNotFoundError, OSError):
+                    pass
+            else:
+                extension_manager_installed = shutil.which("extension-manager") is not None
 
         # 4. Check user-theme extension
         user_themes_enabled = False
@@ -583,7 +622,10 @@ class SandboxBridge:
         Returns:
             FlatpakRepairResult with execution status, returncode, and captured output.
         """
-        if shutil.which("flatpak") is None and not is_in_flatpak_sandbox():
+        can_run_flatpak = shutil.which("flatpak") is not None or (
+            is_in_flatpak_sandbox() and shutil.which("flatpak-spawn") is not None
+        )
+        if not can_run_flatpak:
             return FlatpakRepairResult(
                 success=False,
                 command=[],
@@ -596,7 +638,7 @@ class SandboxBridge:
         is_non_root = hasattr(os, "geteuid") and os.geteuid() != 0
         needs_pkexec = (not user_mode) and (use_pkexec or is_non_root)
 
-        if needs_pkexec and shutil.which("pkexec") is not None:
+        if needs_pkexec and (shutil.which("pkexec") is not None or is_in_flatpak_sandbox()):
             cmd.append("pkexec")
 
         cmd.extend(["flatpak", "repair"])
@@ -605,12 +647,13 @@ class SandboxBridge:
         else:
             cmd.append("--system")
 
-        logger.info("Executing flatpak repair: %s", " ".join(cmd))
+        exec_cmd = wrap_host_command(cmd)
+        logger.info("Executing flatpak repair: %s", " ".join(exec_cmd))
         output_lines: list[str] = []
 
         try:
             process = subprocess.Popen(
-                cmd,
+                exec_cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -812,25 +855,42 @@ class SandboxBridge:
             if on_progress:
                 on_progress(prog_msg)
 
-            # Check if binary is present
+            # Check if binary is present or can be dispatched via flatpak-spawn
             bin_name = tokens[0]
-            if not shutil.which(bin_name) and not is_in_flatpak_sandbox():
-                err = f"Command '{bin_name}' is not installed on this system."
-                output_lines.append(err)
-                if on_progress:
-                    on_progress(err)
-                return WizardStepResult(
-                    step_id=step.step_id,
-                    success=False,
-                    command=raw_cmd,
-                    output="\n".join(output_lines),
-                    returncode=127,
-                    error_message=err,
-                )
+            if is_in_flatpak_sandbox():
+                if shutil.which("flatpak-spawn") is None:
+                    err = "flatpak-spawn is required to execute host commands from Flatpak sandbox."
+                    output_lines.append(err)
+                    if on_progress:
+                        on_progress(err)
+                    return WizardStepResult(
+                        step_id=step.step_id,
+                        success=False,
+                        command=raw_cmd,
+                        output="\n".join(output_lines),
+                        returncode=127,
+                        error_message=err,
+                    )
+                exec_tokens = wrap_host_command(tokens)
+            else:
+                if not shutil.which(bin_name):
+                    err = f"Command '{bin_name}' is not installed on this system."
+                    output_lines.append(err)
+                    if on_progress:
+                        on_progress(err)
+                    return WizardStepResult(
+                        step_id=step.step_id,
+                        success=False,
+                        command=raw_cmd,
+                        output="\n".join(output_lines),
+                        returncode=127,
+                        error_message=err,
+                    )
+                exec_tokens = tokens
 
             try:
                 process = subprocess.Popen(
-                    tokens,
+                    exec_tokens,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
