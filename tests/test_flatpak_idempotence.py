@@ -41,6 +41,19 @@ def test_core_flathub_step_idempotence_command_flags() -> None:
     assert "https://dl.flathub.org/repo/flathub.flatpakrepo" in flathub_step.command_user
 
 
+def test_core_extension_manager_step_command_flags() -> None:
+    """Verify Extension Manager install step command matches Flathub app ID format."""
+    bridge = SandboxBridge()
+    steps = bridge.get_wizard_steps(user_mode=True)
+    ext_step = next(s for s in steps if s.step_id == "install_extension_manager")
+
+    assert "com.mattjakeman.ExtensionManager" in ext_step.command_user
+    assert "flathub" in ext_step.command_user
+    assert "-y" in ext_step.command_user
+    assert "com.mattjakeman.ExtensionManager" in ext_step.command_system
+    assert "pkexec" in ext_step.command_system
+
+
 def test_core_step_satisfaction_flags_when_already_configured() -> None:
     """Verify is_satisfied is True when components are already detected."""
     bridge = SandboxBridge()

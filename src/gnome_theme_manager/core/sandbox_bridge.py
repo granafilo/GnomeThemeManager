@@ -784,8 +784,8 @@ class SandboxBridge:
                 description=_(
                     "Install Extension Manager (com.mattjakeman.ExtensionManager) to browse and manage GNOME Shell extensions."
                 ),
-                command_user="flatpak install -y --user flathub com.mattjakeman.ExtensionManager",
-                command_system="pkexec flatpak install -y flathub com.mattjakeman.ExtensionManager",
+                command_user="flatpak install flathub com.mattjakeman.ExtensionManager -y",
+                command_system="pkexec flatpak install flathub com.mattjakeman.ExtensionManager -y",
                 is_satisfied=status.extension_manager_installed,
                 requires_root_system=True,
             ),

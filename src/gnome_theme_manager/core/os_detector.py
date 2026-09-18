@@ -101,7 +101,7 @@ DEPENDENCY_PACKAGE_MAP: dict[str, dict[str, str]] = {
     },
     "extension-manager": {
         "apt": "gnome-shell-extension-manager",
-        "dnf": "extension-manager",
+        "dnf": "gnome-shell-extension-manager",
         "pacman": "extension-manager",
         "zypper": "extension-manager",
     },
@@ -672,16 +672,16 @@ def get_extension_manager_install_options(
 
     return [
         {
-            "id": "system",
-            "name": f"Extension Manager ({clean_pm.upper()})",
-            "command": ext_mgr_cmd,
-            "description": "Recommended native package for Extension Manager.",
-        },
-        {
             "id": "flatpak",
             "name": "Extension Manager (Flatpak Flathub)",
             "command": "flatpak install flathub com.mattjakeman.ExtensionManager",
             "description": "Official Extension Manager release in sandbox from Flathub.",
+        },
+        {
+            "id": "system",
+            "name": f"Extension Manager ({clean_pm.upper()})",
+            "command": ext_mgr_cmd,
+            "description": "Recommended native package for Extension Manager.",
         },
         {
             "id": "gnome-extensions-app",

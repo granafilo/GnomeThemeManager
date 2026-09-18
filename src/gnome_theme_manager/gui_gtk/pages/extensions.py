@@ -625,11 +625,17 @@ class ExtensionsPage:
             cmd = self.manager.get_install_command("extension-manager")
             self._install_options = [
                 {
+                    "id": "flatpak",
+                    "name": _("Extension Manager (Flatpak Flathub)"),
+                    "command": "flatpak install flathub com.mattjakeman.ExtensionManager",
+                    "description": _("Official Extension Manager release in sandbox from Flathub."),
+                },
+                {
                     "id": "system",
                     "name": _("Extension Manager (System Package)"),
                     "command": cmd,
                     "description": _("Recommended native package for Extension Manager."),
-                }
+                },
             ]
 
         if self.combo_install_method is not None:

@@ -499,7 +499,11 @@ def test_get_extension_manager_install_options_distros() -> None:
 
     # Fedora
     fedora_opts = get_extension_manager_install_options(distro="fedora")
-    assert any("dnf" in opt["command"] for opt in fedora_opts)
+    assert fedora_opts[0]["id"] == "flatpak"
+    assert fedora_opts[0]["command"] == "flatpak install flathub com.mattjakeman.ExtensionManager"
+    dnf_opt = next(opt for opt in fedora_opts if opt["id"] == "system")
+    assert "gnome-shell-extension-manager" in dnf_opt["command"]
+    assert "sudo dnf install -y gnome-shell-extension-manager" in dnf_opt["command"]
 
     # Arch
     arch_opts = get_extension_manager_install_options(distro="arch")
